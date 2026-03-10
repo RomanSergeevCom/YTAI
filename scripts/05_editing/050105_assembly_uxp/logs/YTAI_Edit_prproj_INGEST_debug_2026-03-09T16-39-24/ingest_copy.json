@@ -1,0 +1,45 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "YTAI_Edit",
+  "created_at": "2026-03-08T14:21:18Z",
+  "media": {
+    "width": 3840,
+    "height": 2160,
+    "fps": 25,
+    "sample_rate": 48000
+  },
+  "clips": [
+    {
+      "clip_id": "C5402",
+      "filename": "C5402.MP4",
+      "path": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5402.MP4",
+      "duration": 156,
+      "offset": 0,
+      "premiere_transcript": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/per_clip/C5402/C5402_premiere_transcript.json"
+    },
+    {
+      "clip_id": "C5403",
+      "filename": "C5403.MP4",
+      "path": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5403.MP4",
+      "duration": 79.2,
+      "offset": 156,
+      "premiere_transcript": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/per_clip/C5403/C5403_premiere_transcript.json"
+    },
+    {
+      "clip_id": "C5404",
+      "filename": "C5404.MP4",
+      "path": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5404.MP4",
+      "duration": 121.44,
+      "offset": 235.2,
+      "premiere_transcript": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/per_clip/C5404/C5404_premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_captions.srt"
+  },
+  "source_folder": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit"
+}

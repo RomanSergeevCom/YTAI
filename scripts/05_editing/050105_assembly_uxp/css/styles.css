@@ -1,0 +1,158 @@
+/* YTAI Brief — Dark theme matching Premiere Pro */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #1e1e1e;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+/* Toolbar */
+#toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+button {
+  background: #3a3a3a;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button:hover {
+  background: #4a4a4a;
+}
+
+button:active {
+  background: #2a2a2a;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button:disabled:hover {
+  background: #3a3a3a;
+}
+
+.project-name {
+  color: #aaa;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* Stats bar */
+.stats {
+  display: flex;
+  gap: 12px;
+  padding: 6px 8px;
+  background: #2d2d2d;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.stats span {
+  white-space: nowrap;
+}
+
+/* Progress */
+.progress {
+  margin-bottom: 8px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 3px;
+  color: #bbb;
+}
+
+.progress-bar {
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #4A90D9;
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-fill.done {
+  background: #4CAF50;
+}
+
+.progress-fill.error {
+  background: #E34850;
+}
+
+/* Log */
+.log {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log-line {
+  padding: 1px 0;
+}
+
+.log-line.info {
+  color: #bbb;
+}
+
+.log-line.ok {
+  color: #4CAF50;
+}
+
+.log-line.warn {
+  color: #E6C619;
+}
+
+.log-line.error {
+  color: #E34850;
+}
+
+.log-line.step {
+  color: #4A90D9;
+  font-weight: 600;
+}
+
+/* Utility */
+.hidden {
+  display: none !important;
+}

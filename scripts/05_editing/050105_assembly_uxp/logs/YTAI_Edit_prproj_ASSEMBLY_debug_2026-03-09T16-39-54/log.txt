@@ -1,0 +1,110 @@
+=== YTAI ASSEMBLY — Log ===
+Pipeline: ASSEMBLY
+Project: YTAI_Edit.prproj
+Project Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit.prproj
+Brief Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+Report Generated: 2026-03-09 20:39:54
+Total Entries: 102
+--------------------------------------
+[2026-03-09 20:39:35] [INFO] === DEBUG ASSEMBLY ===
+[2026-03-09 20:39:35] [INFO] Loading brief from path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+[2026-03-09 20:39:35] [INFO] Brief loaded: 9 segments, 4 blocks
+[2026-03-09 20:39:35] [INFO] === ASSEMBLY BUILD START ===
+[2026-03-09 20:39:35] [INFO] Project: YTAI_Edit
+[2026-03-09 20:39:35] [INFO] Project saved
+[2026-03-09 20:39:35] [INFO] === Step 2: Scanning project for clips ===
+[2026-03-09 20:39:35] [INFO] Found bin: 00_Source
+[2026-03-09 20:39:35] [INFO] Scanned 00_Source: 6 entries
+[2026-03-09 20:39:35] [INFO] Clip validation: 3/3 found
+[2026-03-09 20:39:35] [INFO] === Step 3: Building Assembly sequence ===
+[2026-03-09 20:39:35] [INFO] Building Assembly sequence: 5 segments
+[2026-03-09 20:39:35] [DEBUG]   [1] seg_001 [Hook] C5403.MP4 00:00.0-01:11.6 (71.6s)
+[2026-03-09 20:39:35] [DEBUG]   [2] seg_003 [Government Vision] C5402.MP4 01:59.4-02:31.9 (32.5s)
+[2026-03-09 20:39:35] [DEBUG]   [3] seg_004 [Government Vision] C5403.MP4 01:13.4-01:16.4 (3.0s)
+[2026-03-09 20:39:35] [DEBUG]   [4] seg_005 [Client Story] C5404.MP4 00:30.0-01:46.2 (76.2s)
+[2026-03-09 20:39:35] [DEBUG]   [5] seg_006 [Client Story] C5404.MP4 01:47.7-01:57.7 (10.0s)
+[2026-03-09 20:39:35] [INFO] First clip: "C5403.MP4" cast=OK
+[2026-03-09 20:39:35] [INFO] Assembly sequence created: YTAI_Edit_2_Assembly
+[2026-03-09 20:39:35] [INFO] [1/5] seg_001: C5403.MP4 → cast=OK, in/out=0.0-71.6s → createSequenceFromMedia → dur=71.6s @ 0.0s
+[2026-03-09 20:39:35] [INFO] [2/5] seg_003: C5402.MP4 → cast=OK, in/out=119.4-151.9s → insert@71.6s → dur=32.5s
+[2026-03-09 20:39:35] [INFO] [3/5] seg_004: C5403.MP4 → cast=OK, in/out=73.4-76.4s → insert@104.1s → dur=3.0s
+[2026-03-09 20:39:35] [INFO] [4/5] seg_005: C5404.MP4 → cast=OK, in/out=30.0-106.2s → insert@107.1s → dur=76.2s
+[2026-03-09 20:39:35] [INFO] [5/5] seg_006: C5404.MP4 → cast=OK, in/out=107.7-117.7s → insert@183.3s → dur=10.0s
+[2026-03-09 20:39:35] [INFO] Assembly: 5/5 clips inserted, total=193.3s
+[2026-03-09 20:39:35] [INFO] V1 verification: 5 items (expected 5)
+[2026-03-09 20:39:35] [DEBUG]   [0] start=0.0s dur=71.6s name="C5403.MP4"
+[2026-03-09 20:39:35] [DEBUG]   [1] start=71.6s dur=32.5s name="C5402.MP4"
+[2026-03-09 20:39:35] [DEBUG]   [2] start=104.1s dur=3.0s name="C5403.MP4"
+[2026-03-09 20:39:35] [DEBUG]   [3] start=107.1s dur=76.2s name="C5404.MP4"
+[2026-03-09 20:39:35] [DEBUG]   [4] start=183.3s dur=10.0s name="C5404.MP4"
+[2026-03-09 20:39:35] [INFO] === Step 4: Markers ===
+[2026-03-09 20:39:35] [DEBUG] markersOwner methods: [getMarkers, createRemoveMarkerAction, createMoveMarkerAction, createAddMarkerAction, addEventListener, removeEventListener, dispatchEvent, constructor]
+[2026-03-09 20:39:35] [DEBUG] Using constants: CHAPTER="com.adobe.premiereMarkers.chapter", COMMENT="com.adobe.premiereMarkers.comment"
+[2026-03-09 20:39:35] [DEBUG]   Chapter: "Hook" at 0.0s, dur=71.6s
+[2026-03-09 20:39:35] [DEBUG]   Chapter: "Government Vision" at 71.6s, dur=35.5s
+[2026-03-09 20:39:35] [DEBUG]   Chapter: "Client Story" at 107.1s, dur=86.2s
+[2026-03-09 20:39:35] [INFO] Creating 8 markers...
+[2026-03-09 20:39:35] [INFO] Markers: 3 chapters, 5 comments
+[2026-03-09 20:39:35] [INFO] === Post-build validation ===
+[2026-03-09 20:39:35] [INFO] Validation PASSED
+[2026-03-09 20:39:35] [INFO] === ASSEMBLY BUILD COMPLETE (0.6s) ===
+[2026-03-09 20:39:35] [INFO] Assembly: 5 clips on V1, total=193.3s
+[2026-03-09 20:39:35] [INFO] Project saved
+[2026-03-09 20:39:35] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/
+[2026-03-09 20:39:35] [DEBUG] Found logs folder: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/logs
+[2026-03-09 20:39:35] [INFO] Project file copied to debug bundle: YTAI_Edit.prproj
+[2026-03-09 20:39:35] [INFO] Debug bundle saved to: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/logs/YTAI_Edit_prproj_ASSEMBLY_debug_2026-03-09T16-39-35
+[2026-03-09 20:39:35] [INFO] === DEBUG ASSEMBLY COMPLETE ===
+[2026-03-09 20:39:47] [INFO] === APPLY COLORS ===
+[2026-03-09 20:39:47] [DEBUG] ProjectItemColorLabel: {VIOLET=0, IRIS=1, LAVENDER=3, CERULEAN=4, FOREST=5, ROSE=6, MANGO=7, PURPLE=8, BLUE=9, TEAL=10, MAGENTA=11, TAN=12, GREEN=13, BROWN=14, YELLOW=15}
+[2026-03-09 20:39:47] [DEBUG]   seg_001: color=Green(13) colorVia=action
+[2026-03-09 20:39:47] [DEBUG]   seg_003: color=Blue(9) colorVia=action
+[2026-03-09 20:39:47] [DEBUG]   seg_004: color=Blue(9) colorVia=action
+[2026-03-09 20:39:47] [DEBUG]   seg_005: color=Orange(7) colorVia=action
+[2026-03-09 20:39:47] [DEBUG]   seg_006: color=Orange(7) colorVia=action
+[2026-03-09 20:39:47] [INFO] Colors applied to 5/5 clips
+[2026-03-09 20:39:47] [INFO] === APPLY COLORS COMPLETE ===
+[2026-03-09 20:39:53] [INFO] === ASSEMBLY BUILD START ===
+[2026-03-09 20:39:53] [INFO] Project: YTAI_Edit
+[2026-03-09 20:39:53] [INFO] Project saved
+[2026-03-09 20:39:53] [INFO] === Step 2: Scanning project for clips ===
+[2026-03-09 20:39:53] [INFO] Found bin: 00_Source
+[2026-03-09 20:39:53] [INFO] Scanned 00_Source: 6 entries
+[2026-03-09 20:39:53] [INFO] Clip validation: 3/3 found
+[2026-03-09 20:39:53] [INFO] === Step 3: Building Assembly sequence ===
+[2026-03-09 20:39:53] [INFO] Building Assembly sequence: 5 segments
+[2026-03-09 20:39:53] [DEBUG]   [1] seg_001 [Hook] C5403.MP4 00:00.0-01:11.6 (71.6s)
+[2026-03-09 20:39:53] [DEBUG]   [2] seg_003 [Government Vision] C5402.MP4 01:59.4-02:31.9 (32.5s)
+[2026-03-09 20:39:53] [DEBUG]   [3] seg_004 [Government Vision] C5403.MP4 01:13.4-01:16.4 (3.0s)
+[2026-03-09 20:39:53] [DEBUG]   [4] seg_005 [Client Story] C5404.MP4 00:30.0-01:46.2 (76.2s)
+[2026-03-09 20:39:53] [DEBUG]   [5] seg_006 [Client Story] C5404.MP4 01:47.7-01:57.7 (10.0s)
+[2026-03-09 20:39:53] [DEBUG] Cannot delete sequence "YTAI_Edit_2_Assembly": undefined
+[2026-03-09 20:39:53] [INFO] First clip: "C5403.MP4" cast=OK
+[2026-03-09 20:39:53] [INFO] Assembly sequence created: YTAI_Edit_2_Assembly
+[2026-03-09 20:39:53] [INFO] [1/5] seg_001: C5403.MP4 → cast=OK, in/out=0.0-71.6s → createSequenceFromMedia → dur=71.6s @ 0.0s
+[2026-03-09 20:39:53] [INFO] [2/5] seg_003: C5402.MP4 → cast=OK, in/out=119.4-151.9s → insert@71.6s → dur=32.5s
+[2026-03-09 20:39:53] [INFO] [3/5] seg_004: C5403.MP4 → cast=OK, in/out=73.4-76.4s → insert@104.1s → dur=3.0s
+[2026-03-09 20:39:53] [INFO] [4/5] seg_005: C5404.MP4 → cast=OK, in/out=30.0-106.2s → insert@107.1s → dur=76.2s
+[2026-03-09 20:39:53] [INFO] [5/5] seg_006: C5404.MP4 → cast=OK, in/out=107.7-117.7s → insert@183.3s → dur=10.0s
+[2026-03-09 20:39:53] [INFO] Assembly: 5/5 clips inserted, total=193.3s
+[2026-03-09 20:39:53] [INFO] V1 verification: 5 items (expected 5)
+[2026-03-09 20:39:53] [DEBUG]   [0] start=0.0s dur=71.6s name="C5403.MP4"
+[2026-03-09 20:39:53] [DEBUG]   [1] start=71.6s dur=32.5s name="C5402.MP4"
+[2026-03-09 20:39:53] [DEBUG]   [2] start=104.1s dur=3.0s name="C5403.MP4"
+[2026-03-09 20:39:53] [DEBUG]   [3] start=107.1s dur=76.2s name="C5404.MP4"
+[2026-03-09 20:39:53] [DEBUG]   [4] start=183.3s dur=10.0s name="C5404.MP4"
+[2026-03-09 20:39:53] [INFO] === Step 4: Markers ===
+[2026-03-09 20:39:53] [DEBUG] markersOwner methods: [getMarkers, createRemoveMarkerAction, createMoveMarkerAction, createAddMarkerAction, addEventListener, removeEventListener, dispatchEvent, constructor]
+[2026-03-09 20:39:53] [DEBUG] Using constants: CHAPTER="com.adobe.premiereMarkers.chapter", COMMENT="com.adobe.premiereMarkers.comment"
+[2026-03-09 20:39:53] [DEBUG]   Chapter: "Hook" at 0.0s, dur=71.6s
+[2026-03-09 20:39:53] [DEBUG]   Chapter: "Government Vision" at 71.6s, dur=35.5s
+[2026-03-09 20:39:53] [DEBUG]   Chapter: "Client Story" at 107.1s, dur=86.2s
+[2026-03-09 20:39:53] [INFO] Creating 8 markers...
+[2026-03-09 20:39:53] [INFO] Markers: 3 chapters, 5 comments
+[2026-03-09 20:39:54] [INFO] === Post-build validation ===
+[2026-03-09 20:39:54] [INFO] Validation PASSED
+[2026-03-09 20:39:54] [INFO] === ASSEMBLY BUILD COMPLETE (1.0s) ===
+[2026-03-09 20:39:54] [INFO] Assembly: 5 clips on V1, total=193.3s
+[2026-03-09 20:39:54] [INFO] Project saved
+[2026-03-09 20:39:54] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/
+[2026-03-09 20:39:54] [DEBUG] Found logs folder: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/logs

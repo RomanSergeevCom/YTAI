@@ -1,0 +1,83 @@
+=== YTAI ASSEMBLY — Log ===
+Pipeline: ASSEMBLY
+Project: YTAI_Edit.prproj
+Project Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit.prproj
+Brief Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+Report Generated: 2026-03-09 19:31:11
+Total Entries: 75
+--------------------------------------
+[2026-03-09 19:31:10] [INFO] === DEBUG ASSEMBLY ===
+[2026-03-09 19:31:10] [INFO] Loading brief from path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+[2026-03-09 19:31:10] [INFO] Brief loaded: 9 segments, 4 blocks
+[2026-03-09 19:31:10] [INFO] === ASSEMBLY BUILD START ===
+[2026-03-09 19:31:10] [INFO] Project: YTAI_Edit
+[2026-03-09 19:31:10] [INFO] Project saved
+[2026-03-09 19:31:10] [INFO] === Step 2: Scanning project for clips ===
+[2026-03-09 19:31:10] [INFO] Found bin: 00_Source
+[2026-03-09 19:31:10] [INFO] Scanned 00_Source: 6 entries
+[2026-03-09 19:31:10] [INFO] Clip validation: 3/3 found
+[2026-03-09 19:31:10] [INFO] === Step 3: Building Assembly sequence ===
+[2026-03-09 19:31:10] [INFO] Building Assembly sequence: 5 segments
+[2026-03-09 19:31:10] [DEBUG]   [1] seg_001 [Hook] C5403.MP4 00:00.0-01:11.6 (71.6s)
+[2026-03-09 19:31:10] [DEBUG]   [2] seg_003 [Government Vision] C5402.MP4 01:59.4-02:31.9 (32.5s)
+[2026-03-09 19:31:10] [DEBUG]   [3] seg_004 [Government Vision] C5403.MP4 01:13.4-01:16.4 (3.0s)
+[2026-03-09 19:31:10] [DEBUG]   [4] seg_005 [Client Story] C5404.MP4 00:30.0-01:46.2 (76.2s)
+[2026-03-09 19:31:10] [DEBUG]   [5] seg_006 [Client Story] C5404.MP4 01:47.7-01:57.7 (10.0s)
+[2026-03-09 19:31:10] [INFO] First clip: "C5403.MP4" cast=OK
+[2026-03-09 19:31:11] [INFO] Assembly sequence created: YTAI_Edit_2_Assembly
+[2026-03-09 19:31:11] [INFO] [1/5] seg_001: C5403.MP4 → cast=OK, in/out=0.0-71.6s → createSequenceFromMedia → dur=71.6s @ 0.0s
+[2026-03-09 19:31:11] [INFO] [2/5] seg_003: C5402.MP4 → cast=OK, in/out=119.4-151.9s → insert@71.6s → dur=32.5s
+[2026-03-09 19:31:11] [INFO] [3/5] seg_004: C5403.MP4 → cast=OK, in/out=73.4-76.4s → insert@104.1s → dur=3.0s
+[2026-03-09 19:31:11] [INFO] [4/5] seg_005: C5404.MP4 → cast=OK, in/out=30.0-106.2s → insert@107.1s → dur=76.2s
+[2026-03-09 19:31:11] [INFO] [5/5] seg_006: C5404.MP4 → cast=OK, in/out=107.7-117.7s → insert@183.3s → dur=10.0s
+[2026-03-09 19:31:11] [INFO] Assembly: 5/5 clips inserted, total=193.3s
+[2026-03-09 19:31:11] [INFO] V1 verification: 5 items (expected 5)
+[2026-03-09 19:31:11] [DEBUG]   [0] start=0.0s dur=71.6s name="C5403.MP4"
+[2026-03-09 19:31:11] [DEBUG]   [1] start=71.6s dur=32.5s name="C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG]   [2] start=104.1s dur=3.0s name="C5403.MP4"
+[2026-03-09 19:31:11] [DEBUG]   [3] start=107.1s dur=76.2s name="C5404.MP4"
+[2026-03-09 19:31:11] [DEBUG]   [4] start=183.3s dur=10.0s name="C5404.MP4"
+[2026-03-09 19:31:11] [INFO] === Step 4: Colors & markers ===
+[2026-03-09 19:31:11] [DEBUG] Real ProjectItemColorLabel: {VIOLET=0, IRIS=1, LAVENDER=3, CERULEAN=4, FOREST=5, ROSE=6, MANGO=7, PURPLE=8, BLUE=9, TEAL=10, MAGENTA=11, TAN=12, GREEN=13, BROWN=14, YELLOW=15}
+[2026-03-09 19:31:11] [DEBUG] Real MarkerColor: {GREEN=0, RED=1, MAGNETA=2, ORANGE=3, YELLOW=4, BLUE=6, CYAN=7}
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=0 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=1 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=2 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=3 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=4 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=5 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=6 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=7 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=8 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=9 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=10 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=11 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=12 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=13 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=14 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG] DEBUG_COLOR: index=15 applied to "C5402.MP4"
+[2026-03-09 19:31:11] [DEBUG]   seg_001: name="1.1 Hook — Israeli client question — concise retake" color=Green(13) nameVia=action colorVia=action
+[2026-03-09 19:31:11] [DEBUG]   seg_003: name="2.1 Government Vision — Strategic decisions for stability" color=Blue(9) nameVia=action colorVia=action
+[2026-03-09 19:31:11] [DEBUG]   seg_004: name="2.2 Government Vision — More plans than any country" color=Blue(9) nameVia=action colorVia=action
+[2026-03-09 19:31:11] [DEBUG]   seg_005: name="3.1 Client Story — Camping trip in Ras Al Khaimah" color=Orange(7) nameVia=action colorVia=action
+[2026-03-09 19:31:11] [DEBUG]   seg_006: name="3.2 Client Story — Strong bond — how broker-client relationships work" color=Orange(7) nameVia=action colorVia=action
+[2026-03-09 19:31:11] [INFO] Colors applied to 5 clips
+[2026-03-09 19:31:11] [DEBUG] Marker type values: CHAPTER="Chapter", COMMENT="Comment"
+[2026-03-09 19:31:11] [DEBUG] ppro.Marker all types: [MARKER_TYPE_COMMENT="Comment", MARKER_TYPE_CHAPTER="Chapter", MARKER_TYPE_FLVCUEPOINT="FLVCuePoint", MARKER_TYPE_WEBLINK="WebLink"]
+[2026-03-09 19:31:11] [DEBUG]   Chapter: "Hook" type="Chapter" dur=71.6s markerColor=0
+[2026-03-09 19:31:11] [DEBUG]   Chapter: "Government Vision" type="Chapter" dur=35.5s markerColor=6
+[2026-03-09 19:31:11] [DEBUG]   Chapter: "Client Story" type="Chapter" dur=86.2s markerColor=3
+[2026-03-09 19:31:11] [INFO] Markers: 3 chapters, 5 comments
+[2026-03-09 19:31:11] [DEBUG] DEBUG_MARKER_COLOR: index=0 name="Green(0)" at 195.3s
+[2026-03-09 19:31:11] [DEBUG] DEBUG_MARKER_COLOR: index=1 name="Red(1)" at 197.3s
+[2026-03-09 19:31:11] [DEBUG] DEBUG_MARKER_COLOR: index=2 name="Purple(2)" at 199.3s
+[2026-03-09 19:31:11] [DEBUG] DEBUG_MARKER_COLOR: index=3 name="Orange(3)" at 201.3s
+[2026-03-09 19:31:11] [DEBUG] DEBUG_MARKER_COLOR: index=4 name="Yellow(4)" at 203.3s
+[2026-03-09 19:31:11] [DEBUG] DEBUG_MARKER_COLOR: index=5 name="White(5)" at 205.3s
+[2026-03-09 19:31:11] [DEBUG] DEBUG_MARKER_COLOR: index=6 name="Blue(6)" at 207.3s
+[2026-03-09 19:31:11] [DEBUG] DEBUG_MARKER_COLOR: index=7 name="Cyan(7)" at 209.3s
+[2026-03-09 19:31:11] [INFO] === ASSEMBLY BUILD COMPLETE (0.7s) ===
+[2026-03-09 19:31:11] [INFO] Assembly: 5 clips on V1, total=193.3s
+[2026-03-09 19:31:11] [INFO] Project saved
+[2026-03-09 19:31:11] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/
+[2026-03-09 19:31:11] [DEBUG] Found logs folder: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/logs

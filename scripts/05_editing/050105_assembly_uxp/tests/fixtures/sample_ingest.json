@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "Interview",
+  "created_at": "2026-03-08T12:00:00Z",
+  "media": {
+    "width": 3840,
+    "height": 2160,
+    "fps": 25.0,
+    "sample_rate": 48000
+  },
+  "clips": [
+    {
+      "clip_id": "C5402",
+      "filename": "C5402.MP4",
+      "path": "/abs/Interview/C5402.MP4",
+      "duration": 156.0,
+      "offset": 0.0,
+      "premiere_transcript": "/abs/Interview_transcription/per_clip/C5402/C5402_premiere_transcript.json"
+    },
+    {
+      "clip_id": "C5403",
+      "filename": "C5403.MP4",
+      "path": "/abs/Interview/C5403.MP4",
+      "duration": 203.5,
+      "offset": 156.0,
+      "premiere_transcript": "/abs/Interview_transcription/per_clip/C5403/C5403_premiere_transcript.json"
+    },
+    {
+      "clip_id": "C5404",
+      "filename": "C5404.MP4",
+      "path": "/abs/Interview/C5404.MP4",
+      "duration": 120.2,
+      "offset": 359.5,
+      "premiere_transcript": "/abs/Interview_transcription/per_clip/C5404/C5404_premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/abs/Interview_transcription/Interview_transcript.json",
+    "transcript_srt": "/abs/Interview_transcription/Interview_transcript.srt",
+    "transcript_xlsx": "/abs/Interview_transcript.xlsx"
+  },
+  "source_folder": "/abs/Interview"
+}

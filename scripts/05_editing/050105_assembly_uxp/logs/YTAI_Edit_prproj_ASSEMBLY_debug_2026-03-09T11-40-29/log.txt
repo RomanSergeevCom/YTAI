@@ -1,0 +1,39 @@
+=== YTAI ASSEMBLY — Log ===
+Pipeline: ASSEMBLY
+Project: YTAI_Edit.prproj
+Project Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit.prproj
+Brief Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+Report Generated: 2026-03-09 15:40:29
+Total Entries: 31
+--------------------------------------
+[2026-03-09 15:40:29] [INFO] === DEBUG ASSEMBLY ===
+[2026-03-09 15:40:29] [INFO] Loading brief from path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+[2026-03-09 15:40:29] [INFO] Brief loaded: 9 segments, 4 blocks
+[2026-03-09 15:40:29] [INFO] === ASSEMBLY BUILD START ===
+[2026-03-09 15:40:29] [INFO] Project: YTAI_Edit
+[2026-03-09 15:40:29] [INFO] Project saved
+[2026-03-09 15:40:29] [INFO] === Step 2: Scanning project for clips ===
+[2026-03-09 15:40:29] [INFO] Found bin: 00_Source
+[2026-03-09 15:40:29] [INFO] Scanned 00_Source: 6 entries
+[2026-03-09 15:40:29] [INFO] Clip validation: 3/3 found
+[2026-03-09 15:40:29] [INFO] === Step 3: Building ASSEMBLY sequence ===
+[2026-03-09 15:40:29] [INFO] Building ASSEMBLY sequence: 5 segments
+[2026-03-09 15:40:29] [INFO] ASSEMBLY sequence created: YTAI_Edit_ASSEMBLY
+[2026-03-09 15:40:29] [INFO] ASSEMBLY: 5/5 clips inserted
+[2026-03-09 15:40:29] [INFO] === Step 4: Trimming clips ===
+[2026-03-09 15:40:29] [INFO] Trimming 7 clips (expected 5)
+[2026-03-09 15:40:29] [WARN] Trim failed for seg_001: ti.createSetSourceOutPointAction is not a function
+[2026-03-09 15:40:29] [WARN] Trim failed for seg_004: ti.createSetSourceOutPointAction is not a function
+[2026-03-09 15:40:29] [WARN] Trim failed for seg_003: ti.createSetSourceOutPointAction is not a function
+[2026-03-09 15:40:29] [WARN] Trim failed for seg_005: ti.createSetSourceOutPointAction is not a function
+[2026-03-09 15:40:29] [WARN] Trim failed for seg_006: ti.createSetSourceOutPointAction is not a function
+[2026-03-09 15:40:29] [INFO] Clips repositioned tightly
+[2026-03-09 15:40:29] [INFO] Trim complete
+[2026-03-09 15:40:29] [INFO] === Step 5: Colors & markers ===
+[2026-03-09 15:40:29] [INFO] Colors applied to 5 clips
+[2026-03-09 15:40:29] [INFO] Markers: 3 chapters, 5 comments
+[2026-03-09 15:40:29] [INFO] === ASSEMBLY BUILD COMPLETE (0.5s) ===
+[2026-03-09 15:40:29] [INFO] ASSEMBLY: 5 clips on V1
+[2026-03-09 15:40:29] [INFO] Project saved
+[2026-03-09 15:40:29] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/
+[2026-03-09 15:40:29] [DEBUG] Found logs folder: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/logs

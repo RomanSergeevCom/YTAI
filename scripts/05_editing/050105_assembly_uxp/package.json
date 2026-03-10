@@ -1,0 +1,13 @@
+{
+  "name": "050105_assembly_uxp",
+  "version": "1.0.0",
+  "description": "UXP plugin for Adobe Premiere Pro — Ingest + Assembly in one panel",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test tests/**/*.test.js",
+    "test:ingest": "node --test tests/ingest/*.test.js",
+    "test:assembly": "node --test tests/assembly/*.test.js",
+    "test:review": "node --test tests/review/*.test.js"
+  },
+  "devDependencies": {}
+}

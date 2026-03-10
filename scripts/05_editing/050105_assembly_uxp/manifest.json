@@ -1,0 +1,72 @@
+{
+  "id": "com.ytai.assembly.panel",
+  "name": "050105_assembly_uxp",
+  "shortname": "Assembly",
+  "version": "1.0.0",
+  "main": "index.html",
+  "host": [
+    {
+      "app": "premierepro",
+      "minVersion": "25.6.0"
+    }
+  ],
+  "manifestVersion": 5,
+  "requiredPermissions": {
+    "localFileSystem": "fullAccess",
+    "clipboard": "readAndWrite",
+    "network": {
+      "domains": "all"
+    }
+  },
+  "entrypoints": [
+    {
+      "id": "assemblyPanel",
+      "type": "panel",
+      "minimumSize": {
+        "width": 320,
+        "height": 500
+      },
+      "maximumSize": {
+        "width": 2000,
+        "height": 4000
+      },
+      "preferredDockedSize": {
+        "width": 640,
+        "height": 1000
+      },
+      "preferredFloatingSize": {
+        "width": 700,
+        "height": 1100
+      },
+      "label": {
+        "default": "YTAI Assembly"
+      },
+      "icons": [
+        {
+          "width": 23,
+          "height": 23,
+          "path": "icons/dark.png",
+          "scale": [1, 2],
+          "theme": ["darkest", "dark", "medium"]
+        },
+        {
+          "width": 23,
+          "height": 23,
+          "path": "icons/light.png",
+          "scale": [1, 2],
+          "theme": ["lightest", "light"]
+        }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "width": 48,
+      "height": 48,
+      "path": "icons/plugin-icon.png",
+      "scale": [1, 2],
+      "theme": ["darkest", "dark", "medium", "lightest", "light", "all"],
+      "species": ["pluginList"]
+    }
+  ]
+}

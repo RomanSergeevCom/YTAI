@@ -1,0 +1,24 @@
+=== YTAI ASSEMBLY — Log ===
+Pipeline: ASSEMBLY
+Project: YTAI_Edit.prproj
+Project Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit.prproj
+Brief Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+Report Generated: 2026-03-10 10:09:04
+Total Entries: 12
+--------------------------------------
+[2026-03-10 10:09:03] [INFO] === DEBUG ASSEMBLY ===
+[2026-03-10 10:09:03] [INFO] Loading brief from path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+[2026-03-10 10:09:03] [INFO] Brief loaded: 9 segments, 4 blocks
+[2026-03-10 10:09:03] [INFO] === ASSEMBLY BUILD START ===
+[2026-03-10 10:09:03] [INFO] Project: YTAI_Edit
+[2026-03-10 10:09:03] [INFO] Project saved
+[2026-03-10 10:09:03] [INFO] === Step 2: Scanning project for clips ===
+[2026-03-10 10:09:03] [ERROR] ASSEMBLY BUILD FAILED: "00_Source" bin not found. Run INGEST first to import clips.
+[2026-03-10 10:09:03] [DEBUG] Error: "00_Source" bin not found. Run INGEST first to import clips.
+    at findSourceBin (/Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/src/assembly/projectScanner.js:38:9)
+    at async validateIngestState (/Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/src/assembly/projectScanner.js:131:21)
+    at async buildAssembly (index.js:452:24)
+    at async e.exports.debugAssembly (index.js:1370:5)
+[2026-03-10 10:09:04] [INFO] Project saved
+[2026-03-10 10:09:04] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/
+[2026-03-10 10:09:04] [DEBUG] Found logs folder: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/logs
