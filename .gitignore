@@ -1,5 +1,6 @@
 # macOS
 .DS_Store
+Thumbs.db
 
 # Python
 __pycache__/
@@ -16,11 +17,31 @@ node_modules/
 *.MOV
 *.avi
 *.mkv
+
+# Audio files
+*.wav
+*.mp3
+
+# Premiere Pro project files
 *.prproj
 *.prin
+*.pek
+*.cfa
 
 # Premiere debug logs (contain .prproj snapshots)
 scripts/05_editing/0500_uxp/logs/
 
 # Testing project (video files ~6GB)
 scripts/05_editing/999_testing_project/
+
+# ML models (24GB — Ollama, HuggingFace, Whisper)
+models/
+
+# Dependency repos / clones (13GB)
+github/
+
+# Virtual environments (3GB)
+environment/
+
+# Config with API tokens
+config/

@@ -1,0 +1,106 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-08T14:08:34Z",
+  "project": "YTAI_Edit",
+  "total_duration": 356.64,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "C5402",
+    "C5403",
+    "C5404"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "C5402",
+      "local_start": 1.46,
+      "local_end": 152.0,
+      "global_start": 1.46,
+      "global_end": 152.0,
+      "speaker": "SPEAKER_00",
+      "text": "The other day my colleague asked in one of our internal chats, guys I have an Israeli client and he's asking me is it safe for me as an Israeli citizen to invest in the UAE because what do you think about the situation of 2017 when UAE had a conflict with Qatar and at that point they even closed the airspace between each other, all the economic the economies were actually on stop between the two countries. So his question was very simple, did UAE take away the freehold ownership rights from the Qatari citizens and that question guide got me really excited. I went to Chad GPT and I started researching what happened there now initially I didn't know because I'm a citizen of another country next to a step government. never came across this question before. But what I realize is that there was the Arabian Spring in 2011 -12 after which there were some differences in the political vision between the Qatar and the UAE and in 2017 it evolved into a conflict where the Qatar citizens were given briefly like three weeks to get out of the country. Although this was true and the conflict lasted till 2021, which after then it was fully recovered and citizens of Qatar were allowed back, during this time UAE never took away the rightful ownership of those Qatar citizens. This gave me a little hint about Dubai. It's not just how we we as people who live here as brokers see the potential future of it. It's the history of Dubai that tells us that look at all these questions on a long run. Each time the government is making decisions towards stability of the economy, of the citizens and keeping safety of the citizens. So they know even if there is a conflict here and now today, in the future it will be gone. They will need to live with it. So they're taking their decisions very cautiously, thoughtful.",
+      "avg_confidence": 0.9057
+    },
+    {
+      "id": 1,
+      "clip_id": "C5403",
+      "local_start": 0.0,
+      "local_end": 71.62,
+      "global_start": 156.0,
+      "global_end": 227.62,
+      "speaker": "SPEAKER_00",
+      "text": "Long story short. Yeah, long story short. The other day, I received a question from my colleague in one of the internal chats. She has an Israeli client who's asking, Hey, I'm a bit scared of investing in Dubai because what if they take away my ownership rights? What do you think about the conflict between Qatar and UAE in 2017? I read the question. I'm like, what conflict between Qatar and UAE? So I went researching, found out that there was one. And it actually lasted till 2021. And even the citizens of Qatar were asked to leave the country of UAE during this time. But even during this time, there weren't any massive cases of taking away the property of those people. So this gives us an idea of the position. The strategic thinking of supreme leaders of our country. They're always thinking about the future. They have a plan 10, 20 years up ahead.",
+      "avg_confidence": 0.9663
+    },
+    {
+      "id": 2,
+      "clip_id": "C5403",
+      "local_start": 73.42,
+      "local_end": 76.44,
+      "global_start": 229.42,
+      "global_end": 232.44,
+      "speaker": "SPEAKER_00",
+      "text": "Probably even more plans than any other country I know.",
+      "avg_confidence": 0.9981
+    },
+    {
+      "id": 3,
+      "clip_id": "C5404",
+      "local_start": 0.0,
+      "local_end": 0.34,
+      "global_start": 235.2,
+      "global_end": 235.54,
+      "speaker": "SPEAKER_00",
+      "text": "Let's go!",
+      "avg_confidence": 0.8462
+    },
+    {
+      "id": 4,
+      "clip_id": "C5404",
+      "local_start": 30.0,
+      "local_end": 106.24,
+      "global_start": 265.2,
+      "global_end": 341.44,
+      "speaker": "SPEAKER_00",
+      "text": "In Ras Al Khaimah. And there was a funny story. There were several people going with us. And on the way there, I think we had a stop in one of the gas stations. And his child, he accidentally spilled the coffee on the car. On the car remote system. And the car wasn't working at all. Eventually, we went to the camping. And he put his family with someone in another car. And when it was time to leave, we asked our friends to take his family with them. And take him back home. But since his car was stuck in Ras Al Khaimah, we decided to stay in the mountains together. So, it was a funny situation. That we were just, you know, we barely know each other. But he's definitely fond of the nature and stuff. So, we spent the whole... night talking about investment, lifestyle in Dubai. And then in the morning, we went to recover his car. And it was another funny story of how we worked out this whole procedure with three Pakistani guys that were trying to take money from us.",
+      "avg_confidence": 0.9441
+    },
+    {
+      "id": 5,
+      "clip_id": "C5404",
+      "local_start": 107.7,
+      "local_end": 117.74,
+      "global_start": 342.9,
+      "global_end": 352.94,
+      "speaker": "SPEAKER_00",
+      "text": "But that really created a strong bond between. That was nice. That's how things happen between clients and brokers in my world.",
+      "avg_confidence": 0.9913
+    },
+    {
+      "id": 6,
+      "clip_id": "C5404",
+      "local_start": 119.78,
+      "local_end": 121.42,
+      "global_start": 354.98,
+      "global_end": 356.62,
+      "speaker": "SPEAKER_00",
+      "text": "I try to can a few investor to do so from two to be a down payments, and then I pay them. You look like this. And everything's pretty normal for here, because they can do it broke through here, they can sit back ,pit and let it Generally people are Tot Sawyer end up or similar if it was for categories for us to decide where he was looking forward to The car was happily, the car was coming in a very comfortable state and feels like a modern car.",
+      "avg_confidence": 0.0784
+    }
+  ],
+  "stats": {
+    "total_words": 802,
+    "total_segments": 7,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 7,
+        "words": 802,
+        "duration": 313.44,
+        "avg_confidence": 0.8186
+      }
+    },
+    "avg_confidence": 0.8186,
+    "low_confidence_segments": 1
+  }
+}

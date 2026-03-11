@@ -1,0 +1,60 @@
+=== YTAI Ingest — Log ===
+Project: YTAI_Edit.prproj
+Project Path: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit.prproj
+Ingest Path: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json
+Source Folder: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit
+Report Generated: 2026-03-08 18:31:04
+Total Entries: 52
+--------------------------------------
+[2026-03-08 18:30:41] [INFO] === DEBUG RUN ===
+[2026-03-08 18:30:41] [INFO] Loading: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json
+[2026-03-08 18:30:41] [INFO] Loading ingest from path: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json
+[2026-03-08 18:30:41] [INFO] Ingest loaded: 3 clips, project "YTAI_Edit"
+[2026-03-08 18:30:41] [INFO] === Build started ===
+[2026-03-08 18:30:41] [INFO] Project: YTAI_Edit.prproj
+[2026-03-08 18:30:41] [INFO] Project path: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit.prproj
+[2026-03-08 18:30:41] [INFO] Ingest: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json
+[2026-03-08 18:30:41] [INFO] Clips: 3, Resolution: 3840x2160 @ 25fps
+[2026-03-08 18:30:41] [INFO] === Step 1: Creating bin structure ===
+[2026-03-08 18:30:41] [INFO] Created bins: 00_Source, 01_Sequence, 02_Transcripts
+[2026-03-08 18:30:41] [INFO] === Step 2: Importing media & building sequence ===
+[2026-03-08 18:30:41] [INFO] Importing 3 media file(s) into 00_Source
+[2026-03-08 18:30:41] [DEBUG]   -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5402.MP4
+[2026-03-08 18:30:41] [DEBUG]   -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5403.MP4
+[2026-03-08 18:30:41] [DEBUG]   -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5404.MP4
+[2026-03-08 18:30:41] [INFO] Import complete: C5402.MP4, C5403.MP4, C5404.MP4
+[2026-03-08 18:30:41] [DEBUG] Cannot list bin "00_Source": bin.getItems is not a function
+[2026-03-08 18:30:41] [WARN] findProjectItemByName: "C5402.MP4" not found. Visited: [RYA_Video, 00_Source, 01_Sequence, 02_Transcripts, YTAI_Edit — Ingest, 00_Source 01, 01_Sequence 02, 02_Transcripts 03]
+[2026-03-08 18:30:41] [WARN] First clip "C5402.MP4" not found, using createSequence (default settings)
+[2026-03-08 18:30:42] [INFO] Sequence created: "YTAI_Edit — Ingest" (guid=4041efe7-d077-40f5-942b-8894b256fd3b)
+[2026-03-08 18:30:42] [INFO] SequenceEditor obtained: true
+[2026-03-08 18:30:42] [WARN] findProjectItemByName: "C5402.MP4" not found. Visited: [RYA_Video, 00_Source, 01_Sequence, 02_Transcripts, YTAI_Edit — Ingest, 00_Source 01, 01_Sequence 02, 02_Transcripts 03, YTAI_Edit — Ingest]
+[2026-03-08 18:30:42] [ERROR] Clip not found in project: C5402.MP4 (C5402)
+[2026-03-08 18:30:42] [WARN] findProjectItemByName: "C5403.MP4" not found. Visited: [RYA_Video, 00_Source, 01_Sequence, 02_Transcripts, YTAI_Edit — Ingest, 00_Source 01, 01_Sequence 02, 02_Transcripts 03, YTAI_Edit — Ingest]
+[2026-03-08 18:30:42] [ERROR] Clip not found in project: C5403.MP4 (C5403)
+[2026-03-08 18:30:42] [WARN] findProjectItemByName: "C5404.MP4" not found. Visited: [RYA_Video, 00_Source, 01_Sequence, 02_Transcripts, YTAI_Edit — Ingest, 00_Source 01, 01_Sequence 02, 02_Transcripts 03, YTAI_Edit — Ingest]
+[2026-03-08 18:30:42] [ERROR] Clip not found in project: C5404.MP4 (C5404)
+[2026-03-08 18:30:42] [INFO] Sequence "YTAI_Edit — Ingest" complete: 0/3 clip(s) placed, total 356.6s
+[2026-03-08 18:30:42] [INFO] === Step 3: Importing transcripts ===
+[2026-03-08 18:30:42] [INFO] SRT file queued: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_transcript.srt
+[2026-03-08 18:30:42] [DEBUG] Transcript queued: C5402 -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/per_clip/C5402/C5402_premiere_transcript.json
+[2026-03-08 18:30:42] [DEBUG] Transcript queued: C5403 -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/per_clip/C5403/C5403_premiere_transcript.json
+[2026-03-08 18:30:42] [DEBUG] Transcript queued: C5404 -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/per_clip/C5404/C5404_premiere_transcript.json
+[2026-03-08 18:30:42] [INFO] Transcript files to import: 4 (1 SRT + 3 premiere transcripts)
+[2026-03-08 18:31:01] [INFO] Transcript import complete: 4 file(s)
+[2026-03-08 18:31:01] [INFO] SRT imported successfully
+[2026-03-08 18:31:01] [INFO] Premiere transcript JSONs imported: 3/3
+[2026-03-08 18:31:01] [INFO] === Step 4: Activating sequence ===
+[2026-03-08 18:31:01] [WARN] openSequence not available: undefined
+[2026-03-08 18:31:01] [INFO] Active sequence: "YTAI_Edit — Ingest"
+[2026-03-08 18:31:01] [INFO] === Build complete ===
+[2026-03-08 18:31:01] [INFO] Summary: 0 clips on timeline, 356.6s total
+[2026-03-08 18:31:01] [INFO] Transcripts: SRT=true, JSONs=3
+[2026-03-08 18:31:01] [INFO] Premiere project saved: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit.prproj
+[2026-03-08 18:31:01] [INFO] Saving logs to: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription
+[2026-03-08 18:31:01] [INFO] Log saved: YTAI_Edit_ingest_2026-03-08T14-31-01.log
+[2026-03-08 18:31:01] [INFO] Debug snapshot saved: YTAI_Edit_ingest_2026-03-08T14-31-01_debug.json
+[2026-03-08 18:31:01] [INFO] Project file copied: YTAI_Edit.prproj
+[2026-03-08 18:31:01] [INFO] === DEBUG RUN COMPLETE ===
+[2026-03-08 18:31:04] [INFO] Premiere project saved: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit.prproj
+[2026-03-08 18:31:04] [INFO] Saving logs to: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription

@@ -1,0 +1,99 @@
+{
+  "timestamp": "2026-03-08 18:10:05",
+  "projectName": "YTAI_Edit.prproj",
+  "projectPath": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit.prproj",
+  "ingestPath": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json",
+  "sourceFolderPath": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit",
+  "ingestData": {
+    "version": "1.0",
+    "type": "ingest",
+    "project_name": "YTAI_Edit",
+    "created_at": "2026-03-08T14:08:34Z",
+    "media": {
+      "width": 3840,
+      "height": 2160,
+      "fps": 25,
+      "sample_rate": 48000
+    },
+    "clips": [
+      {
+        "clip_id": "C5402",
+        "filename": "C5402.MP4",
+        "path": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5402.MP4",
+        "duration": 156,
+        "offset": 0,
+        "premiere_transcript": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/per_clip/C5402/C5402_premiere_transcript.json"
+      },
+      {
+        "clip_id": "C5403",
+        "filename": "C5403.MP4",
+        "path": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5403.MP4",
+        "duration": 79.2,
+        "offset": 156,
+        "premiere_transcript": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/per_clip/C5403/C5403_premiere_transcript.json"
+      },
+      {
+        "clip_id": "C5404",
+        "filename": "C5404.MP4",
+        "path": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5404.MP4",
+        "duration": 121.44,
+        "offset": 235.2,
+        "premiere_transcript": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/per_clip/C5404/C5404_premiere_transcript.json"
+      }
+    ],
+    "files": {
+      "transcript_json": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_transcript.json",
+      "transcript_xlsx": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcript.xlsx",
+      "transcript_srt": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_transcript.srt"
+    },
+    "source_folder": "/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit"
+  },
+  "logEntries": [
+    "[2026-03-08 18:09:03] [INFO] 020201_uxp_premiere_ingest initialized",
+    "[2026-03-08 18:09:03] [INFO] Version 1.0.0",
+    "[2026-03-08 18:09:05] [INFO] Opening file picker for ingest JSON...",
+    "[2026-03-08 18:09:59] [INFO] Ingest file nativePath: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json",
+    "[2026-03-08 18:09:59] [INFO] Ingest loaded: 3 clips, project \"YTAI_Edit\"",
+    "[2026-03-08 18:10:04] [INFO] === Build started ===",
+    "[2026-03-08 18:10:04] [INFO] Project: YTAI_Edit.prproj",
+    "[2026-03-08 18:10:04] [INFO] Project path: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit.prproj",
+    "[2026-03-08 18:10:04] [INFO] Ingest: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json",
+    "[2026-03-08 18:10:04] [INFO] Clips: 3, Resolution: 3840x2160 @ 25fps",
+    "[2026-03-08 18:10:04] [INFO] === Step 1: Creating bin structure ===",
+    "[2026-03-08 18:10:04] [INFO] Created bins: 00_Source, 01_Sequence, 02_Transcripts",
+    "[2026-03-08 18:10:04] [INFO] === Step 2: Importing media & building sequence ===",
+    "[2026-03-08 18:10:04] [INFO] Importing 3 media file(s) into 00_Source",
+    "[2026-03-08 18:10:04] [DEBUG]   -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5402.MP4",
+    "[2026-03-08 18:10:04] [DEBUG]   -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5403.MP4",
+    "[2026-03-08 18:10:04] [DEBUG]   -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5404.MP4",
+    "[2026-03-08 18:10:05] [INFO] Import complete: C5402.MP4, C5403.MP4, C5404.MP4",
+    "[2026-03-08 18:10:05] [WARN] First clip \"C5402.MP4\" not found, using createSequence (default settings)",
+    "[2026-03-08 18:10:05] [INFO] Sequence created: \"YTAI_Edit — Ingest\"",
+    "[2026-03-08 18:10:05] [ERROR] Clip not found in project: C5402.MP4 (C5402)",
+    "[2026-03-08 18:10:05] [ERROR] Clip not found in project: C5403.MP4 (C5403)",
+    "[2026-03-08 18:10:05] [ERROR] Clip not found in project: C5404.MP4 (C5404)",
+    "[2026-03-08 18:10:05] [INFO] Sequence \"YTAI_Edit — Ingest\" complete: 3 clip(s), total 356.6s",
+    "[2026-03-08 18:10:05] [INFO] === Step 3: Importing transcripts ===",
+    "[2026-03-08 18:10:05] [INFO] SRT file queued: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_transcript.srt",
+    "[2026-03-08 18:10:05] [DEBUG] Transcript queued: C5402 -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/per_clip/C5402/C5402_premiere_transcript.json",
+    "[2026-03-08 18:10:05] [DEBUG] Transcript queued: C5403 -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/per_clip/C5403/C5403_premiere_transcript.json",
+    "[2026-03-08 18:10:05] [DEBUG] Transcript queued: C5404 -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/per_clip/C5404/C5404_premiere_transcript.json",
+    "[2026-03-08 18:10:05] [INFO] Transcript files to import: 4 (1 SRT + 3 premiere transcripts)",
+    "[2026-03-08 18:10:05] [INFO] Transcript import complete: 4 file(s)",
+    "[2026-03-08 18:10:05] [INFO] SRT imported successfully",
+    "[2026-03-08 18:10:05] [INFO] Premiere transcript JSONs imported: 3/3",
+    "[2026-03-08 18:10:05] [INFO] === Step 4: Activating sequence ===",
+    "[2026-03-08 18:10:05] [WARN] openSequence not available: undefined",
+    "[2026-03-08 18:10:05] [INFO] Active sequence: \"YTAI_Edit — Ingest\"",
+    "[2026-03-08 18:10:05] [INFO] === Build complete ===",
+    "[2026-03-08 18:10:05] [INFO] Summary: 3 clips on timeline, 356.6s total",
+    "[2026-03-08 18:10:05] [INFO] Transcripts: SRT=true, JSONs=3",
+    "[2026-03-08 18:10:05] [INFO] Saving debug bundle...",
+    "[2026-03-08 18:10:05] [INFO] Saving Premiere project: YTAI_Edit.prproj",
+    "[2026-03-08 18:10:05] [INFO] Premiere project saved: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit.prproj",
+    "[2026-03-08 18:10:05] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/02_transcribe/020201_premiere_ingest/",
+    "[2026-03-08 18:10:05] [DEBUG] logs/ not found at /Users/romansergeev/YTAI/scripts/02_transcribe/020201_premiere_ingest/logs, creating...",
+    "[2026-03-08 18:10:05] [DEBUG] Created logs folder at: /Users/romansergeev/YTAI/scripts/02_transcribe/020201_premiere_ingest/logs"
+  ],
+  "entryCount": 45
+}

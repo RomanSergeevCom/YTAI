@@ -1,0 +1,10 @@
+{
+  "name": "020201_uxp_premiere_ingest",
+  "version": "1.0.0",
+  "description": "UXP plugin for Adobe Premiere Pro — loads ingest JSON and builds timeline with clips, SRT, and transcripts",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {}
+}

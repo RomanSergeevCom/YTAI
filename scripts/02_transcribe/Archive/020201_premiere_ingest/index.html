@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="index.js"></script>
+  </head>
+  <style>
+    :root {
+      --bg-primary: #0a1628;
+      --bg-secondary: #132035;
+      --bg-tertiary: #1a2a45;
+      --text-primary: #e0e0e0;
+      --text-secondary: #8899aa;
+      --accent: #c8e64a;
+      --accent-hover: #b8d63a;
+      --success: #c8e64a;
+      --warning: #ff9800;
+      --error: #f44336;
+      --border: #1e3355;
+    }
+
+    body {
+      font-family: "Adobe Clean", system-ui, sans-serif;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      padding: 8px 12px;
+      overflow-y: auto;
+      height: 100vh;
+      margin: 0;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
+
+    h3 {
+      margin: 12px 0 6px 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    #log-panel {
+      background: #060e1a;
+      color: #c0c0c0;
+      font-family: "Menlo", "Monaco", "Consolas", monospace;
+      font-size: 10px;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      height: 160px;
+      overflow-y: auto;
+      margin-bottom: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    #summary-panel {
+      background: var(--bg-secondary);
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      display: none;
+    }
+
+    #progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--bg-tertiary);
+      border-radius: 2px;
+      margin-bottom: 8px;
+      overflow: hidden;
+      display: none;
+    }
+
+    #progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 2px;
+    }
+
+    #progress-text {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: none;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+
+    sp-button {
+      height: 28px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .status-dot.ready { background: var(--success); }
+    .status-dot.waiting { background: var(--warning); }
+    .status-dot.error { background: var(--error); }
+
+    .log-info { color: #7eb8da; }
+    .log-warn { color: #ffb74d; }
+    .log-error { color: #ef5350; }
+    .log-debug { color: #556677; }
+
+    .section {
+      margin-bottom: 12px;
+    }
+
+    #file-info {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      white-space: pre-wrap;
+    }
+
+    .clear-log-btn {
+      float: right;
+      cursor: pointer;
+      font-size: 10px;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    .clear-log-btn:hover {
+      color: var(--text-primary);
+    }
+
+    #validation-panel {
+      background: var(--bg-secondary);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      margin-top: 6px;
+      font-size: 11px;
+      display: none;
+    }
+
+    .val-line {
+      padding: 1px 0;
+      color: var(--text-primary);
+    }
+
+    .quick-actions {
+      margin-bottom: 8px;
+    }
+  </style>
+
+  <body>
+    <div class="quick-actions">
+      <div class="btn-row">
+        <sp-button id="btn-debug" variant="primary">Debug</sp-button>
+        <sp-button id="btn-open-logs">Copy Logs Path</sp-button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Status</h3>
+      <div id="status">
+        <span class="status-dot waiting"></span>
+        Waiting for ingest JSON...
+      </div>
+      <div id="validation-panel"></div>
+    </div>
+
+    <div class="section">
+      <h3>
+        Log
+        <button class="clear-log-btn" id="btn-clear-log">clear</button>
+      </h3>
+      <div id="log-panel"></div>
+    </div>
+
+    <div class="section">
+      <h3>1. Load Ingest JSON</h3>
+      <div class="btn-row">
+        <sp-button id="btn-load-ingest">Load Ingest JSON</sp-button>
+      </div>
+      <div id="file-info"></div>
+      <div id="summary-panel"></div>
+    </div>
+
+    <div class="section">
+      <h3>2. Build Timeline</h3>
+      <div id="progress-bar"><div id="progress-fill"></div></div>
+      <div id="progress-text"></div>
+      <div class="btn-row">
+        <sp-button id="btn-build" disabled>Build Timeline</sp-button>
+        <sp-button id="btn-save-log">Save Log</sp-button>
+      </div>
+    </div>
+  </body>
+</html>

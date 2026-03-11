@@ -1,0 +1,109 @@
+=== YTAI Ingest — Log ===
+Project: YTAI_Edit_10.prproj
+Project Path: /Users/romansergeev/Desktop/YTAI_Edit_10.prproj
+Ingest Path: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json
+Source Folder: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit
+Report Generated: 2026-03-08 19:58:40
+Total Entries: 101
+--------------------------------------
+[2026-03-08 19:58:33] [INFO] === DEBUG RUN ===
+[2026-03-08 19:58:33] [INFO] Loading: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json
+[2026-03-08 19:58:33] [INFO] Loading ingest from path: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json
+[2026-03-08 19:58:33] [DEBUG] Ingest JSON: 1776 chars
+[2026-03-08 19:58:33] [INFO] Ingest loaded: 3 clips, project "YTAI_Edit"
+[2026-03-08 19:58:33] [INFO] === Build started ===
+[2026-03-08 19:58:33] [INFO] Project: YTAI_Edit_10.prproj
+[2026-03-08 19:58:33] [INFO] Project path: /Users/romansergeev/Desktop/YTAI_Edit_10.prproj
+[2026-03-08 19:58:33] [INFO] Ingest: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json
+[2026-03-08 19:58:33] [INFO] Clips: 3, Resolution: 3840x2160 @ 25fps
+[2026-03-08 19:58:33] [DEBUG]   Clip: C5402 — C5402.MP4 (156s, path=/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5402.MP4)
+[2026-03-08 19:58:33] [DEBUG]   Clip: C5403 — C5403.MP4 (79.2s, path=/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5403.MP4)
+[2026-03-08 19:58:33] [DEBUG]   Clip: C5404 — C5404.MP4 (121.44s, path=/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5404.MP4)
+[2026-03-08 19:58:33] [DEBUG] Host: premierepro 26.0.1
+[2026-03-08 19:58:33] [DEBUG] UXP: uxp-8.1.0-local
+[2026-03-08 19:58:33] [INFO] === Step 1: Creating bin structure ===
+[2026-03-08 19:58:34] [DEBUG] Root items after bin creation: 3 item(s)
+[2026-03-08 19:58:34] [DEBUG]   Root item: "00_Source" (type=2)
+[2026-03-08 19:58:34] [DEBUG] Bin "00_Source" cast to FolderItem: OK
+[2026-03-08 19:58:34] [DEBUG]   Root item: "01_Sequence" (type=2)
+[2026-03-08 19:58:34] [DEBUG] Bin "01_Sequence" cast to FolderItem: OK
+[2026-03-08 19:58:34] [DEBUG]   Root item: "02_Transcripts" (type=2)
+[2026-03-08 19:58:34] [DEBUG] Bin "02_Transcripts" cast to FolderItem: OK
+[2026-03-08 19:58:34] [INFO] Created bins: 00_Source, 01_Sequence, 02_Transcripts
+[2026-03-08 19:58:34] [INFO] === Step 2: Importing media & building sequence ===
+[2026-03-08 19:58:34] [INFO] Importing 3 media file(s) into 00_Source
+[2026-03-08 19:58:34] [DEBUG]   -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5402.MP4
+[2026-03-08 19:58:34] [DEBUG]   -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5403.MP4
+[2026-03-08 19:58:34] [DEBUG]   -> /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/C5404.MP4
+[2026-03-08 19:58:34] [INFO] Import complete: C5402.MP4, C5403.MP4, C5404.MP4
+[2026-03-08 19:58:34] [DEBUG] Bin "00_Source" contains 3 item(s): "C5402.MP4" (type=1), "C5403.MP4" (type=1), "C5404.MP4" (type=1)
+[2026-03-08 19:58:34] [INFO] First clip found: "C5402.MP4" (type=1)
+[2026-03-08 19:58:34] [DEBUG] ClipProjectItem.cast: success
+[2026-03-08 19:58:34] [INFO] Creating sequence from media: "YTAI_Edit — Ingest" (cast=true)
+[2026-03-08 19:58:34] [INFO] Sequence created: "YTAI_Edit — Ingest" (method=createSequenceFromMedia, guid=32247689-d1ec-4eda-9d33-a8fb1c0a9dbf)
+[2026-03-08 19:58:34] [DEBUG] Could not read sequence settings: settings.getVideoFrameSize is not a function
+[2026-03-08 19:58:34] [INFO] SequenceEditor obtained: true
+[2026-03-08 19:58:34] [DEBUG] Inserting "C5402.MP4" at 0s (ticks=0)
+[2026-03-08 19:58:34] [INFO] [1/3] Placed "C5402.MP4" (156s) @ 0s
+[2026-03-08 19:58:34] [DEBUG] Inserting "C5403.MP4" at 156s (ticks=39626496000000)
+[2026-03-08 19:58:34] [INFO] [2/3] Placed "C5403.MP4" (79.2s) @ 156s
+[2026-03-08 19:58:34] [DEBUG] Inserting "C5404.MP4" at 235.2s (ticks=59744563200000)
+[2026-03-08 19:58:34] [INFO] [3/3] Placed "C5404.MP4" (121.44s) @ 235.2s
+[2026-03-08 19:58:34] [DEBUG] After clip placement: V=3 A=3 tracks, 3/3 placed
+[2026-03-08 19:58:34] [INFO] Created tracks: V3/A4 (placeholder clip at 366.6s — delete manually)
+[2026-03-08 19:58:34] [INFO] Final tracks: V=3 A=4
+[2026-03-08 19:58:34] [INFO] Sequence "YTAI_Edit — Ingest" complete: 3/3 clip(s) placed, total 356.6s
+[2026-03-08 19:58:34] [INFO] === Step 3: Importing transcripts ===
+[2026-03-08 19:58:34] [DEBUG] SRT path: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_transcript.srt
+[2026-03-08 19:58:34] [DEBUG] SRT file size: 4607 chars
+[2026-03-08 19:58:34] [INFO] SRT imported into 02_Transcripts bin: YTAI_Edit_transcript.srt
+[2026-03-08 19:58:34] [INFO] To add captions: drag SRT from 02_Transcripts to timeline caption track
+[2026-03-08 19:58:34] [DEBUG] Read transcript: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/per_clip/C5402/C5402_premiere_transcript.json
+[2026-03-08 19:58:34] [DEBUG] Adobe JSON: 40261 chars, 1 segments, 1 speakers
+[2026-03-08 19:58:34] [DEBUG] Found clip: "C5402.MP4" (type=1)
+[2026-03-08 19:58:34] [DEBUG] ClipProjectItem.cast success for "C5402.MP4"
+[2026-03-08 19:58:34] [DEBUG] importFromJSON returned TextSegments for C5402
+[2026-03-08 19:58:34] [INFO] Transcript bound: "C5402.MP4" (C5402)
+[2026-03-08 19:58:34] [DEBUG] Read transcript: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/per_clip/C5403/C5403_premiere_transcript.json
+[2026-03-08 19:58:34] [DEBUG] Adobe JSON: 22013 chars, 2 segments, 1 speakers
+[2026-03-08 19:58:34] [DEBUG] Found clip: "C5403.MP4" (type=1)
+[2026-03-08 19:58:34] [DEBUG] ClipProjectItem.cast success for "C5403.MP4"
+[2026-03-08 19:58:34] [DEBUG] importFromJSON returned TextSegments for C5403
+[2026-03-08 19:58:34] [INFO] Transcript bound: "C5403.MP4" (C5403)
+[2026-03-08 19:58:34] [DEBUG] Read transcript: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/per_clip/C5404/C5404_premiere_transcript.json
+[2026-03-08 19:58:34] [DEBUG] Adobe JSON: 39137 chars, 4 segments, 1 speakers
+[2026-03-08 19:58:34] [DEBUG] Found clip: "C5404.MP4" (type=1)
+[2026-03-08 19:58:34] [DEBUG] ClipProjectItem.cast success for "C5404.MP4"
+[2026-03-08 19:58:34] [DEBUG] importFromJSON returned TextSegments for C5404
+[2026-03-08 19:58:34] [INFO] Transcript bound: "C5404.MP4" (C5404)
+[2026-03-08 19:58:34] [INFO] Transcripts: SRT=true, bound=3/3
+[2026-03-08 19:58:34] [INFO] === Step 4: Activating sequence ===
+[2026-03-08 19:58:34] [WARN] openSequence not available: undefined
+[2026-03-08 19:58:34] [INFO] Active sequence: "YTAI_Edit — Ingest"
+[2026-03-08 19:58:34] [INFO] === Build complete ===
+[2026-03-08 19:58:34] [INFO] Summary: 3 clips on timeline, 356.6s total
+[2026-03-08 19:58:34] [INFO] Transcripts: SRT=true, bound=3
+[2026-03-08 19:58:34] [INFO] Build elapsed: 0.6s
+[2026-03-08 19:58:34] [INFO] Premiere project saved: /Users/romansergeev/Desktop/YTAI_Edit_10.prproj
+[2026-03-08 19:58:34] [INFO] Saving logs to: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription
+[2026-03-08 19:58:34] [INFO] Log saved: YTAI_Edit_ingest_2026-03-08T15-58-34.log
+[2026-03-08 19:58:34] [INFO] Debug snapshot saved: YTAI_Edit_ingest_2026-03-08T15-58-34_debug.json
+[2026-03-08 19:58:34] [INFO] Project file copied: YTAI_Edit_10.prproj
+[2026-03-08 19:58:34] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/02_transcribe/020201_premiere_ingest/
+[2026-03-08 19:58:34] [DEBUG] Found logs folder: /Users/romansergeev/YTAI/scripts/02_transcribe/020201_premiere_ingest/logs
+[2026-03-08 19:58:34] [INFO] Project file copied to debug bundle: YTAI_Edit_10.prproj
+[2026-03-08 19:58:34] [INFO] Debug bundle saved to: /Users/romansergeev/YTAI/scripts/02_transcribe/020201_premiere_ingest/logs/debug_YTAI_Edit_10_prproj_2026-03-08T15-58-34
+[2026-03-08 19:58:34] [INFO] === DEBUG RUN COMPLETE ===
+[2026-03-08 19:58:35] [INFO] Opening logs folder: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription
+[2026-03-08 19:58:35] [DEBUG] shell available: true, openExternal: function
+[2026-03-08 19:58:35] [WARN] shell.openExternal failed: file scheme is not supported
+[2026-03-08 19:58:39] [INFO] Opening logs folder: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription
+[2026-03-08 19:58:39] [DEBUG] shell available: true, openExternal: function
+[2026-03-08 19:58:39] [WARN] shell.openExternal failed: file scheme is not supported
+[2026-03-08 19:58:40] [INFO] Premiere project saved: /Users/romansergeev/Desktop/YTAI_Edit_10.prproj
+[2026-03-08 19:58:40] [INFO] Saving logs to: /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription
+[2026-03-08 19:58:40] [INFO] Log saved: YTAI_Edit_ingest_2026-03-08T15-58-40.log
+[2026-03-08 19:58:40] [INFO] Debug snapshot saved: YTAI_Edit_ingest_2026-03-08T15-58-40_debug.json
+[2026-03-08 19:58:40] [INFO] Project file copied: YTAI_Edit_10.prproj
+[2026-03-08 19:58:40] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/02_transcribe/020201_premiere_ingest/
+[2026-03-08 19:58:40] [DEBUG] Found logs folder: /Users/romansergeev/YTAI/scripts/02_transcribe/020201_premiere_ingest/logs

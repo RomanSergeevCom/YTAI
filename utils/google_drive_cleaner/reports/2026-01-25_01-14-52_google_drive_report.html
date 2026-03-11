@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive Cache Report - 2026-01-25</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 30px;
+            line-height: 1.6;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #4285f4;
+        }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+        
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .summary-card .value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #4285f4;
+        }
+        .summary-card .label { color: #888; margin-top: 5px; font-size: 0.9em; }
+        .summary-card.success .value { color: #34a853; }
+        .summary-card.warning .value { color: #fbbc04; }
+        .summary-card.danger .value { color: #ea4335; }
+        
+        /* Sections */
+        .section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .section h2 {
+            color: #4285f4;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 1.3em;
+        }
+        
+        /* Pre-flight checks */
+        .check-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .check-icon { font-size: 1.2em; margin-right: 12px; }
+        .check-name { font-weight: 500; min-width: 180px; }
+        .check-status { color: #888; flex: 1; }
+        .check-suggestion { color: #fbbc04; font-size: 0.85em; margin-left: 10px; }
+        
+        /* Progress bars */
+        .progress-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .progress-label { min-width: 100px; font-size: 0.9em; }
+        .progress-bar {
+            flex: 1;
+            height: 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0 15px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.3s;
+        }
+        .progress-fill.video { background: linear-gradient(90deg, #ea4335, #ff6b6b); }
+        .progress-fill.image { background: linear-gradient(90deg, #9c27b0, #e040fb); }
+        .progress-fill.document { background: linear-gradient(90deg, #4285f4, #64b5f6); }
+        .progress-fill.audio { background: linear-gradient(90deg, #34a853, #69f0ae); }
+        .progress-fill.archive { background: linear-gradient(90deg, #fbbc04, #ffeb3b); }
+        .progress-fill.code { background: linear-gradient(90deg, #00bcd4, #4dd0e1); }
+        .progress-fill.other { background: linear-gradient(90deg, #607d8b, #90a4ae); }
+        .progress-value { min-width: 100px; text-align: right; font-family: monospace; }
+        
+        /* Disk usage visualization */
+        .disk-visual {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            height: 40px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+        .disk-used {
+            height: 100%;
+            background: linear-gradient(90deg, #ea4335, #fbbc04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            transition: width 0.5s;
+        }
+        .disk-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85em;
+            color: #888;
+        }
+        
+        /* Account cards */
+        .account-card {
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4285f4;
+        }
+        .account-card.backup { border-left-color: #fbbc04; }
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .account-email { font-weight: 600; font-size: 1.1em; }
+        .account-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .badge-active { background: rgba(52,168,83,0.2); color: #34a853; }
+        .badge-backup { background: rgba(251,188,4,0.2); color: #fbbc04; }
+        .badge-stream { background: rgba(66,133,244,0.2); color: #4285f4; }
+        .badge-mirror { background: rgba(234,67,53,0.2); color: #ea4335; }
+        .account-size { font-size: 1.5em; color: #4285f4; font-weight: 600; }
+        .account-details { color: #aaa; font-size: 0.9em; margin-top: 10px; }
+        .account-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .breakdown-item { text-align: center; }
+        .breakdown-value { font-size: 1.2em; color: #4285f4; font-weight: 600; }
+        .breakdown-label { font-size: 0.8em; color: #888; }
+        
+        /* Shared drives list */
+        .shared-drives {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        .shared-drive-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .shared-drive-item:last-child { border-bottom: none; }
+        
+        /* Location cards */
+        .location-card {
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #34a853;
+        }
+        .location-card.medium { border-left-color: #fbbc04; }
+        .location-card.high { border-left-color: #ea4335; }
+        .location-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .location-name { font-weight: 600; font-size: 1.1em; }
+        .location-size { color: #4285f4; font-family: monospace; font-size: 1.2em; font-weight: 600; }
+        .location-path { font-family: monospace; font-size: 0.8em; color: #888; margin-top: 5px; }
+        .location-meta {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        .location-desc { color: #aaa; margin-top: 10px; font-size: 0.9em; }
+        
+        /* Largest files table */
+        .files-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        .files-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            color: #4285f4;
+            font-weight: 600;
+        }
+        .files-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .files-table tr:hover { background: rgba(255,255,255,0.03); }
+        .file-path {
+            font-family: monospace;
+            font-size: 0.85em;
+            max-width: 500px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .file-size { color: #4285f4; font-family: monospace; font-weight: 600; }
+        .file-category {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* Clickable links */
+        .file-link, .folder-link {
+            color: #8ab4f8;
+            text-decoration: none;
+            transition: color 0.2s, background 0.2s;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .file-link:hover, .folder-link:hover {
+            color: #4285f4;
+            background: rgba(66,133,244,0.15);
+            text-decoration: underline;
+        }
+        .folder-link {
+            color: #aaa;
+        }
+        .folder-link:hover {
+            color: #e0e0e0;
+            background: rgba(255,255,255,0.1);
+        }
+        .location-path a {
+            color: #888;
+        }
+        .location-path a:hover {
+            color: #4285f4;
+        }
+        .account-details a {
+            color: #aaa;
+        }
+        .account-details a:hover {
+            color: #4285f4;
+        }
+        
+        /* Command box */
+        .command-box {
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.85em;
+            color: #34a853;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            line-height: 1.8;
+        }
+        
+        /* Risk badges */
+        .risk-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .risk-safe { background: rgba(52,168,83,0.2); color: #34a853; }
+        .risk-low { background: rgba(52,168,83,0.2); color: #34a853; }
+        .risk-medium { background: rgba(251,188,4,0.2); color: #fbbc04; }
+        .risk-high { background: rgba(234,67,53,0.2); color: #ea4335; }
+        
+        /* Age distribution */
+        .age-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .age-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .age-value { font-size: 1.3em; color: #4285f4; font-weight: 600; }
+        .age-label { font-size: 0.85em; color: #888; margin-top: 5px; }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: #666;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #1e1e2e;
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 700px;
+            width: 90%;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .modal-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #4285f4;
+        }
+        .modal-close {
+            font-size: 1.5em;
+            color: #888;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .modal-close:hover { color: #ea4335; }
+        .modal-command {
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            padding: 15px 20px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9em;
+            color: #34a853;
+            word-break: break-all;
+            margin-bottom: 20px;
+        }
+        .copy-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .copy-btn:hover { background: #3367d6; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { padding: 15px; }
+            h1 { font-size: 1.8em; }
+            .section { padding: 15px; }
+            .file-path { max-width: 200px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>☁️ Google Drive Cache Analysis</h1>
+        <p class="subtitle">Version 3.1.0 | Generated: 2026-01-25T01:14:53.454098</p>
+        
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="value">3.02 GB</div>
+                <div class="label">Total Found</div>
+            </div>
+            <div class="summary-card success">
+                <div class="value">3.02 GB</div>
+                <div class="label">Safe to Delete</div>
+            </div>
+            <div class="summary-card">
+                <div class="value">1,099</div>
+                <div class="label">Files Scanned</div>
+            </div>
+            <div class="summary-card">
+                <div class="value">~3 seconds</div>
+                <div class="label">Est. Cleanup Time</div>
+            </div>
+            <div class="summary-card ">
+                <div class="value">1.2%</div>
+                <div class="label">Disk Used</div>
+            </div>
+            <div class="summary-card success">
+                <div class="value">✅</div>
+                <div class="label">GDrive Closed</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔍 Pre-Flight Checks</h2>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">Python Version</span>
+                <span class="check-status">Python 3.11 detected</span>
+                
+            </div>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">Operating System</span>
+                <span class="check-status">Darwin detected</span>
+                
+            </div>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">macOS Version</span>
+                <span class="check-status">macOS 26.2</span>
+                
+            </div>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">Google Drive Status</span>
+                <span class="check-status">Not running</span>
+                
+            </div>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">Disk Space</span>
+                <span class="check-status">552.23 GB free (98.8%)</span>
+                
+            </div>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">Time Machine</span>
+                <span class="check-status">Not running</span>
+                
+            </div>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">Network Connection</span>
+                <span class="check-status">Connected</span>
+                
+            </div>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">Google Accounts</span>
+                <span class="check-status">0 active, 5 backup folders</span>
+                
+            </div>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">Permissions</span>
+                <span class="check-status">Read access OK</span>
+                
+            </div>
+
+            <div class="check-item">
+                <span class="check-icon">✅</span>
+                <span class="check-name">Sync Status</span>
+                <span class="check-status">No active sync</span>
+                
+            </div>
+
+        </div>
+
+        <div class="section">
+            <h2>💾 Disk Usage</h2>
+            <div class="disk-visual">
+                <div class="disk-used" style="width: 1.2334241807624928%">
+                    1.2% Used
+                </div>
+            </div>
+            <div class="disk-labels">
+                <span>Used: 11.43 GB</span>
+                <span>Total: 926.35 GB</span>
+                <span>Free: 552.23 GB</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 File Types Breakdown</h2>
+
+            <div class="progress-row">
+                <span class="progress-label">Video</span>
+                <div class="progress-bar">
+                    <div class="progress-fill video" style="width: 30.21595703101247%"></div>
+                </div>
+                <span class="progress-value">934.52 MB</span>
+            </div>
+
+            <div class="progress-row">
+                <span class="progress-label">Document</span>
+                <div class="progress-bar">
+                    <div class="progress-fill document" style="width: 2.8394552772737587%"></div>
+                </div>
+                <span class="progress-value">87.82 MB</span>
+            </div>
+
+            <div class="progress-row">
+                <span class="progress-label">Image</span>
+                <div class="progress-bar">
+                    <div class="progress-fill image" style="width: 2.7827417142865647%"></div>
+                </div>
+                <span class="progress-value">86.06 MB</span>
+            </div>
+
+            <div class="progress-row">
+                <span class="progress-label">Audio</span>
+                <div class="progress-bar">
+                    <div class="progress-fill audio" style="width: 2.2137193705700478%"></div>
+                </div>
+                <span class="progress-value">68.47 MB</span>
+            </div>
+
+            <div class="progress-row">
+                <span class="progress-label">Code</span>
+                <div class="progress-bar">
+                    <div class="progress-fill code" style="width: 2.053646746897182%"></div>
+                </div>
+                <span class="progress-value">63.52 MB</span>
+            </div>
+
+            <div class="progress-row">
+                <span class="progress-label">Other</span>
+                <div class="progress-bar">
+                    <div class="progress-fill other" style="width: 1.8991771271184514%"></div>
+                </div>
+                <span class="progress-value">58.74 MB</span>
+            </div>
+
+        </div>
+
+        <div class="section">
+            <h2>📅 Cache Age Distribution</h2>
+            <div class="age-grid">
+
+                <div class="age-item">
+                    <div class="age-value">8.38 MB</div>
+                    <div class="age-label">< 7 days (0.3%)</div>
+                </div>
+
+                <div class="age-item">
+                    <div class="age-value">106.01 MB</div>
+                    <div class="age-label">7-30 days (3.4%)</div>
+                </div>
+
+                <div class="age-item">
+                    <div class="age-value">537.60 MB</div>
+                    <div class="age-label">30-180 days (17.4%)</div>
+                </div>
+
+                <div class="age-item">
+                    <div class="age-value">62.79 MB</div>
+                    <div class="age-label">> 180 days (2.0%)</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>👤 Google Accounts</h2>
+
+            <div class="account-card backup">
+                <div class="account-header">
+                    <div>
+                        <span class="account-email">rs@rya.ae</span>
+                        <span class="account-badge badge-backup">BACKUP</span>
+                        
+                    </div>
+                    <span class="account-size">584.55 MB</span>
+                </div>
+                <div class="account-details">
+                    Path: <a href="#" class="folder-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)" title="Open in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)</a><br>
+                    Files: 98
+                     | Last sync: 2025-10-26 11:35
+                     | Offline files: 98
+                </div>
+
+                <div class="account-breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">0.00 B</div>
+                        <div class="breakdown-label">My Drive</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">584.55 MB</div>
+                        <div class="breakdown-label">Shared Drives</div>
+                    </div>
+                </div>
+
+                <div class="shared-drives">
+                    <strong style="color: #888; font-size: 0.85em;">Shared Drives:</strong>
+
+                    <div class="shared-drive-item">
+                        <span>Production Projects</span>
+                        <span style="color: #4285f4; font-family: monospace;">584.55 MB</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="account-card backup">
+                <div class="account-header">
+                    <div>
+                        <span class="account-email">rs@rya.ae</span>
+                        <span class="account-badge badge-backup">BACKUP</span>
+                        
+                    </div>
+                    <span class="account-size">3.05 MB</span>
+                </div>
+                <div class="account-details">
+                    Path: <a href="#" class="folder-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (26-10-2025 11:34 AM)" title="Open in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (26-10-2025 11:34 AM)</a><br>
+                    Files: 0
+                     | Last sync: 2026-01-24 20:30
+                    
+                </div>
+
+                <div class="account-breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">8.00 KB</div>
+                        <div class="breakdown-label">My Drive</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">3.04 MB</div>
+                        <div class="breakdown-label">Shared Drives</div>
+                    </div>
+                </div>
+
+                <div class="shared-drives">
+                    <strong style="color: #888; font-size: 0.85em;">Shared Drives:</strong>
+
+                    <div class="shared-drive-item">
+                        <span>YTCG</span>
+                        <span style="color: #4285f4; font-family: monospace;">636.00 KB</span>
+                    </div>
+
+                    <div class="shared-drive-item">
+                        <span>YTMS</span>
+                        <span style="color: #4285f4; font-family: monospace;">604.00 KB</span>
+                    </div>
+
+                    <div class="shared-drive-item">
+                        <span>YTCN</span>
+                        <span style="color: #4285f4; font-family: monospace;">536.00 KB</span>
+                    </div>
+
+                    <div class="shared-drive-item">
+                        <span>YTLM</span>
+                        <span style="color: #4285f4; font-family: monospace;">436.00 KB</span>
+                    </div>
+
+                    <div class="shared-drive-item">
+                        <span>YTGOLD</span>
+                        <span style="color: #4285f4; font-family: monospace;">316.00 KB</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="account-card backup">
+                <div class="account-header">
+                    <div>
+                        <span class="account-email">rs@rya.ae</span>
+                        <span class="account-badge badge-backup">BACKUP</span>
+                        
+                    </div>
+                    <span class="account-size">804.00 KB</span>
+                </div>
+                <div class="account-details">
+                    Path: <a href="#" class="folder-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (14-01-2025 12:16 PM)" title="Open in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (14-01-2025 12:16 PM)</a><br>
+                    Files: 0
+                     | Last sync: 2025-04-23 17:28
+                    
+                </div>
+
+                <div class="account-breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">0.00 B</div>
+                        <div class="breakdown-label">My Drive</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">804.00 KB</div>
+                        <div class="breakdown-label">Shared Drives</div>
+                    </div>
+                </div>
+
+                <div class="shared-drives">
+                    <strong style="color: #888; font-size: 0.85em;">Shared Drives:</strong>
+
+                    <div class="shared-drive-item">
+                        <span>YTMS</span>
+                        <span style="color: #4285f4; font-family: monospace;">236.00 KB</span>
+                    </div>
+
+                    <div class="shared-drive-item">
+                        <span>YTCN</span>
+                        <span style="color: #4285f4; font-family: monospace;">160.00 KB</span>
+                    </div>
+
+                    <div class="shared-drive-item">
+                        <span>YTLM</span>
+                        <span style="color: #4285f4; font-family: monospace;">144.00 KB</span>
+                    </div>
+
+                    <div class="shared-drive-item">
+                        <span>YTCG</span>
+                        <span style="color: #4285f4; font-family: monospace;">88.00 KB</span>
+                    </div>
+
+                    <div class="shared-drive-item">
+                        <span>YTGOLD</span>
+                        <span style="color: #4285f4; font-family: monospace;">56.00 KB</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="account-card backup">
+                <div class="account-header">
+                    <div>
+                        <span class="account-email">1@romansergeev.com</span>
+                        <span class="account-badge badge-backup">BACKUP</span>
+                        
+                    </div>
+                    <span class="account-size">44.00 KB</span>
+                </div>
+                <div class="account-details">
+                    Path: <a href="#" class="folder-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-1@romansergeev.com (14-01-2025 12:15 PM)" title="Open in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-1@romansergeev.com (14-01-2025 12:15 PM)</a><br>
+                    Files: 0
+                     | Last sync: 2025-10-26 11:18
+                    
+                </div>
+
+                <div class="account-breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">20.00 KB</div>
+                        <div class="breakdown-label">My Drive</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">16.00 KB</div>
+                        <div class="breakdown-label">Shared Drives</div>
+                    </div>
+                </div>
+
+                <div class="shared-drives">
+                    <strong style="color: #888; font-size: 0.85em;">Shared Drives:</strong>
+
+                    <div class="shared-drive-item">
+                        <span>Архивы - Проекты</span>
+                        <span style="color: #4285f4; font-family: monospace;">8.00 KB</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="account-card backup">
+                <div class="account-header">
+                    <div>
+                        <span class="account-email">4rsergeev@gmail.com</span>
+                        <span class="account-badge badge-backup">BACKUP</span>
+                        
+                    </div>
+                    <span class="account-size">8.00 KB</span>
+                </div>
+                <div class="account-details">
+                    Path: <a href="#" class="folder-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-4rsergeev@gmail.com (14-01-2025 12:16 PM)" title="Open in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-4rsergeev@gmail.com (14-01-2025 12:16 PM)</a><br>
+                    Files: 0
+                     | Last sync: 2025-04-23 17:28
+                    
+                </div>
+
+                <div class="account-breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">8.00 KB</div>
+                        <div class="breakdown-label">My Drive</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value">0.00 B</div>
+                        <div class="breakdown-label">Shared Drives</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="section">
+            <h2>🐘 Largest Cached Files</h2>
+            <table class="files-table">
+                <tr>
+                    <th>File</th>
+                    <th>Size</th>
+                    <th>Type</th>
+                    <th>Modified</th>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/5) Радиус поворота.MOV" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/5) Радиус поворота.MOV</a></td>
+                    <td class="file-size">256.69 MB</td>
+                    <td><span class="file-category">video</span></td>
+                    <td>2025-10-08</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/5) Радиус поворота.MOV" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/5) Радиус поворота.MOV</a></td>
+                    <td class="file-size">256.69 MB</td>
+                    <td><span class="file-category">video</span></td>
+                    <td>2025-10-08</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/4, 5) Поворот кабины оператора.MOV" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/4, 5) Поворот кабины оператора.MOV</a></td>
+                    <td class="file-size">156.82 MB</td>
+                    <td><span class="file-category">video</span></td>
+                    <td>2025-10-08</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/4, 5) Поворот кабины оператора.MOV" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/4, 5) Поворот кабины оператора.MOV</a></td>
+                    <td class="file-size">156.82 MB</td>
+                    <td><span class="file-category">video</span></td>
+                    <td>2025-10-08</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Video/Archive/A_23.10.25_TepliyDom_01_by_RomanSergeevCom.mp4" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Video/Archive/A_23.10.25_TepliyDom_01_by_RomanSergeevCom.mp4</a></td>
+                    <td class="file-size">40.82 MB</td>
+                    <td><span class="file-category">video</span></td>
+                    <td>2025-10-23</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Video/Archive/A_23.10.25_TepliyDom_01_by_RomanSergeevCom.mp4" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Video/Archive/A_23.10.25_TepliyDom_01_by_RomanSergeevCom.mp4</a></td>
+                    <td class="file-size">40.82 MB</td>
+                    <td><span class="file-category">video</span></td>
+                    <td>2025-10-23</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Audio/Андрей-Одинцов-Теплый дом.wav" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Audio/Андрей-Одинцов-Теплый дом.wav</a></td>
+                    <td class="file-size">27.13 MB</td>
+                    <td><span class="file-category">audio</span></td>
+                    <td>2025-10-23</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Audio/Андрей-Одинцов-Теплый дом.wav" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Audio/Андрей-Одинцов-Теплый дом.wav</a></td>
+                    <td class="file-size">27.13 MB</td>
+                    <td><span class="file-category">audio</span></td>
+                    <td>2025-10-23</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/Общий каталог_Ajax_(sm).pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/Общий каталог_Ajax_(sm).pdf</a></td>
+                    <td class="file-size">8.82 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-07-09</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/Общий каталог_Ajax_(sm).pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/Общий каталог_Ajax_(sm).pdf</a></td>
+                    <td class="file-size">8.82 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-07-09</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Audio/Юлия-Меллер-Смета.wav" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Audio/Юлия-Меллер-Смета.wav</a></td>
+                    <td class="file-size">7.11 MB</td>
+                    <td><span class="file-category">audio</span></td>
+                    <td>2025-10-23</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Audio/Юлия-Меллер-Смета.wav" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC01-Teplyj-dom-2/Audio/Юлия-Меллер-Смета.wav</a></td>
+                    <td class="file-size">7.11 MB</td>
+                    <td><span class="file-category">audio</span></td>
+                    <td>2025-10-23</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/BRAND MANUAL.pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/BRAND MANUAL.pdf</a></td>
+                    <td class="file-size">6.80 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-10-08</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/BRAND MANUAL.pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Материалы AJAX/BRAND MANUAL.pdf</a></td>
+                    <td class="file-size">6.80 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-10-08</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/SPX_Бетоноукладочная машина_Ajax_(sm).pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/SPX_Бетоноукладочная машина_Ajax_(sm).pdf</a></td>
+                    <td class="file-size">6.10 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-07-09</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/SPX_Бетоноукладочная машина_Ajax_(sm).pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/SPX_Бетоноукладочная машина_Ajax_(sm).pdf</a></td>
+                    <td class="file-size">6.10 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-07-09</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Рефы.mp4" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Рефы.mp4</a></td>
+                    <td class="file-size">5.62 MB</td>
+                    <td><span class="file-category">video</span></td>
+                    <td>2025-10-13</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Рефы.mp4" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Рефы.mp4</a></td>
+                    <td class="file-size">5.62 MB</td>
+                    <td><span class="file-category">video</span></td>
+                    <td>2025-10-13</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/AZX _ARZX_Самоходные бетононасосы с распределительной стрелой_Ajax_(sm).pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/AZX _ARZX_Самоходные бетононасосы с распределительной стрелой_Ajax_(sm).pdf</a></td>
+                    <td class="file-size">4.17 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-07-09</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/AZX _ARZX_Самоходные бетононасосы с распределительной стрелой_Ajax_(sm).pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/AZX _ARZX_Самоходные бетононасосы с распределительной стрелой_Ajax_(sm).pdf</a></td>
+                    <td class="file-size">4.17 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-07-09</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/AF_Автобетоносмесители_Ajax_(sm).pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/AF_Автобетоносмесители_Ajax_(sm).pdf</a></td>
+                    <td class="file-size">3.97 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-07-09</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/AF_Автобетоносмесители_Ajax_(sm).pdf" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Брошюры/AF_Автобетоносмесители_Ajax_(sm).pdf</a></td>
+                    <td class="file-size">3.97 MB</td>
+                    <td><span class="file-category">document</span></td>
+                    <td>2025-07-09</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Фото_Видео/Equipment images/asp-10011.png" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Фото_Видео/Equipment images/asp-10011.png</a></td>
+                    <td class="file-size">3.91 MB</td>
+                    <td><span class="file-category">image</span></td>
+                    <td>2025-01-17</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Фото_Видео/Equipment images/asp-10011.png" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Фото_Видео/Equipment images/asp-10011.png</a></td>
+                    <td class="file-size">3.91 MB</td>
+                    <td><span class="file-category">image</span></td>
+                    <td>2025-01-17</td>
+                </tr>
+
+                <tr>
+                    <td class="file-path"><a href="#" class="file-link" data-path="/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Фото_Видео/Equipment images/6011-E.png" title="Reveal in Finder">/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)/Shared drives/Production Projects/RSC02-AJAX/Sources/Фото_Видео/Equipment images/6011-E.png</a></td>
+                    <td class="file-size">3.86 MB</td>
+                    <td><span class="file-category">image</span></td>
+                    <td>2025-01-17</td>
+                </tr>
+
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>📁 Cache Locations</h2>
+
+            <div class="location-card ">
+                <div class="location-header">
+                    <div>
+                        <span class="location-name">Google Cache Directory</span>
+                        <span class="risk-badge risk-safe">SAFE</span>
+                    </div>
+                    <span class="location-size">1.83 GB</span>
+                </div>
+                <div class="location-path"><a href="#" class="folder-link" data-path="/Users/romansergeev/Library/Caches/Google" title="Open in Finder">/Users/romansergeev/Library/Caches/Google</a></div>
+                <div class="location-meta">
+                    <span>Files: 500</span>
+
+                    <span>Age: 2025-09-07 to 2026-01-25</span>
+
+                </div>
+                <div class="location-desc">General Google applications cache. Includes Chrome, Drive, and other Google apps.</div>
+            </div>
+
+            <div class="location-card ">
+                <div class="location-header">
+                    <div>
+                        <span class="location-name">DriveFS Main Cache</span>
+                        <span class="risk-badge risk-safe">SAFE</span>
+                    </div>
+                    <span class="location-size">635.44 MB</span>
+                </div>
+                <div class="location-path"><a href="#" class="folder-link" data-path="/Users/romansergeev/Library/Application Support/Google/DriveFS" title="Open in Finder">/Users/romansergeev/Library/Application Support/Google/DriveFS</a></div>
+                <div class="location-meta">
+                    <span>Files: 500</span>
+
+                    <span>Age: 2024-03-11 to 2026-01-25</span>
+
+                </div>
+                <div class="location-desc">Primary Google Drive for Desktop cache. Contains downloaded/synced files, metadata database, and account-specific data. This is usually the largest.</div>
+            </div>
+
+            <div class="location-card ">
+                <div class="location-header">
+                    <div>
+                        <span class="location-name">CloudStorage Virtual Mounts</span>
+                        <span class="risk-badge risk-safe">SAFE</span>
+                    </div>
+                    <span class="location-size">588.44 MB</span>
+                </div>
+                <div class="location-path"><a href="#" class="folder-link" data-path="/Users/romansergeev/Library/CloudStorage" title="Open in Finder">/Users/romansergeev/Library/CloudStorage</a></div>
+                <div class="location-meta">
+                    <span>Files: 98</span>
+
+                    <span>Age: 2025-01-17 to 2025-12-25</span>
+
+                </div>
+                <div class="location-desc">Virtual mount points for each Google account. Contains streamed/mirrored files. Safe to delete if accounts are disconnected.</div>
+            </div>
+
+            <div class="location-card ">
+                <div class="location-header">
+                    <div>
+                        <span class="location-name">DriveFS Preferences</span>
+                        <span class="risk-badge risk-safe">LOW</span>
+                    </div>
+                    <span class="location-size">1.22 KB</span>
+                </div>
+                <div class="location-path"><a href="#" class="folder-link" data-path="/Users/romansergeev/Library/Preferences/com.google.drivefs.plist" title="Open in Finder">/Users/romansergeev/Library/Preferences/com.google.drivefs.plist</a></div>
+                <div class="location-meta">
+                    <span>Files: 1</span>
+
+                </div>
+                <div class="location-desc">Google Drive application preferences. Delete to reset settings.</div>
+            </div>
+
+        </div>
+
+        <div class="section">
+            <h2>🧹 Cleanup Commands</h2>
+            <p style="color: #888; margin-bottom: 15px;">Copy and paste into Terminal to clean cache:</p>
+            <div class="command-box"># Step 1: Quit Google Drive
+osascript -e 'quit app "Google Drive"'
+sleep 3
+
+# Step 2: Delete cache (Total: 3.02 GB)
+rm -rf "/Users/romansergeev/Library/Application Support/Google/DriveFS"
+rm -rf "/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (26-10-2025 11:34 AM)"
+rm -rf "/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (14-01-2025 12:16 PM)"
+rm -rf "/Users/romansergeev/Library/CloudStorage/GoogleDrive-1@romansergeev.com (14-01-2025 12:15 PM)"
+rm -rf "/Users/romansergeev/Library/CloudStorage/GoogleDrive-4rsergeev@gmail.com (14-01-2025 12:16 PM)"
+rm -rf "/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)"
+rm -rf "/Users/romansergeev/Library/Caches/Google"
+rm -rf "/Users/romansergeev/Library/Preferences/com.google.drivefs.plist"
+
+# Step 3: Verify freed space
+df -h /
+
+echo "✅ Cleanup complete!"</div>
+        </div>
+        
+        <div class="footer">
+            <p>Generated by Google Drive Cache Analyzer v3.1.0</p>
+            <p style="color: #444; margin-top: 10px;">⚠️ Always verify before deleting. Files will re-download when needed.</p>
+            <p style="color: #555; margin-top: 5px; font-size: 0.85em;">💡 Click any path to copy the Terminal command to reveal it in Finder</p>
+        </div>
+    </div>
+    
+    <!-- Modal for copy command -->
+    <div id="pathModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">📂 Open in Finder</span>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; color: #aaa;">Copy this command and paste in Terminal:</p>
+                <div class="modal-command" id="modalCommand"></div>
+                <button class="copy-btn" onclick="copyCommand()">📋 Copy Command</button>
+                <p id="copyStatus" style="color: #34a853; margin-top: 10px; display: none;">✓ Copied!</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Check if running on local server (clickable mode)
+        const isLocalServer = window.location.protocol === 'http:' && window.location.hostname === 'localhost';
+        
+        // Handle clicks on file/folder links
+        document.querySelectorAll('.file-link, .folder-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const path = this.getAttribute('data-path');
+                const isFile = this.classList.contains('file-link');
+                
+                if (isLocalServer) {
+                    // Direct Finder open via local server
+                    openInFinder(path, isFile);
+                } else {
+                    // Fallback: show modal with copy command
+                    showModal(path, isFile);
+                }
+            });
+        });
+        
+        async function openInFinder(path, reveal) {
+            try {
+                const url = `/open-finder?path=${encodeURIComponent(path)}&reveal=${reveal ? '1' : '0'}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Failed to open');
+                }
+                // Brief visual feedback
+                event.target.style.background = 'rgba(52,168,83,0.3)';
+                setTimeout(() => {
+                    event.target.style.background = '';
+                }, 300);
+            } catch (err) {
+                console.error('Failed to open in Finder:', err);
+                // Fallback to modal
+                showModal(path, reveal);
+            }
+        }
+        
+        function showModal(path, isFile) {
+            const modal = document.getElementById('pathModal');
+            const commandEl = document.getElementById('modalCommand');
+            
+            // Generate the appropriate command
+            let command;
+            if (isFile) {
+                command = `open -R "${path}"`;
+            } else {
+                command = `open "${path}"`;
+            }
+            
+            commandEl.textContent = command;
+            commandEl.setAttribute('data-command', command);
+            modal.style.display = 'flex';
+            
+            document.getElementById('copyStatus').style.display = 'none';
+        }
+        
+        function closeModal() {
+            document.getElementById('pathModal').style.display = 'none';
+        }
+        
+        function copyCommand() {
+            const command = document.getElementById('modalCommand').getAttribute('data-command');
+            navigator.clipboard.writeText(command).then(() => {
+                document.getElementById('copyStatus').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('copyStatus').style.display = 'none';
+                }, 2000);
+            });
+        }
+        
+        // Close modal on outside click
+        document.getElementById('pathModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+        
+        // Show mode indicator
+        if (isLocalServer) {
+            document.body.insertAdjacentHTML('afterbegin', 
+                '<div style="position:fixed;top:10px;right:10px;background:#34a853;color:white;padding:8px 15px;border-radius:20px;font-size:0.85em;z-index:999;">✨ Click paths to open in Finder</div>'
+            );
+        }
+    </script>
+</body>
+</html>

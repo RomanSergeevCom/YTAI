@@ -1,0 +1,105 @@
+2026-01-25 01:07:23,256 [DEBUG] [setup_logging:328] ======================================================================
+2026-01-25 01:07:23,256 [DEBUG] [setup_logging:329] SESSION START - Google Drive Cache Analyzer v3.1.0
+2026-01-25 01:07:23,256 [DEBUG] [setup_logging:330] Timestamp: 2026-01-25T01:07:23.256297
+2026-01-25 01:07:23,256 [DEBUG] [setup_logging:331] Python: 3.11.14 (main, Oct  9 2025, 16:16:55) [Clang 17.0.0 (clang-1700.4.4.1)]
+2026-01-25 01:07:23,264 [DEBUG] [setup_logging:332] Platform: macOS-26.2-arm64-arm-64bit
+2026-01-25 01:07:23,264 [DEBUG] [setup_logging:333] User: /Users/romansergeev
+2026-01-25 01:07:23,264 [DEBUG] [setup_logging:334] Script: /Users/romansergeev/YTAI/utils/google_drive_cleaner/google_drive_cleaner_v3.py
+2026-01-25 01:07:23,264 [DEBUG] [setup_logging:335] Verbose mode: False
+2026-01-25 01:07:23,264 [DEBUG] [setup_logging:336] ======================================================================
+2026-01-25 01:07:23,264 [DEBUG] [analyze:764] ==================================================
+2026-01-25 01:07:23,264 [DEBUG] [analyze:765] STARTING ANALYSIS
+2026-01-25 01:07:23,264 [DEBUG] [analyze:766] ==================================================
+2026-01-25 01:07:23,264 [DEBUG] [run_checks:747] Starting pre-flight checks...
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] Python Version: Python 3.11 detected
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] Operating System: Darwin detected
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] macOS Version: macOS 26.2
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] Google Drive Status: Not running
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] Disk Space: 552.26 GB free (98.8%)
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] Time Machine: Not running
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] Network Connection: Connected
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] Google Accounts: 0 active, 5 backup folders
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] Permissions: Read access OK
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:752]   Check [PASS] Sync Status: No active sync
+2026-01-25 01:07:23,432 [DEBUG] [run_checks:757] Pre-flight checks complete. Critical failures: False
+2026-01-25 01:07:23,432 [DEBUG] [analyze:787] --------------------------------------------------
+2026-01-25 01:07:23,433 [DEBUG] [analyze:788] SCANNING CACHE LOCATIONS
+2026-01-25 01:07:23,433 [DEBUG] [analyze:789] --------------------------------------------------
+2026-01-25 01:07:23,433 [DEBUG] [analyze:792] Scanning: DriveFS Main Cache
+2026-01-25 01:07:23,433 [DEBUG] [analyze:793]   Path: /Users/romansergeev/Library/Application Support/Google/DriveFS
+2026-01-25 01:07:23,488 [DEBUG] [analyze:802]   Found: 635.44 MB (500 files)
+2026-01-25 01:07:23,488 [DEBUG] [analyze:803]   Risk level: safe
+2026-01-25 01:07:23,488 [DEBUG] [analyze:792] Scanning: CloudStorage Virtual Mounts
+2026-01-25 01:07:23,488 [DEBUG] [analyze:793]   Path: /Users/romansergeev/Library/CloudStorage
+2026-01-25 01:07:23,520 [DEBUG] [analyze:802]   Found: 588.44 MB (98 files)
+2026-01-25 01:07:23,520 [DEBUG] [analyze:803]   Risk level: safe
+2026-01-25 01:07:23,520 [DEBUG] [analyze:792] Scanning: Google Cache Directory
+2026-01-25 01:07:23,520 [DEBUG] [analyze:793]   Path: /Users/romansergeev/Library/Caches/Google
+2026-01-25 01:07:23,813 [DEBUG] [analyze:802]   Found: 1.83 GB (500 files)
+2026-01-25 01:07:23,813 [DEBUG] [analyze:803]   Risk level: safe
+2026-01-25 01:07:23,813 [DEBUG] [analyze:792] Scanning: DriveFS Cache
+2026-01-25 01:07:23,814 [DEBUG] [analyze:793]   Path: /Users/romansergeev/Library/Caches/com.google.drivefs
+2026-01-25 01:07:23,814 [DEBUG] [analyze:815]   Not found or empty
+2026-01-25 01:07:23,814 [DEBUG] [analyze:792] Scanning: DriveFS Preferences
+2026-01-25 01:07:23,814 [DEBUG] [analyze:793]   Path: /Users/romansergeev/Library/Preferences/com.google.drivefs.plist
+2026-01-25 01:07:23,814 [DEBUG] [analyze:802]   Found: 1.22 KB (1 files)
+2026-01-25 01:07:23,814 [DEBUG] [analyze:803]   Risk level: low
+2026-01-25 01:07:23,814 [DEBUG] [analyze:792] Scanning: Google Logs
+2026-01-25 01:07:23,814 [DEBUG] [analyze:793]   Path: /Users/romansergeev/Library/Logs/Google
+2026-01-25 01:07:23,814 [DEBUG] [analyze:815]   Not found or empty
+2026-01-25 01:07:23,814 [DEBUG] [analyze:792] Scanning: Legacy Google Drive
+2026-01-25 01:07:23,814 [DEBUG] [analyze:793]   Path: /Users/romansergeev/Library/Application Support/Google/Drive
+2026-01-25 01:07:23,814 [DEBUG] [analyze:815]   Not found or empty
+2026-01-25 01:07:23,814 [DEBUG] [analyze:818] --------------------------------------------------
+2026-01-25 01:07:23,814 [DEBUG] [analyze:819] SCANNING GOOGLE ACCOUNTS
+2026-01-25 01:07:23,814 [DEBUG] [analyze:820] --------------------------------------------------
+2026-01-25 01:07:24,009 [DEBUG] [analyze:826] Account [BACKUP]: rs@rya.ae
+2026-01-25 01:07:24,009 [DEBUG] [analyze:827]   Path: /Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (25.01.2026 00:15)
+2026-01-25 01:07:24,009 [DEBUG] [analyze:828]   Size: 584.55 MB
+2026-01-25 01:07:24,009 [DEBUG] [analyze:829]   Sync mode: unknown
+2026-01-25 01:07:24,009 [DEBUG] [analyze:830]   My Drive: 0.00 B
+2026-01-25 01:07:24,009 [DEBUG] [analyze:831]   Shared Drives: 584.55 MB
+2026-01-25 01:07:24,009 [DEBUG] [analyze:834]     - Production Projects: 584.55 MB
+2026-01-25 01:07:24,009 [DEBUG] [analyze:826] Account [BACKUP]: rs@rya.ae
+2026-01-25 01:07:24,009 [DEBUG] [analyze:827]   Path: /Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (26-10-2025 11:34 AM)
+2026-01-25 01:07:24,009 [DEBUG] [analyze:828]   Size: 3.05 MB
+2026-01-25 01:07:24,009 [DEBUG] [analyze:829]   Sync mode: unknown
+2026-01-25 01:07:24,009 [DEBUG] [analyze:830]   My Drive: 8.00 KB
+2026-01-25 01:07:24,009 [DEBUG] [analyze:831]   Shared Drives: 3.04 MB
+2026-01-25 01:07:24,009 [DEBUG] [analyze:834]     - Zoom Arch: 28.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:834]     - Smart Home: 64.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:834]     - YTLM: 436.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:826] Account [BACKUP]: rs@rya.ae
+2026-01-25 01:07:24,010 [DEBUG] [analyze:827]   Path: /Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae (14-01-2025 12:16 PM)
+2026-01-25 01:07:24,010 [DEBUG] [analyze:828]   Size: 804.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:829]   Sync mode: unknown
+2026-01-25 01:07:24,010 [DEBUG] [analyze:830]   My Drive: 0.00 B
+2026-01-25 01:07:24,010 [DEBUG] [analyze:831]   Shared Drives: 804.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:834]     - YTLM: 144.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:834]     - YTCN: 160.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:834]     - YTCG: 88.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:826] Account [BACKUP]: 1@romansergeev.com
+2026-01-25 01:07:24,010 [DEBUG] [analyze:827]   Path: /Users/romansergeev/Library/CloudStorage/GoogleDrive-1@romansergeev.com (14-01-2025 12:15 PM)
+2026-01-25 01:07:24,010 [DEBUG] [analyze:828]   Size: 44.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:829]   Sync mode: unknown
+2026-01-25 01:07:24,010 [DEBUG] [analyze:830]   My Drive: 20.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:831]   Shared Drives: 16.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:834]     - Архивы - Проекты: 8.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:826] Account [BACKUP]: 4rsergeev@gmail.com
+2026-01-25 01:07:24,010 [DEBUG] [analyze:827]   Path: /Users/romansergeev/Library/CloudStorage/GoogleDrive-4rsergeev@gmail.com (14-01-2025 12:16 PM)
+2026-01-25 01:07:24,010 [DEBUG] [analyze:828]   Size: 8.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:829]   Sync mode: unknown
+2026-01-25 01:07:24,010 [DEBUG] [analyze:830]   My Drive: 8.00 KB
+2026-01-25 01:07:24,010 [DEBUG] [analyze:831]   Shared Drives: 0.00 B
+2026-01-25 01:07:24,025 [DEBUG] [analyze:864] --------------------------------------------------
+2026-01-25 01:07:24,025 [DEBUG] [analyze:865] ANALYSIS SUMMARY
+2026-01-25 01:07:24,025 [DEBUG] [analyze:866] --------------------------------------------------
+2026-01-25 01:07:24,025 [DEBUG] [analyze:867] Total size found: 3.02 GB
+2026-01-25 01:07:24,025 [DEBUG] [analyze:868] Safe to delete: 3.02 GB
+2026-01-25 01:07:24,025 [DEBUG] [analyze:869] Total files scanned: 1099
+2026-01-25 01:07:24,025 [DEBUG] [analyze:870] Locations found: 4
+2026-01-25 01:07:24,025 [DEBUG] [analyze:871] Accounts found: 5
+2026-01-25 01:07:24,025 [DEBUG] [analyze:872] Disk free: 552.26 GB (98.8%)
+2026-01-25 01:07:24,025 [DEBUG] [analyze:873] Analysis time: 0.76 seconds
+2026-01-25 01:07:24,025 [DEBUG] [analyze:874] ==================================================
+2026-01-25 01:07:24,026 [INFO] [generate_html_report:1936] HTML report saved: /Users/romansergeev/YTAI/utils/google_drive_cleaner/reports/2026-01-25_01-07-23_google_drive_report.html

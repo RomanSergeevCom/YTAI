@@ -1,0 +1,1049 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-08T14:08:34Z",
+  "whisper_model": "large-v3",
+  "clip_id": "C5403",
+  "clip_file": "C5403.MP4",
+  "duration": 79.2,
+  "clip_offset_in_full": 156.0,
+  "language": "en",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 71.62,
+      "speaker": "SPEAKER_00",
+      "text": "Long story short. Yeah, long story short. The other day, I received a question from my colleague in one of the internal chats. She has an Israeli client who's asking, Hey, I'm a bit scared of investing in Dubai because what if they take away my ownership rights? What do you think about the conflict between Qatar and UAE in 2017? I read the question. I'm like, what conflict between Qatar and UAE? So I went researching, found out that there was one. And it actually lasted till 2021. And even the citizens of Qatar were asked to leave the country of UAE during this time. But even during this time, there weren't any massive cases of taking away the property of those people. So this gives us an idea of the position. The strategic thinking of supreme leaders of our country. They're always thinking about the future. They have a plan 10, 20 years up ahead.",
+      "words": [
+        {
+          "word": "Long",
+          "start": 0.0,
+          "end": 0.1,
+          "confidence": 0.7431
+        },
+        {
+          "word": "story",
+          "start": 0.1,
+          "end": 0.28,
+          "confidence": 0.9659
+        },
+        {
+          "word": "short.",
+          "start": 0.28,
+          "end": 0.58,
+          "confidence": 0.9825
+        },
+        {
+          "word": "Yeah,",
+          "start": 1.3,
+          "end": 1.86,
+          "confidence": 0.7059
+        },
+        {
+          "word": "long",
+          "start": 1.98,
+          "end": 2.2,
+          "confidence": 0.9753
+        },
+        {
+          "word": "story",
+          "start": 2.2,
+          "end": 2.5,
+          "confidence": 0.9983
+        },
+        {
+          "word": "short.",
+          "start": 2.5,
+          "end": 2.84,
+          "confidence": 0.9939
+        },
+        {
+          "word": "The",
+          "start": 3.28,
+          "end": 3.84,
+          "confidence": 0.9658
+        },
+        {
+          "word": "other",
+          "start": 3.84,
+          "end": 4.04,
+          "confidence": 0.9997
+        },
+        {
+          "word": "day,",
+          "start": 4.04,
+          "end": 4.38,
+          "confidence": 0.9996
+        },
+        {
+          "word": "I",
+          "start": 4.38,
+          "end": 4.48,
+          "confidence": 0.8867
+        },
+        {
+          "word": "received",
+          "start": 4.48,
+          "end": 4.74,
+          "confidence": 0.9951
+        },
+        {
+          "word": "a",
+          "start": 4.74,
+          "end": 4.9,
+          "confidence": 0.9735
+        },
+        {
+          "word": "question",
+          "start": 4.9,
+          "end": 5.22,
+          "confidence": 0.9989
+        },
+        {
+          "word": "from",
+          "start": 5.22,
+          "end": 5.48,
+          "confidence": 0.9972
+        },
+        {
+          "word": "my",
+          "start": 5.48,
+          "end": 5.64,
+          "confidence": 0.9941
+        },
+        {
+          "word": "colleague",
+          "start": 5.64,
+          "end": 5.94,
+          "confidence": 0.9989
+        },
+        {
+          "word": "in",
+          "start": 5.94,
+          "end": 6.12,
+          "confidence": 0.9798
+        },
+        {
+          "word": "one",
+          "start": 6.12,
+          "end": 6.28,
+          "confidence": 0.9987
+        },
+        {
+          "word": "of",
+          "start": 6.28,
+          "end": 6.42,
+          "confidence": 0.9995
+        },
+        {
+          "word": "the",
+          "start": 6.42,
+          "end": 6.52,
+          "confidence": 0.998
+        },
+        {
+          "word": "internal",
+          "start": 6.52,
+          "end": 6.8,
+          "confidence": 0.9938
+        },
+        {
+          "word": "chats.",
+          "start": 6.8,
+          "end": 7.18,
+          "confidence": 0.9986
+        },
+        {
+          "word": "She",
+          "start": 7.6,
+          "end": 8.16,
+          "confidence": 0.9972
+        },
+        {
+          "word": "has",
+          "start": 8.16,
+          "end": 8.36,
+          "confidence": 0.9977
+        },
+        {
+          "word": "an",
+          "start": 8.36,
+          "end": 8.52,
+          "confidence": 0.9126
+        },
+        {
+          "word": "Israeli",
+          "start": 8.52,
+          "end": 8.9,
+          "confidence": 0.9859
+        },
+        {
+          "word": "client",
+          "start": 8.9,
+          "end": 9.44,
+          "confidence": 0.9991
+        },
+        {
+          "word": "who's",
+          "start": 9.44,
+          "end": 9.76,
+          "confidence": 0.9692
+        },
+        {
+          "word": "asking,",
+          "start": 9.76,
+          "end": 10.04,
+          "confidence": 0.9995
+        },
+        {
+          "word": "Hey,",
+          "start": 10.22,
+          "end": 10.44,
+          "confidence": 0.2795
+        },
+        {
+          "word": "I'm",
+          "start": 10.46,
+          "end": 11.58,
+          "confidence": 0.9983
+        },
+        {
+          "word": "a",
+          "start": 11.58,
+          "end": 11.66,
+          "confidence": 0.9995
+        },
+        {
+          "word": "bit",
+          "start": 11.66,
+          "end": 11.88,
+          "confidence": 0.9994
+        },
+        {
+          "word": "scared",
+          "start": 11.88,
+          "end": 12.26,
+          "confidence": 0.9997
+        },
+        {
+          "word": "of",
+          "start": 12.26,
+          "end": 12.52,
+          "confidence": 0.9997
+        },
+        {
+          "word": "investing",
+          "start": 12.52,
+          "end": 12.84,
+          "confidence": 0.9999
+        },
+        {
+          "word": "in",
+          "start": 12.84,
+          "end": 13.16,
+          "confidence": 0.9999
+        },
+        {
+          "word": "Dubai",
+          "start": 13.16,
+          "end": 13.4,
+          "confidence": 0.9997
+        },
+        {
+          "word": "because",
+          "start": 13.4,
+          "end": 13.96,
+          "confidence": 0.9124
+        },
+        {
+          "word": "what",
+          "start": 13.96,
+          "end": 15.58,
+          "confidence": 0.8564
+        },
+        {
+          "word": "if",
+          "start": 15.58,
+          "end": 15.72,
+          "confidence": 0.9994
+        },
+        {
+          "word": "they",
+          "start": 15.72,
+          "end": 15.84,
+          "confidence": 0.9997
+        },
+        {
+          "word": "take",
+          "start": 15.84,
+          "end": 16.06,
+          "confidence": 0.9999
+        },
+        {
+          "word": "away",
+          "start": 16.06,
+          "end": 16.3,
+          "confidence": 0.9998
+        },
+        {
+          "word": "my",
+          "start": 16.3,
+          "end": 16.64,
+          "confidence": 0.9999
+        },
+        {
+          "word": "ownership",
+          "start": 16.64,
+          "end": 17.22,
+          "confidence": 0.9998
+        },
+        {
+          "word": "rights?",
+          "start": 17.22,
+          "end": 17.7,
+          "confidence": 0.9998
+        },
+        {
+          "word": "What",
+          "start": 18.08,
+          "end": 18.64,
+          "confidence": 0.9993
+        },
+        {
+          "word": "do",
+          "start": 18.64,
+          "end": 18.78,
+          "confidence": 0.9999
+        },
+        {
+          "word": "you",
+          "start": 18.78,
+          "end": 18.8,
+          "confidence": 0.9999
+        },
+        {
+          "word": "think",
+          "start": 18.8,
+          "end": 19.0,
+          "confidence": 0.9999
+        },
+        {
+          "word": "about",
+          "start": 19.0,
+          "end": 19.32,
+          "confidence": 0.9997
+        },
+        {
+          "word": "the",
+          "start": 19.32,
+          "end": 19.72,
+          "confidence": 0.9999
+        },
+        {
+          "word": "conflict",
+          "start": 19.72,
+          "end": 20.14,
+          "confidence": 0.9998
+        },
+        {
+          "word": "between",
+          "start": 20.14,
+          "end": 20.56,
+          "confidence": 0.9997
+        },
+        {
+          "word": "Qatar",
+          "start": 20.56,
+          "end": 20.98,
+          "confidence": 0.9985
+        },
+        {
+          "word": "and",
+          "start": 20.98,
+          "end": 21.64,
+          "confidence": 0.9998
+        },
+        {
+          "word": "UAE",
+          "start": 21.64,
+          "end": 22.2,
+          "confidence": 0.9962
+        },
+        {
+          "word": "in",
+          "start": 22.2,
+          "end": 22.42,
+          "confidence": 0.9991
+        },
+        {
+          "word": "2017?",
+          "start": 22.42,
+          "end": 22.94,
+          "confidence": 0.9996
+        },
+        {
+          "word": "I",
+          "start": 23.5,
+          "end": 23.72,
+          "confidence": 0.9888
+        },
+        {
+          "word": "read",
+          "start": 23.72,
+          "end": 24.02,
+          "confidence": 0.3735
+        },
+        {
+          "word": "the",
+          "start": 24.02,
+          "end": 24.74,
+          "confidence": 0.9999
+        },
+        {
+          "word": "question.",
+          "start": 24.74,
+          "end": 25.06,
+          "confidence": 0.9999
+        },
+        {
+          "word": "I'm",
+          "start": 25.14,
+          "end": 25.26,
+          "confidence": 0.9985
+        },
+        {
+          "word": "like,",
+          "start": 25.26,
+          "end": 25.34,
+          "confidence": 0.9995
+        },
+        {
+          "word": "what",
+          "start": 25.42,
+          "end": 25.7,
+          "confidence": 0.9121
+        },
+        {
+          "word": "conflict",
+          "start": 25.7,
+          "end": 26.18,
+          "confidence": 0.9992
+        },
+        {
+          "word": "between",
+          "start": 26.18,
+          "end": 26.58,
+          "confidence": 0.9995
+        },
+        {
+          "word": "Qatar",
+          "start": 26.58,
+          "end": 26.98,
+          "confidence": 0.9998
+        },
+        {
+          "word": "and",
+          "start": 26.98,
+          "end": 27.34,
+          "confidence": 0.9999
+        },
+        {
+          "word": "UAE?",
+          "start": 27.34,
+          "end": 27.8,
+          "confidence": 0.9998
+        },
+        {
+          "word": "So",
+          "start": 27.8,
+          "end": 28.36,
+          "confidence": 0.7209
+        },
+        {
+          "word": "I",
+          "start": 28.36,
+          "end": 28.52,
+          "confidence": 0.9108
+        },
+        {
+          "word": "went",
+          "start": 28.52,
+          "end": 28.74,
+          "confidence": 0.9998
+        },
+        {
+          "word": "researching,",
+          "start": 28.74,
+          "end": 29.2,
+          "confidence": 0.9906
+        },
+        {
+          "word": "found",
+          "start": 29.34,
+          "end": 29.6,
+          "confidence": 0.9974
+        },
+        {
+          "word": "out",
+          "start": 29.6,
+          "end": 29.94,
+          "confidence": 0.9986
+        },
+        {
+          "word": "that",
+          "start": 29.94,
+          "end": 30.1,
+          "confidence": 0.9943
+        },
+        {
+          "word": "there",
+          "start": 30.1,
+          "end": 30.26,
+          "confidence": 0.9991
+        },
+        {
+          "word": "was",
+          "start": 30.26,
+          "end": 30.46,
+          "confidence": 0.9982
+        },
+        {
+          "word": "one.",
+          "start": 30.46,
+          "end": 30.98,
+          "confidence": 0.9114
+        },
+        {
+          "word": "And",
+          "start": 31.28,
+          "end": 31.76,
+          "confidence": 0.9936
+        },
+        {
+          "word": "it",
+          "start": 31.76,
+          "end": 31.88,
+          "confidence": 0.9992
+        },
+        {
+          "word": "actually",
+          "start": 31.88,
+          "end": 32.14,
+          "confidence": 0.9996
+        },
+        {
+          "word": "lasted",
+          "start": 32.14,
+          "end": 32.7,
+          "confidence": 0.9999
+        },
+        {
+          "word": "till",
+          "start": 32.7,
+          "end": 33.0,
+          "confidence": 0.9189
+        },
+        {
+          "word": "2021.",
+          "start": 33.0,
+          "end": 33.68,
+          "confidence": 0.9993
+        },
+        {
+          "word": "And",
+          "start": 33.84,
+          "end": 34.62,
+          "confidence": 0.9992
+        },
+        {
+          "word": "even",
+          "start": 34.62,
+          "end": 35.1,
+          "confidence": 0.9998
+        },
+        {
+          "word": "the",
+          "start": 35.1,
+          "end": 35.28,
+          "confidence": 1.0
+        },
+        {
+          "word": "citizens",
+          "start": 35.28,
+          "end": 35.7,
+          "confidence": 0.9998
+        },
+        {
+          "word": "of",
+          "start": 35.7,
+          "end": 36.02,
+          "confidence": 1.0
+        },
+        {
+          "word": "Qatar",
+          "start": 36.02,
+          "end": 36.4,
+          "confidence": 0.9948
+        },
+        {
+          "word": "were",
+          "start": 36.4,
+          "end": 37.42,
+          "confidence": 0.9962
+        },
+        {
+          "word": "asked",
+          "start": 37.42,
+          "end": 39.96,
+          "confidence": 0.9951
+        },
+        {
+          "word": "to",
+          "start": 39.96,
+          "end": 40.22,
+          "confidence": 0.9999
+        },
+        {
+          "word": "leave",
+          "start": 40.22,
+          "end": 40.48,
+          "confidence": 1.0
+        },
+        {
+          "word": "the",
+          "start": 40.48,
+          "end": 40.74,
+          "confidence": 0.9999
+        },
+        {
+          "word": "country",
+          "start": 40.74,
+          "end": 41.08,
+          "confidence": 0.9999
+        },
+        {
+          "word": "of",
+          "start": 41.08,
+          "end": 41.78,
+          "confidence": 0.998
+        },
+        {
+          "word": "UAE",
+          "start": 41.78,
+          "end": 42.12,
+          "confidence": 0.9975
+        },
+        {
+          "word": "during",
+          "start": 42.12,
+          "end": 42.78,
+          "confidence": 0.9964
+        },
+        {
+          "word": "this",
+          "start": 42.78,
+          "end": 43.06,
+          "confidence": 1.0
+        },
+        {
+          "word": "time.",
+          "start": 43.06,
+          "end": 43.36,
+          "confidence": 1.0
+        },
+        {
+          "word": "But",
+          "start": 43.91,
+          "end": 44.3,
+          "confidence": 0.9999
+        },
+        {
+          "word": "even",
+          "start": 44.3,
+          "end": 45.4,
+          "confidence": 0.9992
+        },
+        {
+          "word": "during",
+          "start": 45.4,
+          "end": 45.8,
+          "confidence": 1.0
+        },
+        {
+          "word": "this",
+          "start": 45.8,
+          "end": 46.36,
+          "confidence": 1.0
+        },
+        {
+          "word": "time,",
+          "start": 46.36,
+          "end": 46.76,
+          "confidence": 1.0
+        },
+        {
+          "word": "there",
+          "start": 46.86,
+          "end": 47.36,
+          "confidence": 0.9999
+        },
+        {
+          "word": "weren't",
+          "start": 47.36,
+          "end": 47.86,
+          "confidence": 1.0
+        },
+        {
+          "word": "any",
+          "start": 47.86,
+          "end": 48.14,
+          "confidence": 0.9999
+        },
+        {
+          "word": "massive",
+          "start": 48.14,
+          "end": 48.6,
+          "confidence": 0.9999
+        },
+        {
+          "word": "cases",
+          "start": 48.6,
+          "end": 49.1,
+          "confidence": 1.0
+        },
+        {
+          "word": "of",
+          "start": 49.1,
+          "end": 49.68,
+          "confidence": 0.9995
+        },
+        {
+          "word": "taking",
+          "start": 49.68,
+          "end": 50.84,
+          "confidence": 0.9998
+        },
+        {
+          "word": "away",
+          "start": 50.84,
+          "end": 51.3,
+          "confidence": 1.0
+        },
+        {
+          "word": "the",
+          "start": 51.3,
+          "end": 51.94,
+          "confidence": 1.0
+        },
+        {
+          "word": "property",
+          "start": 51.94,
+          "end": 52.34,
+          "confidence": 1.0
+        },
+        {
+          "word": "of",
+          "start": 52.34,
+          "end": 53.18,
+          "confidence": 0.9998
+        },
+        {
+          "word": "those",
+          "start": 53.18,
+          "end": 53.42,
+          "confidence": 1.0
+        },
+        {
+          "word": "people.",
+          "start": 53.42,
+          "end": 54.02,
+          "confidence": 1.0
+        },
+        {
+          "word": "So",
+          "start": 54.24,
+          "end": 54.76,
+          "confidence": 0.9986
+        },
+        {
+          "word": "this",
+          "start": 54.76,
+          "end": 55.08,
+          "confidence": 0.9984
+        },
+        {
+          "word": "gives",
+          "start": 55.08,
+          "end": 55.32,
+          "confidence": 0.9999
+        },
+        {
+          "word": "us",
+          "start": 55.32,
+          "end": 55.54,
+          "confidence": 0.9999
+        },
+        {
+          "word": "an",
+          "start": 55.54,
+          "end": 55.66,
+          "confidence": 1.0
+        },
+        {
+          "word": "idea",
+          "start": 55.66,
+          "end": 55.98,
+          "confidence": 0.9999
+        },
+        {
+          "word": "of",
+          "start": 55.98,
+          "end": 56.56,
+          "confidence": 0.9993
+        },
+        {
+          "word": "the",
+          "start": 56.56,
+          "end": 57.18,
+          "confidence": 0.9931
+        },
+        {
+          "word": "position.",
+          "start": 57.18,
+          "end": 57.64,
+          "confidence": 0.941
+        },
+        {
+          "word": "The",
+          "start": 57.8,
+          "end": 58.52,
+          "confidence": 0.0564
+        },
+        {
+          "word": "strategic",
+          "start": 58.52,
+          "end": 58.96,
+          "confidence": 0.8125
+        },
+        {
+          "word": "thinking",
+          "start": 58.96,
+          "end": 59.64,
+          "confidence": 0.9958
+        },
+        {
+          "word": "of",
+          "start": 59.64,
+          "end": 60.64,
+          "confidence": 0.788
+        },
+        {
+          "word": "supreme",
+          "start": 60.64,
+          "end": 62.4,
+          "confidence": 0.6955
+        },
+        {
+          "word": "leaders",
+          "start": 62.4,
+          "end": 62.96,
+          "confidence": 0.9975
+        },
+        {
+          "word": "of",
+          "start": 62.96,
+          "end": 63.32,
+          "confidence": 0.9885
+        },
+        {
+          "word": "our",
+          "start": 63.32,
+          "end": 63.62,
+          "confidence": 0.9975
+        },
+        {
+          "word": "country.",
+          "start": 63.62,
+          "end": 64.18,
+          "confidence": 0.9969
+        },
+        {
+          "word": "They're",
+          "start": 64.7,
+          "end": 65.38,
+          "confidence": 0.9307
+        },
+        {
+          "word": "always",
+          "start": 65.38,
+          "end": 65.68,
+          "confidence": 0.9985
+        },
+        {
+          "word": "thinking",
+          "start": 65.68,
+          "end": 66.04,
+          "confidence": 0.9992
+        },
+        {
+          "word": "about",
+          "start": 66.04,
+          "end": 66.38,
+          "confidence": 0.9984
+        },
+        {
+          "word": "the",
+          "start": 66.38,
+          "end": 66.6,
+          "confidence": 0.9978
+        },
+        {
+          "word": "future.",
+          "start": 66.6,
+          "end": 66.9,
+          "confidence": 0.9729
+        },
+        {
+          "word": "They",
+          "start": 67.56,
+          "end": 68.24,
+          "confidence": 0.9655
+        },
+        {
+          "word": "have",
+          "start": 68.24,
+          "end": 68.42,
+          "confidence": 0.9995
+        },
+        {
+          "word": "a",
+          "start": 68.42,
+          "end": 68.56,
+          "confidence": 0.9989
+        },
+        {
+          "word": "plan",
+          "start": 68.56,
+          "end": 68.84,
+          "confidence": 0.9983
+        },
+        {
+          "word": "10,",
+          "start": 68.84,
+          "end": 69.9,
+          "confidence": 0.8905
+        },
+        {
+          "word": "20",
+          "start": 70.1,
+          "end": 70.76,
+          "confidence": 0.9992
+        },
+        {
+          "word": "years",
+          "start": 70.76,
+          "end": 71.1,
+          "confidence": 0.9997
+        },
+        {
+          "word": "up",
+          "start": 71.1,
+          "end": 71.4,
+          "confidence": 0.9932
+        },
+        {
+          "word": "ahead.",
+          "start": 71.4,
+          "end": 71.62,
+          "confidence": 0.9999
+        }
+      ],
+      "avg_confidence": 0.9663,
+      "low_confidence": false
+    },
+    {
+      "id": 1,
+      "start": 73.42,
+      "end": 76.44,
+      "speaker": "SPEAKER_00",
+      "text": "Probably even more plans than any other country I know.",
+      "words": [
+        {
+          "word": "Probably",
+          "start": 73.42,
+          "end": 74.1,
+          "confidence": 0.9976
+        },
+        {
+          "word": "even",
+          "start": 74.1,
+          "end": 74.38,
+          "confidence": 0.9987
+        },
+        {
+          "word": "more",
+          "start": 74.38,
+          "end": 74.66,
+          "confidence": 0.9999
+        },
+        {
+          "word": "plans",
+          "start": 74.66,
+          "end": 75.0,
+          "confidence": 0.9998
+        },
+        {
+          "word": "than",
+          "start": 75.0,
+          "end": 75.16,
+          "confidence": 0.9993
+        },
+        {
+          "word": "any",
+          "start": 75.16,
+          "end": 75.34,
+          "confidence": 0.999
+        },
+        {
+          "word": "other",
+          "start": 75.34,
+          "end": 75.74,
+          "confidence": 0.9999
+        },
+        {
+          "word": "country",
+          "start": 75.74,
+          "end": 76.12,
+          "confidence": 0.9999
+        },
+        {
+          "word": "I",
+          "start": 76.12,
+          "end": 76.26,
+          "confidence": 0.9866
+        },
+        {
+          "word": "know.",
+          "start": 76.26,
+          "end": 76.44,
+          "confidence": 1.0
+        }
+      ],
+      "avg_confidence": 0.9981,
+      "low_confidence": false
+    }
+  ],
+  "stats": {
+    "total_words": 167,
+    "total_segments": 2,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 2,
+        "words": 167,
+        "duration": 74.64
+      }
+    },
+    "avg_confidence": 0.9682,
+    "low_confidence_segments": 0
+  }
+}

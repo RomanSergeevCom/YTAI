@@ -1,0 +1,16 @@
+2026-01-25 13:34:48,263 [INFO] Starting server for: /Users/romansergeev/Desktop/disk_report_20260125_133448.html
+2026-01-25 13:34:48,263 [INFO] URL: http://127.0.0.1:8000/
+2026-01-25 13:34:48,263 [INFO] Log file: /Users/romansergeev/YTAI/utils/disk_analyzer/logs/2026-01-25_13-34-48_disk_analyzer.log
+2026-01-25 13:34:48,453 [DEBUG] GET request: /
+2026-01-25 13:34:48,453 [DEBUG] Serving report HTML
+2026-01-25 13:35:15,908 [DEBUG] GET request: /open-file?path=%2FUsers%2Fromansergeev%2FLibrary%2FCloudStorage%2FGoogleDrive-rs%40rya.ae%2FShared%20drives%2FYTCG%2FYTCG%20S6%2F%5BEditing%5D%20YTCG%2022%20IFZA%20Explained%2FYouTube%2FYTCG%20%2022%20IFZA%20FreeZone%20Dubai%20UAE%20Setup%20Business.mp4
+2026-01-25 13:35:15,909 [INFO] 📄 Open file request: /Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae/Shared drives/YTCG/YTCG S6/[Editing] YTCG 22 IFZA Explained/YouTube/YTCG  22 IFZA FreeZone Dubai UAE Setup Business.mp4
+2026-01-25 13:35:15,909 [DEBUG] open_in_finder called: path=/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae/Shared drives/YTCG/YTCG S6/[Editing] YTCG 22 IFZA Explained/YouTube/YTCG  22 IFZA FreeZone Dubai UAE Setup Business.mp4, reveal=False
+2026-01-25 13:35:16,085 [DEBUG] open result: returncode=0, stderr=
+2026-01-25 13:35:16,088 [INFO]    Result: ✓ SUCCESS
+2026-01-25 13:35:24,675 [DEBUG] GET request: /open-folder?path=%2FUsers%2Fromansergeev%2FLibrary%2FCloudStorage%2FGoogleDrive-rs%40rya.ae%2FShared%20drives%2FYTCG%2FYTCG%20S6%2F%5BEditing%5D%20YTCG%2022%20IFZA%20Explained%2FYouTube%2FYTCG%20%2022%20IFZA%20FreeZone%20Dubai%20UAE%20Setup%20Business.mp4
+2026-01-25 13:35:24,675 [INFO] 📁 Reveal in Finder request: /Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae/Shared drives/YTCG/YTCG S6/[Editing] YTCG 22 IFZA Explained/YouTube/YTCG  22 IFZA FreeZone Dubai UAE Setup Business.mp4
+2026-01-25 13:35:24,676 [DEBUG] open_in_finder called: path=/Users/romansergeev/Library/CloudStorage/GoogleDrive-rs@rya.ae/Shared drives/YTCG/YTCG S6/[Editing] YTCG 22 IFZA Explained/YouTube/YTCG  22 IFZA FreeZone Dubai UAE Setup Business.mp4, reveal=True
+2026-01-25 13:35:25,123 [DEBUG] AppleScript reveal result: returncode=0, stdout=document file YTCG  22 IFZA FreeZone Dubai UAE Setup Business.mp4 of folder YouTube of folder [Editing] YTCG 22 IFZA Explained of folder YTCG S6 of folder YTCG of folder Shared drives of folder GoogleDrive-rs@rya.ae of folder CloudStorage of folder Library of folder romansergeev of folder Users of startup disk
+, stderr=
+2026-01-25 13:35:25,124 [INFO]    Result: ✓ SUCCESS

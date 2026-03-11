@@ -1,0 +1,88 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-08 18:08:34
+============================================================
+
+=== Configuration ===
+Project:    YTAI_Edit
+Input:      folder — /Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit
+Clips:      3
+Duration:   5:56 (356.6s)
+Speakers:   auto (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+
+=== Clips ===
+  C5402                   2:36  3840×2160 25.0fps H264  offset 0.000s  C5402.MP4
+  C5403                   1:19  3840×2160 25.0fps H264  offset 156.000s  C5403.MP4
+  C5404                   2:01  3840×2160 25.0fps H264  offset 235.200s  C5404.MP4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    5:25  91.2%  26 segments
+  Gaps                       0:31  8.8%
+
+=== Transcription ===
+Total words:     802
+Total segments:  7
+Avg confidence:  0.8186
+Low confidence:  1 segments
+  Low confidence details:
+    [C5404] seg 3: "I try to can a few investor to do so from two to be a down p..." (conf=0.08)
+
+=== Per-Clip Details ===
+  C5402:
+    Words: 332  Segments: 1  Confidence: 0.9057  Low: 0
+    Speaker 1: 332 words, 1 segs, 2:30
+  C5403:
+    Words: 167  Segments: 2  Confidence: 0.9682  Low: 0
+    Speaker 1: 167 words, 2 segs, 1:14
+  C5404:
+    Words: 303  Segments: 4  Confidence: 0.6869  Low: 1
+    Speaker 1: 303 words, 4 segs, 1:28
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio        11s        1s  -    9s    0.3%
+  Diarization          53s       15s  -   39s    3.4%
+  Whisper           4m 09s    7m 02s  +2m 52s   96.3%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             5m 15s    7m 18s  +2m 03s  100.0%
+
+=== Output Files ===
+  YTAI_Edit_transcription/
+    YTAI_Edit_ingest.json                               1.7 KB
+    YTAI_Edit_transcript.json                          11.0 KB
+    YTAI_Edit_transcript.srt                            4.5 KB
+    clip_offsets.json                                   0.4 KB
+    combined_transcript.json                            6.4 KB
+    diarization.json                                    2.4 KB
+    full_audio.wav                                  11145.0 KB
+    meta.json                                           0.7 KB
+    speakers.json                                       0.2 KB
+    per_clip/C5402/C5402_audio.wav                   4875.1 KB
+    per_clip/C5402/C5402_premiere_transcript.json      70.4 KB
+    per_clip/C5402/C5402_transcript.json               44.1 KB
+    per_clip/C5402/C5402_transcript.srt                 1.8 KB
+    per_clip/C5402/C5402_transcript.txt                 1.8 KB
+    per_clip/C5402/C5402_whisper_raw.json              39.2 KB
+    per_clip/C5403/C5403_audio.wav                   2475.1 KB
+    per_clip/C5403/C5403_premiere_transcript.json      38.2 KB
+    per_clip/C5403/C5403_transcript.json               22.5 KB
+    per_clip/C5403/C5403_transcript.srt                 1.0 KB
+    per_clip/C5403/C5403_transcript.txt                 0.9 KB
+    per_clip/C5403/C5403_whisper_raw.json              20.5 KB
+    per_clip/C5404/C5404_audio.wav                   3795.1 KB
+    per_clip/C5404/C5404_premiere_transcript.json      68.7 KB
+    per_clip/C5404/C5404_transcript.json               40.8 KB
+    per_clip/C5404/C5404_transcript.srt                 1.7 KB
+    per_clip/C5404/C5404_transcript.txt                 1.6 KB
+    per_clip/C5404/C5404_whisper_raw.json              38.1 KB
+  YTAI_Edit_transcript.xlsx  (10.0 KB)
+
+============================================================
