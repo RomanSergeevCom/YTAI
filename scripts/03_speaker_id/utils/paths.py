@@ -15,11 +15,12 @@ from typing import Optional, List
 # Константы структуры проекта
 # ============================================================================
 
-VIDEO_DIR = "01_Raw/01_01_Video"
-AUDIO_DIR = "01_Raw/01_02_Audio"
-TRANSCRIPTS_RUNS_DIR = "02_Transcripts/02_01_Runs"
-TRANSCRIPTS_CLEAN_DIR = "02_Transcripts/02_02_Clean"
-LOGS_DIR = "08_Logs"
+VIDEO_DIR = "01_Media/Source/Video"
+AUDIO_DIR = "01_Media/Source/Audio"
+TRANSCRIPTION_DIR = "01_Media/Source/Transcription"
+SETUP_DIR = "01_Media/Source/Setup"
+DJI_PIPELINE_DIR = "99_Pipeline/DJI_Audio"
+LOGS_DIR = "01_Media/Source/Setup/logs"
 
 VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".mts", ".avi", ".mkv",
               ".MP4", ".MOV", ".M4V", ".MTS", ".AVI", ".MKV"}
@@ -52,16 +53,18 @@ def get_project_paths(project_dir: str) -> dict:
         "project_name": project_root.name,
         "video_dir": project_root / VIDEO_DIR,
         "audio_dir": project_root / AUDIO_DIR,
-        "runs_dir": project_root / TRANSCRIPTS_RUNS_DIR,
-        "clean_dir": project_root / TRANSCRIPTS_CLEAN_DIR,
+        "transcription_dir": project_root / TRANSCRIPTION_DIR,
+        "setup_dir": project_root / SETUP_DIR,
+        "dji_pipeline_dir": project_root / DJI_PIPELINE_DIR,
         "logs_dir": project_root / LOGS_DIR,
     }
 
 
 def ensure_dirs(paths: dict) -> None:
     """Создать все необходимые директории."""
-    for key in ["runs_dir", "speakers_dir", "named_dir", "byclips_dir", "logs_dir"]:
-        paths[key].mkdir(parents=True, exist_ok=True)
+    for key in ["transcription_dir", "setup_dir", "logs_dir"]:
+        if key in paths:
+            paths[key].mkdir(parents=True, exist_ok=True)
 
 
 # ============================================================================

@@ -8,7 +8,7 @@ LLM анализ для определения имён и ролей спике
     python analyze_speakers.py --project "/path/to/project" --force
 
 Выход:
-    02_Transcripts/02_02_Speakers/
+    01_Media/Source/Transcription/
     ├── {project}_analyze_speakers_{timestamp}.json
     └── {project}_analyze_speakers_{timestamp}_report.txt
 """
@@ -356,7 +356,7 @@ def save_analysis_report(
 # Проверка существующего файла
 # ============================================================================
 
-def check_existing_analysis(clean_dir: Path, project_name: str, logger) -> Optional[Path]:
+def check_existing_analysis(transcription_dir: Path, project_name: str, logger) -> Optional[Path]:
     """
     Проверить наличие существующего анализа.
     
@@ -364,7 +364,7 @@ def check_existing_analysis(clean_dir: Path, project_name: str, logger) -> Optio
         Path к существующему файлу или None
     """
     existing = find_latest_file(
-        clean_dir,
+        transcription_dir,
         f"{project_name}_analyze_speakers_*.json"
     )
     
@@ -433,14 +433,14 @@ def main():
     
     # Найти папку с репликами
     utterances_dir = find_latest_dir(
-        paths["clean_dir"],
+        paths["transcription_dir"],
         f"{project_name}_extract_speakers_*"
     )
     
     # Исключить папки _srt
     if utterances_dir and "_srt" in utterances_dir.name:
         # Найти папку без _srt
-        all_dirs = list(paths["clean_dir"].glob(f"{project_name}_extract_speakers_*"))
+        all_dirs = list(paths["transcription_dir"].glob(f"{project_name}_extract_speakers_*"))
         utterances_dir = None
         for d in sorted(all_dirs, key=lambda x: x.stat().st_mtime, reverse=True):
             if d.is_dir() and "_srt" not in d.name and "backup" not in str(d):
@@ -464,7 +464,7 @@ def main():
     # Проверка существующего анализа
     # ================================================================
     if not args.force:
-        existing = check_existing_analysis(paths["clean_dir"], project_name, logger)
+        existing = check_existing_analysis(paths["transcription_dir"], project_name, logger)
         
         if existing:
             # Спросить пользователя
@@ -584,12 +584,12 @@ def main():
     
     # Очистить старые файлы
     cleanup_old_files(
-        paths["clean_dir"],
+        paths["transcription_dir"],
         f"{project_name}_analyze_speakers_*"
     )
     
     # JSON
-    json_path = paths["clean_dir"] / f"{project_name}_analyze_speakers_{timestamp}.json"
+    json_path = paths["transcription_dir"] / f"{project_name}_analyze_speakers_{timestamp}.json"
     save_analysis_json(
         speakers_result,
         json_path,
@@ -601,7 +601,7 @@ def main():
     logger.info(f"JSON: {json_path.name}")
     
     # Отчёт
-    report_path = paths["clean_dir"] / f"{project_name}_analyze_speakers_{timestamp}_report.txt"
+    report_path = paths["transcription_dir"] / f"{project_name}_analyze_speakers_{timestamp}_report.txt"
     save_analysis_report(speakers_result, report_path, project_name, guest_hint)
     logger.info(f"Отчёт: {report_path.name}")
     

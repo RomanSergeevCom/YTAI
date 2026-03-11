@@ -1,9 +1,9 @@
-# YTCR — Структура проекта
+# YTCR — Структура проекта v3.0
 
 ```
 YTCR/
 │
-├── _channel/                                       ← общие ресурсы канала
+├── _channel/                                       <- общие ресурсы канала
 │   ├── LUTs/
 │   ├── templates/
 │   └── assets/
@@ -14,95 +14,103 @@ YTCR/
 │   ├── YTCR01_Arty_Dzis.gdoc
 │   │
 │   │
-│   ├── 01_Source/                                  ← ИСХОДНИКИ + ТРАНСКРИПЦИЯ
+│   ├── 01_Media/                                   <- ВСЁ ДЛЯ МОНТАЖА
 │   │   │
-│   │   ├── 20260228_Studio/                        ← день 1
-│   │   │   ├── FX3/                                ← 161 MP4
-│   │   │   ├── TX01/                               ← петличка A
-│   │   │   ├── TX02/                               ← петличка B
-│   │   │   ├── 20260228_Studio_transcript.xlsx     ← скрипт
-│   │   │   ├── 20260228_Studio.prproj              ← скрипт: preview
-│   │   │   └── 20260228_Studio_transcription/      ← скрипт: полная транскрипция
-│   │   │       ├── full_audio.wav
-│   │   │       ├── clip_offsets.json
-│   │   │       ├── diarization.json
-│   │   │       ├── speakers.json
-│   │   │       ├── combined_transcript.json
-│   │   │       ├── meta.json
-│   │   │       ├── lut/
-│   │   │       └── per_clip/
-│   │   │           ├── C5089/ ... C5251/
+│   │   ├── Source/                                 <- ПАЙПЛАЙН СОЗДАЁТ
+│   │   │   │
+│   │   │   ├── Video/                             <- MP4 с камеры
+│   │   │   │   ├── 20260228_Studio/               <- день 1
+│   │   │   │   │   └── FX3/                       <- 161 MP4
+│   │   │   │   └── 20260302_Desert/               <- день 2
+│   │   │   │       ├── FX3/                       <- 155 MP4
+│   │   │   │       └── GoPro/                     <- 42 файла
+│   │   │   │
+│   │   │   ├── Audio/                             <- DJI синхр. WAV
+│   │   │   │   ├── {clip}_TX01.wav
+│   │   │   │   └── {clip}_TX02.wav
+│   │   │   │
+│   │   │   ├── Transcription/                     <- транскрипция
+│   │   │   │   ├── {project}_transcript.json
+│   │   │   │   ├── {project}_transcript.xlsx
+│   │   │   │   ├── {project}_transcript.srt
+│   │   │   │   ├── speakers.json
+│   │   │   │   ├── diarization.json
+│   │   │   │   ├── clip_offsets.json
+│   │   │   │   ├── meta.json
+│   │   │   │   ├── {project}_FULL_AUDIO.wav
+│   │   │   │   ├── {project}.mkv
+│   │   │   │   └── per_clip/
+│   │   │   │       └── {clip_id}/
+│   │   │   │           ├── {clip}_transcript.json
+│   │   │   │           ├── {clip}_premiere_transcript.json
+│   │   │   │           ├── {clip}_captions.srt
+│   │   │   │           ├── {clip}_audio.wav
+│   │   │   │           ├── {clip}M01.XML          <- метаданные камеры
+│   │   │   │           └── {clip}T01.JPG          <- превью камеры
+│   │   │   │
+│   │   │   ├── Setup/                             <- ЦЕНТР УПРАВЛЕНИЯ UXP
+│   │   │   │   ├── {project}_ingest.json
+│   │   │   │   ├── {project}_edit_brief.json
+│   │   │   │   ├── {project}_edit_brief_review.html
+│   │   │   │   ├── ScreenCues/
+│   │   │   │   │   └── scr_001_full_overlay.png
+│   │   │   │   └── logs/
+│   │   │   │       ├── {project}_transcribe_*.log
+│   │   │   │       └── {project}_sync_dji_audio_*.log
+│   │   │   │
+│   │   │   ├── LUT/                               <- цветокоррекция
+│   │   │   │   └── SL3SG3Ctos709.cube
+│   │   │   │
+│   │   │   └── YTCR01_Arty_Dzis_Source.prproj     <- Ingest проект
 │   │   │
-│   │   └── 20260302_Desert/                        ← день 2
-│   │       ├── FX3/                                ← 155 MP4
-│   │       ├── GoPro/                              ← 42 файла
-│   │       ├── TX02/
-│   │       ├── 20260302_Desert_transcript.xlsx
-│   │       ├── 20260302_Desert.prproj
-│   │       └── 20260302_Desert_transcription/
+│   │   ├── Assets/                                <- МОНТАЖНИК ДОБАВЛЯЕТ
+│   │   │   ├── Music/
+│   │   │   ├── SFX/
+│   │   │   ├── Graphics/
+│   │   │   ├── Stock/
+│   │   │   └── Fonts/
+│   │   │
+│   │   └── YTCR01_Arty_Dzis.prproj               <- РАБОЧИЙ ПРОЕКТ
 │   │
 │   │
-│   ├── 02_Brief/                                   ← АНАЛИЗ + ПЛАН МОНТАЖА
-│   │   ├── speaker_id.json
-│   │   ├── topics.json
-│   │   ├── content_rating.json
-│   │   ├── edit_brief_v1.xlsx
-│   │   ├── edit_brief_v1.json
-│   │   ├── premiere_markers.json
-│   │   ├── premiere_transcript.json
-│   │   ├── chapters.txt
-│   │   └── description.txt
-│   │
-│   │
-│   ├── 03_Edit/                                    ← МОНТАЖ
-│   │   ├── YTCR01_Arty_Dzis.prproj                ← основной проект Premiere
-│   │   ├── YTCR01_Arty_Dzis.prin
-│   │   ├── Auto-Save/
-│   │   └── assets/                                 ← всё кроме исходников
-│   │       ├── music/
-│   │       ├── sfx/
-│   │       ├── graphics/
-│   │       ├── stock/
-│   │       └── fonts/
-│   │
-│   │
-│   ├── 04_Exports/                                 ← ФИНАЛЬНЫЕ РЕНДЕРЫ
+│   ├── 02_Exports/                                <- ФИНАЛЬНЫЕ РЕНДЕРЫ
 │   │   ├── YTCR01_Arty_Dzis_v1.mp4
 │   │   └── xml/
 │   │
 │   │
-│   ├── 05_Shorts/                                  ← SHORTS
+│   ├── 03_Shorts/                                 <- SHORTS
 │   │   ├── short_01.mp4
 │   │   ├── short_01_description.md
-│   │   ├── short_02.mp4
 │   │   └── ...
 │   │
 │   │
-│   ├── 06_Thumbnail/                               ← ПРЕВЬЮ
-│   │   ├── source_frames/
+│   ├── 04_Thumbnail/                              <- ПРЕВЬЮ
 │   │   ├── prompts/
 │   │   ├── drafts/
 │   │   └── thumbnail.png
 │   │
 │   │
-│   ├── YouTube/                                    ← ПАКЕТ ДЛЯ ЗАГРУЗКИ
+│   ├── YouTube/                                   <- ПАКЕТ ДЛЯ ЗАГРУЗКИ
 │   │   ├── video.mp4
 │   │   ├── thumbnail.png
-│   │   └── shorts/
+│   │   ├── description.txt
+│   │   ├── chapters.txt
+│   │   └── tags.txt
 │   │
 │   │
-│   └── logs/                                       ← ЛОГИ СКРИПТОВ
+│   └── 99_Pipeline/                               <- СЛУЖЕБНЫЕ ФАЙЛЫ
+│       └── DJI_Audio/                             <- оригиналы DJI WAV
+│           ├── TX01_MIC037_20260228_*.wav
+│           └── TX02_MIC038_20260228_*.wav
 │
 │
 ├── YTCR02_Next_Guest/
-│   ├── 01_Source/
-│   ├── 02_Brief/
-│   ├── 03_Edit/
-│   ├── 04_Exports/
-│   ├── 05_Shorts/
-│   ├── 06_Thumbnail/
+│   ├── 01_Media/
+│   ├── 02_Exports/
+│   ├── 03_Shorts/
+│   ├── 04_Thumbnail/
 │   ├── YouTube/
-│   └── logs/
+│   └── 99_Pipeline/
 │
 └── ...
 ```
@@ -111,42 +119,40 @@ YTCR/
 
 ## Папки
 
-### 01_Source — исходники + транскрипция
+### 01_Media — всё для монтажа
 
-Всё что сняли. Каждый съёмочный день — подпапка (`20260228_Studio/`, `20260302_Desert/`). Внутри: MP4, WAV, и результаты скрипта транскрипции (xlsx, prproj, _transcription/). Скрипт запускается прямо на эту папку — ничего не перемещать.
+Контейнер для ВСЕГО, что нужно монтажнику. Разделён на:
+- **Source/** — что пайплайн создаёт (видео, аудио, транскрипция, Setup)
+- **Assets/** — что монтажник добавляет (музыка, sfx, графика)
+
+Два проекта Premiere:
+- `Source/{project}_Source.prproj` — после UXP Ingest (бины, клипы, LUT, captions)
+- `{project}.prproj` — рабочая копия для монтажа
 
 ```bash
-python transcribe_project_v2.11.py \
-  --project ".../YTCR01_Arty_Dzis/01_Source/20260228_Studio" -y
+python transcribe_project.py \
+  --project ".../YTCR01_Arty_Dzis" -y
 ```
 
-### 02_Brief — анализ + план монтажа
+### 02_Exports — финальные рендеры
 
-AI-анализ поверх транскрипций: кто говорит, о чём, что оставить. Агрегирует данные из всех съёмочных дней. Сюда же — маркеры для Premiere, субтитры, описание, главы.
+Готовое видео. XML-экспорты из Premiere — в подпапке `xml/`.
 
-### 03_Edit — монтаж
+### 03_Shorts — нарезка
 
-Premiere-проект и всё что нужно для монтажа **кроме исходников**: музыка, sfx, графика, стоковые кадры, шрифты. Исходники остаются в 01_Source — Premiere линкует их оттуда.
+Каждый Short — mp4 + описание.
 
-### 04_Exports — финальные рендеры
+### 04_Thumbnail — превью
 
-Готовое видео. Все стадии пройдены. XML-экспорты из Premiere — в подпапке `xml/`.
-
-### 05_Shorts — нарезка
-
-Отдельно от основного видео. Каждый Short — mp4 + описание.
-
-### 06_Thumbnail — превью
-
-Стоп-кадры, промпты для генерации, черновики, финальное превью.
+Промпты для генерации, черновики, финальное превью.
 
 ### YouTube — пакет для загрузки
 
-Финальное видео, финальное превью, Shorts — копии/линки из 04_Exports, 05_Shorts, 06_Thumbnail. Готово к загрузке в YouTube Studio.
+Финальное видео, превью, описание, главы, теги.
 
-### logs — логи скриптов
+### 99_Pipeline — служебные файлы
 
-Логи транскрипции, AI-анализа, автоматизации.
+Оригиналы DJI TX/MIC WAV (длинные 30-мин куски). Нужны только для sync скрипта.
 
 ---
 
@@ -156,25 +162,23 @@ Premiere-проект и всё что нужно для монтажа **кро
 |---|---|---|
 | Эпизод | `{Channel}{NN}_{Hero}` | `YTCR01_Arty_Dzis` |
 | Съёмочный день | `{YYYYMMDD}_{Location}` | `20260228_Studio` |
-| Premiere (монтаж) | `{EpisodeName}.prproj` | `YTCR01_Arty_Dzis.prproj` |
-| Premiere (preview) | `{DayName}.prproj` | `20260228_Studio.prproj` |
+| Premiere (Ingest) | `{EpisodeName}_Source.prproj` | `YTCR01_Arty_Dzis_Source.prproj` |
+| Premiere (рабочий) | `{EpisodeName}.prproj` | `YTCR01_Arty_Dzis.prproj` |
 | Экспорт | `{EpisodeName}_v{N}.mp4` | `YTCR01_Arty_Dzis_v1.mp4` |
 | Short | `short_{NN}.mp4` | `short_01.mp4` |
 
 ---
 
-## Маппинг текущих файлов
+## Маппинг старых файлов
 
-| Сейчас | Куда |
+| Было | Стало |
 |---|---|
-| `20260228/FX3/` | `YTCR01_.../01_Source/20260228_Studio/FX3/` |
-| `20260228/TX01/`, `TX02/` | `YTCR01_.../01_Source/20260228_Studio/TX01/`, `TX02/` |
-| `20260228/transcription/` | `YTCR01_.../01_Source/20260228_Studio/...transcription/per_clip/` |
-| `20260302 Desert/` | `YTCR01_.../01_Source/20260302_Desert/` |
-| `20260302 Desert/100GOPRO/` | `YTCR01_.../01_Source/20260302_Desert/GoPro/` |
-| `YTCR_transcription/*.xlsx` | удалить (дубликат) |
+| `20260228/FX3/` | `01_Media/Source/Video/20260228_Studio/FX3/` |
+| `20260228/TX01/`, `TX02/` | `99_Pipeline/DJI_Audio/` |
+| `20260228/transcription/` | `01_Media/Source/Transcription/per_clip/` |
+| `20260302 Desert/` | `01_Media/Source/Video/20260302_Desert/` |
+| `20260302 Desert/100GOPRO/` | `01_Media/Source/Video/20260302_Desert/GoPro/` |
 | `LUTs/` | `_channel/LUTs/` |
-| `20260228/ARTEM_STORY_v1.prproj` + `.prin` | `YTCR01_.../03_Edit/` |
-| `20260228/YTCR.prproj` + `.prin` | `YTCR01_.../03_Edit/` (backup) |
-| `20260228/*.xml` | `YTCR01_.../04_Exports/xml/` |
-| `20260228/Auto-Save/` | `YTCR01_.../03_Edit/Auto-Save/` |
+| `ARTEM_STORY_v1.prproj` | `01_Media/YTCR01_Arty_Dzis.prproj` |
+| `*.xml` | `02_Exports/xml/` |
+| `Auto-Save/` | `01_Media/` (Premiere создаёт автоматически) |

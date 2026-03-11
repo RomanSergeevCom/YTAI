@@ -7,7 +7,7 @@ YTAI Этап 3: Apply Names
     python apply_names.py --project "/Volumes/RYA Blue/YTCG37_Hadi_Dawani"
 
 Выход:
-    02_Transcripts/02_03_Named/
+    01_Media/Source/Transcription/
     ├── {project}_apply_names_{timestamp}.json
     ├── {project}_apply_names_{timestamp}.txt
     └── {project}_apply_names_{timestamp}.srt
@@ -228,7 +228,7 @@ def main():
         transcript_path = args.transcript
     else:
         transcript_path = find_latest_file(
-            paths["runs_dir"],
+            paths["transcription_dir"],
             f"{project_name}_transcript_*.json"
         )
     
@@ -241,7 +241,7 @@ def main():
         analysis_path = args.analysis
     else:
         analysis_path = find_latest_file(
-            paths["clean_dir"],
+            paths["transcription_dir"],
             f"{project_name}_analyze_speakers_*.json",
             exclude=["_report"]
         )
@@ -300,12 +300,12 @@ def main():
     
     # Очистить старые файлы
     cleanup_old_files(
-        paths["clean_dir"],
+        paths["transcription_dir"],
         f"{project_name}_apply_names_*"
     )
     
     # JSON
-    json_path = paths["clean_dir"] / f"{project_name}_apply_names_{timestamp}.json"
+    json_path = paths["transcription_dir"] / f"{project_name}_apply_names_{timestamp}.json"
     save_named_json(
         segments, speakers, json_path, project_name,
         transcript_path.name, analysis_path.name, speaker_map
@@ -313,12 +313,12 @@ def main():
     logger.info(f"  JSON: {json_path.name}")
     
     # TXT
-    txt_path = paths["clean_dir"] / f"{project_name}_apply_names_{timestamp}.txt"
+    txt_path = paths["transcription_dir"] / f"{project_name}_apply_names_{timestamp}.txt"
     save_named_txt(segments, speakers, txt_path, project_name)
     logger.info(f"  TXT: {txt_path.name}")
     
     # SRT
-    srt_path = paths["clean_dir"] / f"{project_name}_apply_names_{timestamp}.srt"
+    srt_path = paths["transcription_dir"] / f"{project_name}_apply_names_{timestamp}.srt"
     srt_count = save_named_srt(segments, srt_path)
     logger.info(f"  SRT: {srt_path.name} ({srt_count} субтитров)")
     
@@ -326,7 +326,7 @@ def main():
     # Итог
     # ================================================================
     print_header("ГОТОВО", char="=")
-    logger.info(f"Выходная папка: {paths['clean_dir']}")
+    logger.info(f"Выходная папка: {paths['transcription_dir']}")
     logger.info("")
     logger.info("Проверка:")
     logger.info(f"  1. Откройте {txt_path.name} и прочитайте диалог")

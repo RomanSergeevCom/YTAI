@@ -762,35 +762,44 @@ def detect_input(args):
         work_dir = input_path.parent
         subfolder_groups = None
     elif input_path.is_dir():
-        # Check for subfolders with videos (multi-camera mode)
-        subfolder_groups = {}
-        for item in sorted(input_path.iterdir()):
-            if item.is_dir() and not item.name.startswith('.'):
-                sub_vids = sorted([
-                    f for f in item.iterdir()
-                    if f.is_file() and f.suffix.lower() in VIDEO_EXTENSIONS
-                    and not f.name.startswith('.')
-                ])
-                if sub_vids:
-                    subfolder_groups[item.name] = {
-                        "source_dir": item,
-                        "clips": sub_vids,
-                        "clip_ids": [f.stem for f in sub_vids],
-                    }
+        # v3.0 project structure detection: 01_Media/Source/Video/
+        source_video_dir = input_path / "01_Media" / "Source" / "Video"
+        v3_structure = source_video_dir.is_dir()
 
-        if subfolder_groups:
-            # Multi-camera mode: collect all videos from subfolders
-            video_files = []
-            for grp in subfolder_groups.values():
-                video_files.extend(grp["clips"])
-            video_files.sort()
-        else:
-            # Flat mode (backward compat): search root only
-            video_files = find_videos(input_path)
+        if v3_structure:
+            # v3.0: videos in 01_Media/Source/Video/
+            video_files = find_videos(source_video_dir)
             subfolder_groups = None
+        else:
+            # Legacy: check for subfolders with videos (multi-camera mode)
+            subfolder_groups = {}
+            for item in sorted(input_path.iterdir()):
+                if item.is_dir() and not item.name.startswith('.'):
+                    sub_vids = sorted([
+                        f for f in item.iterdir()
+                        if f.is_file() and f.suffix.lower() in VIDEO_EXTENSIONS
+                        and not f.name.startswith('.')
+                    ])
+                    if sub_vids:
+                        subfolder_groups[item.name] = {
+                            "source_dir": item,
+                            "clips": sub_vids,
+                            "clip_ids": [f.stem for f in sub_vids],
+                        }
+
+            if subfolder_groups:
+                # Multi-camera mode: collect all videos from subfolders
+                video_files = []
+                for grp in subfolder_groups.values():
+                    video_files.extend(grp["clips"])
+                video_files.sort()
+            else:
+                # Flat mode (backward compat): search root only
+                video_files = find_videos(input_path)
+                subfolder_groups = None
 
         if not video_files:
-            print_error(f"No video files found in {input_path}")
+            print_error(f"No video files found in {source_video_dir if v3_structure else input_path}")
             sys.exit(1)
         # Check for duplicate clip names (different extensions, same stem)
         stems = [f.stem for f in video_files]
@@ -804,7 +813,11 @@ def detect_input(args):
         print_error(f"Path not found: {input_path}")
         sys.exit(1)
 
-    transcription_dir = work_dir / f"{project_name}_transcription"
+    # v3.0 structure → 01_Media/Source/Transcription/; legacy → {project}_transcription/
+    if input_path.is_dir() and (input_path / "01_Media" / "Source" / "Video").is_dir():
+        transcription_dir = work_dir / "01_Media" / "Source" / "Transcription"
+    else:
+        transcription_dir = work_dir / f"{project_name}_transcription"
 
     return {
         "input_path": input_path,

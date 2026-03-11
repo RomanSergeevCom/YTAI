@@ -279,11 +279,17 @@ def find_per_clip_dir(brief_path: str, transcription_dir: str, project_name: str
     """Locate the per_clip directory.
 
     Search order:
+    0. v3.0: {brief_dir}/../Transcription/per_clip/  (Setup → sibling Transcription)
     1. {brief_dir}/{transcription_dir}/per_clip/
     2. {brief_dir}/../{transcription_dir}/per_clip/  (one level up)
     3. Walk up to find 02_transcribe/{project_name}/{transcription_dir}/per_clip/
     """
     brief_dir = Path(brief_path).parent
+
+    # Option 0: v3.0 structure (brief in Setup/, per_clip in Transcription/)
+    candidate = brief_dir.parent / "Transcription" / "per_clip"
+    if candidate.is_dir():
+        return candidate
 
     # Option 1: sibling of brief
     candidate = brief_dir / transcription_dir / "per_clip"

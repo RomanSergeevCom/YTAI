@@ -64,10 +64,30 @@ INGEST, ASSEMBLY, REVIEW и SCREENS модули **не импортируют �
 {
   "project_name": "YTAI_Edit",
   "media": { "width": 3840, "height": 2160, "fps": 25, "sample_rate": 48000 },
-  "clips": [{ "clip_id": "C5402", "filename": "C5402.MP4", "path": "/abs/...", "duration": 156.0 }],
+  "clips": [{
+    "clip_id": "C5402", "filename": "C5402.MP4", "path": "/abs/...", "duration": 156.0,
+    "dji_audio": [{ "tx": "TX02", "path": "/abs/.../C5402_TX02.wav" }]
+  }],
   "files": { "transcript_json": "...", "transcript_srt": "...", "transcript_xlsx": "..." },
   "source_folder": "/abs/Interview"
 }
+```
+
+### DJI Audio (опционально)
+
+Если у клипов есть поле `dji_audio`, Ingest автоматически:
+1. Импортирует DJI WAV файлы в `00_Source`
+2. Размещает каждый TX на отдельной аудио дорожке: TX01 → A2, TX02 → A3
+3. Камерное аудио остаётся на A1 для референса
+
+DJI WAV — моно 24-bit 48kHz, обрезанные под длину видеоклипа скриптом `01_prepare/03_sync_dji_audio.py`.
+
+| Track | Содержание |
+|-------|-----------|
+| V1 | Видеоклипы |
+| A1 | Камерное аудио (стерео, L=mic1 R=mic2) |
+| A2 | DJI TX01 (моно, оба уха) — опционально |
+| A3 | DJI TX02 (моно, оба уха) — опционально |
 ```
 
 ---

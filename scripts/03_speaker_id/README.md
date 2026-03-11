@@ -13,14 +13,25 @@
 ## Использование
 
 ```bash
-python 00_process_all.py --project "/Volumes/RYA Blue/YT_Project"
-python 00_process_all.py --project "..." --no-pause
+export PROJECT="/Volumes/RYA Blue/YTCG37_Hadi_Dawani"
+
+python 00_process_all.py --project "$PROJECT"
+python 00_process_all.py --project "$PROJECT" --no-pause
 ```
 
 ## Вход → Выход
-- `02_Transcripts/02_01_Runs/*_transcript_*.json`
-- ↓
-- `02_Transcripts/02_02_Clean/speaker_analysis.json`
-- `02_Transcripts/02_02_Clean/*_named.json`
-- `02_Transcripts/02_02_Clean/*.srt` (по клипам)
-- `02_Transcripts/02_02_Clean/*_by_clips.xlsx`
+
+```
+Вход:  01_Media/Source/Transcription/YTCG37_Hadi_Dawani_transcript_*.json
+
+Выход: 01_Media/Source/Transcription/
+       ├── YTCG37_Hadi_Dawani_extract_speakers_*/    (реплики по спикерам)
+       ├── YTCG37_Hadi_Dawani_analyze_speakers_*.json (LLM анализ)
+       ├── YTCG37_Hadi_Dawani_apply_names_*.json      (с именами)
+       ├── YTCG37_Hadi_Dawani_apply_names_*.srt
+       ├── YTCG37_Hadi_Dawani_split_clips_*.xlsx      (таблица по клипам)
+       ├── RYA-FX3-0099.srt                           (SRT для клипа)
+       └── ...
+
+Лог:   01_Media/Source/Setup/logs/YTCG37_Hadi_Dawani_*.log
+```

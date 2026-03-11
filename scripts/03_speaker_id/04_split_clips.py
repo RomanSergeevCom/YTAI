@@ -7,7 +7,7 @@ YTAI Этап 4: Split Clips
     python split_clips.py --project "/Volumes/RYA Blue/YTCG37_Hadi_Dawani"
 
 Выход:
-    02_Transcripts/02_04_ByClips/
+    01_Media/Source/Transcription/
     ├── {project}_split_clips_{timestamp}.xlsx
     ├── RYA-ZVE1-1146.srt
     ├── RYA-ZVE1-1147.srt
@@ -220,7 +220,7 @@ def main():
         named_path = args.named_json
     else:
         named_path = find_latest_file(
-            paths["clean_dir"],
+            paths["transcription_dir"],
             f"{project_name}_apply_names_*.json"
         )
     
@@ -275,13 +275,13 @@ def main():
     
     # Очистить старые файлы (кроме backup)
     old_count = cleanup_old_files(
-        paths["clean_dir"],
+        paths["transcription_dir"],
         f"{project_name}_split_clips_*"
     )
     
     # Также очистить старые SRT
     old_srts = cleanup_old_files(
-        paths["clean_dir"],
+        paths["transcription_dir"],
         "*.srt"
     )
     
@@ -290,7 +290,7 @@ def main():
     
     # XLSX
     if HAS_OPENPYXL:
-        xlsx_path = paths["clean_dir"] / f"{project_name}_split_clips_{timestamp}.xlsx"
+        xlsx_path = paths["transcription_dir"] / f"{project_name}_split_clips_{timestamp}.xlsx"
         mapped = save_clips_xlsx(segments, clips, xlsx_path, logger)
         logger.info(f"  XLSX: {xlsx_path.name} ({mapped} сегментов)")
     else:
@@ -300,14 +300,14 @@ def main():
     logger.info("")
     logger.info("Создание SRT для каждого клипа...")
     
-    srt_count = save_all_clip_srts(segments, clips, paths["clean_dir"], logger)
+    srt_count = save_all_clip_srts(segments, clips, paths["transcription_dir"], logger)
     logger.info(f"  Создано {srt_count} SRT файлов")
     
     # ================================================================
     # Итог
     # ================================================================
     print_header("ГОТОВО", char="=")
-    logger.info(f"Выходная папка: {paths['clean_dir']}")
+    logger.info(f"Выходная папка: {paths['transcription_dir']}")
     logger.info("")
     logger.info(f"  Клипов: {len(clips)}")
     logger.info(f"  SRT файлов: {srt_count}")

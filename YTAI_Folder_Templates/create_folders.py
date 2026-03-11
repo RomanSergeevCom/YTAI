@@ -27,7 +27,7 @@ TYPE2_TEMPLATE = os.path.join(SCRIPT_DIR, "Type2_Production")
 
 def write_log(base_path: str, folder_type: str, folder_name: str) -> str:
     """Write detailed log file with timestamp"""
-    log_dir = os.path.join(base_path, "99_Pipeline", "logs")
+    log_dir = os.path.join(base_path, "01_Media", "Source", "Setup", "logs")
     os.makedirs(log_dir, exist_ok=True)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -62,16 +62,18 @@ NEXT STEPS
 """
     
     if "Type 1" in folder_type:
-        log_content += """1. Copy camera files to: 01_Source/video/
-2. Copy audio files to:  01_Source/audio/
-3. Run transcription → 02_Brief/transcription.xlsx
+        log_content += """1. Copy camera MP4 to: 01_Media/Source/Video/
+2. Copy DJI WAV to:    99_Pipeline/DJI_Audio/
+3. Copy LUT to:         01_Media/Source/LUT/
+4. Run pipeline → 01_Media/Source/Transcription/
 """
     else:
         log_content += f"""1. Rename PROJECT_NAME.gdoc → {folder_name}.gdoc
-2. Rename 01_Source/PROJECT_NAME.prproj → 01_Source/{folder_name}.prproj
-3. Copy Type 1 footage folders to: 01_Source/
-4. Add music/graphics to: 01_Source/assets/
-5. Generate edit brief → 02_Brief/
+2. Rename PROJECT_NAME_Source.prproj → {folder_name}_Source.prproj
+3. Rename PROJECT_NAME.prproj → {folder_name}.prproj
+4. Copy camera MP4 to: 01_Media/Source/Video/
+5. Copy DJI WAV to: 99_Pipeline/DJI_Audio/
+6. Add music/graphics to: 01_Media/Assets/
 """
     
     log_content += f"""
@@ -154,11 +156,12 @@ def copy_template(template_path: str, dest_path: str, folder_type: str) -> None:
 ✅ Type 1 (Footage) ready!
 
 📋 Next steps:
-   1. Copy camera files to: 01_Source/video/
-   2. Copy audio files to:  01_Source/audio/
-   3. Run transcription → 02_Brief/transcription.xlsx
+   1. Copy camera MP4 to: 01_Media/Source/Video/
+   2. Copy DJI WAV to:    99_Pipeline/DJI_Audio/
+   3. Copy LUT to:         01_Media/Source/LUT/
+   4. Run pipeline → 01_Media/Source/Transcription/
 
-📝 Log: 99_Pipeline/logs/{log_filename}
+📝 Log: 01_Media/Source/Setup/logs/{log_filename}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """)
     else:
@@ -168,12 +171,13 @@ def copy_template(template_path: str, dest_path: str, folder_type: str) -> None:
 
 📋 Next steps:
    1. Rename PROJECT_NAME.gdoc → {folder_name}.gdoc
-   2. Rename 01_Source/PROJECT_NAME.prproj → 01_Source/{folder_name}.prproj
-   3. Copy Type 1 footage folders to: 01_Source/
-   4. Add music/graphics to: 01_Source/assets/
-   5. Generate edit brief → 02_Brief/
+   2. Rename PROJECT_NAME_Source.prproj → {folder_name}_Source.prproj
+   3. Rename PROJECT_NAME.prproj → {folder_name}.prproj
+   4. Copy camera MP4 to: 01_Media/Source/Video/
+   5. Copy DJI WAV to: 99_Pipeline/DJI_Audio/
+   6. Add music/graphics to: 01_Media/Assets/
 
-📝 Log: 99_Pipeline/logs/{log_filename}
+📝 Log: 01_Media/Source/Setup/logs/{log_filename}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """)
 
@@ -194,20 +198,24 @@ USAGE (Manual copy):
   cp -r Type2_Production "/path/to/YTRF01_My_Video"
 
 TYPE 1 (Footage) — Single shooting day:
-  01_Source/video/    Camera files
-  01_Source/audio/    External audio
-  02_Brief/           Transcription & analysis
-  03_Exports/         Test exports
-  99_Pipeline/logs/   System logs
+  01_Media/Source/Video/          Camera MP4
+  01_Media/Source/Audio/          DJI synced WAV
+  01_Media/Source/Transcription/  Transcripts & per-clip data
+  01_Media/Source/Setup/logs/     Script logs
+  01_Media/Source/LUT/            Color correction
+  02_Exports/                     Test exports
+  99_Pipeline/DJI_Audio/          DJI original WAV (archive)
 
 TYPE 2 (Production) — Full project:
-  PROJECT_NAME.gdoc   Google Doc link (rename to your project)
-  01_Source/          Footage + assets + PROJECT_NAME.prproj
-  02_Brief/           Edit brief, XML, chapters
-  03_Exports/         Rendered videos
-  04_Thumbnail/       Thumbnail project
-  YouTube/            Final files for upload
-  99_Pipeline/logs/   System logs
+  PROJECT_NAME.gdoc               Google Doc link (rename)
+  01_Media/Source/                 Pipeline-generated files
+  01_Media/Assets/                 Music, SFX, Graphics, etc.
+  01_Media/{project}.prproj       Working Premiere project
+  02_Exports/                     Rendered videos
+  03_Shorts/                      Short clips
+  04_Thumbnail/                   Thumbnail project
+  YouTube/                        Final files for upload
+  99_Pipeline/DJI_Audio/          DJI original WAV (archive)
 
 TEMPLATES LOCATION:
   {templates_dir}

@@ -9,8 +9,9 @@ from .paths import (
     # Константы
     VIDEO_DIR,
     AUDIO_DIR,
-    TRANSCRIPTS_RUNS_DIR,
-    TRANSCRIPTS_CLEAN_DIR,
+    TRANSCRIPTION_DIR,
+    SETUP_DIR,
+    DJI_PIPELINE_DIR,
     LOGS_DIR,
     VIDEO_EXTS,
     # Функции
@@ -63,8 +64,9 @@ __all__ = [
     # Paths
     "VIDEO_DIR",
     "AUDIO_DIR",
-    "TRANSCRIPTS_RUNS_DIR",
-    "TRANSCRIPTS_CLEAN_DIR",
+    "TRANSCRIPTION_DIR",
+    "SETUP_DIR",
+    "DJI_PIPELINE_DIR",
     "LOGS_DIR",
     "VIDEO_EXTS",
     "get_project_paths",

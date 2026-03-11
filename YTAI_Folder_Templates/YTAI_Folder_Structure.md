@@ -1,4 +1,4 @@
-# YTAI Project Folder Structure
+# YTAI Project Folder Structure v3.0
 
 ## Quick Start
 
@@ -42,67 +42,78 @@ Single shooting day. For reviewing what was shot.
 
 ```
 Type1_Footage/
-├── 01_Source/
-│   ├── video/               # Camera files (*.MP4)
-│   └── audio/               # External audio (*.WAV)
-├── 02_Brief/
-│   ├── transcription.xlsx
-│   └── analysis.md
-├── 03_Exports/
+├── 01_Media/
+│   └── Source/
+│       ├── Video/               # Camera files (*.MP4)
+│       ├── Audio/               # DJI synced WAV (pipeline creates)
+│       ├── Transcription/       # Transcripts & per-clip data
+│       ├── Setup/
+│       │   └── logs/            # Script execution logs
+│       └── LUT/                 # Color correction (*.cube)
+├── 02_Exports/
 │   └── *.mp4
 └── 99_Pipeline/
-    └── logs/
+    └── DJI_Audio/               # Original DJI TX/MIC WAV (archive)
 ```
 
 ---
 
 ## Type 2: Production
 
-Full project. Type 1 folders go inside `01_Source/`.
+Full project. Type 1 folders go inside `01_Media/Source/`.
 
 ```
 Type2_Production/
-├── PROJECT_NAME.gdoc            # Rename to: {YourProject}.gdoc
+├── PROJECT_NAME.gdoc                    # Rename to: {YourProject}.gdoc
 │
-├── 01_Source/
-│   ├── PROJECT_NAME.prproj      # Rename to: {YourProject}.prproj
-│   ├── 20250124_Interview/      # Copy Type 1 folders here
-│   │   ├── video/
-│   │   └── audio/
-│   └── assets/
-│       ├── music/
-│       ├── fonts/
-│       ├── graphics/
-│       ├── sfx/
-│       └── stock/
+├── 01_Media/
+│   ├── Source/                          # PIPELINE CREATES
+│   │   ├── Video/                       # Camera MP4 (from SD card)
+│   │   ├── Audio/                       # DJI synced WAV (pipeline creates)
+│   │   ├── Transcription/              # Transcripts, per_clip/, FULL_AUDIO
+│   │   │   └── per_clip/{clip_id}/     # Per-clip transcripts & SRT
+│   │   ├── Setup/                       # UXP control center
+│   │   │   ├── {project}_ingest.json   # UXP Ingest entry point
+│   │   │   ├── {project}_edit_brief.json
+│   │   │   ├── ScreenCues/             # PNG overlays
+│   │   │   └── logs/                   # All script logs
+│   │   ├── LUT/                        # Color correction (*.cube)
+│   │   └── PROJECT_NAME_Source.prproj  # Rename to: {project}_Source.prproj
+│   │
+│   ├── Assets/                          # EDITOR ADDS
+│   │   ├── Music/
+│   │   ├── SFX/
+│   │   ├── Graphics/
+│   │   ├── Stock/
+│   │   └── Fonts/
+│   │
+│   └── PROJECT_NAME.prproj             # Rename to: {project}.prproj
 │
-├── 02_Brief/
-│   ├── transcription.xlsx
-│   ├── edit_brief.xlsx
-│   ├── edit_brief.md
-│   ├── premiere_import.xml
-│   ├── chapters.txt
-│   └── description.txt
-│
-├── 03_Exports/
+├── 02_Exports/
 │   └── *.mp4
 │
+├── 03_Shorts/
+│
 ├── 04_Thumbnail/
-│   ├── thumbnail.psd
-│   ├── thumbnail.png
-│   └── assets/
+│   ├── prompts/
+│   ├── drafts/
+│   └── thumbnail.png
 │
 ├── YouTube/
 │   ├── video.mp4
-│   └── thumbnail.png
+│   ├── thumbnail.png
+│   ├── description.txt
+│   ├── chapters.txt
+│   └── tags.txt
 │
 └── 99_Pipeline/
-    └── logs/
+    └── DJI_Audio/                       # Original DJI TX/MIC WAV (archive)
 ```
 
 **After copying, rename:**
-1. `PROJECT_NAME.gdoc` → `{YourProject}.gdoc`
-2. `01_Source/PROJECT_NAME.prproj` → `01_Source/{YourProject}.prproj`
+1. `PROJECT_NAME.gdoc` -> `{YourProject}.gdoc`
+2. `01_Media/Source/PROJECT_NAME_Source.prproj` -> `01_Media/Source/{YourProject}_Source.prproj`
+3. `01_Media/PROJECT_NAME.prproj` -> `01_Media/{YourProject}.prproj`
 
 ---
 
@@ -110,27 +121,33 @@ Type2_Production/
 
 ```
 Type 1                                Type 2
-──────                                ──────
+------                                ------
 
-Interview/01_Source/
-  ├── video/*.MP4  ───┐
-  └── audio/*.WAV  ───┤
-                      ├──→  Project/01_Source/
-Broll/01_Source/      │       ├── Project.prproj
-  └── video/*.MP4  ───┘       ├── Interview/
-                              ├── Broll/
-                              └── assets/
+01_Media/Source/
+  ├── Video/*.MP4  ──────┐
+  ├── Audio/*.WAV  ──────┤
+  └── LUT/*.cube  ──────┤
+                         ├──>  01_Media/
+                         │       ├── Source/
+                         │       │   ├── Video/
+99_Pipeline/             │       │   ├── Audio/
+  └── DJI_Audio/*.wav ──┘       │   ├── Transcription/
+                                │   ├── Setup/
+                                │   └── {project}_Source.prproj
+                                ├── Assets/
+                                └── {project}.prproj
 ```
 
 **Steps:**
-1. Film → Copy `Type1_Footage` → rename → add files to `01_Source/video/`
-2. Transcribe → `02_Brief/transcription.xlsx`
-3. Approve → Copy `Type2_Production` → rename folder
-4. Rename `PROJECT_NAME.gdoc` and `PROJECT_NAME.prproj`
-5. Copy footage → `01_Source/{footage_folders}/`
-6. Edit → Export to `03_Exports/`
-7. Thumbnail → `04_Thumbnail/`
-8. Publish → `YouTube/`
+1. Film -> Copy `Type1_Footage` -> rename -> add MP4 to `01_Media/Source/Video/`
+2. Copy DJI WAV to `99_Pipeline/DJI_Audio/`
+3. Run pipeline -> `01_Media/Source/Transcription/`
+4. Approve -> Copy `Type2_Production` -> rename folder
+5. Rename `.gdoc`, `_Source.prproj`, `.prproj`
+6. Copy footage -> `01_Media/Source/Video/`
+7. Edit -> Export to `02_Exports/`
+8. Thumbnail -> `04_Thumbnail/`
+9. Publish -> `YouTube/`
 
 ---
 
@@ -138,24 +155,20 @@ Broll/01_Source/      │       ├── Project.prproj
 
 | # | Type 1 | Type 2 |
 |---|--------|--------|
-| — | — | `PROJECT_NAME.gdoc` (rename) |
-| 01 | `01_Source/video/` | `01_Source/{footage}/` |
-| 01 | `01_Source/audio/` | `01_Source/assets/` |
-| 01 | — | `01_Source/PROJECT_NAME.prproj` (rename) |
-| 02 | `02_Brief/` | `02_Brief/` |
-| 03 | `03_Exports/` | `03_Exports/` |
-| 04 | — | `04_Thumbnail/` |
-| — | — | `YouTube/` |
-| 99 | `99_Pipeline/logs/` | `99_Pipeline/logs/` |
-
----
-
-## 99_Pipeline Folder
-
-System folder for YTAI automation:
-- `logs/` — Script execution logs
-- `project.json` — Project metadata (auto-generated)
-- Other automation files
+| - | - | `PROJECT_NAME.gdoc` (rename) |
+| 01 | `01_Media/Source/Video/` | `01_Media/Source/Video/` |
+| 01 | `01_Media/Source/Audio/` | `01_Media/Source/Audio/` |
+| 01 | `01_Media/Source/Transcription/` | `01_Media/Source/Transcription/` |
+| 01 | `01_Media/Source/Setup/` | `01_Media/Source/Setup/` |
+| 01 | `01_Media/Source/LUT/` | `01_Media/Source/LUT/` |
+| 01 | - | `01_Media/Source/*_Source.prproj` (rename) |
+| 01 | - | `01_Media/Assets/` |
+| 01 | - | `01_Media/*.prproj` (rename) |
+| 02 | `02_Exports/` | `02_Exports/` |
+| 03 | - | `03_Shorts/` |
+| 04 | - | `04_Thumbnail/` |
+| - | - | `YouTube/` |
+| 99 | `99_Pipeline/DJI_Audio/` | `99_Pipeline/DJI_Audio/` |
 
 ---
 
@@ -163,7 +176,7 @@ System folder for YTAI automation:
 
 When using the script, logs are created automatically:
 ```
-99_Pipeline/logs/20250125_143022_folder_created.log
+01_Media/Source/Setup/logs/20250125_143022_folder_created.log
 ```
 
 ---
@@ -182,7 +195,4 @@ python /Users/romansergeev/YTAI/YTAI_Folder_Templates/create_folders.py -p "/pat
 
 # Type 2 (Manual)
 cp -r /Users/romansergeev/YTAI/YTAI_Folder_Templates/Type2_Production "/path"
-
-# Copy Type 1 into Type 2
-cp -r "/Footage/01_Source" "/Project/01_Source/Footage"
 ```

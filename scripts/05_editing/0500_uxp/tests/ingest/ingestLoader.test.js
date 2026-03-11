@@ -154,4 +154,46 @@ describe('generateSummary', () => {
     const summary = generateSummary(ingest);
     assert.ok(summary.includes('SRT: yes'));
   });
+
+  it('includes DJI audio info when present', () => {
+    const data = JSON.parse(JSON.stringify(sampleJSON));
+    data.clips[0].dji_audio = [
+      { tx: 'TX02', path: '/abs/C5402_TX02.wav' }
+    ];
+    data.clips[1].dji_audio = [
+      { tx: 'TX01', path: '/abs/C5403_TX01.wav' },
+      { tx: 'TX02', path: '/abs/C5403_TX02.wav' }
+    ];
+    const ingest = parseIngest(JSON.stringify(data));
+    const summary = generateSummary(ingest);
+    assert.ok(summary.includes('DJI audio:'));
+    assert.ok(summary.includes('2/3'));
+    assert.ok(summary.includes('TX01'));
+    assert.ok(summary.includes('TX02'));
+  });
+
+  it('omits DJI audio line when not present', () => {
+    const ingest = parseIngest(JSON.stringify(sampleJSON));
+    const summary = generateSummary(ingest);
+    assert.ok(!summary.includes('DJI audio:'));
+  });
+});
+
+describe('parseIngest — dji_audio', () => {
+  it('preserves dji_audio field on clips', () => {
+    const data = JSON.parse(JSON.stringify(sampleJSON));
+    data.clips[0].dji_audio = [
+      { tx: 'TX02', path: '/abs/C5402_TX02.wav' }
+    ];
+    const ingest = parseIngest(JSON.stringify(data));
+    assert.ok(ingest.clips[0].dji_audio);
+    assert.equal(ingest.clips[0].dji_audio.length, 1);
+    assert.equal(ingest.clips[0].dji_audio[0].tx, 'TX02');
+    assert.equal(ingest.clips[0].dji_audio[0].path, '/abs/C5402_TX02.wav');
+  });
+
+  it('accepts clips without dji_audio', () => {
+    const ingest = parseIngest(JSON.stringify(sampleJSON));
+    assert.equal(ingest.clips[0].dji_audio, undefined);
+  });
 });

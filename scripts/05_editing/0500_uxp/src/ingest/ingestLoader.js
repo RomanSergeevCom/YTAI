@@ -114,6 +114,14 @@ function generateSummary(ingest) {
     `Source: ${ingest.source_folder || 'N/A'}`
   ];
 
+  // DJI audio info
+  const djiCount = ingest.clips.filter(c => c.dji_audio && c.dji_audio.length > 0).length;
+  if (djiCount > 0) {
+    const txIds = new Set();
+    ingest.clips.forEach(c => (c.dji_audio || []).forEach(d => txIds.add(d.tx)));
+    lines.push(`DJI audio: ${djiCount}/${ingest.clips.length} clips (${[...txIds].join(', ')})`);
+  }
+
   return lines.join('\n');
 }
 

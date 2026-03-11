@@ -12,7 +12,7 @@
 | `06_generate_visual_brief.py` | Сводка визуального анализа |
 
 ## Вход → Выход
-- `01_Raw/ProjectName.mkv`
+- `01_Media/Source/Transcription/YTCG37_Hadi_Dawani.mkv`
 - ↓
 - `03_Analysis/frames/*.jpg`
 - `03_Analysis/scenes.json`

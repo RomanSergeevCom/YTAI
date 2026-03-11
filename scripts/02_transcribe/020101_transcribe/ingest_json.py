@@ -81,6 +81,17 @@ def generate(transcript_json_path: Path) -> Path:
             "premiere_transcript": premiere_abs,
         })
 
+    # Check for synced DJI audio files in 01_Media/Source/Audio/
+    synced_dir = work_dir / "01_Media" / "Source" / "Audio"
+    if synced_dir.exists():
+        for clip in clips:
+            dji_files = sorted(synced_dir.glob(f"{clip['clip_id']}_TX*.wav"))
+            if dji_files:
+                clip["dji_audio"] = [
+                    {"tx": f.stem.split("_")[-1], "path": str(f.resolve())}
+                    for f in dji_files
+                ]
+
     # Files block with absolute paths
     files = {
         "transcript_json": str(transcript_json_path),
@@ -103,7 +114,13 @@ def generate(transcript_json_path: Path) -> Path:
         "source_folder": str(work_dir),
     }
 
-    ingest_path = transcript_json_path.parent / f"{project_name}_ingest.json"
+    # v3.0 structure: ingest.json → Setup/; legacy: next to transcript
+    if transcript_json_path.parent.name == "Transcription":
+        setup_dir = transcript_json_path.parent.parent / "Setup"
+        setup_dir.mkdir(parents=True, exist_ok=True)
+        ingest_path = setup_dir / f"{project_name}_ingest.json"
+    else:
+        ingest_path = transcript_json_path.parent / f"{project_name}_ingest.json"
     with open(ingest_path, "w") as f:
         json.dump(ingest, f, indent=2, ensure_ascii=False)
 

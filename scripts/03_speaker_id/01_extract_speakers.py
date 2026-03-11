@@ -7,7 +7,7 @@ YTAI Этап 1: Extract Speakers
     python extract_speakers.py --project "/Volumes/RYA Blue/YTCG37_Hadi_Dawani"
 
 Выход:
-    02_Transcripts/02_02_Speakers/
+    01_Media/Source/Transcription/
     ├── {project}_extract_speakers_{timestamp}/
     │   ├── _SUMMARY.txt
     │   ├── SPEAKER_00.txt
@@ -289,7 +289,7 @@ def main():
         transcript_path = args.transcript
     else:
         transcript_path = find_latest_file(
-            paths["runs_dir"],
+            paths["transcription_dir"],
             f"{project_name}_transcript_*.json"
         )
     
@@ -338,12 +338,12 @@ def main():
     # ================================================================
     logger.info("")
     
-    output_dir = paths["clean_dir"] / f"{project_name}_extract_speakers_{timestamp}"
-    srt_dir = paths["clean_dir"] / f"{project_name}_extract_speakers_{timestamp}_srt"
+    output_dir = paths["transcription_dir"] / f"{project_name}_extract_speakers_{timestamp}"
+    srt_dir = paths["transcription_dir"] / f"{project_name}_extract_speakers_{timestamp}_srt"
     
     # Очистить старые файлы
     old_count = cleanup_old_files(
-        paths["clean_dir"],
+        paths["transcription_dir"],
         f"{project_name}_extract_speakers_*"
     )
     if old_count > 0:

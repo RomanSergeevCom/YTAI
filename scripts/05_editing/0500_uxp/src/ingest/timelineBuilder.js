@@ -364,11 +364,71 @@ async function buildIngestSequence(project, ingest, sourceBin, sequenceBin, logg
 
   logger.info(`Sequence "${sequenceName}" complete: ${placedCount}/${clips.length} clip(s) placed, total ${cumulativePosition}s`);
 
+  // Step 4: Import and place DJI audio on A2/A3 (if available)
+  let djiPlaced = 0;
+  const djiClips = clips.filter(c => c.dji_audio && c.dji_audio.length > 0);
+  if (djiClips.length > 0) {
+    // Collect all DJI audio files
+    const allDjiFiles = [];
+    for (const clip of djiClips) {
+      for (const dji of clip.dji_audio) {
+        allDjiFiles.push(dji.path);
+      }
+    }
+
+    logger.info(`Importing ${allDjiFiles.length} DJI audio file(s)`);
+    try {
+      await project.importFiles(allDjiFiles, true, sourceBin || null, false);
+    } catch (djiImportErr) {
+      logger.error(`DJI audio import failed: ${djiImportErr.message}`);
+    }
+
+    // Place each DJI WAV on A2 (first TX) / A3 (second TX)
+    let djiInsertTime = 0;
+    for (const clip of clips) {
+      if (clip.dji_audio && clip.dji_audio.length > 0) {
+        for (let i = 0; i < clip.dji_audio.length; i++) {
+          const dji = clip.dji_audio[i];
+          const audioTrack = 1 + i; // A2=1, A3=2
+          const djiStem = dji.path.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '');
+          const djiItem = await findProjectItemByName(project, djiStem, logger);
+          if (!djiItem) {
+            logger.warn(`DJI audio not found in project: ${djiStem}`);
+            continue;
+          }
+
+          const insertTime = ppro.TickTime.createWithSeconds(djiInsertTime);
+          try {
+            project.lockedAccess(() => {
+              project.executeTransaction((compoundAction) => {
+                const action = seqEditor.createInsertProjectItemAction(
+                  djiItem,
+                  insertTime,
+                  -1,         // no video track
+                  audioTrack, // A2 or A3
+                  true
+                );
+                compoundAction.addAction(action);
+              }, `Insert DJI ${dji.tx} for ${clip.clip_id}`);
+            });
+            djiPlaced++;
+            logger.info(`DJI ${dji.tx}: "${djiStem}" → A${audioTrack + 1} @ ${djiInsertTime}s`);
+          } catch (djiErr) {
+            logger.error(`Failed to place DJI audio "${djiStem}": ${djiErr.message}`);
+          }
+        }
+      }
+      djiInsertTime = Math.round((djiInsertTime + clip.duration) * 10) / 10;
+    }
+    logger.info(`DJI audio: ${djiPlaced} file(s) placed on timeline`);
+  }
+
   return {
     sequence,
     sequenceMethod,
     seqSettings,
     clipCount: placedCount,
+    djiCount: djiPlaced,
     totalDuration: cumulativePosition
   };
 }

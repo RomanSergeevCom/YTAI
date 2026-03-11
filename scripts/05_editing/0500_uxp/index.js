@@ -287,7 +287,8 @@ async function buildIngest() {
         srtImported: trResult.srtImported,
         clipCount: result.clipCount,
         seqSettings: result.seqSettings,
-        lumetriApplied
+        lumetriApplied,
+        djiCount: result.djiCount || 0
       });
     }
 
@@ -340,6 +341,9 @@ async function validateIngestBuild(sequence, ingest, br) {
   // Lumetri
   if (br.lumetriApplied > 0) ok('Lumetri: ' + br.lumetriApplied + ' clip(s)');
   else warn('Lumetri: not applied');
+
+  // DJI audio
+  if (br.djiCount > 0) ok('DJI audio: ' + br.djiCount + ' file(s) on A2/A3');
 
   panel.innerHTML = lines.join('');
   panel.style.display = 'block';

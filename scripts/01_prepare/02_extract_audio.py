@@ -11,13 +11,13 @@ YTAI: Извлечение аудио из видео клипов
     python 02_extract_audio.py --project "/Volumes/RYA Blue/YTCG37_Hadi_Dawani" --dry-run
 
 Результат:
-    01_Raw/01_02_Audio/
-    ├── RYA-ZVE1-1146_AUDIO.wav      (индивидуальный)
-    ├── RYA-ZVE1-1147_AUDIO.wav      (индивидуальный)
+    01_Media/Source/Transcription/
+    ├── RYA-FX3-0099_AUDIO.wav                    (аудио клипа)
+    ├── RYA-FX3-0100_AUDIO.wav                    (аудио клипа)
     ├── ...
-    └── YTCG37_Hadi_Dawani_FULL_AUDIO.wav  (склеенный для транскрипции)
+    └── YTCG37_Hadi_Dawani_FULL_AUDIO.wav         (склеенный для транскрипции)
 
-    08_Logs/
+    01_Media/Source/Setup/logs/
     └── YTCG37_Hadi_Dawani_extract_audio_20260113_120000.log
 """
 from __future__ import annotations
@@ -38,10 +38,10 @@ from pathlib import Path
 VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".mts", ".avi", ".mkv",
               ".MP4", ".MOV", ".M4V", ".MTS", ".AVI", ".MKV"}
 
-CLIPS_SUBDIR = "01_Raw/01_01_Video"
-AUDIO_SUBDIR = "01_Raw/01_02_Audio"
+CLIPS_SUBDIR = "01_Media/Source/Video"
+AUDIO_SUBDIR = "01_Media/Source/Transcription"
 TMP_SUBDIR = "09_Tmp"
-LOGS_SUBDIR = "08_Logs"
+LOGS_SUBDIR = "01_Media/Source/Setup/logs"
 
 MIN_OK_BYTES = 100_000  # 100KB минимум для валидного WAV
 
