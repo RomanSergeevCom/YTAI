@@ -1,0 +1,27 @@
+=== YTAI SCREENS — Log ===
+Version: 1.9.1
+Pipeline: SCREENS
+Project: YTAI_Edit
+Project Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit.prproj
+Brief Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+Report Generated: 2026-03-10 17:24:01
+Total Entries: 18
+--------------------------------------
+[2026-03-10 17:23:59] [INFO] === DEBUG SCREENS ===
+[2026-03-10 17:23:59] [INFO] Building Assembly sequence (prerequisite)...
+[2026-03-10 17:24:01] [INFO] Assembly built. Starting Screen Cues...
+[2026-03-10 17:24:01] [INFO] === SCREEN CUES BUILD START ===
+[2026-03-10 17:24:01] [INFO] Screens: 7, Project: YTAI_Edit
+[2026-03-10 17:24:01] [DEBUG]   scr_001: type=chapter_title, seg=seg_001, title="Dubai Property Rights"
+[2026-03-10 17:24:01] [DEBUG]   scr_002: type=lower_third, seg=seg_001, title="Speaker 1"
+[2026-03-10 17:24:01] [DEBUG]   scr_003: type=half_overlay, seg=seg_003, title="Government Strategy"
+[2026-03-10 17:24:01] [DEBUG]   scr_004: type=three_fifths_overlay, seg=seg_004, title="UAE Forward Planning"
+[2026-03-10 17:24:01] [DEBUG]   scr_005: type=list, seg=seg_005, title="The Camping Trip"
+[2026-03-10 17:24:01] [DEBUG]   scr_006: type=info_graphic, seg=seg_005, title="Client Relationships"
+[2026-03-10 17:24:01] [DEBUG]   scr_007: type=product_shot, seg=seg_006, title="Dubai Real Estate Services"
+[2026-03-10 17:24:01] [INFO] === Step 1: Finding Assembly sequence ===
+[2026-03-10 17:24:01] [DEBUG] Looking for: "YTAI_Edit_2_Assembly"
+[2026-03-10 17:24:01] [ERROR] SCREEN CUES BUILD FAILED: undefined
+[2026-03-10 17:24:01] [INFO] Project saved
+[2026-03-10 17:24:01] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/
+[2026-03-10 17:24:01] [DEBUG] Found logs folder: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/logs

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="index.js"></script>
+  </head>
+  <style>
+    :root {
+      --bg-primary: #0a1628;
+      --bg-secondary: #132035;
+      --bg-tertiary: #1a2a45;
+      --text-primary: #e0e0e0;
+      --text-secondary: #8899aa;
+      --accent: #c8e64a;
+      --accent-hover: #b8d63a;
+      --success: #c8e64a;
+      --warning: #ff9800;
+      --error: #f44336;
+      --border: #1e3355;
+      --section-border: #2a4a6a;
+    }
+
+    body {
+      font-family: "Adobe Clean", system-ui, sans-serif;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      padding: 10px 14px;
+      overflow-y: auto;
+      height: 100vh;
+      margin: 0;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+
+    *, *::before, *::after { box-sizing: inherit; }
+
+    /* === Branding === */
+    .branding {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-align: right;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .branding-name {
+      color: var(--accent);
+      font-weight: 600;
+      letter-spacing: 0.8px;
+    }
+
+    /* === Section dividers === */
+    .section-header {
+      display: flex;
+      align-items: center;
+      margin: 16px 0 10px 0;
+      gap: 8px;
+    }
+
+    .section-header::before,
+    .section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--section-border);
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .section-content {
+      margin-bottom: 6px;
+    }
+
+    /* === Status === */
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--text-primary);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-dot.ready { background: var(--success); }
+    .status-dot.waiting { background: var(--warning); }
+    .status-dot.error { background: var(--error); }
+
+    /* === Buttons === */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    sp-button {
+      height: 30px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    /* === Info panels === */
+    .info-text {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      white-space: pre-wrap;
+    }
+
+    .summary-panel {
+      background: var(--bg-secondary);
+      padding: 8px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      display: none;
+    }
+
+    /* === Progress === */
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--bg-tertiary);
+      border-radius: 2px;
+      margin-bottom: 4px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 2px;
+    }
+
+    .progress-text {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      display: none;
+    }
+
+    /* === Validation === */
+    .validation-panel {
+      background: var(--bg-secondary);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      margin-top: 8px;
+      font-size: 11px;
+      display: none;
+    }
+
+    .val-line { padding: 2px 0; color: var(--text-primary); }
+
+    /* === Log panel === */
+    .log-header {
+      display: flex;
+      align-items: center;
+      margin: 16px 0 6px 0;
+      gap: 8px;
+    }
+
+    .log-header::before,
+    .log-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--section-border);
+    }
+
+    .log-panel {
+      background: #060e1a;
+      color: #c0c0c0;
+      font-family: "Menlo", "Monaco", "Consolas", monospace;
+      font-size: 10px;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      height: 140px;
+      overflow-y: auto;
+      margin-bottom: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .log-info { color: #7eb8da; }
+    .log-warn { color: #ffb74d; }
+    .log-error { color: #ef5350; }
+    .log-debug { color: #556677; }
+
+    .clear-log-btn {
+      cursor: pointer;
+      font-size: 10px;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    .clear-log-btn:hover { color: var(--text-primary); }
+  </style>
+
+  <body>
+
+    <!-- ═══════════ BRANDING ═══════════ -->
+    <div class="branding">v1.9.3 · Powered by <span class="branding-name">RYA.AE</span></div>
+
+    <!-- ═══════════ INGEST SECTION ═══════════ -->
+    <div class="section-header">
+      <span class="section-label">Ingest</span>
+    </div>
+
+    <div class="section-content">
+      <div class="status-row">
+        <span class="status-dot waiting" id="ingest-status-dot"></span>
+        <span id="ingest-status-text">Waiting for ingest JSON...</span>
+      </div>
+
+      <div class="btn-row">
+        <sp-button id="btn-load-ingest">Load Ingest JSON</sp-button>
+        <sp-button id="btn-debug-ingest">Debug Ingest</sp-button>
+      </div>
+
+      <div class="info-text" id="ingest-file-info"></div>
+      <div class="summary-panel" id="ingest-summary"></div>
+
+      <div class="progress-bar" id="ingest-progress-bar"><div class="progress-fill" id="ingest-progress-fill"></div></div>
+      <div class="progress-text" id="ingest-progress-text"></div>
+
+      <div class="btn-row">
+        <sp-button id="btn-build-ingest" disabled>Build Ingest</sp-button>
+        <sp-button id="btn-copy-logs">Copy Logs Path</sp-button>
+      </div>
+
+      <div class="validation-panel" id="ingest-validation"></div>
+    </div>
+
+    <!-- ═══════════ ASSEMBLY SECTION ═══════════ -->
+    <div class="section-header">
+      <span class="section-label">Assembly</span>
+    </div>
+
+    <div class="section-content">
+      <div class="status-row">
+        <span class="status-dot waiting" id="assembly-status-dot"></span>
+        <span id="assembly-status-text">Waiting for edit brief...</span>
+      </div>
+
+      <div class="btn-row">
+        <sp-button id="btn-load-brief">Load Edit Brief</sp-button>
+        <sp-button id="btn-debug-assembly">Debug Assembly</sp-button>
+      </div>
+
+      <div class="info-text" id="assembly-file-info"></div>
+      <div class="summary-panel" id="assembly-summary"></div>
+
+      <div class="progress-bar" id="assembly-progress-bar"><div class="progress-fill" id="assembly-progress-fill"></div></div>
+      <div class="progress-text" id="assembly-progress-text"></div>
+
+      <div class="btn-row">
+        <sp-button id="btn-build-assembly" disabled>Build Assembly</sp-button>
+        <sp-button id="btn-copy-assembly-logs">Copy Logs Path</sp-button>
+      </div>
+
+      <div class="validation-panel" id="assembly-validation"></div>
+    </div>
+
+    <!-- ═══════════ REVIEW SECTION ═══════════ -->
+    <div class="section-header">
+      <span class="section-label">Review</span>
+    </div>
+
+    <div class="section-content">
+      <div class="status-row">
+        <span class="status-dot waiting" id="review-status-dot"></span>
+        <span id="review-status-text">Load edit brief first...</span>
+      </div>
+
+      <div class="progress-bar" id="review-progress-bar"><div class="progress-fill" id="review-progress-fill"></div></div>
+      <div class="progress-text" id="review-progress-text"></div>
+
+      <div class="btn-row">
+        <sp-button id="btn-build-review" disabled>Build Review</sp-button>
+        <sp-button id="btn-debug-review">Debug Review</sp-button>
+      </div>
+
+      <div class="validation-panel" id="review-validation"></div>
+    </div>
+
+    <!-- ═══════════ SCREEN CUES SECTION ═══════════ -->
+    <div class="section-header">
+      <span class="section-label">Screen Cues</span>
+    </div>
+
+    <div class="section-content">
+      <div class="status-row">
+        <span class="status-dot waiting" id="screens-status-dot"></span>
+        <span id="screens-status-text">Load edit brief with screens...</span>
+      </div>
+
+      <div class="progress-bar" id="screens-progress-bar"><div class="progress-fill" id="screens-progress-fill"></div></div>
+      <div class="progress-text" id="screens-progress-text"></div>
+
+      <div class="btn-row">
+        <sp-button id="btn-build-screens" disabled>Build Screen Cues</sp-button>
+        <sp-button id="btn-debug-screens">Debug Screens</sp-button>
+      </div>
+
+      <div class="validation-panel" id="screens-validation"></div>
+    </div>
+
+    <!-- ═══════════ INGEST LOG ═══════════ -->
+    <div class="log-header">
+      <span class="section-label">Ingest Log</span>
+      <button class="clear-log-btn" id="btn-clear-ingest-log">clear</button>
+    </div>
+    <div id="ingest-log-panel" class="log-panel"></div>
+
+    <!-- ═══════════ ASSEMBLY LOG ═══════════ -->
+    <div class="log-header">
+      <span class="section-label">Assembly Log</span>
+      <button class="clear-log-btn" id="btn-clear-assembly-log">clear</button>
+    </div>
+    <div id="assembly-log-panel" class="log-panel"></div>
+
+    <!-- ═══════════ REVIEW LOG ═══════════ -->
+    <div class="log-header">
+      <span class="section-label">Review Log</span>
+      <button class="clear-log-btn" id="btn-clear-review-log">clear</button>
+    </div>
+    <div id="review-log-panel" class="log-panel"></div>
+
+    <!-- ═══════════ SCREEN CUES LOG ═══════════ -->
+    <div class="log-header">
+      <span class="section-label">Screen Cues Log</span>
+      <button class="clear-log-btn" id="btn-clear-screens-log">clear</button>
+    </div>
+    <div id="screens-log-panel" class="log-panel"></div>
+
+  </body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <button id="btnLoad">Load Brief</button>
+    <button id="btnBuild" disabled>Build</button>
+    <span id="projectName" class="project-name"></span>
+  </div>
+
+  <!-- Stats bar -->
+  <div id="stats" class="stats hidden">
+    <span id="statSegments"></span>
+    <span id="statBlocks"></span>
+    <span id="statDuration"></span>
+  </div>
+
+  <!-- Progress -->
+  <div id="progress" class="progress hidden">
+    <div class="progress-header">
+      <span id="progressStep"></span>
+      <span id="progressPct"></span>
+    </div>
+    <div class="progress-bar">
+      <div id="progressFill" class="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div id="log" class="log"></div>
+
+  <!-- Scripts: load in dependency order -->
+  <script src="js/constants.js"></script>
+  <script src="js/file-logger.js"></script>
+  <script src="js/brief-parser.js"></script>
+  <script src="js/importer.js"></script>
+  <script src="js/sequence-builder.js"></script>
+  <script src="js/trimmer.js"></script>
+  <script src="js/colorizer.js"></script>
+  <script src="js/markers.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>

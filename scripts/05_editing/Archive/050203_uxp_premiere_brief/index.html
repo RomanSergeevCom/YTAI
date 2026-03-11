@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- TOOLBAR ROW 1: File + View -->
+  <div class="toolbar">
+    <button class="btn btn-primary" id="btn-load" title="Open edit_brief.json file to load segments, blocks, and decisions">Load Brief</button>
+    <button class="btn" id="btn-save" disabled title="Save reviewed decisions back to the JSON file">Save</button>
+    <button class="btn btn-icon" id="btn-reload" disabled title="Re-read the same brief file from disk (if changed externally)">R</button>
+    <span class="toolbar-spacer"></span>
+    <div class="view-switcher" id="view-switcher">
+      <button class="btn btn-icon view-btn" data-view="normal" title="Card view: segment cards with transcript preview and decision buttons (hotkey: 1)">Cards</button>
+      <button class="btn btn-icon view-btn active" data-view="text" title="Text editor: word-level transcript, click-to-jump, word selection and trim (hotkey: 2)">Text</button>
+      <button class="btn btn-icon view-btn" data-view="compact" title="Compact list: minimal headers only, no transcript text (hotkey: 3)">Min</button>
+    </div>
+  </div>
+
+  <!-- TOOLBAR ROW 2: Build + Actions -->
+  <div class="toolbar toolbar-row-2">
+    <button class="btn btn-accent" id="btn-build" disabled title="Build FULL + ROUGH sequences in Premiere (import, trim, color, markers)">Build</button>
+    <div class="timeline-toggle" id="timeline-toggle" style="display:none;">
+      <button class="btn btn-icon tl-btn" data-tl="full" title="FULL timeline: all segments (USE + CUT)">FULL</button>
+      <button class="btn btn-icon tl-btn active" data-tl="rough" title="ROUGH timeline: USE segments only">ROUGH</button>
+    </div>
+    <button class="btn" id="btn-transcripts" disabled title="Load transcript JSON for word-level editing in Text view">Load Text</button>
+    <span class="toolbar-spacer"></span>
+    <button class="btn btn-icon" id="btn-settings" title="Settings: source media folder path, API test">&#9881;</button>
+    <button class="btn btn-icon btn-debug-toggle" id="btn-log" title="Debug log panel (auto-saved to plugin folder after Build)">Log</button>
+  </div>
+
+  <!-- SETTINGS PANEL (toggled by gear icon) -->
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-row">
+      <span class="settings-label">Source Folder</span>
+      <span class="settings-value" id="source-folder-path">Not set</span>
+      <button class="btn" id="btn-browse-source" title="Choose folder with source media files (.MP4)">Browse</button>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">API Test</span>
+      <button class="btn" id="btn-api-test">Test APIs</button>
+    </div>
+    <div class="api-results" id="api-results"></div>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar" id="stats-bar" style="display:none;">
+    <div class="stat">
+      <div class="stat-value" id="stat-selected">0:00</div>
+      <div class="stat-label">Selected</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-total">0:00</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-segments">0/0</div>
+      <div class="stat-label">Segments</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-blocks">0</div>
+      <div class="stat-label">Blocks</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-chapters">0</div>
+      <div class="stat-label">Chapters</div>
+    </div>
+    <div class="stat stat-progress">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="stat-label"><span id="stat-progress-pct">0</span>% reviewed</div>
+    </div>
+  </div>
+
+  <!-- CHAPTER BAR -->
+  <div class="chapter-bar" id="chapter-bar" style="display:none;"></div>
+
+  <!-- SEARCH & FILTERS -->
+  <div class="search-filters" id="search-filters" style="display:none;">
+    <input type="text" class="search-input" id="search-input" placeholder="Search segments...">
+    <div class="filter-pills">
+      <span class="filter-pill active" data-filter="all">All</span>
+      <span class="filter-pill" data-filter="use">Use</span>
+      <span class="filter-pill" data-filter="cut">Cut</span>
+      <span class="filter-pill" data-filter="maybe">?</span>
+      <span class="filter-pill" data-filter="shorts">Sh</span>
+    </div>
+  </div>
+
+  <!-- BUILD PROGRESS -->
+  <div class="build-panel" id="build-panel">
+    <div class="build-progress-bar">
+      <div class="build-progress-fill" id="build-progress-fill" style="width:0%"></div>
+    </div>
+    <div class="build-status" id="build-status">Idle</div>
+  </div>
+
+  <!-- WORD TRIM BAR (Text view only, shown when words selected) -->
+  <div class="word-trim-bar" id="word-trim-bar">
+    <span id="trim-selection-info">0 words</span>
+    <button class="btn" id="btn-trim-to-selection" title="Trim segment to selected word range">Trim</button>
+    <button class="btn" id="btn-split-at-word" title="Split segment into two at the selection boundary">Split</button>
+    <button class="btn" id="btn-exclude-words" title="Exclude selected words — shift segment boundary (X or D key)">Exclude</button>
+    <span class="toolbar-spacer"></span>
+    <button class="btn btn-icon" id="btn-clear-selection" title="Clear word selection (Escape)">&times;</button>
+  </div>
+
+  <!-- SEGMENT LIST (Card view + Text view) -->
+  <div class="segment-list" id="segment-list">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-state-icon">YTAI</div>
+      <div class="empty-state-text">No brief loaded</div>
+      <div class="empty-state-hint">Click "Load Brief" to open an edit_brief.json file</div>
+    </div>
+  </div>
+
+  <!-- DEBUG LOG PANEL (hidden, toggleable via Log button) -->
+  <div class="debug-overlay" id="debug-overlay">
+    <div class="debug-panel" id="debug-panel">
+      <div class="debug-header">
+        <span class="debug-title">Debug Log</span>
+        <span class="debug-count" id="debug-count">0</span>
+        <span class="toolbar-spacer"></span>
+        <button class="btn btn-icon debug-btn" id="btn-log-save" title="Save debug_log.txt to plugin folder (overwrites)">Save</button>
+        <button class="btn debug-btn" id="btn-log-snapshot" title="Save timestamped snapshot (log + brief state) to plugin folder">Snapshot</button>
+        <button class="btn btn-icon debug-btn" id="btn-log-copy" title="Copy all logs to clipboard">Copy</button>
+        <button class="btn btn-icon debug-btn" id="btn-log-clear" title="Clear log">Clear</button>
+        <button class="btn btn-icon debug-btn" id="btn-log-close" title="Close">&times;</button>
+      </div>
+      <div class="debug-log" id="log-panel"></div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS: load order matters, all use globals -->
+  <script src="js/state.js"></script>
+  <script src="js/project-io.js"></script>
+  <script src="js/review.js"></script>
+  <script src="js/navigator.js"></script>
+  <script src="js/build-sequence.js"></script>
+  <script src="index.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+=== YTAI SCREENS — Log ===
+Version: 1.9.2
+Pipeline: SCREENS
+Project: YTAI_Edit
+Project Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit.prproj
+Brief Path: /Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+Report Generated: 2026-03-10 17:52:39
+Total Entries: 36
+--------------------------------------
+[2026-03-10 17:52:38] [INFO] === DEBUG SCREENS ===
+[2026-03-10 17:52:38] [INFO] === SCREEN CUES BUILD START ===
+[2026-03-10 17:52:38] [INFO] Screens: 7, Project: YTAI_Edit
+[2026-03-10 17:52:38] [DEBUG]   scr_001: type=chapter_title, seg=seg_001, title="Dubai Property Rights"
+[2026-03-10 17:52:38] [DEBUG]   scr_002: type=lower_third, seg=seg_001, title="Speaker 1"
+[2026-03-10 17:52:38] [DEBUG]   scr_003: type=half_overlay, seg=seg_003, title="Government Strategy"
+[2026-03-10 17:52:38] [DEBUG]   scr_004: type=three_fifths_overlay, seg=seg_004, title="UAE Forward Planning"
+[2026-03-10 17:52:38] [DEBUG]   scr_005: type=list, seg=seg_005, title="The Camping Trip"
+[2026-03-10 17:52:38] [DEBUG]   scr_006: type=info_graphic, seg=seg_005, title="Client Relationships"
+[2026-03-10 17:52:38] [DEBUG]   scr_007: type=product_shot, seg=seg_006, title="Dubai Real Estate Services"
+[2026-03-10 17:52:38] [INFO] === Step 1: Scanning project clips ===
+[2026-03-10 17:52:38] [INFO] Found bin: 00_Source
+[2026-03-10 17:52:38] [INFO] Scanned 00_Source: 6 entries
+[2026-03-10 17:52:38] [INFO] Clip validation: 3/3 found
+[2026-03-10 17:52:38] [INFO] clipMap: 6 clips found
+[2026-03-10 17:52:38] [INFO] === Step 2: Building Screen Cues sequence ===
+[2026-03-10 17:52:38] [INFO] Valid screens: 7/7
+[2026-03-10 17:52:38] [INFO] ScreenCues sequence created: YTAI_Edit_4_ScreenCues
+[2026-03-10 17:52:38] [INFO]   [1/7] scr_001: chapter_title → V1@0.0s, dur=2.0s, title="Dubai Property Rights"
+[2026-03-10 17:52:38] [INFO]   [2/7] scr_002: lower_third → V1@2.0s, dur=2.0s ✓, title="Speaker 1"
+[2026-03-10 17:52:38] [INFO]   [3/7] scr_003: half_overlay → V1@4.0s, dur=2.0s ✓, title="Government Strategy"
+[2026-03-10 17:52:38] [INFO]   [4/7] scr_004: three_fifths_overlay → V1@6.0s, dur=2.0s ✓, title="UAE Forward Planning"
+[2026-03-10 17:52:38] [INFO]   [5/7] scr_005: list → V1@8.0s, dur=2.0s ✓, title="The Camping Trip"
+[2026-03-10 17:52:38] [INFO]   [6/7] scr_006: info_graphic → V1@10.0s, dur=2.0s ✓, title="Client Relationships"
+[2026-03-10 17:52:38] [INFO]   [7/7] scr_007: product_shot → V1@12.0s, dur=2.0s ✓, title="Dubai Real Estate Service"
+[2026-03-10 17:52:38] [INFO] Screen cues done: 7 V1 clips, 7 markers, 0 skipped, total=14.0s
+[2026-03-10 17:52:38] [INFO] Result: 7 V1 clips, 7 markers, 0 skipped, total=14.0s
+[2026-03-10 17:52:38] [INFO] === Step 3: Screen Cues SRT ===
+[2026-03-10 17:52:38] [INFO] === Import ScreenCues Captions ===
+[2026-03-10 17:52:38] [INFO] No ScreenCues captions SRT found at: YTAI_Edit_4_ScreenCues_captions.srt
+[2026-03-10 17:52:38] [INFO] === SCREEN CUES BUILD COMPLETE (0.4s) ===
+[2026-03-10 17:52:38] [INFO] === Post-build validation ===
+[2026-03-10 17:52:38] [INFO] Validation complete
+[2026-03-10 17:52:38] [INFO] Project saved
+[2026-03-10 17:52:38] [DEBUG] Plugin folder nativePath: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/
+[2026-03-10 17:52:39] [DEBUG] Found logs folder: /Users/romansergeev/YTAI/scripts/05_editing/050105_assembly_uxp/logs

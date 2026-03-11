@@ -1,0 +1,1862 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xmeml>
+<xmeml version="5">
+  <project>
+    <name>YT RF - Artem GERD Story</name>
+    <children>
+      <bin>
+        <name>01_Sources</name>
+        <children>
+          <clip id="masterclip-file-AC1A7118">
+            <name>RYA-ZVE1-1358.MP4</name>
+            <duration>71958</duration>
+            <rate>
+              <timebase>30</timebase>
+              <ntsc>TRUE</ntsc>
+            </rate>
+            <file id="file-AC1A7118">
+              <name>RYA-ZVE1-1358.MP4</name>
+              <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+              <rate>
+                <timebase>30</timebase>
+                <ntsc>TRUE</ntsc>
+              </rate>
+              <duration>71958</duration>
+              <media>
+                <video>
+                  <duration>71958</duration>
+                  <samplecharacteristics>
+                    <width>3840</width>
+                    <height>2160</height>
+                    <pixelaspectratio>square</pixelaspectratio>
+                  </samplecharacteristics>
+                </video>
+                <audio>
+                  <channelcount>2</channelcount>
+                  <samplecharacteristics>
+                    <samplerate>48000</samplerate>
+                    <depth>16</depth>
+                  </samplecharacteristics>
+                </audio>
+              </media>
+            </file>
+          </clip>
+          <clip id="masterclip-file-A9BEBC28">
+            <name>RYA-ZVE1-1359.MP4</name>
+            <duration>39411</duration>
+            <rate>
+              <timebase>30</timebase>
+              <ntsc>TRUE</ntsc>
+            </rate>
+            <file id="file-A9BEBC28">
+              <name>RYA-ZVE1-1359.MP4</name>
+              <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1359.MP4</pathurl>
+              <rate>
+                <timebase>30</timebase>
+                <ntsc>TRUE</ntsc>
+              </rate>
+              <duration>39411</duration>
+              <media>
+                <video>
+                  <duration>39411</duration>
+                  <samplecharacteristics>
+                    <width>3840</width>
+                    <height>2160</height>
+                    <pixelaspectratio>square</pixelaspectratio>
+                  </samplecharacteristics>
+                </video>
+                <audio>
+                  <channelcount>2</channelcount>
+                  <samplecharacteristics>
+                    <samplerate>48000</samplerate>
+                    <depth>16</depth>
+                  </samplecharacteristics>
+                </audio>
+              </media>
+            </file>
+          </clip>
+          <clip id="masterclip-file-13FD0155">
+            <name>RYA-ZVE1-1357.MP4</name>
+            <duration>11838</duration>
+            <rate>
+              <timebase>30</timebase>
+              <ntsc>TRUE</ntsc>
+            </rate>
+            <file id="file-13FD0155">
+              <name>RYA-ZVE1-1357.MP4</name>
+              <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1357.MP4</pathurl>
+              <rate>
+                <timebase>30</timebase>
+                <ntsc>TRUE</ntsc>
+              </rate>
+              <duration>11838</duration>
+              <media>
+                <video>
+                  <duration>11838</duration>
+                  <samplecharacteristics>
+                    <width>3840</width>
+                    <height>2160</height>
+                    <pixelaspectratio>square</pixelaspectratio>
+                  </samplecharacteristics>
+                </video>
+                <audio>
+                  <channelcount>2</channelcount>
+                  <samplecharacteristics>
+                    <samplerate>48000</samplerate>
+                    <depth>16</depth>
+                  </samplecharacteristics>
+                </audio>
+              </media>
+            </file>
+          </clip>
+          <clip id="masterclip-file-5C218712">
+            <name>RYA-ZVE1-1360.MP4</name>
+            <duration>3147</duration>
+            <rate>
+              <timebase>30</timebase>
+              <ntsc>TRUE</ntsc>
+            </rate>
+            <file id="file-5C218712">
+              <name>RYA-ZVE1-1360.MP4</name>
+              <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1360.MP4</pathurl>
+              <rate>
+                <timebase>30</timebase>
+                <ntsc>TRUE</ntsc>
+              </rate>
+              <duration>3147</duration>
+              <media>
+                <video>
+                  <duration>3147</duration>
+                  <samplecharacteristics>
+                    <width>3840</width>
+                    <height>2160</height>
+                    <pixelaspectratio>square</pixelaspectratio>
+                  </samplecharacteristics>
+                </video>
+                <audio>
+                  <channelcount>2</channelcount>
+                  <samplecharacteristics>
+                    <samplerate>48000</samplerate>
+                    <depth>16</depth>
+                  </samplecharacteristics>
+                </audio>
+              </media>
+            </file>
+          </clip>
+        </children>
+      </bin>
+      <bin>
+        <name>02_Blocks</name>
+        <children>
+          <bin>
+            <name>Block_01_Introduction</name>
+            <children>
+              <clip>
+                <name>seg_001_Main intro</name>
+                <duration>360</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>31768</in>
+                <out>32128</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_002_Intro continuation</name>
+                <duration>210</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>32128</in>
+                <out>32338</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clip>
+            </children>
+          </bin>
+          <bin>
+            <name>Block_02_Beginning</name>
+            <children>
+              <clip>
+                <name>seg_003_Student years</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>3297</in>
+                <out>3716</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_004_First symptoms</name>
+                <duration>450</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>3776</in>
+                <out>4226</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_005_Problem is complex</name>
+                <duration>210</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>4226</in>
+                <out>4436</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+            </children>
+          </bin>
+          <bin>
+            <name>Block_03_Diagnosis</name>
+            <children>
+              <clip>
+                <name>seg_006_First doctor visit</name>
+                <duration>630</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>839</in>
+                <out>1469</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_007_FGDS prescribed</name>
+                <duration>359</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>1469</in>
+                <out>1828</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_008_FGDS procedure</name>
+                <duration>1199</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>6713</in>
+                <out>7912</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_009_FGDS results</name>
+                <duration>479</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>10490</in>
+                <out>10969</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+            </children>
+          </bin>
+          <bin>
+            <name>Block_04_What is GERD</name>
+            <children>
+              <clip>
+                <name>seg_010_Valve mechanism</name>
+                <duration>839</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>10969</in>
+                <out>11808</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_011_Acid reflux</name>
+                <duration>689</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>11808</in>
+                <out>12497</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+            </children>
+          </bin>
+          <bin>
+            <name>Block_05_Symptoms</name>
+            <children>
+              <clip>
+                <name>seg_012_Symptom list</name>
+                <duration>330</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>12557</in>
+                <out>12887</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_013_Quality of life</name>
+                <duration>300</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>14595</in>
+                <out>14895</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+            </children>
+          </bin>
+          <bin>
+            <name>Block_06_Medication</name>
+            <children>
+              <clip>
+                <name>seg_014_Treatment works</name>
+                <duration>719</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>13097</in>
+                <out>13816</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_015_Symptoms return</name>
+                <duration>420</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>13816</in>
+                <out>14236</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_016_PPI drugs</name>
+                <duration>420</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>18761</in>
+                <out>19181</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+            </children>
+          </bin>
+          <bin>
+            <name>Block_07_Risks</name>
+            <children>
+              <clip>
+                <name>seg_017_Long-term unknown</name>
+                <duration>509</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>16214</in>
+                <out>16723</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_018_Cancer risk</name>
+                <duration>450</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>16753</in>
+                <out>17203</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_019_Doctor's words</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>22238</in>
+                <out>22657</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+            </children>
+          </bin>
+          <bin>
+            <name>Block_08_Surgery options</name>
+            <children>
+              <clip>
+                <name>seg_020_Old methods</name>
+                <duration>570</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>24875</in>
+                <out>25445</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_021_Nissen procedure</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>25445</in>
+                <out>25864</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_022_Irreversible</name>
+                <duration>569</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>26224</in>
+                <out>26793</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_023_Side effects</name>
+                <duration>599</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>27063</in>
+                <out>27662</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clip>
+            </children>
+          </bin>
+          <bin>
+            <name>Block_12_RefluxStop</name>
+            <children>
+              <clip>
+                <name>seg_030_New approach</name>
+                <duration>480</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>19540</in>
+                <out>20020</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_031_How it works</name>
+                <duration>869</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>20020</in>
+                <out>20889</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_032_Advantages</name>
+                <duration>899</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>20919</in>
+                <out>21818</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_033_No dysphagia</name>
+                <duration>569</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>27992</in>
+                <out>28561</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clip>
+            </children>
+          </bin>
+          <bin>
+            <name>Block_14_Closing</name>
+            <children>
+              <clip>
+                <name>seg_040_First patient</name>
+                <duration>390</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>28831</in>
+                <out>29221</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clip>
+              <clip>
+                <name>seg_041_Call to action</name>
+                <duration>359</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <in>37253</in>
+                <out>37612</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clip>
+            </children>
+          </bin>
+        </children>
+      </bin>
+      <bin>
+        <name>03_Alternatives</name>
+        <children>
+          <clip>
+            <name>ALT_seg_050_Cost info</name>
+            <duration>509</duration>
+            <rate>
+              <timebase>30</timebase>
+              <ntsc>TRUE</ntsc>
+            </rate>
+            <in>1049</in>
+            <out>1558</out>
+            <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+          </clip>
+          <clip>
+            <name>ALT_seg_051_Sports difficulty</name>
+            <duration>390</duration>
+            <rate>
+              <timebase>30</timebase>
+              <ntsc>TRUE</ntsc>
+            </rate>
+            <in>69770</in>
+            <out>70160</out>
+            <masterclipid>masterclip-file-AC1A7118</masterclipid>
+          </clip>
+          <clip>
+            <name>ALT_seg_001_alt_Alt intro take</name>
+            <duration>450</duration>
+            <rate>
+              <timebase>30</timebase>
+              <ntsc>TRUE</ntsc>
+            </rate>
+            <in>9590</in>
+            <out>10040</out>
+            <masterclipid>masterclip-file-13FD0155</masterclipid>
+          </clip>
+        </children>
+      </bin>
+      <bin>
+        <name>04_Unused</name>
+        <children>
+          <clip>
+            <name>UNUSED_seg_099_Off-topic discussion</name>
+            <duration>1049</duration>
+            <rate>
+              <timebase>30</timebase>
+              <ntsc>TRUE</ntsc>
+            </rate>
+            <in>300</in>
+            <out>1349</out>
+            <masterclipid>masterclip-file-5C218712</masterclipid>
+          </clip>
+        </children>
+      </bin>
+      <sequence id="sequence-1">
+        <name>YT RF - Artem GERD Story</name>
+        <duration>15135</duration>
+        <rate>
+          <timebase>30</timebase>
+          <ntsc>TRUE</ntsc>
+        </rate>
+        <timecode>
+          <string>00:00:00:00</string>
+          <frame>0</frame>
+          <rate>
+            <timebase>30</timebase>
+            <ntsc>TRUE</ntsc>
+          </rate>
+          <displayformat>DF</displayformat>
+        </timecode>
+        <media>
+          <video>
+            <format>
+              <samplecharacteristics>
+                <width>3840</width>
+                <height>2160</height>
+                <pixelaspectratio>square</pixelaspectratio>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+              </samplecharacteristics>
+            </format>
+            <track>
+              <clipitem id="clipitem-seg_001">
+                <name>seg_001_Main intro</name>
+                <duration>360</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>0</start>
+                <end>360</end>
+                <in>31768</in>
+                <out>32128</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+                <file id="clipfile-seg_001">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1359.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 1: Introduction</name>
+                  <comment>Hello, my name is Artem Dogaev, I am an entrepreneur...</comment>
+                  <in>0</in>
+                  <out>360</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_002">
+                <name>seg_002_Intro continuation</name>
+                <duration>210</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>360</start>
+                <end>570</end>
+                <in>32128</in>
+                <out>32338</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+                <file id="clipfile-seg_002">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1359.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 1: Introduction</name>
+                  <comment>This is a disease of modern times...</comment>
+                  <in>0</in>
+                  <out>210</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_003">
+                <name>seg_003_Student years</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>570</start>
+                <end>989</end>
+                <in>3297</in>
+                <out>3716</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_003">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 2: Beginning</name>
+                  <comment>It all started when I was a student...</comment>
+                  <in>0</in>
+                  <out>419</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_004">
+                <name>seg_004_First symptoms</name>
+                <duration>450</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>989</start>
+                <end>1439</end>
+                <in>3776</in>
+                <out>4226</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_004">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 2: Beginning</name>
+                  <comment>I did not pay attention, thought magic pills would help...</comment>
+                  <in>0</in>
+                  <out>450</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_005">
+                <name>seg_005_Problem is complex</name>
+                <duration>210</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>1439</start>
+                <end>1649</end>
+                <in>4226</in>
+                <out>4436</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_005">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 2: Beginning</name>
+                  <comment>But the problem turned out to be more complex...</comment>
+                  <in>0</in>
+                  <out>210</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_006">
+                <name>seg_006_First doctor visit</name>
+                <duration>630</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>1649</start>
+                <end>2279</end>
+                <in>839</in>
+                <out>1469</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_006">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 3: Diagnosis</name>
+                  <comment>Went to the doctor, stomach really hurt...</comment>
+                  <in>0</in>
+                  <out>630</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_007">
+                <name>seg_007_FGDS prescribed</name>
+                <duration>359</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>2279</start>
+                <end>2638</end>
+                <in>1469</in>
+                <out>1828</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_007">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 3: Diagnosis</name>
+                  <comment>Gastroenterologist said need to look inside...</comment>
+                  <in>0</in>
+                  <out>359</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_008">
+                <name>seg_008_FGDS procedure</name>
+                <duration>1199</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>2638</start>
+                <end>3837</end>
+                <in>6713</in>
+                <out>7912</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_008">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 3: Diagnosis</name>
+                  <comment>I thought it would be like ultrasound...</comment>
+                  <in>0</in>
+                  <out>1199</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_009">
+                <name>seg_009_FGDS results</name>
+                <duration>479</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>3837</start>
+                <end>4316</end>
+                <in>10490</in>
+                <out>10969</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_009">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 3: Diagnosis</name>
+                  <comment>After FGDS the doctor wrote: hernia, inflammation...</comment>
+                  <in>0</in>
+                  <out>479</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_010">
+                <name>seg_010_Valve mechanism</name>
+                <duration>839</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>4316</start>
+                <end>5155</end>
+                <in>10969</in>
+                <out>11808</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_010">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 4: What is GERD</name>
+                  <comment>Between esophagus and stomach there is a special valve...</comment>
+                  <in>0</in>
+                  <out>839</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_011">
+                <name>seg_011_Acid reflux</name>
+                <duration>689</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>5155</start>
+                <end>5844</end>
+                <in>11808</in>
+                <out>12497</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_011">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 4: What is GERD</name>
+                  <comment>The problem is that valve does not close completely...</comment>
+                  <in>0</in>
+                  <out>689</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_012">
+                <name>seg_012_Symptom list</name>
+                <duration>330</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>5844</start>
+                <end>6174</end>
+                <in>12557</in>
+                <out>12887</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_012">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 5: Symptoms</name>
+                  <comment>Symptoms are stomach pain, chest pain, cough, heartburn...</comment>
+                  <in>0</in>
+                  <out>330</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_013">
+                <name>seg_013_Quality of life</name>
+                <duration>300</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>6174</start>
+                <end>6474</end>
+                <in>14595</in>
+                <out>14895</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_013">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 5: Symptoms</name>
+                  <comment>Burning heartburn. It really poisons quality of life...</comment>
+                  <in>0</in>
+                  <out>300</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_014">
+                <name>seg_014_Treatment works</name>
+                <duration>719</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>6474</start>
+                <end>7193</end>
+                <in>13097</in>
+                <out>13816</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_014">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 6: Medication</name>
+                  <comment>After FGDS prescribed medication. Wake up, take pill...</comment>
+                  <in>0</in>
+                  <out>719</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_015">
+                <name>seg_015_Symptoms return</name>
+                <duration>420</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>7193</start>
+                <end>7613</end>
+                <in>13816</in>
+                <out>14236</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_015">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 6: Medication</name>
+                  <comment>As soon as you stop - symptoms return next day...</comment>
+                  <in>0</in>
+                  <out>420</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_016">
+                <name>seg_016_PPI drugs</name>
+                <duration>420</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>7613</start>
+                <end>8033</end>
+                <in>18761</in>
+                <out>19181</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_016">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 6: Medication</name>
+                  <comment>Proton pump inhibitors - Pariet, Dexilant, Nexium...</comment>
+                  <in>0</in>
+                  <out>420</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_017">
+                <name>seg_017_Long-term unknown</name>
+                <duration>509</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>8033</start>
+                <end>8542</end>
+                <in>16214</in>
+                <out>16723</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_017">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 7: Risks</name>
+                  <comment>Dangerous moment - you can maintain with medication...</comment>
+                  <in>0</in>
+                  <out>509</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_018">
+                <name>seg_018_Cancer risk</name>
+                <duration>450</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>8542</start>
+                <end>8992</end>
+                <in>16753</in>
+                <out>17203</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_018">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 7: Risks</name>
+                  <comment>Cells can transform - oncology. Barrett's esophagus...</comment>
+                  <in>0</in>
+                  <out>450</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_019">
+                <name>seg_019_Doctor's words</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>8992</start>
+                <end>9411</end>
+                <in>22238</in>
+                <out>22657</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_019">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 7: Risks</name>
+                  <comment>Asked directly - can this be fixed? He said surgery needed...</comment>
+                  <in>0</in>
+                  <out>419</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_020">
+                <name>seg_020_Old methods</name>
+                <duration>570</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>9411</start>
+                <end>9981</end>
+                <in>24875</in>
+                <out>25445</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_020">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 8: Surgery options</name>
+                  <comment>In Russia - same methods as 50 years ago...</comment>
+                  <in>0</in>
+                  <out>570</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_021">
+                <name>seg_021_Nissen procedure</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>9981</start>
+                <end>10400</end>
+                <in>25445</in>
+                <out>25864</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_021">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 8: Surgery options</name>
+                  <comment>They wrap stomach 360 degrees - Nissen operation...</comment>
+                  <in>0</in>
+                  <out>419</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_022">
+                <name>seg_022_Irreversible</name>
+                <duration>569</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>10400</start>
+                <end>10969</end>
+                <in>26224</in>
+                <out>26793</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_022">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 8: Surgery options</name>
+                  <comment>Problem is these operations are irreversible...</comment>
+                  <in>0</in>
+                  <out>569</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_023">
+                <name>seg_023_Side effects</name>
+                <duration>599</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>10969</start>
+                <end>11568</end>
+                <in>27063</in>
+                <out>27662</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+                <file id="clipfile-seg_023">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1358.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 8: Surgery options</name>
+                  <comment>Quality of life suffers. Esophagus tightness, dysphagia...</comment>
+                  <in>0</in>
+                  <out>599</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_030">
+                <name>seg_030_New approach</name>
+                <duration>480</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>11568</start>
+                <end>12048</end>
+                <in>19540</in>
+                <out>20020</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+                <file id="clipfile-seg_030">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1359.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 12: RefluxStop</name>
+                  <comment>They are developing a fundamentally new approach...</comment>
+                  <in>0</in>
+                  <out>480</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_031">
+                <name>seg_031_How it works</name>
+                <duration>869</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>12048</start>
+                <end>12917</end>
+                <in>20020</in>
+                <out>20889</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+                <file id="clipfile-seg_031">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1359.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 12: RefluxStop</name>
+                  <comment>Attached to upper stomach, restores natural His angle...</comment>
+                  <in>0</in>
+                  <out>869</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_032">
+                <name>seg_032_Advantages</name>
+                <duration>899</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>12917</start>
+                <end>13816</end>
+                <in>20919</in>
+                <out>21818</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+                <file id="clipfile-seg_032">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1359.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 12: RefluxStop</name>
+                  <comment>This method has no impact on esophagus at all...</comment>
+                  <in>0</in>
+                  <out>899</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_033">
+                <name>seg_033_No dysphagia</name>
+                <duration>569</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>13816</start>
+                <end>14385</end>
+                <in>27992</in>
+                <out>28561</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+                <file id="clipfile-seg_033">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1359.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 12: RefluxStop</name>
+                  <comment>No dysphagia. All functions preserved...</comment>
+                  <in>0</in>
+                  <out>569</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_040">
+                <name>seg_040_First patient</name>
+                <duration>390</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>14385</start>
+                <end>14775</end>
+                <in>28831</in>
+                <out>29221</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+                <file id="clipfile-seg_040">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1359.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 14: Closing</name>
+                  <comment>If they introduce this - I will be first client...</comment>
+                  <in>0</in>
+                  <out>390</out>
+                </marker>
+              </clipitem>
+              <clipitem id="clipitem-seg_041">
+                <name>seg_041_Call to action</name>
+                <duration>359</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>14775</start>
+                <end>15134</end>
+                <in>37253</in>
+                <out>37612</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+                <file id="clipfile-seg_041">
+                  <pathurl>file://localhost/Volumes/RYA/Footage/RYA-ZVE1-1359.MP4</pathurl>
+                </file>
+                <marker>
+                  <name>BLOCK 14: Closing</name>
+                  <comment>Want to find solution once and for all...</comment>
+                  <in>0</in>
+                  <out>359</out>
+                </marker>
+              </clipitem>
+            </track>
+            <track>
+              <clipitem>
+                <name>BROLL: Medical procedure footage</name>
+                <duration>1199</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>2638</start>
+                <end>3837</end>
+                <enabled>FALSE</enabled>
+              </clipitem>
+              <clipitem>
+                <name>BROLL: Add sphincter animation</name>
+                <duration>839</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>4316</start>
+                <end>5155</end>
+                <enabled>FALSE</enabled>
+              </clipitem>
+              <clipitem>
+                <name>BROLL: Add acid reflux animation</name>
+                <duration>689</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>5155</start>
+                <end>5844</end>
+                <enabled>FALSE</enabled>
+              </clipitem>
+              <clipitem>
+                <name>BROLL: Show pill bottles</name>
+                <duration>719</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>6474</start>
+                <end>7193</end>
+                <enabled>FALSE</enabled>
+              </clipitem>
+              <clipitem>
+                <name>BROLL: Show drug names on screen</name>
+                <duration>420</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>7613</start>
+                <end>8033</end>
+                <enabled>FALSE</enabled>
+              </clipitem>
+              <clipitem>
+                <name>BROLL: Add Barrett's diagram</name>
+                <duration>450</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>8542</start>
+                <end>8992</end>
+                <enabled>FALSE</enabled>
+              </clipitem>
+              <clipitem>
+                <name>BROLL: Add Nissen diagram</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>9981</start>
+                <end>10400</end>
+                <enabled>FALSE</enabled>
+              </clipitem>
+              <clipitem>
+                <name>BROLL: Show device 3D model</name>
+                <duration>480</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>11568</start>
+                <end>12048</end>
+                <enabled>FALSE</enabled>
+              </clipitem>
+              <clipitem>
+                <name>BROLL: Add installation animation</name>
+                <duration>869</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>12048</start>
+                <end>12917</end>
+                <enabled>FALSE</enabled>
+              </clipitem>
+            </track>
+            <track />
+          </video>
+          <audio>
+            <format>
+              <samplecharacteristics>
+                <samplerate>48000</samplerate>
+                <depth>16</depth>
+              </samplecharacteristics>
+            </format>
+            <track>
+              <clipitem id="audioclip-seg_001">
+                <name>seg_001_Main intro</name>
+                <duration>360</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>0</start>
+                <end>360</end>
+                <in>31768</in>
+                <out>32128</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_002">
+                <name>seg_002_Intro continuation</name>
+                <duration>210</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>360</start>
+                <end>570</end>
+                <in>32128</in>
+                <out>32338</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_003">
+                <name>seg_003_Student years</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>570</start>
+                <end>989</end>
+                <in>3297</in>
+                <out>3716</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_004">
+                <name>seg_004_First symptoms</name>
+                <duration>450</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>989</start>
+                <end>1439</end>
+                <in>3776</in>
+                <out>4226</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_005">
+                <name>seg_005_Problem is complex</name>
+                <duration>210</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>1439</start>
+                <end>1649</end>
+                <in>4226</in>
+                <out>4436</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_006">
+                <name>seg_006_First doctor visit</name>
+                <duration>630</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>1649</start>
+                <end>2279</end>
+                <in>839</in>
+                <out>1469</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_007">
+                <name>seg_007_FGDS prescribed</name>
+                <duration>359</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>2279</start>
+                <end>2638</end>
+                <in>1469</in>
+                <out>1828</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_008">
+                <name>seg_008_FGDS procedure</name>
+                <duration>1199</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>2638</start>
+                <end>3837</end>
+                <in>6713</in>
+                <out>7912</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_009">
+                <name>seg_009_FGDS results</name>
+                <duration>479</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>3837</start>
+                <end>4316</end>
+                <in>10490</in>
+                <out>10969</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_010">
+                <name>seg_010_Valve mechanism</name>
+                <duration>839</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>4316</start>
+                <end>5155</end>
+                <in>10969</in>
+                <out>11808</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_011">
+                <name>seg_011_Acid reflux</name>
+                <duration>689</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>5155</start>
+                <end>5844</end>
+                <in>11808</in>
+                <out>12497</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_012">
+                <name>seg_012_Symptom list</name>
+                <duration>330</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>5844</start>
+                <end>6174</end>
+                <in>12557</in>
+                <out>12887</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_013">
+                <name>seg_013_Quality of life</name>
+                <duration>300</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>6174</start>
+                <end>6474</end>
+                <in>14595</in>
+                <out>14895</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_014">
+                <name>seg_014_Treatment works</name>
+                <duration>719</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>6474</start>
+                <end>7193</end>
+                <in>13097</in>
+                <out>13816</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_015">
+                <name>seg_015_Symptoms return</name>
+                <duration>420</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>7193</start>
+                <end>7613</end>
+                <in>13816</in>
+                <out>14236</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_016">
+                <name>seg_016_PPI drugs</name>
+                <duration>420</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>7613</start>
+                <end>8033</end>
+                <in>18761</in>
+                <out>19181</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_017">
+                <name>seg_017_Long-term unknown</name>
+                <duration>509</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>8033</start>
+                <end>8542</end>
+                <in>16214</in>
+                <out>16723</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_018">
+                <name>seg_018_Cancer risk</name>
+                <duration>450</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>8542</start>
+                <end>8992</end>
+                <in>16753</in>
+                <out>17203</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_019">
+                <name>seg_019_Doctor's words</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>8992</start>
+                <end>9411</end>
+                <in>22238</in>
+                <out>22657</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_020">
+                <name>seg_020_Old methods</name>
+                <duration>570</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>9411</start>
+                <end>9981</end>
+                <in>24875</in>
+                <out>25445</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_021">
+                <name>seg_021_Nissen procedure</name>
+                <duration>419</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>9981</start>
+                <end>10400</end>
+                <in>25445</in>
+                <out>25864</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_022">
+                <name>seg_022_Irreversible</name>
+                <duration>569</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>10400</start>
+                <end>10969</end>
+                <in>26224</in>
+                <out>26793</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_023">
+                <name>seg_023_Side effects</name>
+                <duration>599</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>10969</start>
+                <end>11568</end>
+                <in>27063</in>
+                <out>27662</out>
+                <masterclipid>masterclip-file-AC1A7118</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_030">
+                <name>seg_030_New approach</name>
+                <duration>480</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>11568</start>
+                <end>12048</end>
+                <in>19540</in>
+                <out>20020</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_031">
+                <name>seg_031_How it works</name>
+                <duration>869</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>12048</start>
+                <end>12917</end>
+                <in>20020</in>
+                <out>20889</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_032">
+                <name>seg_032_Advantages</name>
+                <duration>899</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>12917</start>
+                <end>13816</end>
+                <in>20919</in>
+                <out>21818</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_033">
+                <name>seg_033_No dysphagia</name>
+                <duration>569</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>13816</start>
+                <end>14385</end>
+                <in>27992</in>
+                <out>28561</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_040">
+                <name>seg_040_First patient</name>
+                <duration>390</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>14385</start>
+                <end>14775</end>
+                <in>28831</in>
+                <out>29221</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clipitem>
+              <clipitem id="audioclip-seg_041">
+                <name>seg_041_Call to action</name>
+                <duration>359</duration>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <start>14775</start>
+                <end>15134</end>
+                <in>37253</in>
+                <out>37612</out>
+                <masterclipid>masterclip-file-A9BEBC28</masterclipid>
+              </clipitem>
+            </track>
+            <track />
+            <track />
+            <track />
+          </audio>
+        </media>
+        <marker>
+          <name>BLOCK 1: Introduction</name>
+          <comment>Clean take, good energy</comment>
+          <in>0</in>
+          <out>360</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: Introduction</name>
+          <comment>YouTube chapter at 00:00:00:00</comment>
+          <in>0</in>
+          <out>1</out>
+        </marker>
+        <marker>
+          <name>BLOCK 2: Beginning</name>
+          <comment>It all started when I was a student...</comment>
+          <in>570</in>
+          <out>990</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: Beginning</name>
+          <comment>YouTube chapter at 00:00:19:01</comment>
+          <in>570</in>
+          <out>571</out>
+        </marker>
+        <marker>
+          <name>BLOCK 3: Diagnosis</name>
+          <comment>Went to the doctor, stomach really hurt...</comment>
+          <in>1650</in>
+          <out>2279</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: Diagnosis</name>
+          <comment>YouTube chapter at 00:00:55:02</comment>
+          <in>1650</in>
+          <out>1651</out>
+        </marker>
+        <marker>
+          <name>BLOCK 4: What is GERD</name>
+          <comment>Good explanation</comment>
+          <in>4318</in>
+          <out>5157</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: What is GERD</name>
+          <comment>YouTube chapter at 00:02:24:02</comment>
+          <in>4318</in>
+          <out>4319</out>
+        </marker>
+        <marker>
+          <name>BLOCK 5: Symptoms</name>
+          <comment>Symptoms are stomach pain, chest pain, cough, heartburn...</comment>
+          <in>5846</in>
+          <out>6176</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: Symptoms</name>
+          <comment>YouTube chapter at 00:03:15:02</comment>
+          <in>5846</in>
+          <out>5847</out>
+        </marker>
+        <marker>
+          <name>BLOCK 6: Medication</name>
+          <comment>After FGDS prescribed medication. Wake up, take pill...</comment>
+          <in>6476</in>
+          <out>7195</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: Medication</name>
+          <comment>YouTube chapter at 00:03:36:02</comment>
+          <in>6476</in>
+          <out>6477</out>
+        </marker>
+        <marker>
+          <name>BLOCK 7: Risks</name>
+          <comment>Dangerous moment - you can maintain with medication...</comment>
+          <in>8035</in>
+          <out>8544</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: Risks</name>
+          <comment>YouTube chapter at 00:04:28:03</comment>
+          <in>8035</in>
+          <out>8036</out>
+        </marker>
+        <marker>
+          <name>BLOCK 8: Surgery options</name>
+          <comment>In Russia - same methods as 50 years ago...</comment>
+          <in>9414</in>
+          <out>9983</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: Surgery options</name>
+          <comment>YouTube chapter at 00:05:14:03</comment>
+          <in>9414</in>
+          <out>9415</out>
+        </marker>
+        <marker>
+          <name>BLOCK 12: RefluxStop</name>
+          <comment>They are developing a fundamentally new approach...</comment>
+          <in>11571</in>
+          <out>12051</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: RefluxStop</name>
+          <comment>YouTube chapter at 00:06:26:03</comment>
+          <in>11571</in>
+          <out>11572</out>
+        </marker>
+        <marker>
+          <name>BLOCK 14: Closing</name>
+          <comment>If they introduce this - I will be first client...</comment>
+          <in>14388</in>
+          <out>14778</out>
+        </marker>
+        <marker>
+          <name>CHAPTER: Closing</name>
+          <comment>YouTube chapter at 00:08:00:02</comment>
+          <in>14388</in>
+          <out>14389</out>
+        </marker>
+      </sequence>
+    </children>
+  </project>
+</xmeml>

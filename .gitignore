@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv*/
+
+# Node
+node_modules/
+
+# Video files
+*.MP4
+*.mp4
+*.mov
+*.MOV
+*.avi
+*.mkv
+*.prproj
+*.prin
+
+# Premiere debug logs (contain .prproj snapshots)
+scripts/05_editing/0500_uxp/logs/
+
+# Testing project (video files ~6GB)
+scripts/05_editing/999_testing_project/
