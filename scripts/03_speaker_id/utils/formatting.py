@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 YTAI Utils: Formatting
-Форматирование timestamps, логирование.
+Timestamp formatting, logging.
 """
 
 import logging
@@ -15,23 +15,23 @@ from datetime import datetime
 
 def generate_timestamp() -> str:
     """
-    Сгенерировать timestamp для имён файлов.
-    
+    Generate a timestamp for file names.
+
     Returns:
-        Строка вида "20260112_171500"
+        String like "20260112_171500"
     """
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def format_timestamp(seconds: float) -> str:
     """
-    Форматировать секунды как HH:MM:SS.
-    
+    Format seconds as HH:MM:SS.
+
     Args:
-        seconds: Время в секундах
-        
+        seconds: Time in seconds
+
     Returns:
-        Строка "01:23:45"
+        String "01:23:45"
     """
     h, r = divmod(int(seconds), 3600)
     m, s = divmod(r, 60)
@@ -40,13 +40,13 @@ def format_timestamp(seconds: float) -> str:
 
 def format_srt_timestamp(seconds: float) -> str:
     """
-    Форматировать секунды для SRT (HH:MM:SS,mmm).
-    
+    Format seconds for SRT (HH:MM:SS,mmm).
+
     Args:
-        seconds: Время в секундах
-        
+        seconds: Time in seconds
+
     Returns:
-        Строка "01:23:45,678"
+        String "01:23:45,678"
     """
     total_ms = int(round(seconds * 1000))
     ms = total_ms % 1000
@@ -58,13 +58,13 @@ def format_srt_timestamp(seconds: float) -> str:
 
 def format_duration(seconds: float) -> str:
     """
-    Форматировать длительность человекочитаемо.
-    
+    Format duration in a human-readable way.
+
     Args:
-        seconds: Время в секундах
-        
+        seconds: Time in seconds
+
     Returns:
-        Строка "1h 23m 45s" или "23m 45s" или "45s"
+        String "1h 23m 45s" or "23m 45s" or "45s"
     """
     h, r = divmod(int(seconds), 3600)
     m, s = divmod(r, 60)
@@ -78,7 +78,7 @@ def format_duration(seconds: float) -> str:
 
 
 # ============================================================================
-# Логирование
+# Logging
 # ============================================================================
 
 def setup_logging(
@@ -87,35 +87,35 @@ def setup_logging(
     script_name: str
 ) -> logging.Logger:
     """
-    Настроить логгер с выводом в файл и консоль.
-    
+    Set up a logger with file and console output.
+
     Args:
-        logs_dir: Папка для логов
-        project_name: Название проекта
-        script_name: Название скрипта (без .py)
-        
+        logs_dir: Directory for log files
+        project_name: Project name
+        script_name: Script name (without .py)
+
     Returns:
-        Настроенный logger
+        Configured logger
     """
     logs_dir.mkdir(parents=True, exist_ok=True)
     
     timestamp = generate_timestamp()
     log_file = logs_dir / f"{project_name}_{script_name}_{timestamp}.log"
     
-    # Создать новый logger с уникальным именем
+    # Create a new logger with a unique name
     logger_name = f"{project_name}_{script_name}_{timestamp}"
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
     
-    # Очистить handlers если есть
+    # Clear handlers if any exist
     logger.handlers.clear()
     
-    # File handler - всё
+    # File handler - all levels
     fh = logging.FileHandler(log_file, encoding="utf-8")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
     
-    # Console handler - INFO и выше
+    # Console handler - INFO and above
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
     ch.setFormatter(logging.Formatter("%(message)s"))
@@ -129,18 +129,18 @@ def setup_logging(
 
 
 # ============================================================================
-# Вспомогательные функции вывода
+# Output helper functions
 # ============================================================================
 
 def print_header(title: str, char: str = "=", width: int = 70) -> None:
-    """Напечатать заголовок."""
+    """Print a header."""
     print(char * width)
     print(title)
     print(char * width)
 
 
 def print_section(title: str, char: str = "-", width: int = 70) -> None:
-    """Напечатать заголовок секции."""
+    """Print a section header."""
     print()
     print(title)
     print(char * width)

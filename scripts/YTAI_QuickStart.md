@@ -1,393 +1,227 @@
 # YTAI Quick Start
 
-## Проект: YTCG37_Hadi_Dawani
+## Quick Run (single command)
+
+```bash
+source ~/YTAI/environment/.venv_transcribe/bin/activate
+python ~/YTAI/scripts/run_pipeline.py "/Volumes/RYA Blue/{project}" --speakers 2
+```
+
+This runs the full pipeline: init → extract audio → transcribe.
 
 ---
 
-## Подготовка
+## Setup
 
-### 1. Запустить Ollama
+### 1. Activate environment
 ```bash
-# Терминал 1
-OLLAMA_MAX_VRAM=20g ollama serve
+source ~/YTAI/environment/.venv_transcribe/bin/activate
 ```
 
-### 2. Активировать окружение
+### 2. Set project path
 ```bash
-# Терминал 2
-source /Users/romansergeev/YTAI/environment/.venv_transcribe/bin/activate
-```
-
-### 3. Установить переменную проекта
-```bash
-export PROJECT="/Volumes/RYA Blue/YTCG37_Hadi_Dawani"
-```
-
----
-
-## Этап 1: Склейка клипов
-
-### Команда:
-```bash
-python ~/YTAI/scripts/01_prepare/01_concat_clips.py --project "$PROJECT"
-```
-
-### Что делает:
-- Берёт все клипы из `01_Media/Source/Video/`
-- Склеивает в один master файл без перекодирования
-
-### Результат:
-```
-01_Media/Source/
-├── Video/
-│   ├── RYA-ZVE1-1146.MP4      (исходные клипы)
-│   ├── RYA-ZVE1-1147.MP4
-│   └── ...
-└── Transcription/
-    └── YTCG37_Hadi_Dawani.mkv  ← НОВЫЙ ФАЙЛ (склеенный master)
-
-01_Media/Source/Setup/logs/
-└── concat_master_20260113_120000.log
-```
-
-### Проверка:
-```bash
-ls -la "$PROJECT/01_Media/Source/Transcription/"*.mkv
-# Должен быть: YTCG37_Hadi_Dawani.mkv (~10-50 GB)
+export PROJECT="/Volumes/RYA Blue/{project}"
 ```
 
 ---
 
-## Этап 2: Извлечение аудио
+## Pipeline (automatic)
 
-### Команда:
+```bash
+# Full pipeline — 2 speakers (interview)
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --speakers 2
+
+# With DJI wireless audio sync
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --speakers 2 --tz-offset 4
+
+# Check what's done
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --list
+
+# Dry run (show what would happen)
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --dry-run
+```
+
+### Pipeline stages
+
+| # | Stage | What it does |
+|---|-------|-------------|
+| 0 | `init` | Create v3.0 folder structure (auto if missing) |
+| 1 | `extract_audio` | Extract WAV from each clip + concat FULL_AUDIO.wav |
+| 2 | `sync_dji` | Sync DJI wireless audio to clips (optional, needs `--tz-offset`) |
+| 3 | `transcribe` | Whisper transcription + Pyannote speaker diarization |
+
+### Options
+
+| Flag | Description |
+|------|-------------|
+| `--speakers N` | Number of speakers for Pyannote (e.g. 2 for interview) |
+| `--language XX` | Language for Whisper (default: auto-detect) |
+| `--tz-offset N` | Timezone offset for DJI sync (e.g. 4 for Dubai, 3 for Moscow) |
+| `--only STAGE` | Run only one stage |
+| `--from STAGE` | Start from this stage |
+| `--to STAGE` | Stop after this stage |
+| `--no-pause` | Don't pause between stages |
+| `--force` | Re-run even if output exists |
+| `--type footage\|production` | Folder type for init (default: footage) |
+
+---
+
+## Pipeline (step-by-step)
+
+For debugging or running individual stages:
+
+### Stage 1: Extract audio
 ```bash
 python ~/YTAI/scripts/01_prepare/02_extract_audio.py --project "$PROJECT"
 ```
 
-### Что делает:
-- Извлекает аудио из каждого клипа
-- Склеивает в один FULL_AUDIO.wav для транскрипции
+Extracts audio from each video clip, concatenates into FULL_AUDIO.wav.
 
-### Результат:
+**Output:**
 ```
 01_Media/Source/Transcription/
-├── per_clip/
-│   ├── RYA-ZVE1-1146/RYA-ZVE1-1146_audio.wav
-│   ├── RYA-ZVE1-1147/RYA-ZVE1-1147_audio.wav
-│   └── ...
-└── YTCG37_Hadi_Dawani_FULL_AUDIO.wav  ← ГЛАВНЫЙ ФАЙЛ
-
-01_Media/Source/Setup/logs/
-└── extract_audio_20260113_121000.log
+├── {clip}_AUDIO.wav                    (per-clip audio)
+└── {project}_FULL_AUDIO.wav            (concatenated for transcription)
 ```
 
-### Проверка:
+**Check:**
 ```bash
 ls -la "$PROJECT/01_Media/Source/Transcription/"*FULL_AUDIO.wav
-# Должен быть: YTCG37_Hadi_Dawani_FULL_AUDIO.wav (~1-3 GB)
 ```
 
 ---
 
-## Этап 2.5: Синхронизация DJI аудио (опционально)
-
-### Команда:
+### Stage 2: DJI audio sync (optional)
 ```bash
 python ~/YTAI/scripts/01_prepare/03_sync_dji_audio.py --project "$PROJECT" --tz-offset 4
 ```
 
-### Что делает:
-- Берёт DJI WAV из `99_Pipeline/DJI_Audio/`
-- Обрезает/склеивает под каждый видеоклип камеры
-- Пишет синхронизированные WAV в `01_Media/Source/Audio/`
+Syncs DJI wireless mic audio to camera clips by matching timestamps.
 
-### Результат:
+**Output:**
 ```
 01_Media/Source/Audio/
-├── RYA-ZVE1-1146_TX02.wav
-├── RYA-ZVE1-1147_TX02.wav
+├── {clip}_TX02.wav
 └── ...
 ```
 
 ---
 
-## Этап 3: Транскрипция
-
-### Команда:
+### Stage 3: Transcription
 ```bash
 python ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py --project "$PROJECT" -n 2
 ```
 
-### Параметры:
-- `-n 2` — количество спикеров (2 для интервью)
-- `-m large-v3` — модель Whisper (по умолчанию)
+**Parameters:**
+- `-n 2` — number of speakers (2 for interview)
+- `-m large-v3` — Whisper model (default)
+- `--language en` — language (default: auto-detect)
 
-### Что делает:
-- Whisper транскрибирует аудио в текст
-- Pyannote определяет кто говорит (SPEAKER_00, SPEAKER_01)
-- Объединяет в единый транскрипт
+**Time:** ~15-25 min per hour of audio
 
-### Время: ~15-25 минут для 1 часа видео
-
-### Результат:
+**Output:**
 ```
 01_Media/Source/Transcription/
-├── YTCG37_Hadi_Dawani_transcript.json  ← для скриптов
-├── YTCG37_Hadi_Dawani_transcript.srt   ← субтитры
+├── {project}_transcript.json           (main transcript)
+├── {project}_transcript.srt            (subtitles)
+├── {project}_transcript.xlsx           (spreadsheet)
 ├── per_clip/
-│   ├── RYA-ZVE1-1146/
-│   │   ├── RYA-ZVE1-1146_transcript.json
-│   │   └── RYA-ZVE1-1146_premiere_transcript.json
-│   └── ...
+│   └── {clip}/
+│       ├── {clip}_transcript.json
+│       ├── {clip}_transcript.srt
+│       └── {clip}_premiere_transcript.json
 
 01_Media/Source/Setup/
-├── YTCG37_Hadi_Dawani_ingest.json  ← для UXP Premiere
-└── logs/
-    └── YTCG37_Hadi_Dawani_transcribe_20260113_122000.log
+└── {project}_ingest.json               (Premiere UXP)
 ```
 
-### Проверка:
+**Check:**
 ```bash
-# Файлы созданы?
-ls "$PROJECT/01_Media/Source/Transcription/"
-
-# Сколько спикеров найдено?
-grep -o '"SPEAKER_[0-9]*"' "$PROJECT/01_Media/Source/Transcription/"*_transcript*.json | sort -u
-# Ожидается: "SPEAKER_00" и "SPEAKER_01"
-```
-
-### Пример содержимого .txt:
-```
-[00:00:05] SPEAKER_00:
-  Hello and welcome to Connect Group channel...
-
-[00:00:12] SPEAKER_01:
-  Thank you for having me, Roman...
+ls "$PROJECT/01_Media/Source/Transcription/"*_transcript*
+grep -o '"SPEAKER_[0-9]*"' "$PROJECT/01_Media/Source/Transcription/"*_transcript.json | sort -u
 ```
 
 ---
 
-## Этап 4: Идентификация спикеров
+## Next step: Speaker ID
 
-### Команда:
+Speaker identification is done via **Claude Desktop project** (recommended)
+or manually with scripts:
+
 ```bash
 python ~/YTAI/scripts/03_speaker_id/00_process_all.py --project "$PROJECT" --no-pause
 ```
 
-### Что делает (4 подэтапа):
-
-#### 4.1 Extract Speakers
-- Извлекает все реплики каждого спикера в отдельные файлы
-
-#### 4.2 Analyze Speakers (LLM)
-- qwen2.5:32b анализирует реплики
-- Определяет кто Host (Roman), кто Guest (Hadi Dawani)
-
-#### 4.3 Apply Names
-- Заменяет SPEAKER_00 → "Roman", SPEAKER_01 → "Hadi Dawani"
-
-#### 4.4 Split Clips
-- Разбивает транскрипт по исходным клипам
-- Создаёт SRT для каждого клипа с локальными таймкодами
-
-### Время: ~5-10 минут
-
-### Результат:
-```
-01_Media/Source/Transcription/
-├── YTCG37_Hadi_Dawani_extract_speakers_20260113_123000/
-│   ├── SPEAKER_00.txt         (все реплики спикера 0)
-│   ├── SPEAKER_01.txt         (все реплики спикера 1)
-│   └── _SUMMARY.txt           (статистика)
-│
-├── YTCG37_Hadi_Dawani_extract_speakers_20260113_123000_srt/
-│   ├── SPEAKER_00.srt
-│   └── SPEAKER_01.srt
-│
-├── YTCG37_Hadi_Dawani_analyze_speakers_20260113_123500.json      ← результат LLM
-├── YTCG37_Hadi_Dawani_analyze_speakers_20260113_123500_report.txt
-│
-├── YTCG37_Hadi_Dawani_apply_names_20260113_124000.json           ← с именами
-├── YTCG37_Hadi_Dawani_apply_names_20260113_124000.txt
-├── YTCG37_Hadi_Dawani_apply_names_20260113_124000.srt
-│
-├── YTCG37_Hadi_Dawani_split_clips_20260113_124500.xlsx           ← таблица
-├── RYA-ZVE1-1146.srt          ← SRT для клипа 1
-├── RYA-ZVE1-1147.srt          ← SRT для клипа 2
-├── RYA-ZVE1-1148.srt          ← SRT для клипа 3
-└── ...
-
-01_Media/Source/Setup/logs/
-├── YTCG37_Hadi_Dawani_extract_speakers_20260113_123000.log
-├── YTCG37_Hadi_Dawani_analyze_speakers_20260113_123500.log
-├── YTCG37_Hadi_Dawani_apply_names_20260113_124000.log
-└── YTCG37_Hadi_Dawani_split_clips_20260113_124500.log
-```
-
-### Проверка:
-```bash
-# Какие имена определил LLM?
-cat "$PROJECT/01_Media/Source/Transcription/"*_analyze_speakers_*.json
-
-# Сколько SRT файлов создано?
-ls "$PROJECT/01_Media/Source/Transcription/"*.srt | wc -l
-
-# Посмотреть таблицу
-open "$PROJECT/01_Media/Source/Transcription/"*_split_clips_*.xlsx
-
-# Посмотреть транскрипт с именами
-head -50 "$PROJECT/01_Media/Source/Transcription/"*_apply_names_*.txt
-```
-
-### Пример содержимого *_apply_names_*.txt:
-```
-[00:00:05] Roman:
-  Hello and welcome to Connect Group channel...
-
-[00:00:12] Hadi Dawani:
-  Thank you for having me, Roman...
-```
-
-### Пример SRT для клипа (RYA-ZVE1-1146.srt):
-```
-1
-00:00:05,000 --> 00:00:11,500
-[Roman] Hello and welcome to Connect Group channel...
-
-2
-00:00:12,000 --> 00:00:18,300
-[Hadi Dawani] Thank you for having me, Roman...
-```
+This replaces SPEAKER_00/SPEAKER_01 with real names and generates per-clip SRT files.
 
 ---
 
-## Итоговая структура проекта
+## Project structure (after full pipeline)
 
 ```
-YTCG37_Hadi_Dawani/
-│
+{project}/
 ├── 01_Media/
 │   ├── Source/
-│   │   ├── Video/
-│   │   │   ├── RYA-ZVE1-1146.MP4
-│   │   │   ├── RYA-ZVE1-1147.MP4
-│   │   │   └── ...
-│   │   ├── Audio/
-│   │   │   ├── RYA-ZVE1-1146_TX02.wav
-│   │   │   └── ...
-│   │   ├── Transcription/
-│   │   │   ├── YTCG37_Hadi_Dawani.mkv
-│   │   │   ├── YTCG37_Hadi_Dawani_FULL_AUDIO.wav
-│   │   │   ├── YTCG37_Hadi_Dawani_transcript.json
-│   │   │   ├── YTCG37_Hadi_Dawani_apply_names_*.txt
-│   │   │   ├── YTCG37_Hadi_Dawani_split_clips_*.xlsx
-│   │   │   ├── RYA-ZVE1-1146.srt
-│   │   │   ├── RYA-ZVE1-1147.srt
+│   │   ├── Video/                      ← camera MP4
+│   │   ├── Audio/                      ← DJI synced WAV (optional)
+│   │   ├── Transcription/              ← transcripts, per-clip data
+│   │   │   ├── {project}_transcript.json
+│   │   │   ├── {project}_FULL_AUDIO.wav
 │   │   │   └── per_clip/...
 │   │   ├── Setup/
-│   │   │   ├── YTCG37_Hadi_Dawani_ingest.json
-│   │   │   └── logs/
-│   │   │       ├── concat_master_*.log
-│   │   │       ├── extract_audio_*.log
-│   │   │       └── ...
-│   │   └── LUT/
-│   │       └── SL3SG3Ctos709.cube
-│   │
-│   ├── Assets/
-│   │   ├── Music/
-│   │   ├── SFX/
-│   │   └── ...
-│   │
-│   └── YTCG37_Hadi_Dawani.prproj
-│
+│   │   │   ├── {project}_ingest.json   ← Premiere UXP
+│   │   │   └── logs/                   ← all pipeline logs
+│   │   └── LUT/                        ← .cube from SD card
+│   ├── Assets/                         ← Music/, SFX/, Graphics/, Stock/, Fonts/
+│   └── {project}.prproj               ← Premiere working project
 ├── 02_Exports/
 ├── 03_Shorts/
 ├── 04_Thumbnail/
 ├── YouTube/
-│
-├── 99_Pipeline/
-│   └── DJI_Audio/
-│       └── TX02_MIC037_*.wav
-│
-└── YTCG37_Hadi_Dawani.gdoc
+├── 99_Pipeline/DJI_Audio/              ← original DJI WAV (archive)
+└── {project}.gdoc
 ```
 
 ---
 
-## Файлы для Premiere Pro
+## Premiere Pro files
 
-| Файл | Назначение |
-|------|------------|
-| `*_split_clips_*.xlsx` | Таблица: клип -> таймкод -> спикер -> текст |
-| `RYA-ZVE1-1146.srt` | Субтитры для клипа 1 (локальные таймкоды) |
-| `RYA-ZVE1-1147.srt` | Субтитры для клипа 2 |
-| `...` | ... |
-
-### Как использовать:
-1. Импортировать клипы из `01_Media/Source/Video/`
-2. Для каждого клипа импортировать соответствующий SRT из `Transcription/`
-3. XLSX использовать как референс для навигации
+| File | Purpose |
+|------|---------|
+| `*_ingest.json` | Input for UXP Ingest plugin — imports clips, bins, LUT, captions |
+| `*_transcript.srt` | Global subtitles (full timeline) |
+| `per_clip/{clip}_premiere_transcript.json` | Premiere-native transcript per clip |
+| `per_clip/{clip}_transcript.srt` | Per-clip subtitles with local timecodes |
 
 ---
 
 ## Troubleshooting
 
-### Ошибка: "FULL_AUDIO.wav not found"
+### "FULL_AUDIO.wav not found"
 ```bash
 python ~/YTAI/scripts/01_prepare/02_extract_audio.py --project "$PROJECT"
 ```
 
-### Ошибка: "Ollama connection refused"
+### View logs
 ```bash
-# Проверить что Ollama запущен
-curl http://localhost:11434/api/tags
+# Latest extract audio log
+tail -50 "$PROJECT/01_Media/Source/Setup/logs/"*extract_audio*.log
 
-# Если нет — запустить
-OLLAMA_MAX_VRAM=20g ollama serve
+# Latest transcription log
+tail -50 "$PROJECT/01_Media/Source/Transcription/"*_transcribe_*.log
 ```
 
-### Неправильные имена спикеров
+### Re-run a single stage
 ```bash
-# Отредактировать JSON
-nano "$PROJECT/01_Media/Source/Transcription/"*_analyze_speakers_*.json
-
-# Перезапустить с этапа 3
-python ~/YTAI/scripts/03_speaker_id/00_process_all.py --project "$PROJECT" --start-from 3
-```
-
-### Посмотреть логи
-```bash
-# Последние 50 строк лога транскрипции
-tail -50 "$PROJECT/01_Media/Source/Setup/logs/"*_transcribe_*.log
-
-# Лог анализа спикеров
-cat "$PROJECT/01_Media/Source/Setup/logs/"*_analyze_speakers_*.log
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only transcribe --speakers 2 --force
 ```
 
 ---
 
-## Quick Commands
+## Configuration
 
-```bash
-# Полный цикл (после подготовки)
-source /Users/romansergeev/YTAI/environment/.venv_transcribe/bin/activate
-export PROJECT="/Volumes/RYA Blue/YTCG37_Hadi_Dawani"
-
-python ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py --project "$PROJECT" -n 2
-python ~/YTAI/scripts/03_speaker_id/00_process_all.py --project "$PROJECT" --no-pause
-
-# Проверить результат
-ls "$PROJECT/01_Media/Source/Transcription/"*.srt | wc -l
-```
-
----
-
-## Конфигурация
-
-| Параметр | Значение |
-|----------|----------|
-| Python venv | `/Users/romansergeev/YTAI/environment/.venv_transcribe` |
-| LLM модель | `qwen2.5:32b` |
-| Whisper модель | `large-v3` |
-| Спикеров | 2 (интервью) |
+| Parameter | Value |
+|-----------|-------|
+| Python venv | `~/YTAI/environment/.venv_transcribe` |
+| Whisper model | `large-v3` |
+| Default speakers | 2 (interview) |

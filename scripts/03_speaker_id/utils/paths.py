@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 YTAI Utils: Paths
-Пути проекта, поиск файлов, backup.
+Project paths, file search, backup.
 """
 
 import re
@@ -12,7 +12,7 @@ from typing import Optional, List
 
 
 # ============================================================================
-# Константы структуры проекта
+# Project structure constants
 # ============================================================================
 
 VIDEO_DIR = "01_Media/Source/Video"
@@ -27,26 +27,26 @@ VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".mts", ".avi", ".mkv",
 
 
 # ============================================================================
-# Пути проекта
+# Project paths
 # ============================================================================
 
 def get_project_paths(project_dir: str) -> dict:
     """
-    Получить все пути проекта.
-    
+    Get all project paths.
+
     Args:
-        project_dir: Путь к папке проекта
-        
+        project_dir: Path to project folder
+
     Returns:
-        Dict со всеми путями
-        
+        Dict with all paths
+
     Raises:
-        FileNotFoundError: Если папка проекта не существует
+        FileNotFoundError: If project folder does not exist
     """
     project_root = Path(project_dir).expanduser().resolve()
     
     if not project_root.exists():
-        raise FileNotFoundError(f"Папка проекта не найдена: {project_root}")
+        raise FileNotFoundError(f"Project folder not found: {project_root}")
     
     return {
         "project_root": project_root,
@@ -61,58 +61,58 @@ def get_project_paths(project_dir: str) -> dict:
 
 
 def ensure_dirs(paths: dict) -> None:
-    """Создать все необходимые директории."""
+    """Create all required directories."""
     for key in ["transcription_dir", "setup_dir", "logs_dir"]:
         if key in paths:
             paths[key].mkdir(parents=True, exist_ok=True)
 
 
 # ============================================================================
-# Поиск файлов
+# File search
 # ============================================================================
 
 def find_latest_file(directory: Path, pattern: str, exclude: Optional[List[str]] = None) -> Optional[Path]:
     """
-    Найти последний файл по паттерну (по дате модификации).
-    
+    Find the latest file by pattern (by modification date).
+
     Args:
-        directory: Директория для поиска
-        pattern: Glob паттерн (например "*_transcript_*.json")
-        exclude: Список подстрок для исключения
-        
+        directory: Directory to search in
+        pattern: Glob pattern (e.g. "*_transcript_*.json")
+        exclude: List of substrings to exclude
+
     Returns:
-        Path к последнему файлу или None
+        Path to the latest file or None
     """
     if not directory.exists():
         return None
     
     files = list(directory.glob(pattern))
     
-    # Исключить файлы с определёнными подстроками
+    # Exclude files with certain substrings
     if exclude:
         files = [f for f in files if not any(ex in f.name for ex in exclude)]
     
-    # Исключить backup/
+    # Exclude backup/
     files = [f for f in files if "backup" not in str(f)]
     
     if not files:
         return None
     
-    # Сортировка по дате модификации (последний первый)
+    # Sort by modification date (latest first)
     files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
     return files[0]
 
 
 def find_latest_dir(directory: Path, pattern: str) -> Optional[Path]:
     """
-    Найти последнюю папку по паттерну.
-    
+    Find the latest directory by pattern.
+
     Args:
-        directory: Директория для поиска
-        pattern: Glob паттерн (например "*_extract_speakers_*")
-        
+        directory: Directory to search in
+        pattern: Glob pattern (e.g. "*_extract_speakers_*")
+
     Returns:
-        Path к последней папке или None
+        Path to the latest directory or None
     """
     if not directory.exists():
         return None
@@ -132,14 +132,14 @@ def find_latest_dir(directory: Path, pattern: str) -> Optional[Path]:
 
 def move_to_backup(path: Path, backup_dir: Optional[Path] = None) -> Optional[Path]:
     """
-    Переместить файл/папку в backup/.
-    
+    Move a file/folder to backup/.
+
     Args:
-        path: Файл или папка для перемещения
-        backup_dir: Папка backup (по умолчанию: рядом с path)
-        
+        path: File or folder to move
+        backup_dir: Backup folder (default: next to path)
+
     Returns:
-        Новый путь в backup или None если path не существует
+        New path in backup or None if path does not exist
     """
     if not path.exists():
         return None
@@ -149,7 +149,7 @@ def move_to_backup(path: Path, backup_dir: Optional[Path] = None) -> Optional[Pa
     
     backup_dir.mkdir(parents=True, exist_ok=True)
     
-    # Если файл с таким именем уже есть в backup - добавить timestamp
+    # If a file with the same name already exists in backup - add timestamp
     dest = backup_dir / path.name
     if dest.exists():
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -164,15 +164,15 @@ def move_to_backup(path: Path, backup_dir: Optional[Path] = None) -> Optional[Pa
 
 def cleanup_old_files(directory: Path, pattern: str, backup_dir: Optional[Path] = None) -> int:
     """
-    Найти файлы по паттерну и переместить в backup/.
-    
+    Find files by pattern and move them to backup/.
+
     Args:
-        directory: Директория для поиска
-        pattern: Glob паттерн
-        backup_dir: Папка backup (по умолчанию: directory/backup)
-        
+        directory: Directory to search in
+        pattern: Glob pattern
+        backup_dir: Backup folder (default: directory/backup)
+
     Returns:
-        Количество перемещённых файлов/папок
+        Number of moved files/folders
     """
     if not directory.exists():
         return 0
@@ -181,7 +181,7 @@ def cleanup_old_files(directory: Path, pattern: str, backup_dir: Optional[Path] 
         backup_dir = directory / "backup"
     
     items = list(directory.glob(pattern))
-    # Исключить саму папку backup
+    # Exclude the backup folder itself
     items = [i for i in items if i.name != "backup" and "backup" not in str(i)]
     
     count = 0
@@ -198,19 +198,19 @@ def cleanup_old_files(directory: Path, pattern: str, backup_dir: Optional[Path] 
 
 def find_channel_profile(project_root: Path) -> Optional[Path]:
     """
-    Найти файл Channel Profile в проекте или родительской папке.
-    
-    Ищет: *_Channel_Profile.txt, Channel_Profile.txt
+    Find a Channel Profile file in the project or parent folder.
+
+    Searches for: *_Channel_Profile.txt, Channel_Profile.txt
     """
     patterns = ["*_Channel_Profile.txt", "Channel_Profile.txt", "channel_profile.txt"]
     
-    # Сначала в проекте
+    # First in the project
     for pattern in patterns:
         files = list(project_root.glob(pattern))
         if files:
             return files[0]
     
-    # Потом в родительской папке
+    # Then in the parent folder
     parent = project_root.parent
     for pattern in patterns:
         files = list(parent.glob(pattern))
@@ -221,7 +221,7 @@ def find_channel_profile(project_root: Path) -> Optional[Path]:
 
 
 def load_channel_profile(project_root: Path) -> Optional[str]:
-    """Загрузить содержимое Channel Profile."""
+    """Load the contents of a Channel Profile."""
     profile_path = find_channel_profile(project_root)
     
     if profile_path and profile_path.exists():
@@ -234,30 +234,30 @@ def load_channel_profile(project_root: Path) -> Optional[str]:
 
 
 # ============================================================================
-# Извлечение имени гостя из названия проекта
+# Extract guest name from project name
 # ============================================================================
 
 def extract_guest_hint(project_name: str) -> Optional[str]:
     """
-    Извлечь имя гостя из названия проекта.
-    
-    Примеры:
-        "YTCG37_Hadi_Dawani" → "Hadi Dawani"
-        "YTDemo_Ahmed_AlMutawa" → "Ahmed AlMutawa"
-        "YT_Interview_John_Smith" → "John Smith"
-        "YTPODCAST15_Maria_Garcia" → "Maria Garcia"
+    Extract guest name from project name.
+
+    Examples:
+        "YTCG37_Hadi_Dawani" -> "Hadi Dawani"
+        "YTDemo_Ahmed_AlMutawa" -> "Ahmed AlMutawa"
+        "YT_Interview_John_Smith" -> "John Smith"
+        "YTPODCAST15_Maria_Garcia" -> "Maria Garcia"
     """
-    # Убрать префикс YT с любыми буквами/цифрами до первого _
-    # YT, YTCG37, YTDemo, YTPODCAST15 и т.д.
+    # Remove YT prefix with any letters/digits up to the first _
+    # YT, YTCG37, YTDemo, YTPODCAST15, etc.
     cleaned = re.sub(r'^YT[A-Za-z]*\d*_?', '', project_name)
     
-    # Убрать даты в конце (YYYYMMDD или YYMMDD)
+    # Remove trailing dates (YYYYMMDD or YYMMDD)
     cleaned = re.sub(r'_?\d{6,8}$', '', cleaned)
     
-    # Заменить подчёркивания на пробелы
+    # Replace underscores with spaces
     cleaned = cleaned.replace('_', ' ').strip()
     
-    # Проверить что похоже на имя (1-4 слова)
+    # Check that it looks like a name (1-4 words)
     words = cleaned.split()
     if 1 <= len(words) <= 4:
         skip_words = {'interview', 'project', 'video', 'raw', 'edit', 'final', 'draft'}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 YTAI Utils: LLM
-Работа с Ollama API.
+Ollama API integration.
 """
 
 import json
@@ -17,29 +17,29 @@ except ImportError:
 
 
 # ============================================================================
-# Константы
+# Constants
 # ============================================================================
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TAGS_URL = "http://localhost:11434/api/tags"
 DEFAULT_LLM_MODEL = "qwen2.5:32b"
-OLLAMA_TIMEOUT = 600  # 10 минут
+OLLAMA_TIMEOUT = 600  # 10 minutes
 
 
 # ============================================================================
-# Проверка сервера
+# Server check
 # ============================================================================
 
 def check_ollama_server(logger: Optional[logging.Logger] = None) -> bool:
     """
-    Проверить что Ollama сервер запущен.
-    
+    Check that the Ollama server is running.
+
     Returns:
-        True если сервер доступен
+        True if the server is reachable
     """
     if not HAS_REQUESTS:
         if logger:
-            logger.error("Библиотека requests не установлена: pip install requests")
+            logger.error("requests library is not installed: pip install requests")
         return False
     
     try:
@@ -48,21 +48,21 @@ def check_ollama_server(logger: Optional[logging.Logger] = None) -> bool:
             models = response.json().get("models", [])
             if logger:
                 model_names = [m.get("name", "") for m in models]
-                logger.debug(f"Доступные модели: {model_names}")
+                logger.debug(f"Available models: {model_names}")
             return True
         return False
     except requests.exceptions.ConnectionError:
         if logger:
-            logger.error("Ollama сервер не запущен. Запустите: ollama serve")
+            logger.error("Ollama server is not running. Start it with: ollama serve")
         return False
     except Exception as e:
         if logger:
-            logger.error(f"Ошибка проверки Ollama: {e}")
+            logger.error(f"Ollama check error: {e}")
         return False
 
 
 def get_available_models() -> list:
-    """Получить список доступных моделей."""
+    """Get the list of available models."""
     if not HAS_REQUESTS:
         return []
     
@@ -78,7 +78,7 @@ def get_available_models() -> list:
 
 
 # ============================================================================
-# Вызов API
+# API call
 # ============================================================================
 
 def call_ollama(
@@ -90,22 +90,22 @@ def call_ollama(
     logger: Optional[logging.Logger] = None
 ) -> Optional[str]:
     """
-    Отправить запрос в Ollama API.
-    
+    Send a request to the Ollama API.
+
     Args:
-        prompt: Текст промпта
-        model: Название модели
-        temperature: Температура (0.0-1.0)
-        max_tokens: Максимум токенов в ответе
-        timeout: Таймаут в секундах
-        logger: Опциональный логгер
-        
+        prompt: Prompt text
+        model: Model name
+        temperature: Temperature (0.0-1.0)
+        max_tokens: Maximum tokens in response
+        timeout: Timeout in seconds
+        logger: Optional logger
+
     Returns:
-        Текст ответа или None при ошибке
+        Response text or None on error
     """
     if not HAS_REQUESTS:
         if logger:
-            logger.error("Библиотека requests не установлена")
+            logger.error("requests library is not installed")
         return None
     
     try:
@@ -118,7 +118,7 @@ def call_ollama(
                 "options": {
                     "temperature": temperature,
                     "num_predict": max_tokens,
-                    "num_ctx": 32768,  # Большой контекст для всех реплик
+                    "num_ctx": 32768,  # Large context for all utterances
                 }
             },
             timeout=timeout
@@ -128,44 +128,44 @@ def call_ollama(
             return response.json().get("response", "")
         else:
             if logger:
-                logger.warning(f"Ollama API ошибка: {response.status_code}")
+                logger.warning(f"Ollama API error: {response.status_code}")
             return None
             
     except requests.exceptions.Timeout:
         if logger:
-            logger.warning(f"Ollama таймаут ({timeout}s)")
+            logger.warning(f"Ollama timeout ({timeout}s)")
         return None
     except requests.exceptions.ConnectionError:
         if logger:
-            logger.error("Ollama сервер недоступен")
+            logger.error("Ollama server is unreachable")
         return None
     except Exception as e:
         if logger:
-            logger.error(f"Ollama ошибка: {e}")
+            logger.error(f"Ollama error: {e}")
         return None
 
 
 # ============================================================================
-# Парсинг JSON из ответа
+# Parse JSON from response
 # ============================================================================
 
 def parse_json_response(response: str, logger: Optional[logging.Logger] = None) -> Optional[Dict[str, Any]]:
     """
-    Извлечь JSON из ответа LLM.
-    
-    LLM может вернуть JSON внутри текста или markdown блока.
-    
+    Extract JSON from an LLM response.
+
+    The LLM may return JSON inside text or a markdown block.
+
     Args:
-        response: Текст ответа от LLM
-        logger: Опциональный логгер
-        
+        response: Response text from the LLM
+        logger: Optional logger
+
     Returns:
-        Распарсенный dict или None
+        Parsed dict or None
     """
     if not response:
         return None
     
-    # Попробовать найти JSON в markdown блоке
+    # Try to find JSON in a markdown block
     md_patterns = [
         r'```json\s*([\s\S]*?)\s*```',  # ```json ... ```
         r'```\s*([\s\S]*?)\s*```',       # ``` ... ```
@@ -180,8 +180,8 @@ def parse_json_response(response: str, logger: Optional[logging.Logger] = None) 
             except json.JSONDecodeError:
                 continue
     
-    # Попробовать найти JSON объект по скобкам (с учётом вложенности)
-    # Ищем первую { и соответствующую ей }
+    # Try to find a JSON object by braces (accounting for nesting)
+    # Find the first { and its matching }
     start_idx = response.find('{')
     if start_idx != -1:
         depth = 0
@@ -197,20 +197,20 @@ def parse_json_response(response: str, logger: Optional[logging.Logger] = None) 
                     except json.JSONDecodeError:
                         break
     
-    # Попробовать распарсить весь ответ как JSON
+    # Try to parse the entire response as JSON
     try:
         return json.loads(response.strip())
     except json.JSONDecodeError:
         pass
     
     if logger:
-        logger.warning(f"Не удалось распарсить JSON из ответа: {response[:200]}...")
+        logger.warning(f"Failed to parse JSON from response: {response[:200]}...")
     
     return None
 
 
 # ============================================================================
-# Хелперы для анализа спикеров
+# Speaker analysis helpers
 # ============================================================================
 
 def build_speaker_analysis_prompt(
@@ -220,29 +220,29 @@ def build_speaker_analysis_prompt(
     guest_hint: Optional[str] = None
 ) -> str:
     """
-    Построить промпт для анализа спикера.
-    
+    Build a prompt for speaker analysis.
+
     Args:
-        speaker_id: ID спикера (SPEAKER_00)
-        utterances: Список реплик [{"text": "...", "start": 0.0}, ...]
-        channel_context: Контекст канала
-        guest_hint: Подсказка имени гостя
-        
+        speaker_id: Speaker ID (SPEAKER_00)
+        utterances: List of utterances [{"text": "...", "start": 0.0}, ...]
+        channel_context: Channel context
+        guest_hint: Guest name hint
+
     Returns:
-        Текст промпта
+        Prompt text
     """
     total = len(utterances)
     
-    # Форматировать реплики
+    # Format utterances
     utterances_text = "\n".join([
         f'{i+1}. "{u["text"]}"' 
         for i, u in enumerate(utterances)
     ])
     
-    # Контекст канала
+    # Channel context
     context_section = ""
     if channel_context:
-        # Ограничить размер контекста
+        # Limit context size
         if len(channel_context) > 2000:
             channel_context = channel_context[:2000] + "\n[...truncated]"
         context_section = f"""
@@ -250,7 +250,7 @@ CHANNEL CONTEXT:
 {channel_context}
 """
     
-    # Подсказка имени гостя
+    # Guest name hint
     hint_section = ""
     if guest_hint:
         hint_section = f"""

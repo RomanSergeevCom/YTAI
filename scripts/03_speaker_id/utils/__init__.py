@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 YTAI Utils
-Общие утилиты для скриптов обработки транскриптов.
+Common utilities for transcript processing scripts.
 """
 
 # Paths
 from .paths import (
-    # Константы
+    # Constants
     VIDEO_DIR,
     AUDIO_DIR,
     TRANSCRIPTION_DIR,
@@ -14,7 +14,7 @@ from .paths import (
     DJI_PIPELINE_DIR,
     LOGS_DIR,
     VIDEO_EXTS,
-    # Функции
+    # Functions
     get_project_paths,
     ensure_dirs,
     find_latest_file,
