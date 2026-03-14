@@ -275,7 +275,7 @@ describe('buildScreenCues', () => {
     assert.equal(ids.length, 3);
   });
 
-  it('creates markers at Assembly timeline positions', async () => {
+  it('returns markerList at Assembly timeline positions (creation deferred to index.js)', async () => {
     var allSegs = makeAllSegments();
     var screens = [
       makeScreen({ id: 'scr_001', segmentId: 'seg_001', tcInSec: 0, segment: allSegs[0], type: 'full_overlay' }),
@@ -283,10 +283,13 @@ describe('buildScreenCues', () => {
     ];
     var result = await buildScreenCues(project, screens, allSegs, makeClipMap(), 'TestProject');
 
+    // Markers are no longer created inside buildScreenCues — they are prepared as markerList
+    // and created by createScreenCuesMarkers() in index.js (same pattern as Assembly)
     assert.equal(result.markers, 2);
-    var addMarkerCalls = ppro._recorder.getCalls('Markers.createAddMarkerAction');
-    assert.ok(addMarkerCalls.length >= 2);
-    assert.ok(addMarkerCalls[0].args[0].includes('[SCR]'));
+    assert.ok(result.markerList.length >= 2, 'markerList should have 2+ entries');
+    assert.ok(result.markerList[0].name.includes('[SCR]'), 'marker name should include [SCR]');
+    assert.equal(result.markerList[0].type, 'com.adobe.premiereMarkers.chapter', 'marker type should be Chapter URI');
+    assert.ok(result.markerList[0].startSec >= 0, 'marker startSec should be >= 0');
   });
 
   it('returns srtContent with correct timecodes', async () => {

@@ -171,9 +171,13 @@ async function cleanExistingSequence(project, seqName, logger) {
  * @param {number} outSec - Source out point in seconds
  * @param {string} label - Segment label for logging
  * @param {Object} logger - Logger instance
+ * @param {Object} [colorOpts] - Optional color to apply before insert:
+ *   { color: 'Green' } → applyColorToItem (Assembly, ScreenCues)
+ *   { colorIdx: 6 }    → applyColorByIndex (Review)
+ *   null/undefined      → no coloring (Ingest: clips placed whole)
  * @returns {number} Number of DJI audio items placed (0 if none found)
  */
-function insertDjiAudio(project, seqEditor, clipMap, sourceFile, insertSec, inSec, outSec, label, logger) {
+function insertDjiAudio(project, seqEditor, clipMap, sourceFile, insertSec, inSec, outSec, label, logger, colorOpts) {
   // Extract clip_id: "RYA-FX3-0100.MP4" → "RYA-FX3-0100"
   var clipId = sourceFile.replace(/\.[^.]+$/, '');
 
@@ -195,6 +199,13 @@ function insertDjiAudio(project, seqEditor, clipMap, sourceFile, insertSec, inSe
     // Cast for trim
     var djiCast = ppro.ClipProjectItem.cast(djiItem);
     var djiForTrim = djiCast || djiItem;
+
+    // Apply per-segment color BEFORE insert (same pattern as V1 clips)
+    if (colorOpts && colorOpts.color) {
+      applyColorToItem(project, djiItem, colorOpts.color, label + ':' + txName, logger);
+    } else if (colorOpts && colorOpts.colorIdx !== undefined) {
+      applyColorByIndex(project, djiItem, colorOpts.colorIdx, label + ':' + txName, logger);
+    }
 
     // Set same source in/out as video (DJI audio is synced 1:1)
     var inTime = ppro.TickTime.createWithSeconds(inSec);

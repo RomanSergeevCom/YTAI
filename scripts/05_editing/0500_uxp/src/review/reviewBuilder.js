@@ -426,9 +426,10 @@ async function buildReviewSequence(project, clipMap, segments, projectName, logg
   // Get SequenceEditor early — needed for DJI audio insert on first clip too
   var seqEditor = ppro.SequenceEditor.getEditor(seq);
 
-  // Insert DJI audio for first clip on A2 (same source in/out as video)
+  // Insert DJI audio for first clip on A2 (same source in/out as video, same color)
   var firstDjiCount = insertDjiAudio(project, seqEditor, clipMap, firstSeg.sourceFile,
-    firstSeg._timelinePosition || 0, firstSeg.inSec, firstSeg.outSec, firstSeg.id, logger);
+    firstSeg._timelinePosition || 0, firstSeg.inSec, firstSeg.outSec, firstSeg.id, logger,
+    { colorIdx: firstColorIdx });
 
   if (logger) {
     logger.info('Review sequence created: ' + seqName);
@@ -500,11 +501,12 @@ async function buildReviewSequence(project, clipMap, segments, projectName, logg
     // Clear source in/out (using CAST item, so clip can be reused)
     clearSourceInOut(project, clipForTrim, seg.id, logger);
 
-    // Insert DJI audio for this segment on A2 (same source in/out as video)
+    // Insert DJI audio for this segment on A2 (same source in/out as video, same color)
     var segDjiCount = 0;
     if (insertOk) {
       segDjiCount = insertDjiAudio(project, seqEditor, clipMap, seg.sourceFile,
-        seg._timelinePosition, seg.inSec, seg.outSec, seg.id, logger);
+        seg._timelinePosition, seg.inSec, seg.outSec, seg.id, logger,
+        { colorIdx: colorIdx });
       totalDjiCount += segDjiCount;
     }
 

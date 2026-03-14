@@ -4,7 +4,7 @@
  * Creates a sequence that mirrors the Assembly timeline:
  *   V1 = exact copy of Assembly (same segments, order, trims, colors)
  *   V2 = PNG overlays at screen cue positions (if PNGs available)
- *   Markers = Orange Comment markers at screen cue positions
+ *   Markers = Orange Chapter markers at screen cue positions (created by index.js)
  *   SRT = generated in-memory for import
  *
  * Two-step workflow:
@@ -28,7 +28,7 @@ try {
   ppro = require('../../tests/mocks/premierepro');
 }
 
-const { SCREEN_CUE_COLOR, MARKER_TYPE_COMMENT } = require('../shared/constants');
+const { SCREEN_CUE_COLOR, MARKER_TYPE_CHAPTER } = require('../shared/constants');
 const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
 const { formatMarkerComment, formatSrtContent } = require('./screenParser');
 
@@ -185,7 +185,7 @@ async function findImportedItem(project, filename, targetBin) {
  *
  * V1: Exact copy of Assembly (same segments, order, trims, colors)
  * V2: PNG overlays at screen cue positions (if PNGs available)
- * Markers: Orange Comment markers at each screen cue position
+ * Markers: Orange Chapter markers at each screen cue position (via markerList → index.js)
  *
  * @param {Object} project - Active Premiere project
  * @param {Array} screens - Parsed screens from screenParser
@@ -196,12 +196,13 @@ async function findImportedItem(project, filename, targetBin) {
  * @param {string} [briefPath] - Path to edit_brief.json (for PNG lookup)
  * @param {Array|null} [pngFiles] - Filenames of PNGs found on disk (pre-checked by pipeline), or null
  * @param {Object|null} [screenCuesBin] - Target bin for PNG imports (01_ScreenCues), or null for project root
- * @returns {{ sequence, clips, markers, overlays, skipped, warnings, totalDuration, assemblySegments, srtContent }}
+ * @returns {{ sequence, clips, markers, overlays, skipped, warnings, totalDuration, assemblySegments, srtContent, markerList }}
  */
 async function buildScreenCues(project, screens, segments, clipMap, projectName, logger, briefPath, pngFiles, screenCuesBin) {
   var result = {
     sequence: null, clips: 0, markers: 0, overlays: 0, skipped: 0,
-    warnings: [], totalDuration: 0, assemblySegments: [], srtContent: ''
+    warnings: [], totalDuration: 0, assemblySegments: [], srtContent: '',
+    markerList: []
   };
 
   if (!screens || screens.length === 0) {
@@ -272,9 +273,9 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
   // Get SequenceEditor early — needed for DJI audio insert on first clip too
   var seqEditor = ppro.SequenceEditor.getEditor(seq);
 
-  // Insert DJI audio for first clip on A2 (same source in/out as video)
+  // Insert DJI audio for first clip on A2 (same source in/out as video, same color)
   var firstDjiCount = insertDjiAudio(project, seqEditor, clipMap, firstSeg.sourceFile,
-    0, firstSeg.inSec, firstSeg.outSec, firstSeg.id, logger);
+    0, firstSeg.inSec, firstSeg.outSec, firstSeg.id, logger, { color: firstSeg.color });
   var totalDjiCount = firstDjiCount;
 
   if (logger) {
@@ -330,11 +331,11 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
 
     clearSourceInOut(project, clipForTrim, seg.id, logger);
 
-    // Insert DJI audio for this segment on A2 (same source in/out as video)
+    // Insert DJI audio for this segment on A2 (same source in/out as video, same color)
     var segDjiCount = 0;
     if (insertOk) {
       segDjiCount = insertDjiAudio(project, seqEditor, clipMap, seg.sourceFile,
-        cumulativePosition, seg.inSec, seg.outSec, seg.id, logger);
+        cumulativePosition, seg.inSec, seg.outSec, seg.id, logger, { color: seg.color });
       totalDjiCount += segDjiCount;
     }
 
@@ -462,7 +463,11 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
     if (logger) logger.info('No briefPath provided — skipping V2 PNG overlays');
   }
 
-  // === Phase E: Markers (Orange Comment) at screen positions ===
+  // === Phase E: Build marker list (actual creation done in index.js) ===
+  // Marker creation is handled by createScreenCuesMarkers() in index.js,
+  // following the same 4-transaction pattern as createAssemblyMarkers().
+  // This ensures markers are read ONCE and the same references are used
+  // for both color and type transactions.
   var markerList = [];
   for (var mi = 0; mi < screens.length; mi++) {
     var screen = screens[mi];
@@ -471,83 +476,18 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
 
     markerList.push({
       name: '[SCR] ' + screen.type,
-      type: MARKER_TYPE_COMMENT,
+      type: MARKER_TYPE_CHAPTER,
       startSec: markerPos,
       durationSec: 0,
       comment: formatMarkerComment(screen)
     });
   }
 
-  if (markerList.length > 0) {
-    try {
-      var markersOwner = await ppro.Markers.getMarkers(seq);
-
-      // Transaction 1: Create markers
-      try {
-        project.lockedAccess(function () {
-          project.executeTransaction(function (ca) {
-            for (var mk_i = 0; mk_i < markerList.length; mk_i++) {
-              var mk = markerList[mk_i];
-              ca.addAction(markersOwner.createAddMarkerAction(
-                mk.name, mk.type,
-                ppro.TickTime.createWithSeconds(mk.startSec),
-                ppro.TickTime.createWithSeconds(mk.durationSec),
-                mk.comment
-              ));
-            }
-          }, 'ScreenCue markers batch');
-        });
-      } catch (batchErr) {
-        if (logger) logger.debug('Batch marker creation failed, trying individual: ' + batchErr.message);
-        for (var mk_i = 0; mk_i < markerList.length; mk_i++) {
-          try {
-            var mk = markerList[mk_i];
-            project.lockedAccess(function () {
-              project.executeTransaction(function (ca) {
-                ca.addAction(markersOwner.createAddMarkerAction(
-                  mk.name, mk.type,
-                  ppro.TickTime.createWithSeconds(mk.startSec),
-                  ppro.TickTime.createWithSeconds(mk.durationSec),
-                  mk.comment
-                ));
-              }, 'ScreenCue marker: ' + mk.name);
-            });
-          } catch (indErr) {
-            if (logger) logger.debug('  Marker failed: ' + mk.name + ': ' + indErr.message);
-          }
-        }
-      }
-
-      // Transaction 2: Set marker colors to Orange
-      var allMarkers = markersOwner.getMarkers();
-      if (allMarkers && allMarkers.length > 0) {
-        try {
-          project.lockedAccess(function () {
-            project.executeTransaction(function (ca) {
-              for (var ci = 0; ci < allMarkers.length; ci++) {
-                var marker = allMarkers[ci];
-                var markerName = '';
-                try { markerName = marker.getName ? marker.getName() : (marker.name || ''); } catch (e) { }
-                if (markerName.indexOf('[SCR]') === 0) {
-                  ca.addAction(marker.createSetColorByIndexAction(SCREEN_CUE_COLOR.markerIdx));
-                }
-              }
-            }, 'ScreenCue marker colors');
-          });
-        } catch (colorErr) {
-          if (logger) logger.debug('Marker color setting failed: ' + colorErr.message);
-        }
-      }
-
-      result.markers = markerList.length;
-    } catch (markerErr) {
-      result.warnings.push('Marker creation failed: ' + markerErr.message);
-      if (logger) logger.warn('Marker creation failed: ' + markerErr.message);
-    }
-  }
+  result.markerList = markerList;
+  result.markers = markerList.length;
 
   if (logger) {
-    logger.info('Markers: ' + result.markers + ' Orange Comment');
+    logger.info('Markers: ' + markerList.length + ' prepared (will be created by pipeline)');
   }
 
   // === Phase F: Generate SRT ===

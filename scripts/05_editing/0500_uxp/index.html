@@ -113,6 +113,18 @@
       font-size: 11px;
     }
 
+    /* Button done state — shows checkmark + green accent after successful build */
+    sp-button.btn-done {
+      border: 1.5px solid var(--success) !important;
+      opacity: 0.85;
+    }
+
+    sp-button.btn-done::after {
+      content: ' \2713';
+      color: var(--success);
+      font-weight: bold;
+    }
+
     /* === Project section === */
     #project-section {
       background: var(--bg-secondary);

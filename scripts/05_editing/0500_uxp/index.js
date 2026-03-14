@@ -514,6 +514,7 @@ async function buildIngest() {
     ingestLogger.info('=== INGEST BUILD COMPLETE (' + elapsed + 's) ===');
     ingestLogger.info('Timing: ' + stepTimings.join(' | '));
     ingestLogger.info('Summary: ' + result.clipCount + ' clips, ' + trResult.transcriptsImported + ' transcripts');
+    $('btn-build-ingest').classList.add('btn-done');
 
     // Post-build validation
     if (result.sequence) {
@@ -793,6 +794,7 @@ async function buildAssembly() {
     assemblyLogger.info('=== ASSEMBLY BUILD COMPLETE (' + elapsed + 's) ===');
     assemblyLogger.info('Timing: ' + stepTimings.join(' | '));
     assemblyLogger.info('Assembly: ' + result.clipCount + ' clips on V1, total=' + (result.totalDuration || 0).toFixed(1) + 's');
+    $('btn-build-assembly').classList.add('btn-done');
 
     // ScreenCues reminder — how many screens are ready in the brief
     if (assemblyState.screens && assemblyState.screens.length > 0) {
@@ -1647,6 +1649,7 @@ async function buildReview() {
     reviewLogger.info('=== REVIEW BUILD COMPLETE (' + elapsed + 's) ===');
     reviewLogger.info('Timing: ' + stepTimings.join(' | '));
     reviewLogger.info('Review: ' + result.clipCount + ' clips on V1, total=' + (result.totalDuration || 0).toFixed(1) + 's');
+    $('btn-build-review').classList.add('btn-done');
 
     setReviewStatus('Review built (' + result.clipCount + ' clips)', 'ready');
     updateLogPath('review', reviewLogger.getLastSavedPath());
@@ -1835,6 +1838,7 @@ async function generateScreenPngs() {
 
   screensLogger.info('=== GENERATE PNGs COMPLETE ===');
   $('btn-generate-pngs').removeAttribute('disabled');
+  $('btn-generate-pngs').classList.add('btn-done');
 }
 
 /**
@@ -1842,7 +1846,7 @@ async function generateScreenPngs() {
  *
  * V1 = exact copy of Assembly (same segments, order, trims, colors)
  * V2 = PNG overlays at screen cue positions (if PNGs available)
- * Markers = Orange Comment markers at screen cue positions
+ * Markers = Orange Chapter markers at screen cue positions
  * SRT = generated in-memory, written to disk, imported to 02_Transcripts
  *
  * Does NOT depend on Assembly sequence — only needs brief + imported clips.
@@ -1852,11 +1856,12 @@ async function generateScreenPngs() {
  *   - Clips imported (via INGEST — 00_Source bin exists)
  *   - (Optional) PNGs generated via generate_screen_cues_png.py
  *
- * 4 steps:
+ * 5 steps:
  *   1. Scan clips from 00_Source
- *   2. Build ScreenCues sequence (V1 Assembly copy + V2 PNGs + markers + SRT)
- *   3. Write SRT file to brief directory
- *   4. Import Screen Cues SRT to 02_Transcripts bin
+ *   2. Build ScreenCues sequence (V1 Assembly copy + V2 PNGs + SRT)
+ *   3. Create markers (separate step — same 4-transaction pattern as Assembly)
+ *   4. Write SRT file to brief directory
+ *   5. Import Screen Cues SRT to 02_Transcripts bin
  */
 async function buildScreenCuesPipeline() {
   if (!assemblyState.screens || assemblyState.screens.length === 0) {
@@ -1867,7 +1872,7 @@ async function buildScreenCuesPipeline() {
   setScreensStatus('Building screen cues...', 'waiting');
   $('screens-validation').style.display = 'none';
 
-  var totalSteps = 4;
+  var totalSteps = 5;
   var step = 0;
   var startTime = Date.now();
 
@@ -1972,11 +1977,24 @@ async function buildScreenCuesPipeline() {
 
     stepTimings.push('build ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
-    // Step 3: Write SRT file to brief directory
+    // Step 3: Create markers (separate step — same pattern as Assembly)
+    step++;
+    stepStart = Date.now();
+    setScreensProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Markers...');
+    screensLogger.info('=== Step 3: Create Screen Cues markers ===');
+    var markerInfo = null;
+    try {
+      markerInfo = await createScreenCuesMarkers(project, screenResult);
+    } catch (markerErr) {
+      screensLogger.warn('Markers step failed (non-fatal): ' + markerErr.message);
+    }
+    stepTimings.push('markers ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
+
+    // Step 4: Write SRT file to brief directory
     step++;
     stepStart = Date.now();
     setScreensProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Writing SRT...');
-    screensLogger.info('=== Step 3: Write Screen Cues SRT ===');
+    screensLogger.info('=== Step 4: Write Screen Cues SRT ===');
     if (screenResult.srtContent && assemblyState.filePath) {
       try {
         var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
@@ -1994,11 +2012,11 @@ async function buildScreenCuesPipeline() {
 
     stepTimings.push('srt-write ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
-    // Step 4: Import SRT to 02_Transcripts bin
+    // Step 5: Import SRT to 02_Transcripts bin
     step++;
     stepStart = Date.now();
     setScreensProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Importing SRT...');
-    screensLogger.info('=== Step 4: Import Screen Cues SRT ===');
+    screensLogger.info('=== Step 5: Import Screen Cues SRT ===');
     await importCaptionsSrt(project, assemblyState.filePath, assemblyState.projectName,
       '4_ScreenCues', 'ScreenCues', screensLogger);
 
@@ -2014,6 +2032,7 @@ async function buildScreenCuesPipeline() {
     setScreensProgress(100, 'Complete!');
     screensLogger.info('=== SCREEN CUES BUILD COMPLETE (' + elapsed + 's) ===');
     screensLogger.info('Timing: ' + stepTimings.join(' | '));
+    $('btn-build-screens').classList.add('btn-done');
 
     // Status line — clear feedback based on V2 result
     if (screenResult.overlays > 0) {
@@ -2070,6 +2089,154 @@ async function saveScreensLogs(project, screenResult) {
 }
 
 /**
+ * Create Screen Cues markers on the sequence.
+ *
+ * Follows the SAME 4-transaction pattern as createAssemblyMarkers():
+ *   Transaction 1: Create all markers (batch)
+ *   Read markers ONCE: markersOwner.getMarkers()
+ *   Transaction 2: Set colors (using SAME marker references)
+ *   Transaction 3: Set types to Chapter (using SAME marker references)
+ *
+ * KEY FIX: Previous version in screenBuilder.js called getMarkers() twice
+ * (once for colors, once for types), which returned stale references after
+ * the color transaction. Now we read once and reuse — matching Assembly.
+ *
+ * @param {Object} project - Active Premiere project
+ * @param {Object} screenResult - Result from buildScreenCues() with .sequence and .markerList
+ * @returns {{ chapters: number, comments: number }}
+ */
+async function createScreenCuesMarkers(project, screenResult) {
+  const { MARKER_TYPE_CHAPTER, SCREEN_CUE_COLOR } = require('./src/shared/constants');
+  const seq = screenResult.sequence;
+  const markerList = screenResult.markerList || [];
+  const TIME_ZERO = ppro.TickTime.createWithSeconds(0);
+
+  if (!seq || markerList.length === 0) {
+    screensLogger.info('No markers to create');
+    return { chapters: 0, comments: 0 };
+  }
+
+  // Static API — the ONLY working way to get markers in UXP Premiere Pro
+  let markersOwner;
+  try {
+    markersOwner = await ppro.Markers.getMarkers(seq);
+  } catch (ex) {
+    screensLogger.warn('Cannot get sequence markers: ' + ex.message);
+    return { chapters: 0, comments: 0 };
+  }
+
+  if (!markersOwner) {
+    screensLogger.warn('Markers object is null');
+    return { chapters: 0, comments: 0 };
+  }
+
+  // Transaction 1: Create all markers (batch)
+  let chapterCount = 0;
+  try {
+    project.lockedAccess(function () {
+      project.executeTransaction(function (ca) {
+        for (var mk_i = 0; mk_i < markerList.length; mk_i++) {
+          var mk = markerList[mk_i];
+          try {
+            ca.addAction(markersOwner.createAddMarkerAction(
+              mk.name, mk.type,
+              ppro.TickTime.createWithSeconds(mk.startSec),
+              ppro.TickTime.createWithSeconds(mk.durationSec),
+              mk.comment
+            ));
+            chapterCount++;
+          } catch (ex) {
+            screensLogger.debug('Marker action failed: ' + mk.name + ' — ' + ex.message);
+          }
+        }
+      }, 'YTAI ScreenCue Markers');
+    });
+  } catch (batchErr) {
+    screensLogger.warn('Batch markers failed: ' + batchErr.message + ', trying individually...');
+    chapterCount = 0;
+    for (var mk_i = 0; mk_i < markerList.length; mk_i++) {
+      try {
+        var mk = markerList[mk_i];
+        project.lockedAccess(function () {
+          project.executeTransaction(function (ca) {
+            ca.addAction(markersOwner.createAddMarkerAction(
+              mk.name, mk.type,
+              ppro.TickTime.createWithSeconds(mk.startSec),
+              ppro.TickTime.createWithSeconds(mk.durationSec),
+              mk.comment
+            ));
+          }, 'Marker: ' + mk.name);
+        });
+        chapterCount++;
+      } catch (ex) {
+        screensLogger.debug('  Marker failed: ' + mk.name + ' — ' + ex.message);
+      }
+    }
+  }
+
+  screensLogger.info('Markers: ' + chapterCount + ' created');
+
+  // Read markers ONCE — use same references for both color and type transactions
+  try {
+    var allMarkers = markersOwner.getMarkers();
+    if (allMarkers && allMarkers.length > 0) {
+
+      // Transaction 2: Set marker colors to Orange
+      try {
+        project.lockedAccess(function () {
+          project.executeTransaction(function (ca) {
+            for (var ci = 0; ci < allMarkers.length; ci++) {
+              var marker = allMarkers[ci];
+              try {
+                var markerName = marker.getName ? marker.getName() : '';
+                if (markerName.indexOf('[SCR]') === 0) {
+                  ca.addAction(marker.createSetColorByIndexAction(SCREEN_CUE_COLOR.markerIdx));
+                }
+              } catch (e) {
+                screensLogger.debug('  Marker color failed: ' + e.message);
+              }
+            }
+          }, 'YTAI ScreenCue Marker Colors');
+        });
+        screensLogger.info('Marker colors: Orange applied');
+      } catch (colorErr) {
+        screensLogger.debug('Marker color setting failed: ' + colorErr.message);
+      }
+
+      // Transaction 3: Set marker TYPE to Chapter (using SAME allMarkers refs)
+      // createAddMarkerAction ignores the type param — always creates Event.
+      // Must use createSetTypeAction on each marker to change Event → Chapter.
+      var typedCount = 0;
+      try {
+        project.lockedAccess(function () {
+          project.executeTransaction(function (ca) {
+            for (var ti = 0; ti < allMarkers.length; ti++) {
+              var marker = allMarkers[ti];
+              try {
+                var markerName = marker.getName ? marker.getName() : '';
+                if (markerName.indexOf('[SCR]') === 0) {
+                  ca.addAction(marker.createSetTypeAction(MARKER_TYPE_CHAPTER));
+                  typedCount++;
+                }
+              } catch (e) {
+                screensLogger.debug('  Marker type failed: ' + e.message);
+              }
+            }
+          }, 'YTAI ScreenCue Marker Types');
+        });
+        screensLogger.info('Marker types: ' + typedCount + '/' + allMarkers.length + ' set to Chapter');
+      } catch (typeErr) {
+        screensLogger.debug('Marker type change failed (non-fatal): ' + typeErr.message);
+      }
+    }
+  } catch (readErr) {
+    screensLogger.debug('Marker colors/types failed (non-fatal): ' + readErr.message);
+  }
+
+  return { chapters: chapterCount, comments: 0 };
+}
+
+/**
  * Post-build validation for Screen Cues — V1 clips, V2 overlays, markers, SRT.
  */
 async function validateScreensBuild(sequence, screenResult) {
@@ -2098,7 +2265,7 @@ async function validateScreensBuild(sequence, screenResult) {
   else warn('V2 Overlays: 0 — run: python generate_screen_cues_png.py --brief <path>');
 
   // Markers
-  if (screenResult.markers > 0) ok('Markers: ' + screenResult.markers + ' Comment markers');
+  if (screenResult.markers > 0) ok('Markers: ' + screenResult.markers + ' Chapter markers');
   else warn('Markers: none created');
 
   // SRT
