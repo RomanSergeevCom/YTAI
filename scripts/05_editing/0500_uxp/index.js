@@ -63,21 +63,40 @@ const screensLogger = new Logger('SCREENS');
 
 function $(id) { return document.querySelector('#' + id); }
 
-function appendToPanel(panelId, entry, level) {
+function appendToPanel(panelId, entry, level, message) {
   const panel = $(panelId);
   if (!panel) return;
-  const cls = level === 'ERROR' ? 'log-error'
-    : level === 'WARN' ? 'log-warn'
-    : level === 'DEBUG' ? 'log-debug'
-    : 'log-info';
+
+  // Detect special log patterns for enhanced styling
+  var msg = message || entry;
+  var cls;
+  if (msg.indexOf('=== ') === 0 && msg.indexOf('BUILD START') !== -1) {
+    cls = 'log-header-line';
+  } else if (msg.indexOf('=== ') === 0 && msg.indexOf('BUILD COMPLETE') !== -1) {
+    cls = 'log-header-line';
+  } else if (msg.indexOf('=== ') === 0 && msg.indexOf('COMPLETE') !== -1) {
+    cls = 'log-header-line';
+  } else if (msg.indexOf('=== Step ') === 0 || msg.indexOf('=== Post-build') === 0) {
+    cls = 'log-step';
+  } else if (msg.indexOf('Timing:') === 0) {
+    cls = 'log-timing';
+  } else if (msg.indexOf('Result:') === 0 || msg.indexOf('Summary:') === 0 || msg.indexOf('Assembly:') === 0 || msg.indexOf('Review:') === 0) {
+    cls = 'log-result';
+  } else {
+    cls = level === 'ERROR' ? 'log-error'
+      : level === 'WARN' ? 'log-warn'
+      : level === 'DEBUG' ? 'log-debug'
+      : 'log-info';
+  }
+
   panel.innerHTML += '<span class="' + cls + '">' + escapeHtml(entry) + '</span>\n';
   panel.scrollTop = panel.scrollHeight;
 }
 
-ingestLogger.onLog = (entry, level) => { appendToPanel('ingest-log-panel', entry, level); };
-assemblyLogger.onLog = (entry, level) => { appendToPanel('assembly-log-panel', entry, level); };
-reviewLogger.onLog = (entry, level) => { appendToPanel('review-log-panel', entry, level); };
-screensLogger.onLog = (entry, level) => { appendToPanel('screens-log-panel', entry, level); };
+ingestLogger.onLog = (entry, level, message) => { appendToPanel('ingest-log-panel', entry, level, message); };
+assemblyLogger.onLog = (entry, level, message) => { appendToPanel('assembly-log-panel', entry, level, message); };
+reviewLogger.onLog = (entry, level, message) => { appendToPanel('review-log-panel', entry, level, message); };
+screensLogger.onLog = (entry, level, message) => { appendToPanel('screens-log-panel', entry, level, message); };
 
 // --- INGEST UI helpers ---
 
@@ -2048,7 +2067,7 @@ async function buildScreenCuesPipeline() {
 
     // Validation panel
     if (screenResult.sequence) {
-      await validateScreensBuild(screenResult.sequence, screenResult);
+      await validateScreensBuild(screenResult.sequence, screenResult, markerInfo);
     }
 
     // Save debug bundle
@@ -2092,14 +2111,16 @@ async function saveScreensLogs(project, screenResult) {
  * Create Screen Cues markers on the sequence.
  *
  * Follows the SAME 4-transaction pattern as createAssemblyMarkers():
- *   Transaction 1: Create all markers (batch)
- *   Read markers ONCE: markersOwner.getMarkers()
- *   Transaction 2: Set colors (using SAME marker references)
- *   Transaction 3: Set types to Chapter (using SAME marker references)
+ *   0. Activate sequence (CRITICAL — buildScreenCues does importFiles which may deactivate it)
+ *   1. Transaction 1: Create all markers (batch)
+ *   2. Read markers ONCE: markersOwner.getMarkers()
+ *   3. Transaction 2: Set colors (using SAME marker references)
+ *   4. Transaction 3: Set types to Chapter (using SAME marker references)
  *
- * KEY FIX: Previous version in screenBuilder.js called getMarkers() twice
- * (once for colors, once for types), which returned stale references after
- * the color transaction. Now we read once and reuse — matching Assembly.
+ * KEY DIFFERENCE from Assembly: buildScreenCues() does project.importFiles() for PNGs,
+ * which changes Premiere's internal state and may deactivate/close the sequence.
+ * Assembly has NO such operations between sequence creation and markers.
+ * Fix: explicitly activate + open sequence before marker operations.
  *
  * @param {Object} project - Active Premiere project
  * @param {Object} screenResult - Result from buildScreenCues() with .sequence and .markerList
@@ -2109,11 +2130,27 @@ async function createScreenCuesMarkers(project, screenResult) {
   const { MARKER_TYPE_CHAPTER, SCREEN_CUE_COLOR } = require('./src/shared/constants');
   const seq = screenResult.sequence;
   const markerList = screenResult.markerList || [];
-  const TIME_ZERO = ppro.TickTime.createWithSeconds(0);
 
   if (!seq || markerList.length === 0) {
     screensLogger.info('No markers to create');
     return { chapters: 0, comments: 0 };
+  }
+
+  // CRITICAL: Activate the ScreenCues sequence before marker operations.
+  // buildScreenCues() does project.importFiles() for PNGs, which can deactivate/close
+  // the sequence. Assembly doesn't have this problem because it does NOTHING between
+  // sequence creation and markers. This is why Assembly markers work but ScreenCues didn't.
+  try {
+    await project.setActiveSequence(seq);
+    screensLogger.debug('Activated ScreenCues sequence for markers');
+  } catch (e) {
+    screensLogger.warn('setActiveSequence failed: ' + e.message);
+  }
+  try {
+    await project.openSequence(seq.guid || seq);
+    screensLogger.debug('Opened ScreenCues sequence for markers');
+  } catch (e) {
+    screensLogger.debug('openSequence failed (non-fatal): ' + e.message);
   }
 
   // Static API — the ONLY working way to get markers in UXP Premiere Pro
@@ -2129,6 +2166,15 @@ async function createScreenCuesMarkers(project, screenResult) {
     screensLogger.warn('Markers object is null');
     return { chapters: 0, comments: 0 };
   }
+
+  // API discovery — log available methods (same as Assembly, for diagnostics)
+  try {
+    var methods = [];
+    for (var k of Object.getOwnPropertyNames(Object.getPrototypeOf(markersOwner))) {
+      if (typeof markersOwner[k] === 'function') methods.push(k);
+    }
+    screensLogger.debug('markersOwner methods: [' + methods.join(', ') + ']');
+  } catch (e) { /* ignore */ }
 
   // Transaction 1: Create all markers (batch)
   let chapterCount = 0;
@@ -2174,12 +2220,25 @@ async function createScreenCuesMarkers(project, screenResult) {
     }
   }
 
-  screensLogger.info('Markers: ' + chapterCount + ' created');
+  screensLogger.info('Markers created: ' + chapterCount + '/' + markerList.length);
 
   // Read markers ONCE — use same references for both color and type transactions
+  let coloredCount = 0;
+  let typedCount = 0;
   try {
     var allMarkers = markersOwner.getMarkers();
+    screensLogger.debug('markersOwner.getMarkers() returned ' + (allMarkers ? allMarkers.length : 'null') + ' markers');
+
     if (allMarkers && allMarkers.length > 0) {
+      // API discovery — log methods on first marker
+      try {
+        var m0 = allMarkers[0];
+        var mMethods = [];
+        for (var k of Object.getOwnPropertyNames(Object.getPrototypeOf(m0))) {
+          if (typeof m0[k] === 'function') mMethods.push(k);
+        }
+        screensLogger.debug('Marker methods: [' + mMethods.join(', ') + ']');
+      } catch (e) { /* ignore */ }
 
       // Transaction 2: Set marker colors to Orange
       try {
@@ -2188,36 +2247,30 @@ async function createScreenCuesMarkers(project, screenResult) {
             for (var ci = 0; ci < allMarkers.length; ci++) {
               var marker = allMarkers[ci];
               try {
-                var markerName = marker.getName ? marker.getName() : '';
-                if (markerName.indexOf('[SCR]') === 0) {
-                  ca.addAction(marker.createSetColorByIndexAction(SCREEN_CUE_COLOR.markerIdx));
-                }
+                ca.addAction(marker.createSetColorByIndexAction(SCREEN_CUE_COLOR.markerIdx));
+                coloredCount++;
               } catch (e) {
                 screensLogger.debug('  Marker color failed: ' + e.message);
               }
             }
           }, 'YTAI ScreenCue Marker Colors');
         });
-        screensLogger.info('Marker colors: Orange applied');
+        screensLogger.info('Marker colors: ' + coloredCount + '/' + allMarkers.length + ' set to Orange');
       } catch (colorErr) {
-        screensLogger.debug('Marker color setting failed: ' + colorErr.message);
+        screensLogger.warn('Marker color setting failed: ' + colorErr.message);
       }
 
       // Transaction 3: Set marker TYPE to Chapter (using SAME allMarkers refs)
       // createAddMarkerAction ignores the type param — always creates Event.
       // Must use createSetTypeAction on each marker to change Event → Chapter.
-      var typedCount = 0;
       try {
         project.lockedAccess(function () {
           project.executeTransaction(function (ca) {
             for (var ti = 0; ti < allMarkers.length; ti++) {
               var marker = allMarkers[ti];
               try {
-                var markerName = marker.getName ? marker.getName() : '';
-                if (markerName.indexOf('[SCR]') === 0) {
-                  ca.addAction(marker.createSetTypeAction(MARKER_TYPE_CHAPTER));
-                  typedCount++;
-                }
+                ca.addAction(marker.createSetTypeAction(MARKER_TYPE_CHAPTER));
+                typedCount++;
               } catch (e) {
                 screensLogger.debug('  Marker type failed: ' + e.message);
               }
@@ -2226,20 +2279,20 @@ async function createScreenCuesMarkers(project, screenResult) {
         });
         screensLogger.info('Marker types: ' + typedCount + '/' + allMarkers.length + ' set to Chapter');
       } catch (typeErr) {
-        screensLogger.debug('Marker type change failed (non-fatal): ' + typeErr.message);
+        screensLogger.warn('Marker type change failed: ' + typeErr.message);
       }
     }
   } catch (readErr) {
-    screensLogger.debug('Marker colors/types failed (non-fatal): ' + readErr.message);
+    screensLogger.warn('Marker read-back failed: ' + readErr.message);
   }
 
-  return { chapters: chapterCount, comments: 0 };
+  return { chapters: chapterCount, colored: coloredCount, typed: typedCount };
 }
 
 /**
  * Post-build validation for Screen Cues — V1 clips, V2 overlays, markers, SRT.
  */
-async function validateScreensBuild(sequence, screenResult) {
+async function validateScreensBuild(sequence, screenResult, markerInfo) {
   screensLogger.info('=== Post-build validation ===');
   var panel = $('screens-validation');
   var lines = [];
@@ -2264,9 +2317,18 @@ async function validateScreensBuild(sequence, screenResult) {
   if (screenResult.overlays > 0) ok('V2 Overlays: ' + screenResult.overlays + ' PNG screens');
   else warn('V2 Overlays: 0 — run: python generate_screen_cues_png.py --brief <path>');
 
-  // Markers
-  if (screenResult.markers > 0) ok('Markers: ' + screenResult.markers + ' Chapter markers');
-  else warn('Markers: none created');
+  // Markers — use actual markerInfo if available (from createScreenCuesMarkers)
+  var markerCreated = markerInfo ? (markerInfo.chapters || 0) : 0;
+  var markerTyped = markerInfo ? (markerInfo.typed || 0) : 0;
+  if (markerCreated > 0 && markerTyped > 0) {
+    ok('Markers: ' + markerCreated + ' Chapter markers (typed=' + markerTyped + ')');
+  } else if (markerCreated > 0) {
+    warn('Markers: ' + markerCreated + ' created, but type change failed (typed=' + markerTyped + ')');
+  } else if (screenResult.markers > 0) {
+    warn('Markers: planned ' + screenResult.markers + ', but creation failed (0 created)');
+  } else {
+    warn('Markers: none');
+  }
 
   // SRT
   if (screenResult.srtContent && screenResult.srtContent.length > 0) ok('SRT: generated (' + screenResult.srtContent.length + ' chars)');

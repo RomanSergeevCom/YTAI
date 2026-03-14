@@ -269,6 +269,42 @@
     .log-error { color: #ef5350; }
     .log-debug { color: #556677; }
 
+    /* Step header: === Step N: ... === */
+    .log-step {
+      display: block;
+      color: var(--accent);
+      font-weight: 700;
+      padding: 3px 0 1px 0;
+      margin-top: 4px;
+      border-top: 1px solid #1e3355;
+      letter-spacing: 0.3px;
+    }
+
+    /* Build start/complete headers */
+    .log-header-line {
+      display: block;
+      color: #fff;
+      font-weight: 700;
+      background: linear-gradient(90deg, #1a3050, transparent);
+      padding: 3px 6px;
+      margin: 4px -4px 2px -4px;
+      border-left: 3px solid var(--accent);
+      border-radius: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Result/summary line */
+    .log-result {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* Timing line */
+    .log-timing {
+      color: #a0a0a0;
+      font-style: italic;
+    }
+
     .log-path-text {
       font-size: 9px;
       color: var(--text-secondary);
