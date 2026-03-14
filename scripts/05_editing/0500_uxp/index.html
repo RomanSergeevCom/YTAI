@@ -113,6 +113,55 @@
       font-size: 11px;
     }
 
+    /* === Project section === */
+    #project-section {
+      background: var(--bg-secondary);
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+      margin-bottom: 4px;
+    }
+
+    #project-path-info {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* === Project checklist === */
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      padding: 3px 0;
+    }
+
+    .checklist-icon {
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .checklist-icon.ok { color: var(--success); }
+    .checklist-icon.miss { color: var(--error); }
+
+    .checklist-hint {
+      font-size: 9px;
+      color: var(--text-secondary);
+      margin-left: 20px;
+      padding-bottom: 2px;
+    }
+
+    /* === Fallback row (hidden by default) === */
+    .fallback-row {
+      background: var(--bg-tertiary);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px dashed var(--warning);
+      margin-bottom: 8px;
+    }
+
     /* === Info panels === */
     .info-text {
       font-size: 10px;
@@ -208,6 +257,15 @@
     .log-error { color: #ef5350; }
     .log-debug { color: #556677; }
 
+    .log-path-text {
+      font-size: 9px;
+      color: var(--text-secondary);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .clear-log-btn {
       cursor: pointer;
       font-size: 10px;
@@ -223,7 +281,27 @@
   <body>
 
     <!-- ═══════════ BRANDING ═══════════ -->
-    <div class="branding">v1.9.3 · Powered by <span class="branding-name">RYA.AE</span></div>
+    <div class="branding">v2.1.0 · Powered by <span class="branding-name">RYA.AE</span></div>
+
+    <!-- ═══════════ PROJECT SECTION ═══════════ -->
+    <div class="section-header">
+      <span class="section-label">Project</span>
+    </div>
+
+    <div class="section-content" id="project-section">
+      <div class="status-row">
+        <span class="status-dot waiting" id="project-status-dot"></span>
+        <span id="project-status-text">No project selected</span>
+      </div>
+      <div class="btn-row">
+        <sp-button id="btn-select-project" variant="cta">Select Project Folder</sp-button>
+      </div>
+      <div class="info-text" id="project-path-info"></div>
+      <div id="project-checklist"></div>
+      <div class="btn-row" id="project-actions-row" style="display:none">
+        <sp-button id="btn-refresh-project" size="s">Refresh</sp-button>
+      </div>
+    </div>
 
     <!-- ═══════════ INGEST SECTION ═══════════ -->
     <div class="section-header">
@@ -233,12 +311,12 @@
     <div class="section-content">
       <div class="status-row">
         <span class="status-dot waiting" id="ingest-status-dot"></span>
-        <span id="ingest-status-text">Waiting for ingest JSON...</span>
+        <span id="ingest-status-text">Select project folder...</span>
       </div>
 
-      <div class="btn-row">
+      <!-- Fallback — hidden by default, shown when auto-detect fails -->
+      <div class="btn-row fallback-row" id="ingest-fallback-row" style="display:none">
         <sp-button id="btn-load-ingest">Load Ingest JSON</sp-button>
-        <sp-button id="btn-debug-ingest">Debug Ingest</sp-button>
       </div>
 
       <div class="info-text" id="ingest-file-info"></div>
@@ -249,7 +327,6 @@
 
       <div class="btn-row">
         <sp-button id="btn-build-ingest" disabled>Build Ingest</sp-button>
-        <sp-button id="btn-copy-logs">Copy Logs Path</sp-button>
       </div>
 
       <div class="validation-panel" id="ingest-validation"></div>
@@ -263,12 +340,12 @@
     <div class="section-content">
       <div class="status-row">
         <span class="status-dot waiting" id="assembly-status-dot"></span>
-        <span id="assembly-status-text">Waiting for edit brief...</span>
+        <span id="assembly-status-text">Select project folder...</span>
       </div>
 
-      <div class="btn-row">
+      <!-- Fallback — hidden by default, shown when auto-detect fails -->
+      <div class="btn-row fallback-row" id="assembly-fallback-row" style="display:none">
         <sp-button id="btn-load-brief">Load Edit Brief</sp-button>
-        <sp-button id="btn-debug-assembly">Debug Assembly</sp-button>
       </div>
 
       <div class="info-text" id="assembly-file-info"></div>
@@ -279,7 +356,6 @@
 
       <div class="btn-row">
         <sp-button id="btn-build-assembly" disabled>Build Assembly</sp-button>
-        <sp-button id="btn-copy-assembly-logs">Copy Logs Path</sp-button>
       </div>
 
       <div class="validation-panel" id="assembly-validation"></div>
@@ -293,7 +369,7 @@
     <div class="section-content">
       <div class="status-row">
         <span class="status-dot waiting" id="review-status-dot"></span>
-        <span id="review-status-text">Load edit brief first...</span>
+        <span id="review-status-text">Select project folder...</span>
       </div>
 
       <div class="progress-bar" id="review-progress-bar"><div class="progress-fill" id="review-progress-fill"></div></div>
@@ -301,7 +377,6 @@
 
       <div class="btn-row">
         <sp-button id="btn-build-review" disabled>Build Review</sp-button>
-        <sp-button id="btn-debug-review">Debug Review</sp-button>
       </div>
 
       <div class="validation-panel" id="review-validation"></div>
@@ -315,15 +390,15 @@
     <div class="section-content">
       <div class="status-row">
         <span class="status-dot waiting" id="screens-status-dot"></span>
-        <span id="screens-status-text">Load edit brief with screens...</span>
+        <span id="screens-status-text">Select project folder...</span>
       </div>
 
       <div class="progress-bar" id="screens-progress-bar"><div class="progress-fill" id="screens-progress-fill"></div></div>
       <div class="progress-text" id="screens-progress-text"></div>
 
       <div class="btn-row">
+        <sp-button id="btn-generate-pngs" disabled>Generate PNGs</sp-button>
         <sp-button id="btn-build-screens" disabled>Build Screen Cues</sp-button>
-        <sp-button id="btn-debug-screens">Debug Screens</sp-button>
       </div>
 
       <div class="validation-panel" id="screens-validation"></div>
@@ -332,6 +407,8 @@
     <!-- ═══════════ INGEST LOG ═══════════ -->
     <div class="log-header">
       <span class="section-label">Ingest Log</span>
+      <span class="log-path-text" id="ingest-log-path"></span>
+      <button class="clear-log-btn" id="btn-copy-ingest-log-path">copy path</button>
       <button class="clear-log-btn" id="btn-clear-ingest-log">clear</button>
     </div>
     <div id="ingest-log-panel" class="log-panel"></div>
@@ -339,6 +416,8 @@
     <!-- ═══════════ ASSEMBLY LOG ═══════════ -->
     <div class="log-header">
       <span class="section-label">Assembly Log</span>
+      <span class="log-path-text" id="assembly-log-path"></span>
+      <button class="clear-log-btn" id="btn-copy-assembly-log-path">copy path</button>
       <button class="clear-log-btn" id="btn-clear-assembly-log">clear</button>
     </div>
     <div id="assembly-log-panel" class="log-panel"></div>
@@ -346,6 +425,8 @@
     <!-- ═══════════ REVIEW LOG ═══════════ -->
     <div class="log-header">
       <span class="section-label">Review Log</span>
+      <span class="log-path-text" id="review-log-path"></span>
+      <button class="clear-log-btn" id="btn-copy-review-log-path">copy path</button>
       <button class="clear-log-btn" id="btn-clear-review-log">clear</button>
     </div>
     <div id="review-log-panel" class="log-panel"></div>
@@ -353,6 +434,8 @@
     <!-- ═══════════ SCREEN CUES LOG ═══════════ -->
     <div class="log-header">
       <span class="section-label">Screen Cues Log</span>
+      <span class="log-path-text" id="screens-log-path"></span>
+      <button class="clear-log-btn" id="btn-copy-screens-log-path">copy path</button>
       <button class="clear-log-btn" id="btn-clear-screens-log">clear</button>
     </div>
     <div id="screens-log-panel" class="log-panel"></div>

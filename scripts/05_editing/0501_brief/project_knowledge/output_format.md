@@ -197,13 +197,14 @@ Project settings. Core values taken from `clips[0].media` in transcript.json.
 
 ## ASSEMBLY Sequence Workflow
 
-The UXP panel (050105_assembly_uxp) creates one sequence from the edit brief:
+The UXP panel (0500_uxp) creates one sequence from the edit brief:
 
 ### `{project}_2_Assembly`
 
 USE=TRUE segments (block != 99) laid out on **V1** in **block order** (block 1 first, then block 2, etc.). Within each block — **brief order** (order in JSON array).
 
 - V1: Each segment pre-trimmed to tc_in/tc_out before insertion, per-segment color labels
+- A2/A3: DJI microphone audio (trimmed with same in/out points as V1, if DJI WAVs exist)
 - V2: Screen cue clips (Orange) at positions matching screens[] entries (if present)
 - Chapter markers at `is_chapter="TRUE"` positions with block duration and color
 - Per-segment Chapter markers with speaker, transcript, and notes
@@ -214,11 +215,13 @@ USE=TRUE segments (block != 99) laid out on **V1** in **block order** (block 1 f
 
 ```
 Project Root
-+-- 00_Source/              <- imported clips (from INGEST)
++-- 00_Source/              <- imported clips + DJI WAVs (from INGEST)
++-- 01_ScreenCues/          <- PNG overlay images (from SCREEN CUES)
 +-- 02_Transcripts/         <- SRT, transcripts, captions (from INGEST + ASSEMBLY + REVIEW + SCREEN CUES)
-+-- {project}_1_Ingest      <- all clips, whole, on V1 (from INGEST)
-+-- {project}_2_Assembly    <- V1: used segments by block order; V2: screen cues (from ASSEMBLY)
-+-- {project}_3_Review      <- unused segments on V1, by source file order (from REVIEW)
++-- {project}_1_Ingest      <- V1: all clips whole; A2: DJI TX whole (from INGEST)
++-- {project}_2_Assembly    <- V1: used segments; A2: DJI trimmed; V2: screen cues (from ASSEMBLY)
++-- {project}_3_Review      <- V1: unused segments; A2: DJI trimmed (from REVIEW)
++-- {project}_4_ScreenCues  <- V1: Assembly copy; A2: DJI trimmed; V2: PNGs (from SCREEN CUES)
 ```
 
 ## File Naming Convention

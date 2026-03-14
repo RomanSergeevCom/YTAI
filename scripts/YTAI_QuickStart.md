@@ -1,219 +1,230 @@
 # YTAI Quick Start
 
-## Quick Run (single command)
+## Quick Run
 
 ```bash
 source ~/YTAI/environment/.venv_transcribe/bin/activate
-python ~/YTAI/scripts/run_pipeline.py "/Volumes/RYA Blue/{project}" --speakers 2
+python ~/YTAI/scripts/run_pipeline.py "/Volumes/DISK/{project}"
 ```
 
-This runs the full pipeline: init → extract audio → transcribe.
+Just point to the project folder — the pipeline does the rest:
+
+1. **Init folders** — creates v3.0 project structure
+2. **Organize files** — moves video/DJI/LUT/XML to correct dirs
+3. **Extract audio** — WAV per clip + concatenated FULL_AUDIO
+4. **DJI sync** — trims DJI mic recordings to match each video clip (timezone auto-detected)
+
+By default only **Prepare** runs. Add `--all` for transcription too.
 
 ---
 
-## Setup
-
-### 1. Activate environment
-```bash
-source ~/YTAI/environment/.venv_transcribe/bin/activate
-```
-
-### 2. Set project path
-```bash
-export PROJECT="/Volumes/RYA Blue/{project}"
-```
-
----
-
-## Pipeline (automatic)
+## Pipeline
 
 ```bash
-# Full pipeline — 2 speakers (interview)
-python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --speakers 2
+# Default: prepare files (init + extract audio + DJI sync)
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT"
 
-# With DJI wireless audio sync
-python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --speakers 2 --tz-offset 4
+# Full pipeline (prepare + transcribe)
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --all --speakers 2 --language en
 
-# Check what's done
+# Only transcribe (files already prepared)
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only transcribe --speakers 2
+
+# Check status / dry run
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --list
-
-# Dry run (show what would happen)
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --dry-run
 ```
 
-### Pipeline stages
+---
 
-| # | Stage | What it does |
-|---|-------|-------------|
-| 0 | `init` | Create v3.0 folder structure (auto if missing) |
-| 1 | `extract_audio` | Extract WAV from each clip + concat FULL_AUDIO.wav |
-| 2 | `sync_dji` | Sync DJI wireless audio to clips (optional, needs `--tz-offset`) |
-| 3 | `transcribe` | Whisper transcription + Pyannote speaker diarization |
+## Options
 
-### Options
-
-| Flag | Description |
-|------|-------------|
-| `--speakers N` | Number of speakers for Pyannote (e.g. 2 for interview) |
-| `--language XX` | Language for Whisper (default: auto-detect) |
-| `--tz-offset N` | Timezone offset for DJI sync (e.g. 4 for Dubai, 3 for Moscow) |
-| `--only STAGE` | Run only one stage |
-| `--from STAGE` | Start from this stage |
-| `--to STAGE` | Stop after this stage |
-| `--no-pause` | Don't pause between stages |
-| `--force` | Re-run even if output exists |
-| `--type footage\|production` | Folder type for init (default: footage) |
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--all` | Run all phases (prepare + transcribe) | `--all --speakers 2` |
+| `-n, --speakers N` | Number of speakers (Pyannote) | `--speakers 2` |
+| `--language XX` | Whisper language code | `--language en` |
+| `-m MODEL` | Whisper model | `-m large-v3` (default) |
+| `--tz-offset N` | Manual timezone for DJI sync (auto-detected if omitted) | `--tz-offset 4` |
+| `--only PHASE` | Run one phase/sub-stage | `--only transcribe` |
+| `--from / --to` | Range of phases | `--from transcribe` |
+| `--no-pause` | Skip confirmation between phases | |
+| `--force` | Re-run even if output exists | |
+| `--type TYPE` | Folder template: `production` (default) or `footage` | |
+| `--dry-run` | Preview without executing | |
+| `--list` | Show status of each phase | |
 
 ---
 
-## Pipeline (step-by-step)
+## What happens
+
+```
+Phase 1/1 — Prepare files
+
+  [1/3] Init folders       — v3.0 structure + .prproj + .gdoc
+  [2/3] Extract audio      — per_clip/{clip}/{clip}_AUDIO.wav + FULL_AUDIO.wav
+  [3/3] DJI sync           — Source/Audio/{clip}_TX{N}.wav (TZ auto-detected)
+```
+
+### Phases detail
+
+| Phase | Sub-stage | Input | Output |
+|-------|-----------|-------|--------|
+| **Prepare** | Init folders | project folder | v3.0 directory tree + .prproj + .gdoc |
+| | Organize files | stray video/DJI/LUT/XML | moved to correct dirs + per_clip |
+| | Extract audio | `Source/Video/*.mp4` | `per_clip/{clip}/{clip}_AUDIO.wav` + `FULL_AUDIO.wav` |
+| | DJI sync | `Source/Video/` + `DJI_Audio/*.wav` | `Source/Audio/{clip}_TX{N}.wav` |
+| **Transcribe** | Transcribe | `Source/Video/*.mp4` | transcript JSON/SRT/XLSX + ingest.json |
+
+---
+
+## Output structure
+
+### Source/Audio/ — DJI synced audio
+
+DJI mic recordings trimmed to match each video clip:
+```
+Source/Audio/
+├── RYA-FX3-0099_TX02.wav     ← DJI TX02, synced with clip 0099
+├── RYA-FX3-0100_TX02.wav     ← DJI TX02, synced with clip 0100
+└── ...
+```
+Naming: `{video_clip}_TX{N}.wav` — video clip name + DJI transmitter number.
+
+### per_clip/ — extracted audio (for transcription)
+
+Audio extracted from video files:
+```
+Transcription/per_clip/
+├── RYA-FX3-0099/
+│   └── RYA-FX3-0099_AUDIO.wav    ← 48kHz stereo from video
+└── RYA-FX3-0100/
+    └── RYA-FX3-0100_AUDIO.wav    ← 48kHz stereo from video
+```
+
+These are **different** from Source/Audio/ — per_clip audio is from the camera mic, Source/Audio is from DJI wireless mics.
+
+---
+
+## Transcription output
+
+```
+Transcription/
+├── {project}_transcript.json              main transcript (segments + words)
+├── {project}_transcript.srt               subtitles [Speaker] text
+├── {project}_1_Ingest_captions.srt        word-level captions
+├── {project}_transcript.xlsx              spreadsheet
+├── diarization.json                       speaker segments
+├── {project}_FULL_AUDIO.wav               concatenated audio
+├── per_clip/{clip}/
+│   ├── {clip}_AUDIO.wav                   48kHz stereo (from extract_audio)
+│   ├── {clip}M01.XML                      camera metadata
+│   ├── {clip}_audio.wav                   16kHz mono (from transcribe)
+│   ├── {clip}_transcript.json
+│   ├── {clip}_transcript.srt
+│   ├── {clip}_transcript.txt
+│   └── {clip}_premiere_transcript.json    Premiere format
+
+Setup/
+├── {project}_ingest.json                  Premiere UXP plugin
+```
+
+---
+
+## Manual scripts
 
 For debugging or running individual stages:
 
-### Stage 1: Extract audio
+### Extract audio
 ```bash
-python ~/YTAI/scripts/01_prepare/02_extract_audio.py --project "$PROJECT"
+python ~/YTAI/scripts/01_prepare/0102_extract_audio/0102_extract_audio.py --project "$PROJECT"
 ```
 
-Extracts audio from each video clip, concatenates into FULL_AUDIO.wav.
-
-**Output:**
-```
-01_Media/Source/Transcription/
-├── {clip}_AUDIO.wav                    (per-clip audio)
-└── {project}_FULL_AUDIO.wav            (concatenated for transcription)
-```
-
-**Check:**
+### DJI audio sync
 ```bash
-ls -la "$PROJECT/01_Media/Source/Transcription/"*FULL_AUDIO.wav
+# Auto-detect timezone
+python ~/YTAI/scripts/01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py --project "$PROJECT"
+
+# Explicit timezone
+python ~/YTAI/scripts/01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py --project "$PROJECT" --tz-offset 4
 ```
 
----
-
-### Stage 2: DJI audio sync (optional)
+### Transcription
 ```bash
-python ~/YTAI/scripts/01_prepare/03_sync_dji_audio.py --project "$PROJECT" --tz-offset 4
-```
-
-Syncs DJI wireless mic audio to camera clips by matching timestamps.
-
-**Output:**
-```
-01_Media/Source/Audio/
-├── {clip}_TX02.wav
-└── ...
-```
-
----
-
-### Stage 3: Transcription
-```bash
-python ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py --project "$PROJECT" -n 2
-```
-
-**Parameters:**
-- `-n 2` — number of speakers (2 for interview)
-- `-m large-v3` — Whisper model (default)
-- `--language en` — language (default: auto-detect)
-
-**Time:** ~15-25 min per hour of audio
-
-**Output:**
-```
-01_Media/Source/Transcription/
-├── {project}_transcript.json           (main transcript)
-├── {project}_transcript.srt            (subtitles)
-├── {project}_transcript.xlsx           (spreadsheet)
-├── per_clip/
-│   └── {clip}/
-│       ├── {clip}_transcript.json
-│       ├── {clip}_transcript.srt
-│       └── {clip}_premiere_transcript.json
-
-01_Media/Source/Setup/
-└── {project}_ingest.json               (Premiere UXP)
-```
-
-**Check:**
-```bash
-ls "$PROJECT/01_Media/Source/Transcription/"*_transcript*
-grep -o '"SPEAKER_[0-9]*"' "$PROJECT/01_Media/Source/Transcription/"*_transcript.json | sort -u
+python ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py \
+    --project "$PROJECT" -n 2 --language en -y
 ```
 
 ---
 
 ## Next step: Speaker ID
 
-Speaker identification is done via **Claude Desktop project** (recommended)
-or manually with scripts:
-
 ```bash
 python ~/YTAI/scripts/03_speaker_id/00_process_all.py --project "$PROJECT" --no-pause
 ```
 
-This replaces SPEAKER_00/SPEAKER_01 with real names and generates per-clip SRT files.
-
 ---
 
-## Project structure (after full pipeline)
+## Project structure (production — default)
 
 ```
 {project}/
 ├── 01_Media/
-│   ├── Source/
-│   │   ├── Video/                      ← camera MP4
-│   │   ├── Audio/                      ← DJI synced WAV (optional)
-│   │   ├── Transcription/              ← transcripts, per-clip data
-│   │   │   ├── {project}_transcript.json
-│   │   │   ├── {project}_FULL_AUDIO.wav
-│   │   │   └── per_clip/...
-│   │   ├── Setup/
-│   │   │   ├── {project}_ingest.json   ← Premiere UXP
-│   │   │   └── logs/                   ← all pipeline logs
-│   │   └── LUT/                        ← .cube from SD card
-│   ├── Assets/                         ← Music/, SFX/, Graphics/, Stock/, Fonts/
-│   └── {project}.prproj               ← Premiere working project
+│   ├── {project}.prproj                   ← Premiere project (auto-created)
+│   ├── Assets/                            ← Music/, SFX/, Graphics/, Stock/, Fonts/
+│   └── Source/
+│       ├── {project}_Source.prproj        ← Premiere source project
+│       ├── Video/                         ← camera MP4 (auto-organized)
+│       ├── Audio/                         ← DJI synced WAV (auto-generated)
+│       ├── Transcription/                 ← transcripts + per-clip hub
+│       │   ├── {project}_transcript.json
+│       │   ├── {project}_FULL_AUDIO.wav
+│       │   └── per_clip/
+│       │       └── {clip}/
+│       │           ├── {clip}_AUDIO.wav   ← extracted audio (48kHz)
+│       │           ├── {clip}M01.XML      ← camera metadata
+│       │           ├── {clip}_transcript.json
+│       │           └── ...
+│       ├── Setup/
+│       │   ├── {project}_ingest.json      ← Premiere UXP
+│       │   └── logs/                      ← all pipeline logs
+│       └── LUT/                           ← .cube from SD card (auto-organized)
 ├── 02_Exports/
 ├── 03_Shorts/
 ├── 04_Thumbnail/
 ├── YouTube/
-├── 99_Pipeline/DJI_Audio/              ← original DJI WAV (archive)
+├── 99_Pipeline/DJI_Audio/                 ← original DJI WAV (auto-organized)
 └── {project}.gdoc
 ```
 
----
-
-## Premiere Pro files
-
-| File | Purpose |
-|------|---------|
-| `*_ingest.json` | Input for UXP Ingest plugin — imports clips, bins, LUT, captions |
-| `*_transcript.srt` | Global subtitles (full timeline) |
-| `per_clip/{clip}_premiere_transcript.json` | Premiere-native transcript per clip |
-| `per_clip/{clip}_transcript.srt` | Per-clip subtitles with local timecodes |
+Use `--type footage` for minimal structure.
 
 ---
 
 ## Troubleshooting
 
-### "FULL_AUDIO.wav not found"
+### DJI sync failed
 ```bash
-python ~/YTAI/scripts/01_prepare/02_extract_audio.py --project "$PROJECT"
+# Try with explicit timezone
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --tz-offset 4 --force
+```
+
+### No video files
+```bash
+cp /path/to/camera/*.MP4 "$PROJECT/01_Media/Source/Video/"
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --force
+```
+
+### Re-run with force
+```bash
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --force
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --all --speakers 2 --force
 ```
 
 ### View logs
 ```bash
-# Latest extract audio log
-tail -50 "$PROJECT/01_Media/Source/Setup/logs/"*extract_audio*.log
-
-# Latest transcription log
-tail -50 "$PROJECT/01_Media/Source/Transcription/"*_transcribe_*.log
-```
-
-### Re-run a single stage
-```bash
-python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only transcribe --speakers 2 --force
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --list
+tail -50 "$PROJECT/01_Media/Source/Setup/logs/"*run_pipeline*.log
 ```
 
 ---
@@ -223,5 +234,7 @@ python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only transcribe --speakers 2 
 | Parameter | Value |
 |-----------|-------|
 | Python venv | `~/YTAI/environment/.venv_transcribe` |
-| Whisper model | `large-v3` |
-| Default speakers | 2 (interview) |
+| Whisper model | `large-v3` (default) |
+| Scripts | `~/YTAI/scripts/` |
+| Templates | `~/YTAI/YTAI_Folder_Templates/` |
+| Default type | `production` (use `--type footage` for minimal) |

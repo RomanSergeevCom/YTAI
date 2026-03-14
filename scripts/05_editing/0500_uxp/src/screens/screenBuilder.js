@@ -29,7 +29,7 @@ try {
 }
 
 const { SCREEN_CUE_COLOR, MARKER_TYPE_COMMENT } = require('../shared/constants');
-const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence } = require('../shared/clipActions');
+const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
 const { formatMarkerComment, formatSrtContent } = require('./screenParser');
 
 // Default duration for PNG overlay on V2 (seconds)
@@ -269,13 +269,20 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
   result.clips++;
   var cumulativePosition = firstSeg.duration;
 
+  // Get SequenceEditor early — needed for DJI audio insert on first clip too
+  var seqEditor = ppro.SequenceEditor.getEditor(seq);
+
+  // Insert DJI audio for first clip on A2 (same source in/out as video)
+  var firstDjiCount = insertDjiAudio(project, seqEditor, clipMap, firstSeg.sourceFile,
+    0, firstSeg.inSec, firstSeg.outSec, firstSeg.id, logger);
+  var totalDjiCount = firstDjiCount;
+
   if (logger) {
     logger.info('ScreenCues sequence created: ' + seqName);
-    logger.info('[1/' + useSegs.length + '] V1: ' + firstSeg.id + ' → createSequenceFromMedia, dur=' + firstSeg.duration.toFixed(1) + 's');
+    logger.info('[1/' + useSegs.length + '] V1: ' + firstSeg.id + ' → createSequenceFromMedia' +
+      (firstDjiCount > 0 ? ' +A2' : '') +
+      ', dur=' + firstSeg.duration.toFixed(1) + 's');
   }
-
-  // Remaining clips → sequential insert
-  var seqEditor = ppro.SequenceEditor.getEditor(seq);
 
   for (var i = 1; i < useSegs.length; i++) {
     var seg = useSegs[i];
@@ -323,9 +330,18 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
 
     clearSourceInOut(project, clipForTrim, seg.id, logger);
 
+    // Insert DJI audio for this segment on A2 (same source in/out as video)
+    var segDjiCount = 0;
+    if (insertOk) {
+      segDjiCount = insertDjiAudio(project, seqEditor, clipMap, seg.sourceFile,
+        cumulativePosition, seg.inSec, seg.outSec, seg.id, logger);
+      totalDjiCount += segDjiCount;
+    }
+
     if (logger) {
       logger.info('[' + (i + 1) + '/' + useSegs.length + '] V1: ' + seg.id +
         ' → ' + (insertOk ? 'insert@' + cumulativePosition.toFixed(1) + 's' : 'FAILED') +
+        (segDjiCount > 0 ? ' +A2' : '') +
         ', dur=' + seg.duration.toFixed(1) + 's');
     }
 
@@ -334,7 +350,12 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
 
   result.totalDuration = cumulativePosition;
 
-  if (logger) logger.info('V1 Assembly copy: ' + result.clips + '/' + useSegs.length + ' clips, total=' + cumulativePosition.toFixed(1) + 's');
+  if (logger) {
+    logger.info('V1 Assembly copy: ' + result.clips + '/' + useSegs.length + ' clips, total=' + cumulativePosition.toFixed(1) + 's');
+    if (totalDjiCount > 0) {
+      logger.info('DJI audio: ' + totalDjiCount + ' segment(s) placed on A2');
+    }
+  }
 
   // === Phase D: Import + place PNG overlays on V2 ===
   var segPositions = buildSegmentPositionMap(useSegs);

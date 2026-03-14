@@ -1,16 +1,25 @@
-# 020101_transcribe v3.1 — Specification
+# 020101_transcribe v3.2 — Specification
 
 ## Overview
 
-Transcription v3.1 (based on v3.0): word-level timestamps, Premiere Transcript JSON, global diarization.
-Generates ingest JSON for UXP Premiere plugin (020201_premiere_ingest).
+Transcription v3.2 (based on v3.1): word-level timestamps, Premiere Transcript JSON, global diarization.
+Generates ingest JSON for UXP Premiere plugin (0500_uxp).
 Parses Sony camera XML sidecars (NonRealTimeMeta) for camera/lens/color metadata.
+Saves Whisper quality fields per segment for confidence assessment and editing decisions.
 
 **Script:** ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py
-**Version:** 3.1
+**Version:** 3.2
 **Dependencies:** whisper, pyannote.audio, torch, ffmpeg, openpyxl, soundfile, numpy
 
 ---
+
+## Changes from v3.1
+
+1. **Whisper quality fields:** `no_speech_prob`, `compression_ratio`, `temperature`, `avg_logprob` saved per transcript segment.
+2. **Updated low_confidence logic (5 conditions):** `avg_conf < 0.7 OR no_speech_prob > 0.5 OR compression_ratio > 2.4 OR (compression_ratio > 0 AND < 1.2) OR temperature > 0.0`.
+3. **Word duration:** `duration` field added to each word in `words_data[]`.
+4. **Zero-duration filter:** Words with `word_start == word_end` excluded from `words_data`.
+5. **DJI audio in ingest JSON:** `dji_audio` field added to clips[] for DJI microphone sync files.
 
 ## Changes from v3.0
 
@@ -23,7 +32,7 @@ Parses Sony camera XML sidecars (NonRealTimeMeta) for camera/lens/color metadata
 ## Changes from v2.16
 
 1. **Output paths:** JSON and SRT now inside `_transcription/`. Only xlsx stays next to video files.
-2. **Stage 5b (prproj) removed.** Premiere project created via UXP plugin (020201_premiere_ingest).
+2. **Stage 5b (prproj) removed.** Premiere project created via UXP plugin (0500_uxp).
 3. **Stage 6 (new):** Generates ingest JSON (`{project}_ingest.json`) for UXP plugin.
 4. **`--multicam` flag:** Multi-camera without master files (replaces `--no-prproj`).
 
@@ -235,7 +244,7 @@ Folders are different parts of the project. Master files ARE needed.
     Stage 6: Generate Ingest JSON
       ingest_json.generate() -> {transcription_dir}/{project}_ingest.json
 
-Stage 5b (prproj) from v2.16 removed. Premiere project via UXP plugin (020201_premiere_ingest).
+Stage 5b (prproj) from v2.16 removed. Premiere project via UXP plugin (0500_uxp).
 
 ---
 
@@ -355,7 +364,10 @@ File: `{transcription_dir}/{project}_ingest.json`
             "path": "/abs/Interview/C5402.MP4",
             "duration": 156.0,
             "offset": 0.0,
-            "premiere_transcript": "/abs/Interview_transcription/per_clip/C5402/C5402_premiere_transcript.json"
+            "premiere_transcript": "/abs/Interview_transcription/per_clip/C5402/C5402_premiere_transcript.json",
+            "dji_audio": [
+                { "tx": "TX02", "path": "/abs/Interview/01_Media/Source/Audio/C5402_TX02.wav" }
+            ]
         }
     ],
     "files": {
@@ -372,8 +384,53 @@ Fields:
 - `media` — resolution, FPS, sample_rate from first clip
 - `clips[]` — absolute paths to video and premiere transcript JSON
 - `clips[].offset` — clip offset in concatenated audio (for diarization)
+- `clips[].dji_audio` — (optional) DJI microphone sync files from `0103_sync_dji_audio`. Array of `{ tx, path }` objects. Present only when synced DJI WAV files exist in `Source/Audio/`.
 - `files` — absolute paths to combined transcript JSON, SRT, captions SRT, XLSX
 - `source_folder` — project root folder
+
+---
+
+## Transcript Quality Fields (v3.2)
+
+### Whisper segment quality fields
+
+Each `transcript_segments[]` entry in transcript.json now includes Whisper quality metrics, aggregated from the raw Whisper segments that contributed words to the re-grouped segment:
+
+| Field | Type | Aggregation | Description |
+|-------|------|------------|-------------|
+| `no_speech_prob` | float | max | Probability that the segment is non-speech (noise, silence, music). Values > 0.5 indicate likely non-speech |
+| `compression_ratio` | float | max | Text compression ratio. Very high (> 2.4) suggests hallucination; very low (< 1.2) suggests gibberish |
+| `temperature` | float | max | Whisper's decoding temperature. > 0.0 means Whisper used fallback decoding (lower confidence) |
+| `avg_logprob` | float | mean | Average log probability of the decoded tokens. Lower = less confident |
+| `low_confidence` | bool | — | Computed flag (see below) |
+
+### low_confidence logic (v3.2)
+
+A segment is flagged `low_confidence = true` if ANY of these conditions is true:
+
+```
+avg_conf < 0.7                           # low word-level confidence
+OR no_speech_prob > 0.5                  # likely non-speech
+OR compression_ratio > 2.4              # possible hallucination
+OR (compression_ratio > 0 AND < 1.2)    # possible gibberish
+OR temperature > 0.0                     # Whisper used fallback mode
+```
+
+Previous logic (v3.0): `avg_conf < 0.7` only.
+
+### words_data[] format (v3.2)
+
+Each word in `words_data[]` now includes a `duration` field. Zero-duration words are filtered out.
+
+```json
+{
+    "word": "hello",
+    "start": 1.46,
+    "end": 1.82,
+    "duration": 0.36,
+    "confidence": 0.9876
+}
+```
 
 ---
 

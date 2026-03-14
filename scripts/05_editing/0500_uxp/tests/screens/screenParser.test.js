@@ -15,10 +15,10 @@ const {
 // --- Helper: create mock segments ---
 function makeSegments() {
   return [
-    { id: 'seg_001', sourceFile: 'C5402.MP4', inSec: 0, outSec: 10, duration: 10, tcIn: '00:00.0', use: true, block: 1 },
-    { id: 'seg_002', sourceFile: 'C5402.MP4', inSec: 10, outSec: 25, duration: 15, tcIn: '00:10.0', use: true, block: 1 },
-    { id: 'seg_003', sourceFile: 'C5403.MP4', inSec: 5, outSec: 20, duration: 15, tcIn: '00:05.0', use: true, block: 2 },
-    { id: 'seg_004', sourceFile: 'C5403.MP4', inSec: 30, outSec: 45, duration: 15, tcIn: '00:30.0', use: false, block: 99 }
+    { id: 'seg_001', sourceFile: 'RYA-FX3-0099.MP4', inSec: 0, outSec: 10, duration: 10, tcIn: '00:00.0', use: true, block: 1 },
+    { id: 'seg_002', sourceFile: 'RYA-FX3-0099.MP4', inSec: 10, outSec: 25, duration: 15, tcIn: '00:10.0', use: true, block: 1 },
+    { id: 'seg_003', sourceFile: 'RYA-FX3-0100.MP4', inSec: 5, outSec: 20, duration: 15, tcIn: '00:05.0', use: true, block: 2 },
+    { id: 'seg_004', sourceFile: 'RYA-FX3-0100.MP4', inSec: 30, outSec: 45, duration: 15, tcIn: '00:30.0', use: false, block: 99 }
   ];
 }
 

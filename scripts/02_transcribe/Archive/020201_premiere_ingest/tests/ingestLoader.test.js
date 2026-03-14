@@ -19,16 +19,16 @@ describe('parseIngest', () => {
 
   it('returns correct number of clips', () => {
     const ingest = parseIngest(JSON.stringify(sampleJSON));
-    assert.equal(ingest.clips.length, 3);
+    assert.equal(ingest.clips.length, 2);
   });
 
   it('preserves clip fields', () => {
     const ingest = parseIngest(JSON.stringify(sampleJSON));
     const clip = ingest.clips[0];
-    assert.equal(clip.clip_id, 'C5402');
-    assert.equal(clip.filename, 'C5402.MP4');
-    assert.equal(clip.path, '/abs/Interview/C5402.MP4');
-    assert.equal(clip.duration, 156.0);
+    assert.equal(clip.clip_id, 'RYA-FX3-0099');
+    assert.equal(clip.filename, 'RYA-FX3-0099.MP4');
+    assert.ok(clip.path.includes('RYA-FX3-0099.MP4'));
+    assert.equal(clip.duration, 17.76);
     assert.equal(clip.offset, 0.0);
   });
 
@@ -42,9 +42,9 @@ describe('parseIngest', () => {
 
   it('preserves file paths', () => {
     const ingest = parseIngest(JSON.stringify(sampleJSON));
-    assert.ok(ingest.files.transcript_json.includes('Interview_transcript.json'));
-    assert.ok(ingest.files.transcript_srt.includes('Interview_transcript.srt'));
-    assert.ok(ingest.files.transcript_xlsx.includes('Interview_transcript.xlsx'));
+    assert.ok(ingest.files.transcript_json.includes('YTCG37_Setup_UAE_Company_Remotely_transcript.json'));
+    assert.ok(ingest.files.transcript_srt.includes('YTCG37_Setup_UAE_Company_Remotely_transcript.srt'));
+    assert.ok(ingest.files.transcript_xlsx.includes('YTCG37_Setup_UAE_Company_Remotely_transcript.xlsx'));
   });
 
   it('preserves premiere_transcript paths per clip', () => {
@@ -97,8 +97,8 @@ describe('parseIngest', () => {
 
   it('throws when a clip is missing path', () => {
     const data = JSON.parse(JSON.stringify(sampleJSON));
-    delete data.clips[2].path;
-    assert.throws(() => parseIngest(JSON.stringify(data)), /clip\[2\] missing "path"/);
+    delete data.clips[1].path;
+    assert.throws(() => parseIngest(JSON.stringify(data)), /clip\[1\] missing "path"/);
   });
 
   it('throws when a clip has invalid duration', () => {
@@ -113,26 +113,25 @@ describe('getUniqueSourceFiles', () => {
     const ingest = parseIngest(JSON.stringify(sampleJSON));
     const files = getUniqueSourceFiles(ingest);
 
-    assert.equal(files.length, 3);
-    assert.ok(files.includes('/abs/Interview/C5402.MP4'));
-    assert.ok(files.includes('/abs/Interview/C5403.MP4'));
-    assert.ok(files.includes('/abs/Interview/C5404.MP4'));
+    assert.equal(files.length, 2);
+    assert.ok(files.some(f => f.includes('RYA-FX3-0099.MP4')));
+    assert.ok(files.some(f => f.includes('RYA-FX3-0100.MP4')));
   });
 
   it('deduplicates source file paths', () => {
     const data = JSON.parse(JSON.stringify(sampleJSON));
     // Add a duplicate clip path
     data.clips.push({
-      clip_id: 'C5402_dup',
-      filename: 'C5402.MP4',
-      path: '/abs/Interview/C5402.MP4',
+      clip_id: 'RYA-FX3-0099_dup',
+      filename: 'RYA-FX3-0099.MP4',
+      path: data.clips[0].path,
       duration: 50.0,
       offset: 0
     });
     const ingest = parseIngest(JSON.stringify(data));
     const files = getUniqueSourceFiles(ingest);
 
-    assert.equal(files.length, 3); // still 3 unique paths
+    assert.equal(files.length, 2); // still 2 unique paths
   });
 });
 
@@ -148,7 +147,7 @@ describe('generateSummary', () => {
   it('includes project name', () => {
     const ingest = parseIngest(JSON.stringify(sampleJSON));
     const summary = generateSummary(ingest);
-    assert.ok(summary.includes('Interview'));
+    assert.ok(summary.includes('YTCG37_Setup_UAE_Company_Remotely'));
   });
 
   it('includes resolution info', () => {
@@ -162,7 +161,7 @@ describe('generateSummary', () => {
   it('includes clip count', () => {
     const ingest = parseIngest(JSON.stringify(sampleJSON));
     const summary = generateSummary(ingest);
-    assert.ok(summary.includes('3'));
+    assert.ok(summary.includes('2'));
   });
 
   it('includes SRT status', () => {
@@ -174,6 +173,6 @@ describe('generateSummary', () => {
   it('includes source folder', () => {
     const ingest = parseIngest(JSON.stringify(sampleJSON));
     const summary = generateSummary(ingest);
-    assert.ok(summary.includes('/abs/Interview'));
+    assert.ok(summary.includes('YTCG37_Setup_UAE_Company_Remotely'));
   });
 });

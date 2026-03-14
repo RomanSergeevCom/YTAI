@@ -30,7 +30,7 @@ try {
 }
 
 const { REVIEW_COLOR_MAP } = require('../shared/constants');
-const { applyColorByIndex, setSourceInOut, clearSourceInOut, cleanExistingSequence } = require('../shared/clipActions');
+const { applyColorByIndex, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
 
 // Minimum gap duration (seconds) — gaps shorter than this are skipped
 var MIN_GAP_DURATION = 0.3;
@@ -423,17 +423,25 @@ async function buildReviewSequence(project, clipMap, segments, projectName, logg
   // Clear source in/out on first clip (so it can be reused)
   clearSourceInOut(project, firstClipForTrim, firstSeg.id, logger);
 
+  // Get SequenceEditor early — needed for DJI audio insert on first clip too
+  var seqEditor = ppro.SequenceEditor.getEditor(seq);
+
+  // Insert DJI audio for first clip on A2 (same source in/out as video)
+  var firstDjiCount = insertDjiAudio(project, seqEditor, clipMap, firstSeg.sourceFile,
+    firstSeg._timelinePosition || 0, firstSeg.inSec, firstSeg.outSec, firstSeg.id, logger);
+
   if (logger) {
     logger.info('Review sequence created: ' + seqName);
     logger.info('[1/' + reviewSegs.length + '] ' + firstSeg.id + ': ' + firstSeg.sourceFile +
       ' [' + firstCat.toUpperCase() + ']' +
       ' → in/out=' + firstSeg.inSec.toFixed(1) + '-' + firstSeg.outSec.toFixed(1) + 's' +
       ' → createSequenceFromMedia' +
+      (firstDjiCount > 0 ? ' +A2' : '') +
       ' → dur=' + firstSeg.duration.toFixed(1) + 's @' + (firstSeg._timelinePosition || 0).toFixed(1) + 's');
   }
 
   // === Remaining clips: overwrite at absolute positions (Ingest layout) ===
-  var seqEditor = ppro.SequenceEditor.getEditor(seq);
+  var totalDjiCount = firstDjiCount;
   var clipCount = 1;
 
   for (var i = 1; i < reviewSegs.length; i++) {
@@ -492,11 +500,20 @@ async function buildReviewSequence(project, clipMap, segments, projectName, logg
     // Clear source in/out (using CAST item, so clip can be reused)
     clearSourceInOut(project, clipForTrim, seg.id, logger);
 
+    // Insert DJI audio for this segment on A2 (same source in/out as video)
+    var segDjiCount = 0;
+    if (insertOk) {
+      segDjiCount = insertDjiAudio(project, seqEditor, clipMap, seg.sourceFile,
+        seg._timelinePosition, seg.inSec, seg.outSec, seg.id, logger);
+      totalDjiCount += segDjiCount;
+    }
+
     if (logger) {
       logger.info('[' + (i + 1) + '/' + reviewSegs.length + '] ' + seg.id + ': ' + seg.sourceFile +
         ' [' + cat.toUpperCase() + ']' +
         ' → in/out=' + seg.inSec.toFixed(1) + '-' + seg.outSec.toFixed(1) + 's' +
         ' → ' + (insertOk ? 'overwrite@' + seg._timelinePosition.toFixed(1) + 's' : 'FAILED') +
+        (segDjiCount > 0 ? ' +A2' : '') +
         ' → dur=' + seg.duration.toFixed(1) + 's');
     }
   }
@@ -504,7 +521,12 @@ async function buildReviewSequence(project, clipMap, segments, projectName, logg
   // Total duration = Ingest timeline length (includes empty gaps for Assembly)
   var totalDuration = ingestDuration > 0 ? ingestDuration : reviewSegs.reduce(function (sum, s) { return sum + s.duration; }, 0);
 
-  if (logger) logger.info('Review: ' + clipCount + '/' + reviewSegs.length + ' clips placed, timeline=' + totalDuration.toFixed(1) + 's (Ingest layout)');
+  if (logger) {
+    logger.info('Review: ' + clipCount + '/' + reviewSegs.length + ' clips placed, timeline=' + totalDuration.toFixed(1) + 's (Ingest layout)');
+    if (totalDjiCount > 0) {
+      logger.info('DJI audio: ' + totalDjiCount + ' segment(s) placed on A2');
+    }
+  }
 
   // === Post-build verification: read back V1 track items ===
   try {

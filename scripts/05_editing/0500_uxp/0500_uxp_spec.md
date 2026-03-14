@@ -1,4 +1,4 @@
-# 0500_uxp — Specification v1.9.3
+# 0500_uxp — Specification v2.1.0
 
 UXP-плагин для Adobe Premiere Pro: **Ingest** + **Assembly** + **Review** + **Screen Cues** в одной панели.
 
@@ -26,7 +26,7 @@ index.js (оркестратор — state, UI helpers, pipelines)
 │   ├── constants.js      ← LABEL_COLOR_INDEX, MARKER_COLOR_INDEX, MARKER_TYPE_*, TICKS_PER_SECOND, REVIEW_COLOR_MAP, SCREEN_CUE_COLOR, SCREEN_TYPES, SCREEN_REQUIRED_FIELDS
 │   ├── utils.js          ← parseTimecode, tickSec, fmtTime, escapeHtml
 │   ├── logger.js         ← Logger class (buffer + onLog callback + debug bundle)
-│   └── clipActions.js    ← applyColorToItem(), applyColorByIndex(), setSourceInOut(), clearSourceInOut(), cleanExistingSequence()
+│   └── clipActions.js    ← applyColorToItem(), applyColorByIndex(), setSourceInOut(), clearSourceInOut(), cleanExistingSequence(), insertDjiAudio()
 ├── src/ingest/
 │   ├── ingestLoader.js   ← parseIngest(), generateSummary()
 │   ├── binManager.js     ← createBinStructure(), BIN_NAMES
@@ -77,17 +77,25 @@ INGEST, ASSEMBLY, REVIEW и SCREENS модули **не импортируют �
 
 Если у клипов есть поле `dji_audio`, Ingest автоматически:
 1. Импортирует DJI WAV файлы в `00_Source`
-2. Размещает каждый TX на отдельной аудио дорожке: TX01 → A2, TX02 → A3
+2. Размещает каждый TX на отдельной аудио дорожке: TX02 → A2, TX03 → A3
 3. Камерное аудио остаётся на A1 для референса
 
-DJI WAV — моно 24-bit 48kHz, обрезанные под длину видеоклипа скриптом `01_prepare/03_sync_dji_audio.py`.
+DJI WAV — моно 24-bit 48kHz, обрезанные под длину видеоклипа скриптом `01_prepare/0103_sync_dji_audio.py`.
 
 | Track | Содержание |
 |-------|-----------|
 | V1 | Видеоклипы |
 | A1 | Камерное аудио (стерео, L=mic1 R=mic2) |
-| A2 | DJI TX01 (моно, оба уха) — опционально |
-| A3 | DJI TX02 (моно, оба уха) — опционально |
+| A2 | DJI TX02 (моно, оба уха) — опционально |
+| A3 | DJI TX03 (моно, оба уха) — опционально |
+
+**DJI аудио во всех секвенциях:** DJI WAV файлы автоматически размещаются на A2/A3 не только в Ingest, но и в Assembly, Review, и Screen Cues секвенциях. Поскольку DJI аудио синхронизировано 1:1 с видео, используются те же source in/out точки, что и для V1. Функция `insertDjiAudio()` из `clipActions.js` вызывается после каждой вставки видео-клипа.
+
+```
+Ingest:      V1 = цельные клипы,    A2 = DJI цельные клипы (findProjectItemByName)
+Assembly:    V1 = USE=TRUE сегменты, A2 = DJI тримменные сегменты (insertDjiAudio)
+Review:      V1 = complement сегменты, A2 = DJI тримменные сегменты (insertDjiAudio)
+Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегменты (insertDjiAudio)
 ```
 
 ---
@@ -101,9 +109,9 @@ DJI WAV — моно 24-bit 48kHz, обрезанные под длину вид
 5. **Activate** — открытие секвенции + сохранение + валидация
 6. **Captions** — `importCaptionsSrt()` — import `{project}_2_Assembly_captions.srt` в 02_Transcripts
 
-> **Screen Cues** — отдельный pipeline (v1.9.3), не часть Assembly. См. секцию ниже.
+> **Screen Cues** — отдельный pipeline (v1.9.3+), не часть Assembly. См. секцию ниже.
 
-### Screen Cues Pipeline (v1.9.3 — standalone, NOT part of Assembly)
+### Screen Cues Pipeline (standalone, NOT part of Assembly)
 
 **Отдельный pipeline** — создаёт собственную секвенцию `{project}_4_ScreenCues`.
 
@@ -125,7 +133,9 @@ DJI WAV — моно 24-bit 48kHz, обрезанные под длину вид
 3. Write SRT file to {briefDir}/
 4. Import SRT to 02_Transcripts bin
 
-**Pre-flight check (v1.9.3a):** Pipeline проверяет наличие `screen_cues/` папки через `uxpfs.getEntryWithUrl()` перед Step 2. Если PNGs не найдены → V1 строится, V2 пропускается с actionable warning + команда Python копируется в clipboard.
+**Pre-flight check:** Pipeline проверяет наличие `screen_cues/` папки через `uxpfs.getEntryWithUrl()` перед Step 2. Если PNGs не найдены → V1 строится, V2 пропускается с actionable warning + команда Python копируется в clipboard.
+
+**Generate PNGs button (v2.1.0):** Кнопка в UXP панели запускает `run_generate.command` через `shell.openPath()`. Terminal показывает цветной вывод (ANSI) и автозакрывается через 3 секунды. Кнопка disabled во время выполнения (защита от двойного Terminal).
 
 **5 типов screens:** full_overlay, half_overlay, three_fifths_overlay, chapter_bar, lower_third
 **Модули:** `src/screens/screenParser.js`, `src/screens/screenBuilder.js`
@@ -204,7 +214,9 @@ Review timeline имеет ту же длину, что и Ingest (все кли
 | Track | Содержание |
 |-------|-----------|
 | **V1** | Complement сегменты на абсолютных позициях (clipOffset + inSec), Assembly = пустые gaps |
-| **A1** | Аудио из тех же клипов (наследуется автоматически) |
+| **A1** | Камерное аудио (наследуется автоматически от V1 clips) |
+| **A2** | DJI TX02 аудио — тримменное с теми же in/out точками, на абсолютных позициях (опционально) |
+| **A3** | DJI TX03 аудио (опционально, если несколько передатчиков) |
 
 **Размещение:** `createOverwriteItemAction` на абсолютных позициях. Assembly НЕ ТРОНУТ.
 
@@ -269,7 +281,9 @@ Total Ingest = 356.64s
 | Track | Содержание |
 |-------|-----------|
 | **V1** | USE=TRUE сегменты, sorted by block → brief order, pre-trimmed, per-segment colored |
-| **A1** | Аудио из тех же клипов (наследуется автоматически) |
+| **A1** | Камерное аудио (наследуется автоматически от V1 clips) |
+| **A2** | DJI TX02 аудио — тримменное с теми же in/out точками, что и V1 (опционально) |
+| **A3** | DJI TX03 аудио (опционально, если несколько передатчиков) |
 
 - Только `use=TRUE` и `block≠99`
 - Сортировка: по block → brief order внутри блока (НЕ по tc_in)
@@ -434,7 +448,8 @@ buildAssembly() [index.js]
 │  │   ├─ applyColorToItem()      ← цвет ПЕРЕД вставкой (per-segment!)
 │  │   ├─ setSourceInOut()        ← обрезка (cast required)
 │  │   ├─ insert (first: createSequenceFromMedia, rest: createInsertProjectItemAction)
-│  │   └─ clearSourceInOut()      ← сброс для повторного использования
+│  │   ├─ clearSourceInOut()      ← сброс для повторного использования
+│  │   └─ insertDjiAudio()        ← DJI TX на A2/A3 с теми же in/out (clipActions.js)
 │  └─ V1 verification            ← read back TrackItems
 │
 ├─ Step 4: createAssemblyMarkers() [index.js]
@@ -500,7 +515,8 @@ buildReview() [index.js]
 │  │   ├─ applyColorByIndex()       ← цвет из REVIEW_COLOR_MAP (per-segment!)
 │  │   ├─ setSourceInOut()          ← обрезка (cast required)
 │  │   ├─ overwrite (first: createSequenceFromMedia, rest: createOverwriteItemAction @_timelinePosition)
-│  │   └─ clearSourceInOut()        ← сброс для повторного использования
+│  │   ├─ clearSourceInOut()        ← сброс для повторного использования
+│  │   └─ insertDjiAudio()          ← DJI TX на A2/A3 @ _timelinePosition (clipActions.js)
 │  └─ totalDuration = ingestDuration  ← длина = вся Ingest секвенция
 │
 ├─ Step 4: createReviewMarkers() [index.js]
@@ -516,7 +532,7 @@ buildReview() [index.js]
    └─ SRT появляется в 02_Transcripts bin → editor перетаскивает на Caption track
 ```
 
-### Внутри SCREEN CUES Pipeline (v1.9.3)
+### Внутри SCREEN CUES Pipeline
 
 ```
 buildScreenCuesPipeline() [index.js]
@@ -531,8 +547,8 @@ buildScreenCuesPipeline() [index.js]
 │  ├─ Phase A: Filter + sort segments (use=true, block!=99) → useSegs
 │  ├─ Phase B: cleanExistingSequence(seqName)
 │  ├─ Phase C: Build V1 — Assembly copy (same as assemblyBuilder)
-│  │   ├─ First seg → applyColor → setSourceInOut → createSequenceFromMedia → clearSourceInOut
-│  │   └─ Remaining → applyColor → setSourceInOut → createInsertProjectItemAction → clearSourceInOut
+│  │   ├─ First seg → applyColor → setSourceInOut → createSequenceFromMedia → clearSourceInOut → insertDjiAudio
+│  │   └─ Remaining → applyColor → setSourceInOut → createInsertProjectItemAction → clearSourceInOut → insertDjiAudio
 │  ├─ Phase D: Import + place PNG overlays on V2 (if pngFiles available)
 │  │   ├─ buildSegmentPositionMap(useSegs) → segPositions
 │  │   ├─ FOR EACH screen: pngFiles.includes(pngFileName) → import → overwrite on V2
@@ -553,15 +569,17 @@ buildScreenCuesPipeline() [index.js]
 
 ```
 INGEST Pipeline
-├─ importFiles(paths) → создаёт ProjectItems в 00_Source bin
-└─ Premiere Project State (00_Source bin содержит клипы)
+├─ importFiles(paths) → создаёт ProjectItems в 00_Source bin (video + DJI WAVs)
+└─ Premiere Project State (00_Source bin содержит video clips + DJI WAVs)
     │
     ↓  (нет прямого import между модулями!)
     │
 ASSEMBLY Pipeline                    REVIEW Pipeline             SCREEN CUES Pipeline
 ├─ findSourceBin() → "00_Source"     ├─ findSourceBin()          ├─ findSourceBin()
-├─ buildClipMap() → { filename: PI } ├─ buildClipMap()           ├─ buildClipMap()
-└─ buildAssemblySequence()           └─ buildReviewSequence()    └─ buildScreenCues()
+├─ buildClipMap() → { fn: PI }      ├─ buildClipMap()           ├─ buildClipMap()
+│  (incl. DJI WAVs: C5402_TX02)     │  (incl. DJI WAVs)         │  (incl. DJI WAVs)
+├─ buildAssemblySequence()           ├─ buildReviewSequence()    ├─ buildScreenCues()
+└─ insertDjiAudio() per segment     └─ insertDjiAudio()         └─ insertDjiAudio()
 ```
 
 ---
@@ -571,28 +589,39 @@ ASSEMBLY Pipeline                    REVIEW Pipeline             SCREEN CUES Pip
 ### Pipeline-уровень (между скриптами YTAI)
 
 ```
+01_prepare/0103_sync_dji_audio
+└── Source/Audio/{clip}_TX{N}.wav ──→ 020101_transcribe (→ ingest.json clips[].dji_audio)
+
 020101_transcribe
-├── transcript.json ──→ 050202_claude_kb ──→ edit_brief.json ─┬─→ 050105 ASSEMBLY
-├── ingest.json    ──→ 050105 INGEST                          └─→ 050105 REVIEW (обратный фильтр)
+├── transcript.json ──→ 0501_brief (Claude) ──→ edit_brief.json ─┬─→ 0500_uxp ASSEMBLY
+├── ingest.json    ──→ 0500_uxp INGEST                           ├─→ 0500_uxp REVIEW (обратный фильтр)
+│   (incl. dji_audio)                                             └─→ 0500_uxp SCREEN CUES
 └── per_clip/*.json ──→ generate_assembly_captions.py
                          + edit_brief.json
                          ↓
-                        {project}_2_Assembly_captions.srt ──→ 050105 ASSEMBLY (Step 6: auto-import)
-                        {project}_3_Review_captions.srt   ──→ 050105 REVIEW   (Step 6: auto-import)
+                        {project}_2_Assembly_captions.srt ──→ 0500_uxp ASSEMBLY (Step 6: auto-import)
+                        {project}_3_Review_captions.srt   ──→ 0500_uxp REVIEW   (Step 6: auto-import)
 
 Filename = единый ключ:
   020101: clips[].filename = "C5402.MP4"
-  050105 INGEST: importFiles() → 00_Source/"C5402.MP4"
-  050202: segments[].source_file = "C5402.MP4"
-  050105 ASSEMBLY: clipMap["C5402.MP4"]
-  050105 REVIEW: clipMap["C5402.MP4"] (те же клипы, другие сегменты)
+  0500_uxp INGEST: importFiles() → 00_Source/"C5402.MP4" + "C5402_TX02.wav"
+  0501_brief: segments[].source_file = "C5402.MP4"
+  0500_uxp ASSEMBLY: clipMap["C5402.MP4"] + clipMap["C5402_TX02"] (DJI audio)
+  0500_uxp REVIEW: clipMap["C5402.MP4"] + clipMap["C5402_TX02"] (DJI audio)
+  0500_uxp SCREENS: clipMap["C5402.MP4"] + clipMap["C5402_TX02"] (DJI audio)
+
+DJI Audio = связь через clip_id:
+  0103_sync_dji_audio: выход = {clip_id}_TX{N}.wav
+  020101: ingest.json clips[].dji_audio = [{ tx, path }]
+  0500_uxp INGEST: import + findProjectItemByName("{clip_id}_TX02")
+  0500_uxp Assembly/Review/Screens: insertDjiAudio() находит clipMap["{clip_id}_TX02"]
 
 Color:
-  050105 ASSEMBLY: segments[].color → LABEL_COLOR_INDEX → клип + MARKER_COLOR_INDEX → маркер
-  050105 REVIEW: getReviewCategory() → REVIEW_COLOR_MAP → { labelIdx, markerIdx }
+  0500_uxp ASSEMBLY: segments[].color → LABEL_COLOR_INDEX → клип + MARKER_COLOR_INDEX → маркер
+  0500_uxp REVIEW: getReviewCategory() → REVIEW_COLOR_MAP → { labelIdx, markerIdx }
 ```
 
-### Модуль-уровень (внутри 050105)
+### Модуль-уровень (внутри 0500_uxp)
 
 ```
 index.js (оркестратор)
@@ -608,19 +637,25 @@ index.js (оркестратор)
 
 assemblyBuilder.js
 ├── ЧИТАЕТ: premierepro (ppro)
-├── ЧИТАЕТ: src/shared/clipActions  ← applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence
+├── ЧИТАЕТ: src/shared/clipActions  ← applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio
 └── НЕ ИМПОРТИРУЕТ: projectScanner, briefParser, index.js
 
 reviewBuilder.js
 ├── ЧИТАЕТ: premierepro (ppro)
-├── ЧИТАЕТ: src/shared/clipActions  ← applyColorByIndex, setSourceInOut, clearSourceInOut, cleanExistingSequence
+├── ЧИТАЕТ: src/shared/clipActions  ← applyColorByIndex, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio
 ├── ЧИТАЕТ: src/shared/constants    ← REVIEW_COLOR_MAP
 └── НЕ ИМПОРТИРУЕТ: projectScanner, briefParser, assemblyBuilder, index.js
+
+screenBuilder.js
+├── ЧИТАЕТ: premierepro (ppro)
+├── ЧИТАЕТ: src/shared/clipActions  ← applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio
+├── ЧИТАЕТ: src/shared/constants    ← SCREEN_CUE_COLOR
+└── НЕ ИМПОРТИРУЕТ: projectScanner, briefParser, assemblyBuilder, reviewBuilder, index.js
 
 clipActions.js
 ├── ЧИТАЕТ: premierepro (ppro)
 ├── ЧИТАЕТ: src/shared/constants  ← LABEL_COLOR_INDEX
-└── НЕ ИМПОРТИРУЕТ: assemblyBuilder, reviewBuilder
+└── НЕ ИМПОРТИРУЕТ: assemblyBuilder, reviewBuilder, screenBuilder
 
 projectScanner.js
 ├── ЧИТАЕТ: premierepro (ppro)
@@ -632,62 +667,116 @@ briefParser.js
 
 ---
 
-## UI Panel (index.html)
+## UI Panel (index.html) — v2.1.0
 
 ```
 ┌──────────────────────────────────────────┐
-│                   Powered by RYA.AE      │  ← branding
+│                v2.1.0 · Powered by RYA.AE│  ← branding
+├──────────── PROJECT ─────────────────────│
+│  ● No project selected                  │  ← status dot + text
+│  [Select Project Folder]                 │  ← folder picker (uxpfs.getFolder)
+│  ✓ Ingest JSON found                    │  ← checklist (green/red dots)
+│  ✗ Edit Brief not found                 │    + path hints for missing files
+│    Expected: {folder}/01_Media/Source/...│
+│  [Refresh]                               │  ← re-check auto-detection
 ├──────────── INGEST ──────────────────────│
-│  ● Waiting for ingest JSON...            │  ← status dot + text
-│  [Load Ingest JSON] [Debug Ingest]       │
-│  Summary panel (hidden until load)       │
-│  [Build Ingest] [Copy Logs Path]         │
+│  ● Ready — ingest loaded                 │  ← status dot + text
+│  ┌ Load Ingest JSON ┐ (fallback, hidden) │  ← shown only if auto-detect fails
+│  [Build Ingest]                          │
 │  Validation panel (green/yellow/red)     │
 ├──────────── ASSEMBLY ────────────────────│
-│  ● Waiting for edit brief...             │
-│  [Load Edit Brief] [Debug Assembly]      │
-│  Summary panel (hidden until load)       │
-│  [Build Assembly] [Apply Colors] [Logs]  │
+│  ● Ready — brief loaded                  │
+│  ┌ Load Edit Brief ┐ (fallback, hidden)  │  ← shown only if auto-detect fails
+│  [Build Assembly]                        │
 │  Validation panel (green/yellow/red)     │
 ├──────────── REVIEW ──────────────────────│
-│  ● Load edit brief first...             │
-│  [Build Review] [Debug Review]           │
+│  ● Ready                                 │
+│  [Build Review]                          │
 │  Validation panel (green/yellow/red)     │
 ├──────────── SCREEN CUES ────────────────│
-│  ● Load edit brief first...             │
-│  [Build Screen Cues] [Debug Screens]     │
+│  ● Ready                                 │
+│  [Generate PNGs] [Build Screen Cues]     │
 │  Validation panel (V1/V2/markers/SRT)   │
 ├──────────── INGEST LOG ──────────────────│
-│  [clear] Scrollable monospace log        │
+│  /path/to/logs [copy path] [clear]       │  ← log path display + copy
+│  Scrollable monospace log                │
 ├──────────── ASSEMBLY LOG ────────────────│
-│  [clear] Scrollable monospace log        │
+│  /path/to/logs [copy path] [clear]       │
+│  Scrollable monospace log                │
 ├──────────── REVIEW LOG ──────────────────│
-│  [clear] Scrollable monospace log        │
+│  /path/to/logs [copy path] [clear]       │
+│  Scrollable monospace log                │
+├──────────── SCREEN CUES LOG ─────────────│
+│  /path/to/logs [copy path] [clear]       │
+│  Scrollable monospace log                │
 └──────────────────────────────────────────┘
 ```
+
+### Project Selection + Auto-detection (v2.0.0)
+
+| Действие | Описание |
+|--------|----------|
+| **Select Project Folder** | `uxpfs.getFolder()` → сохраняет `projectState.folderPath` + `projectName` → `autoDetectFiles()` |
+| **Auto-detect** | Ищет файлы по конвенции: `{folder}/01_Media/Source/{name}_ingest.json` и `{folder}/01_Media/Source/Setup/{name}_edit_brief.json` через `uxpfs.getEntryWithUrl()` |
+| **Checklist** | Визуальный чеклист: ✓ зелёный (найдено) / ✗ красный (не найдено) + подсказка пути для отсутствующих файлов |
+| **Refresh** | Re-run `autoDetectFiles()` — проверить заново после перемещения файлов |
+| **Fallback** | Если auto-detect не нашёл файл → показывается кнопка ручной загрузки (Load Ingest JSON / Load Edit Brief) с оранжевой рамкой |
+
+### projectState
+
+```javascript
+let projectState = {
+  folderPath: null,     // полный путь к папке проекта
+  projectName: null,    // имя проекта (из имени папки)
+  ingestPath: null,     // путь к найденному ingest.json
+  briefPath: null,      // путь к найденному edit_brief.json
+  ingestDetected: false, // auto-detect нашёл ingest
+  briefDetected: false   // auto-detect нашёл brief
+};
+```
+
+### Кнопки Ingest
+
+| Кнопка | Действие |
+|--------|----------|
+| **Load Ingest JSON** | File picker → parseIngest → показать summary (fallback, скрыта по умолчанию) |
+| **Build Ingest** | 6-step pipeline (clean → bins → sequence → transcripts → LUTs → activate) |
 
 ### Кнопки Assembly
 
 | Кнопка | Действие |
 |--------|----------|
-| **Load Edit Brief** | File picker → parseBrief → показать summary |
-| **Debug Assembly** | Auto-load DEBUG_BRIEF_PATH → buildAssembly() |
+| **Load Edit Brief** | File picker → parseBrief → показать summary (fallback, скрыта по умолчанию) |
 | **Build Assembly** | 6-step pipeline (scan → colors+build → markers → validate → captions) |
-| **Apply Colors** | applyAssemblyColors() + buildAssembly() (полный ребилд для обновления таймлайна) |
-| **Copy Logs Path** | Скопировать путь к папке логов в clipboard |
 
 ### Кнопки Review
 
 | Кнопка | Действие |
 |--------|----------|
 | **Build Review** | 6-step pipeline (scan → build → markers → validate → captions) — доступна после загрузки edit brief |
-| **Debug Review** | Auto-load DEBUG_BRIEF_PATH → buildReview() |
 
-### Debug функции
+### Кнопки Screen Cues
 
-- **Debug Ingest**: загружает hardcoded `DEBUG_INGEST_PATH` → clean → build → validate → save logs
-- **Debug Assembly**: загружает hardcoded `DEBUG_BRIEF_PATH` → buildAssembly() (full pipeline)
-- **Debug Review**: загружает hardcoded `DEBUG_BRIEF_PATH` → buildReview() (full pipeline)
+| Кнопка | Действие |
+|--------|----------|
+| **Generate PNGs** | Запускает `run_generate.command` через `shell.openPath()` → Terminal с цветным выводом → автозакрытие через 3с. Кнопка disabled во время выполнения (double-click protection). |
+| **Build Screen Cues** | 4-step pipeline (scan → V1+V2+markers+SRT → write SRT → import SRT) |
+
+### Generate PNGs — Terminal workflow (v2.1.0)
+
+1. UXP записывает путь к brief в `/tmp/ytai_screen_cues_brief.txt`
+2. `shell.openPath()` открывает `run_generate.command` в Terminal
+3. Скрипт: валидация → красивый header → `python3 generate_screen_cues_png.py` → цветной статус
+4. По завершении: `sleep 3` → `osascript` auto-close Terminal window
+5. UXP polling: каждые 2с проверяет `{briefDir}/screen_cues/.done` → при успехе разблокирует Build Screen Cues
+
+### Validation: `>=` comparison (v2.1.0)
+
+Все validation checks используют `>=` вместо `===` для сравнения количества TrackItems с ожидаемым:
+- `items.length >= expectedCount` → зелёный ● (ok)
+- `items.length < expectedCount` → жёлтый ● (warn: "X/Y clips")
+
+Причина: Premiere `getTrackItems()` может возвращать больше items, чем было вставлено (transitions, gaps, items от предыдущих builds). `>=` корректнее отражает "всё на месте".
 
 ---
 
@@ -746,7 +835,7 @@ createAssemblyMarkers()
 ## Тесты
 
 ```bash
-npm test                    # все 182 тестов
+npm test                    # все 186 тестов
 npm run test:ingest         # только ingest
 npm run test:assembly       # только assembly
 npm run test:review         # только review

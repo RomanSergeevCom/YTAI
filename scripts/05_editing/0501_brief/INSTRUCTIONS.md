@@ -50,7 +50,8 @@ When the user sends a `transcript.json` (video transcript with timecodes and spe
 - Long pauses and filler words
 - Repetitions (speaker said the same thing twice)
 - Off-topic digressions
-- Segments with low_confidence < 0.5 (possible audio issues)
+- Segments with `low_confidence: true` — these are flagged by the transcription pipeline when audio quality is poor. Five conditions trigger this flag: low word confidence, high noise probability (`no_speech_prob > 0.5`), possible hallucination (`compression_ratio > 2.4`), gibberish (`compression_ratio < 1.2`), or Whisper fallback mode (`temperature > 0`). Review such segments carefully — they may contain garbled audio, background noise, or inaccurate transcription
+- Segments with very low `avg_logprob` (< -1.0) combined with other quality flags — likely unreliable transcription
 - Place cut segments in **Block 99** ("Cut") with color **Red** and priority **9**
 
 ### Step 5: Enrich Segments
@@ -158,7 +159,7 @@ Always return the full updated JSON artifact (not a diff).
 
 ## What Happens Next
 
-Your `{project}_edit_brief.json` is loaded into the **YTAI Assembly** UXP panel in Premiere Pro (050105_assembly_uxp).
+Your `{project}_edit_brief.json` is loaded into the **YTAI Assembly** UXP panel in Premiere Pro (0500_uxp).
 
 The plugin works in two stages:
 
@@ -199,11 +200,13 @@ Set `is_chapter="TRUE"` on the **first segment of each block**. The plugin creat
 
 ```
 Project Root
-├── 00_Source/            ← imported clips (from INGEST)
-├── 02_Transcripts/       ← SRT, transcripts, captions (from INGEST + ASSEMBLY + REVIEW)
-├── {project}_1_Ingest    ← all clips, whole, on V1 (from INGEST)
-├── {project}_2_Assembly  ← V1: used segments by block order; V2: screen cues (from ASSEMBLY)
-└── {project}_3_Review    ← unused segments on V1, by source file order (from REVIEW)
+├── 00_Source/            ← imported clips + DJI WAVs (from INGEST)
+├── 01_ScreenCues/        ← PNG overlay images (from SCREEN CUES)
+├── 02_Transcripts/       ← SRT, transcripts, captions (from INGEST + ASSEMBLY + REVIEW + SCREEN CUES)
+├── {project}_1_Ingest    ← V1: all clips whole; A2: DJI TX whole (from INGEST)
+├── {project}_2_Assembly  ← V1: used segments; A2: DJI trimmed; V2: screen cues (from ASSEMBLY)
+├── {project}_3_Review    ← V1: unused segments; A2: DJI trimmed (from REVIEW)
+└── {project}_4_ScreenCues ← V1: Assembly copy; A2: DJI trimmed; V2: PNGs (from SCREEN CUES)
 ```
 
 ### Stage 3: REVIEW (from the same edit_brief.json — inverse filter)

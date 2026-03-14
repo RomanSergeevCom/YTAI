@@ -266,11 +266,50 @@ class Logger {
       this._lastSavedPath = savedPath;
       this.info(`Debug bundle saved to: ${savedPath}`);
 
+      // Log rotation: keep only last 20 debug bundles, delete older ones
+      try {
+        await this._rotateDebugBundles(logsFolder, 20);
+      } catch (rotateErr) {
+        this._log('DEBUG', `Log rotation skipped: ${rotateErr.message}`);
+      }
+
       return { folderPath: savedPath, logFile: 'log.txt' };
     } catch (e) {
       // In test environment or if UXP APIs unavailable
       this.error(`Failed to save debug bundle: ${e.message}`);
       return null;
+    }
+  }
+
+  /**
+   * Rotate debug bundles — keep only the newest `keep` folders, delete the rest.
+   * Folders are sorted by name (which contains timestamp) so alphabetical = chronological.
+   *
+   * @param {Object} logsFolder - UXP folder entry for logs/
+   * @param {number} keep - Number of bundles to keep (default 20)
+   */
+  async _rotateDebugBundles(logsFolder, keep) {
+    const entries = await logsFolder.getEntries();
+    // Only consider debug bundle folders (contain "_debug_" in name)
+    const debugFolders = entries
+      .filter(e => e.isFolder && e.name.includes('_debug_'))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    if (debugFolders.length <= keep) return;
+
+    const toDelete = debugFolders.slice(0, debugFolders.length - keep);
+    let deleted = 0;
+    for (const folder of toDelete) {
+      try {
+        // Delete folder and all its contents
+        await folder.delete({ recursive: true });
+        deleted++;
+      } catch (e) {
+        this._log('DEBUG', `Cannot delete old bundle ${folder.name}: ${e.message}`);
+      }
+    }
+    if (deleted > 0) {
+      this._log('INFO', `Log rotation: deleted ${deleted} old bundle(s), kept ${keep}`);
     }
   }
 

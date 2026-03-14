@@ -1,9 +1,9 @@
-# 050202_claude_kb — Specification v1.2.0
+# 050202_claude_kb — Specification v1.3.0
 
 Claude Desktop Project Knowledge для создания монтажных брифов.
 
 **Вход:** `{project}_transcript.json` (из 020101_transcribe)
-**Выход:** `{project}_edit_brief.json` -> загружается в 050105_assembly_uxp (ASSEMBLY + REVIEW)
+**Выход:** `{project}_edit_brief.json` -> auto-detect в 0500_uxp v2.1.0 (ASSEMBLY + REVIEW + SCREEN CUES)
 **Выход 2:** `{project}_2_Assembly_captions.srt` -> генерируется `generate_assembly_captions.py`
 **Выход 3:** `{project}_3_Review_captions.srt` -> генерируется `generate_assembly_captions.py --review`
 
@@ -32,15 +32,16 @@ Claude Desktop Project Knowledge для создания монтажных бр
     +- {project}_transcript.json --> 050202_claude_kb (Claude Desktop)
     |                                     |
     |                                     +- {project}_edit_brief.json
-    |                                          |
-    |                                          +-->  050105_assembly_uxp (ASSEMBLY: use=TRUE, block≠99)
-    |                                          +-->  050105_assembly_uxp (REVIEW: use=FALSE OR block=99)
+    |                                          |  (auto-detected by UXP v2.1.0 при Select Project Folder)
+    |                                          +-->  0500_uxp (ASSEMBLY: use=TRUE, block≠99)
+    |                                          +-->  0500_uxp (REVIEW: use=FALSE OR block=99)
+    |                                          +-->  0500_uxp (SCREEN CUES: V1 Assembly copy + V2 PNGs)
     |                                          +-->  generate_review.py (HTML ревью)
     |                                          +-->  generate_assembly_captions.py
     |                                                     |
     +- per_clip/{clip_id}_transcript.json ------>          |
-                                                          +- {project}_2_Assembly_captions.srt --> 050105 ASSEMBLY (auto-import)
-                                                          +- {project}_3_Review_captions.srt   --> 050105 REVIEW   (auto-import)
+                                                          +- {project}_2_Assembly_captions.srt --> 0500_uxp ASSEMBLY (auto-import)
+                                                          +- {project}_3_Review_captions.srt   --> 0500_uxp REVIEW   (auto-import)
 ```
 
 ### Генерация Captions (Assembly + Review)
@@ -58,7 +59,7 @@ python generate_assembly_captions.py --brief {project}_edit_brief.json --review
 4. Ремаппит таймкоды слов на соответствующий таймлайн
 5. Генерирует `{project}_2_Assembly_captions.srt` или `{project}_3_Review_captions.srt`
 
-UXP плагин (050105_assembly_uxp) автоматически импортирует оба SRT в 02_Transcripts при Build Assembly / Build Review.
+UXP плагин (0500_uxp v2.1.0) автоматически импортирует оба SRT в 02_Transcripts при Build Assembly / Build Review. Файлы brief и ingest авто-определяются при выборе папки проекта (Select Project Folder → auto-detect).
 
 ### Маппинг полей transcript -> edit_brief
 
@@ -69,9 +70,16 @@ UXP плагин (050105_assembly_uxp) автоматически импорти
 | `segments[].end` (seconds) | `tc_out` (MM:SS.s) | Точка выхода |
 | `segments[].speaker` | `speaker` | Комментарий в маркере |
 | `segments[].text` | `transcript` | Комментарий в маркере |
+| `segments[].low_confidence` | (решение Claude) | `true` → кандидат на block=99 (Cut) |
+| `segments[].no_speech_prob` | (решение Claude) | > 0.5 → шум/тишина, вырезать |
+| `segments[].compression_ratio` | (решение Claude) | > 2.4 → галлюцинация Whisper |
+| `segments[].temperature` | (решение Claude) | > 0 → fallback-декодирование |
+| `segments[].avg_logprob` | (решение Claude) | Общее качество сегмента |
 | `clips[0].media.fps` | `project.fps` | Настройки секвенции |
 | `clips[0].media.width` | `project.width` | Настройки секвенции |
 | `project` | `project.project_name` | Имя секвенции: `{name}_2_Assembly` |
+
+> **Примечание:** Поля quality (no_speech_prob, compression_ratio, temperature, avg_logprob, low_confidence) используются Claude для принятия решений о вырезке/включении сегментов. Они НЕ передаются в edit_brief.json — только информируют решения `use`, `priority`, `block`.
 
 ### Маппинг полей edit_brief -> Assembly UXP
 

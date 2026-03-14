@@ -16,27 +16,27 @@ const ppro = require('../../tests/mocks/premierepro');
 // --- Helpers ---
 function makeAssemblySegments() {
   return [
-    { id: 'seg_001', sourceFile: 'C5402.MP4', inSec: 0, outSec: 10, duration: 10, tcIn: '00:00.0', tcOut: '00:10.0', use: true, block: 1, blockName: 'Hook', color: 'Green' },
-    { id: 'seg_002', sourceFile: 'C5402.MP4', inSec: 15, outSec: 30, duration: 15, tcIn: '00:15.0', tcOut: '00:30.0', use: true, block: 1, blockName: 'Hook', color: 'Green' },
-    { id: 'seg_003', sourceFile: 'C5403.MP4', inSec: 5, outSec: 25, duration: 20, tcIn: '00:05.0', tcOut: '00:25.0', use: true, block: 2, blockName: 'Body', color: 'Blue' }
+    { id: 'seg_001', sourceFile: 'RYA-FX3-0099.MP4', inSec: 0, outSec: 10, duration: 10, tcIn: '00:00.0', tcOut: '00:10.0', use: true, block: 1, blockName: 'Hook', color: 'Green' },
+    { id: 'seg_002', sourceFile: 'RYA-FX3-0099.MP4', inSec: 15, outSec: 30, duration: 15, tcIn: '00:15.0', tcOut: '00:30.0', use: true, block: 1, blockName: 'Hook', color: 'Green' },
+    { id: 'seg_003', sourceFile: 'RYA-FX3-0100.MP4', inSec: 5, outSec: 25, duration: 20, tcIn: '00:05.0', tcOut: '00:25.0', use: true, block: 2, blockName: 'Body', color: 'Blue' }
   ];
 }
 
 function makeAllSegments() {
   var segs = makeAssemblySegments();
-  segs.push({ id: 'seg_cut', sourceFile: 'C5402.MP4', inSec: 100, outSec: 102, duration: 2, tcIn: '01:40.0', tcOut: '01:42.0', use: false, block: 99, blockName: 'Cut', color: 'Red' });
+  segs.push({ id: 'seg_cut', sourceFile: 'RYA-FX3-0099.MP4', inSec: 100, outSec: 102, duration: 2, tcIn: '01:40.0', tcOut: '01:42.0', use: false, block: 99, blockName: 'Cut', color: 'Red' });
   return segs;
 }
 
 function makeClipMap() {
   return {
-    'C5402.MP4': new ppro._MockClipProjectItem('C5402.MP4'),
-    'C5403.MP4': new ppro._MockClipProjectItem('C5403.MP4')
+    'RYA-FX3-0099.MP4': new ppro._MockClipProjectItem('RYA-FX3-0099.MP4'),
+    'RYA-FX3-0100.MP4': new ppro._MockClipProjectItem('RYA-FX3-0100.MP4')
   };
 }
 
 function makeScreen(overrides) {
-  var seg = { id: 'seg_001', sourceFile: 'C5402.MP4', inSec: 0, outSec: 10, duration: 10, tcIn: '00:00.0' };
+  var seg = { id: 'seg_001', sourceFile: 'RYA-FX3-0099.MP4', inSec: 0, outSec: 10, duration: 10, tcIn: '00:00.0' };
   return Object.assign({
     id: 'scr_001',
     type: 'full_overlay',

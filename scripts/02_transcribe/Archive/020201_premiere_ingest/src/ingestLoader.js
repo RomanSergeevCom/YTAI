@@ -5,25 +5,27 @@
  * {
  *   "version": "1.0",
  *   "type": "ingest",
- *   "project_name": "Interview",
- *   "created_at": "2026-03-08T12:00:00Z",
+ *   "project_name": "YTCG37_Setup_UAE_Company_Remotely",
+ *   "created_at": "2026-03-12T20:02:54Z",
  *   "media": { "width": 3840, "height": 2160, "fps": 25.0, "sample_rate": 48000 },
  *   "clips": [
  *     {
- *       "clip_id": "C5402",
- *       "filename": "C5402.MP4",
- *       "path": "/abs/Interview/C5402.MP4",
- *       "duration": 156.0,
+ *       "clip_id": "RYA-FX3-0099",
+ *       "filename": "RYA-FX3-0099.MP4",
+ *       "path": "/abs/.../01_Media/Source/Video/RYA-FX3-0099.MP4",
+ *       "duration": 17.76,
  *       "offset": 0.0,
- *       "premiere_transcript": "/abs/.../C5402_premiere_transcript.json"
+ *       "premiere_transcript": "/abs/.../per_clip/RYA-FX3-0099/RYA-FX3-0099_premiere_transcript.json",
+ *       "dji_audio": [{ "tx": "TX02", "path": "/abs/.../Audio/RYA-FX3-0099_TX02.wav" }]
  *     }
  *   ],
  *   "files": {
- *     "transcript_json": "/abs/.../Interview_transcript.json",
- *     "transcript_srt": "/abs/.../Interview_transcript.srt",
- *     "transcript_xlsx": "/abs/Interview_transcript.xlsx"
+ *     "transcript_json": "/abs/.../YTCG37_..._transcript.json",
+ *     "transcript_srt": "/abs/.../YTCG37_..._transcript.srt",
+ *     "transcript_xlsx": "/abs/.../YTCG37_..._transcript.xlsx",
+ *     "captions_srt": "/abs/.../YTCG37_..._1_Ingest_captions.srt"
  *   },
- *   "source_folder": "/abs/Interview"
+ *   "source_folder": "/abs/.../YTCG37_Setup_UAE_Company_Remotely"
  * }
  */
 

@@ -283,13 +283,15 @@ class Logger {
   }
 
   /**
-   * Get the logs folder path: {source_folder}/{project_name}_transcription
-   * Used by "Open Logs" button.
+   * Get the logs folder path: v3.0 → {source_folder}/01_Media/Source/Setup/logs
+   * Used by "Open Logs" / "Copy Logs Path" button.
    * @returns {string|null}
    */
   getLogsFolderPath() {
     if (this._sourceFolderPath && this._projectName) {
-      return `${this._sourceFolderPath}/${this._projectName}_transcription`;
+      // v3.0 structure
+      const v3path = `${this._sourceFolderPath}/01_Media/Source/Setup/logs`;
+      return v3path;
     }
     return null;
   }

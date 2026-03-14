@@ -21,7 +21,8 @@ try {
   ppro = require('../../tests/mocks/premierepro');
 }
 
-const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence } = require('../shared/clipActions');
+const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
+const { LABEL_COLOR_INDEX } = require('../shared/constants');
 
 /**
  * Sort segments by block (99 last), preserving brief order within each block.
@@ -123,18 +124,28 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
   // Clear source in/out on first clip (so it can be reused with different points)
   clearSourceInOut(project, firstClipForTrim, firstSeg.id, logger);
 
+  // Get SequenceEditor early — needed for DJI audio insert on first clip too
+  var seqEditor = ppro.SequenceEditor.getEditor(seq);
+
+  // Insert DJI audio for first clip on A2 (same source in/out as video)
+  var firstDjiCount = insertDjiAudio(project, seqEditor, clipMap, firstSeg.sourceFile,
+    0, firstSeg.inSec, firstSeg.outSec, firstSeg.id, logger);
+
   if (logger) {
+    var firstColorInfo = firstSeg.color ? ', color=' + firstSeg.color + '(' + (LABEL_COLOR_INDEX[firstSeg.color] !== undefined ? LABEL_COLOR_INDEX[firstSeg.color] : '?') + ')' : '';
     logger.info('Assembly sequence created: ' + seqName);
     logger.info('[1/' + useSegs.length + '] ' + firstSeg.id + ': ' + firstSeg.sourceFile +
       ' → cast=' + (castOk ? 'OK' : 'raw') +
+      firstColorInfo +
       ', in/out=' + firstSeg.inSec.toFixed(1) + '-' + firstSeg.outSec.toFixed(1) + 's' +
       ' → createSequenceFromMedia' +
+      (firstDjiCount > 0 ? ' +A2' : '') +
       ' → dur=' + firstSeg.duration.toFixed(1) + 's @ 0.0s');
   }
 
   // === Remaining clips: sequential insert with pre-trim ===
-  var seqEditor = ppro.SequenceEditor.getEditor(seq);
   var cumulativePosition = firstSeg.duration; // first clip already placed at 0
+  var totalDjiCount = firstDjiCount;
   var clipCount = 1;
 
   for (var i = 1; i < useSegs.length; i++) {
@@ -205,19 +216,46 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
     // Clear source in/out (using CAST item, so clip can be reused)
     clearSourceInOut(project, clipForTrim, seg.id, logger);
 
-    // Log per-clip result
+    // Insert DJI audio for this segment on A2 (same source in/out as video)
+    var segDjiCount = 0;
+    if (insertOk) {
+      segDjiCount = insertDjiAudio(project, seqEditor, clipMap, seg.sourceFile,
+        cumulativePosition, seg.inSec, seg.outSec, seg.id, logger);
+      totalDjiCount += segDjiCount;
+    }
+
+    // Log per-clip result (includes color for debugging)
     if (logger) {
+      var colorInfo = seg.color ? ', color=' + seg.color + '(' + (LABEL_COLOR_INDEX[seg.color] !== undefined ? LABEL_COLOR_INDEX[seg.color] : '?') + ')' : '';
       logger.info('[' + (i + 1) + '/' + useSegs.length + '] ' + seg.id + ': ' + seg.sourceFile +
         ' → cast=' + (segCastOk ? 'OK' : 'raw') +
+        colorInfo +
         ', in/out=' + seg.inSec.toFixed(1) + '-' + seg.outSec.toFixed(1) + 's' +
         ' → ' + (insertOk ? 'insert@' + cumulativePosition.toFixed(1) + 's' : 'FAILED') +
+        (segDjiCount > 0 ? ' +A2' : '') +
         ' → dur=' + seg.duration.toFixed(1) + 's');
     }
 
     cumulativePosition = Math.round((cumulativePosition + seg.duration) * 10) / 10;
   }
 
-  if (logger) logger.info('Assembly: ' + clipCount + '/' + useSegs.length + ' clips inserted, total=' + cumulativePosition.toFixed(1) + 's');
+  if (logger) {
+    logger.info('Assembly: ' + clipCount + '/' + useSegs.length + ' clips inserted, total=' + cumulativePosition.toFixed(1) + 's');
+
+    // Color summary
+    var colorCounts = {};
+    for (var ci = 0; ci < useSegs.length; ci++) {
+      var c = useSegs[ci].color || 'none';
+      colorCounts[c] = (colorCounts[c] || 0) + 1;
+    }
+    var colorParts = Object.keys(colorCounts).map(function (k) { return colorCounts[k] + '× ' + k; });
+    logger.info('Colors: ' + colorParts.join(', '));
+
+    // DJI audio summary
+    if (totalDjiCount > 0) {
+      logger.info('DJI audio: ' + totalDjiCount + ' segment(s) placed on A2');
+    }
+  }
 
   // === Post-build verification: read back V1 track items ===
   try {

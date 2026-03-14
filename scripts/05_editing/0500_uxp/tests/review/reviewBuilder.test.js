@@ -150,8 +150,8 @@ describe('subtractBriefFromRange', () => {
 
 describe('createGapSegment', () => {
   it('creates a segment with correct structure', () => {
-    const gap = createGapSegment('C5402.MP4', 10.5, 30.0);
-    assert.equal(gap.sourceFile, 'C5402.MP4');
+    const gap = createGapSegment('RYA-FX3-0099.MP4', 10.5, 30.0);
+    assert.equal(gap.sourceFile, 'RYA-FX3-0099.MP4');
     assert.equal(gap.inSec, 10.5);
     assert.equal(gap.outSec, 30.0);
     assert.equal(gap.duration, 19.5);
@@ -159,11 +159,11 @@ describe('createGapSegment', () => {
     assert.equal(gap.block, 0);
     assert.equal(gap.priority, 1);
     assert.equal(gap._isGap, true);
-    assert.ok(gap.id.startsWith('gap_C5402'));
+    assert.ok(gap.id.startsWith('gap_RYA-FX3-0099'));
   });
 
   it('produces "skip" category', () => {
-    const gap = createGapSegment('C5402.MP4', 0, 10);
+    const gap = createGapSegment('RYA-FX3-0099.MP4', 0, 10);
     assert.equal(getReviewCategory(gap), 'skip');
   });
 });
@@ -173,13 +173,13 @@ describe('createGapSegment', () => {
 describe('computeClipOffsets', () => {
   it('computes offsets in alphabetical order', () => {
     const result = computeClipOffsets({
-      'C5402.MP4': 156.0,
-      'C5403.MP4': 79.2,
-      'C5404.MP4': 121.44
+      'RYA-FX3-0099.MP4': 156.0,
+      'RYA-FX3-0100.MP4': 79.2,
+      'RYA-FX3-0101.MP4': 121.44
     });
-    assert.equal(result.offsets['C5402.MP4'], 0);
-    assert.equal(result.offsets['C5403.MP4'], 156.0);
-    assert.ok(Math.abs(result.offsets['C5404.MP4'] - 235.2) < 0.01);
+    assert.equal(result.offsets['RYA-FX3-0099.MP4'], 0);
+    assert.equal(result.offsets['RYA-FX3-0100.MP4'], 156.0);
+    assert.ok(Math.abs(result.offsets['RYA-FX3-0101.MP4'] - 235.2) < 0.01);
     assert.ok(Math.abs(result.ingestDuration - 356.64) < 0.01);
   });
 
@@ -200,25 +200,25 @@ describe('computeClipOffsets', () => {
 
 describe('sortReviewSegments with clipDurations', () => {
   const allSegments = [
-    { id: 'seg_001', sourceFile: 'C5403.MP4', inSec: 0.0, outSec: 71.6, duration: 71.6, use: true, block: 1, priority: 1 },
-    { id: 'seg_002', sourceFile: 'C5403.MP4', inSec: 71.6, outSec: 73.4, duration: 1.8, use: false, block: 1, priority: 2,
+    { id: 'seg_001', sourceFile: 'RYA-FX3-0100.MP4', inSec: 0.0, outSec: 71.6, duration: 71.6, use: true, block: 1, priority: 1 },
+    { id: 'seg_002', sourceFile: 'RYA-FX3-0100.MP4', inSec: 71.6, outSec: 73.4, duration: 1.8, use: false, block: 1, priority: 2,
       tcIn: '01:11.6', tcOut: '01:13.4', speaker: 'Host', transcript: 'alt take' },
-    { id: 'seg_003', sourceFile: 'C5402.MP4', inSec: 119.4, outSec: 151.9, duration: 32.5, use: true, block: 2, priority: 1 },
-    { id: 'seg_004', sourceFile: 'C5403.MP4', inSec: 73.4, outSec: 76.4, duration: 3.0, use: true, block: 2, priority: 1 },
-    { id: 'seg_005', sourceFile: 'C5404.MP4', inSec: 30.0, outSec: 106.2, duration: 76.2, use: true, block: 3, priority: 1 },
-    { id: 'seg_006', sourceFile: 'C5404.MP4', inSec: 107.7, outSec: 117.7, duration: 10.0, use: true, block: 3, priority: 1 },
-    { id: 'seg_007', sourceFile: 'C5402.MP4', inSec: 153.9, outSec: 155.2, duration: 1.3, use: false, block: 99, priority: 9,
+    { id: 'seg_003', sourceFile: 'RYA-FX3-0099.MP4', inSec: 119.4, outSec: 151.9, duration: 32.5, use: true, block: 2, priority: 1 },
+    { id: 'seg_004', sourceFile: 'RYA-FX3-0100.MP4', inSec: 73.4, outSec: 76.4, duration: 3.0, use: true, block: 2, priority: 1 },
+    { id: 'seg_005', sourceFile: 'RYA-FX3-0101.MP4', inSec: 30.0, outSec: 106.2, duration: 76.2, use: true, block: 3, priority: 1 },
+    { id: 'seg_006', sourceFile: 'RYA-FX3-0101.MP4', inSec: 107.7, outSec: 117.7, duration: 10.0, use: true, block: 3, priority: 1 },
+    { id: 'seg_007', sourceFile: 'RYA-FX3-0099.MP4', inSec: 153.9, outSec: 155.2, duration: 1.3, use: false, block: 99, priority: 9,
       tcIn: '02:33.9', tcOut: '02:35.2', speaker: '', transcript: 'mumbled' },
-    { id: 'seg_008', sourceFile: 'C5404.MP4', inSec: 0.0, outSec: 0.3, duration: 0.3, use: false, block: 99, priority: 9,
+    { id: 'seg_008', sourceFile: 'RYA-FX3-0101.MP4', inSec: 0.0, outSec: 0.3, duration: 0.3, use: false, block: 99, priority: 9,
       tcIn: '00:00.0', tcOut: '00:00.3', speaker: '', transcript: 'between' },
-    { id: 'seg_009', sourceFile: 'C5404.MP4', inSec: 119.8, outSec: 120.2, duration: 0.4, use: false, block: 99, priority: 9,
+    { id: 'seg_009', sourceFile: 'RYA-FX3-0101.MP4', inSec: 119.8, outSec: 120.2, duration: 0.4, use: false, block: 99, priority: 9,
       tcIn: '01:59.8', tcOut: '02:00.2', speaker: '', transcript: 'expletive' },
   ];
 
   const clipDurations = {
-    'C5402.MP4': 156.0,
-    'C5403.MP4': 79.2,
-    'C5404.MP4': 121.44
+    'RYA-FX3-0099.MP4': 156.0,
+    'RYA-FX3-0100.MP4': 79.2,
+    'RYA-FX3-0101.MP4': 121.44
   };
 
   it('includes brief use=FALSE segments and synthetic gaps', () => {
@@ -272,32 +272,32 @@ describe('sortReviewSegments with clipDurations', () => {
     }
   });
 
-  it('covers complement of assembly for C5402', () => {
+  it('covers complement of assembly for RYA-FX3-0099', () => {
     const result = sortReviewSegments(allSegments, clipDurations);
-    const c5402 = result.filter(s => s.sourceFile === 'C5402.MP4');
+    const clip0099 = result.filter(s => s.sourceFile === 'RYA-FX3-0099.MP4');
     // Assembly uses [119.4-151.9]. Clip is 156.0s.
     // Complement: [0, 119.4] + [151.9, 156.0]
     // Brief covers: seg_007 [153.9-155.2]
     // Gaps: [0, 119.4], [151.9, 153.9], [155.2, 156.0]
-    assert.ok(c5402.length >= 3, 'C5402 should have at least 3 review segments (was: ' + c5402.length + ')');
+    assert.ok(clip0099.length >= 3, 'RYA-FX3-0099 should have at least 3 review segments (was: ' + clip0099.length + ')');
 
     // First segment should start at 0
-    assert.equal(c5402[0].inSec, 0);
+    assert.equal(clip0099[0].inSec, 0);
 
     // seg_007 (brief) should be present
-    assert.ok(c5402.some(s => s.id === 'seg_007'));
+    assert.ok(clip0099.some(s => s.id === 'seg_007'));
   });
 
-  it('covers complement of assembly for C5403', () => {
+  it('covers complement of assembly for RYA-FX3-0100', () => {
     const result = sortReviewSegments(allSegments, clipDurations);
-    const c5403 = result.filter(s => s.sourceFile === 'C5403.MP4');
+    const clip0100 = result.filter(s => s.sourceFile === 'RYA-FX3-0100.MP4');
     // Assembly uses [0-71.6] + [73.4-76.4]. Clip is 79.2s.
     // Complement: [71.6, 73.4] + [76.4, 79.2]
     // Brief covers: seg_002 [71.6-73.4]
     // Gaps: [76.4, 79.2]
-    assert.ok(c5403.length >= 2, 'C5403 should have at least 2 review segments');
-    assert.ok(c5403.some(s => s.id === 'seg_002'), 'seg_002 should be in C5403');
-    assert.ok(c5403.some(s => s._isGap && s.inSec === 76.4), 'gap at 76.4 should exist');
+    assert.ok(clip0100.length >= 2, 'RYA-FX3-0100 should have at least 2 review segments');
+    assert.ok(clip0100.some(s => s.id === 'seg_002'), 'seg_002 should be in RYA-FX3-0100');
+    assert.ok(clip0100.some(s => s._isGap && s.inSec === 76.4), 'gap at 76.4 should exist');
   });
 
   it('seg_008 excluded if duration < minGap (0.3s)', () => {

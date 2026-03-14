@@ -2,7 +2,7 @@
   "segments": [
     {
       "segment_id": "seg_001",
-      "source_file": "C5403.MP4",
+      "source_file": "RYA-FX3-0100.MP4",
       "tc_in": "00:00.0",
       "tc_out": "01:11.6",
       "block": 1,
@@ -20,9 +20,9 @@
     },
     {
       "segment_id": "seg_002",
-      "source_file": "C5402.MP4",
+      "source_file": "RYA-FX3-0099.MP4",
       "tc_in": "00:01.5",
-      "tc_out": "01:28.8",
+      "tc_out": "00:16.8",
       "block": 1,
       "block_name": "Hook",
       "segment_name": "Original take",
@@ -34,11 +34,11 @@
       "priority": 2,
       "is_chapter": "FALSE",
       "broll_note": "",
-      "notes": "Alternative take — longer, less polished"
+      "notes": "Alternative take — shorter clip"
     },
     {
       "segment_id": "seg_003",
-      "source_file": "C5402.MP4",
+      "source_file": "RYA-FX3-0100.MP4",
       "tc_in": "01:59.4",
       "tc_out": "02:31.9",
       "block": 2,
@@ -56,7 +56,7 @@
     },
     {
       "segment_id": "seg_004",
-      "source_file": "C5403.MP4",
+      "source_file": "RYA-FX3-0100.MP4",
       "tc_in": "01:13.4",
       "tc_out": "01:16.4",
       "block": 2,
@@ -74,9 +74,9 @@
     },
     {
       "segment_id": "seg_005",
-      "source_file": "C5404.MP4",
-      "tc_in": "00:30.0",
-      "tc_out": "01:46.2",
+      "source_file": "RYA-FX3-0100.MP4",
+      "tc_in": "05:30.0",
+      "tc_out": "06:46.2",
       "block": 3,
       "block_name": "Client Story",
       "segment_name": "Camping trip",
@@ -92,7 +92,7 @@
     },
     {
       "segment_id": "seg_006",
-      "source_file": "C5402.MP4",
+      "source_file": "RYA-FX3-0100.MP4",
       "tc_in": "02:33.9",
       "tc_out": "02:35.2",
       "block": 99,
@@ -110,7 +110,7 @@
     }
   ],
   "project": {
-    "project_name": "YTAI_Edit",
+    "project_name": "YTCG37_Setup_UAE_Company_Remotely",
     "fps": 25,
     "width": 3840,
     "height": 2160,
@@ -121,6 +121,6 @@
     "create_chapter_markers": true,
     "include_unused": true,
     "cut_color": "Red",
-    "_transcription_dir": "YTAI_Edit_transcription"
+    "_transcription_dir": "Transcription"
   }
 }

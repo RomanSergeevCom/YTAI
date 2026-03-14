@@ -16,6 +16,10 @@
     "clipboard": "readAndWrite",
     "network": {
       "domains": "all"
+    },
+    "launchProcess": {
+      "schemes": ["file"],
+      "extensions": [".command"]
     }
   },
   "entrypoints": [

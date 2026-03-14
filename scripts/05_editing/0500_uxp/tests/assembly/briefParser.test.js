@@ -73,7 +73,7 @@ describe('parseBrief — Format A (segments array)', () => {
 
   it('returns project name from project section', () => {
     const result = parseBrief(sampleJSON);
-    assert.equal(result.projectName, 'YTAI_Edit');
+    assert.equal(result.projectName, 'YTCG37_Setup_UAE_Company_Remotely');
   });
 
   it('returns project settings', () => {
@@ -85,7 +85,7 @@ describe('parseBrief — Format A (segments array)', () => {
 
   it('returns transcription dir', () => {
     const result = parseBrief(sampleJSON);
-    assert.equal(result.transcriptionDir, 'YTAI_Edit_transcription');
+    assert.equal(result.transcriptionDir, 'Transcription');
   });
 
   it('normalizes segment fields correctly', () => {
@@ -93,7 +93,7 @@ describe('parseBrief — Format A (segments array)', () => {
     const seg = result.segments[0];
 
     assert.equal(seg.id, 'seg_001');
-    assert.equal(seg.sourceFile, 'C5403.MP4');
+    assert.equal(seg.sourceFile, 'RYA-FX3-0100.MP4');
     assert.equal(seg.inSec, 0);
     assert.equal(seg.block, 1);
     assert.equal(seg.blockName, 'Hook');
@@ -190,8 +190,8 @@ describe('parseBrief — Format B (clips array)', () => {
     const formatB = {
       project: 'TestProject',
       clips: [{
-        filename: 'C5402.MP4',
-        clip_id: 'C5402',
+        filename: 'RYA-FX3-0099.MP4',
+        clip_id: 'RYA-FX3-0099',
         segments: [{
           start: 0,
           end: 30,
@@ -207,7 +207,7 @@ describe('parseBrief — Format B (clips array)', () => {
     const result = parseBrief(JSON.stringify(formatB));
     assert.equal(result.projectName, 'TestProject');
     assert.equal(result.segments.length, 1);
-    assert.equal(result.segments[0].sourceFile, 'C5402.MP4');
+    assert.equal(result.segments[0].sourceFile, 'RYA-FX3-0099.MP4');
     assert.equal(result.segments[0].speaker, 'Host');
     assert.equal(result.segments[0].inSec, 0);
     assert.equal(result.segments[0].outSec, 30);

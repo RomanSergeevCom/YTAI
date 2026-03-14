@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "type": "ingest",
-  "project_name": "Interview",
-  "created_at": "2026-03-08T12:00:00Z",
+  "project_name": "YTCG37_Setup_UAE_Company_Remotely",
+  "created_at": "2026-03-12T20:02:54Z",
   "media": {
     "width": 3840,
     "height": 2160,
@@ -11,34 +11,39 @@
   },
   "clips": [
     {
-      "clip_id": "C5402",
-      "filename": "C5402.MP4",
-      "path": "/abs/Interview/C5402.MP4",
-      "duration": 156.0,
+      "clip_id": "RYA-FX3-0099",
+      "filename": "RYA-FX3-0099.MP4",
+      "path": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/Video/RYA-FX3-0099.MP4",
+      "duration": 17.76,
       "offset": 0.0,
-      "premiere_transcript": "/abs/Interview_transcription/per_clip/C5402/C5402_premiere_transcript.json"
+      "premiere_transcript": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/Transcription/per_clip/RYA-FX3-0099/RYA-FX3-0099_premiere_transcript.json",
+      "dji_audio": [
+        {
+          "tx": "TX02",
+          "path": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/Audio/RYA-FX3-0099_TX02.wav"
+        }
+      ]
     },
     {
-      "clip_id": "C5403",
-      "filename": "C5403.MP4",
-      "path": "/abs/Interview/C5403.MP4",
-      "duration": 203.5,
-      "offset": 156.0,
-      "premiere_transcript": "/abs/Interview_transcription/per_clip/C5403/C5403_premiere_transcript.json"
-    },
-    {
-      "clip_id": "C5404",
-      "filename": "C5404.MP4",
-      "path": "/abs/Interview/C5404.MP4",
-      "duration": 120.2,
-      "offset": 359.5,
-      "premiere_transcript": "/abs/Interview_transcription/per_clip/C5404/C5404_premiere_transcript.json"
+      "clip_id": "RYA-FX3-0100",
+      "filename": "RYA-FX3-0100.MP4",
+      "path": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/Video/RYA-FX3-0100.MP4",
+      "duration": 2204.64,
+      "offset": 17.76,
+      "premiere_transcript": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/Transcription/per_clip/RYA-FX3-0100/RYA-FX3-0100_premiere_transcript.json",
+      "dji_audio": [
+        {
+          "tx": "TX02",
+          "path": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/Audio/RYA-FX3-0100_TX02.wav"
+        }
+      ]
     }
   ],
   "files": {
-    "transcript_json": "/abs/Interview_transcription/Interview_transcript.json",
-    "transcript_srt": "/abs/Interview_transcription/Interview_transcript.srt",
-    "transcript_xlsx": "/abs/Interview_transcript.xlsx"
+    "transcript_json": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/YTCG37_Setup_UAE_Company_Remotely_transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/YTCG37_Setup_UAE_Company_Remotely_transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/YTCG37_Setup_UAE_Company_Remotely_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/YTCG37_Setup_UAE_Company_Remotely_1_Ingest_captions.srt"
   },
-  "source_folder": "/abs/Interview"
+  "source_folder": "/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely"
 }

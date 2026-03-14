@@ -45,10 +45,16 @@ async function findProjectItemByName(project, name, logger) {
     if (item.name === name) {
       return item;
     }
-    // Also try matching without extension
+    // Also try matching without extension on search name
     const dotIdx = name.lastIndexOf('.');
     if (dotIdx > 0 && item.name === name.substring(0, dotIdx)) {
       if (logger) logger.debug(`Found by stem match: "${item.name}" for "${name}"`);
+      return item;
+    }
+    // Also try matching without extension on item name (e.g. search "RYA-FX3-0099_TX02", item is "RYA-FX3-0099_TX02.wav")
+    const itemDotIdx = item.name.lastIndexOf('.');
+    if (itemDotIdx > 0 && item.name.substring(0, itemDotIdx) === name) {
+      if (logger) logger.debug(`Found by item stem match: "${item.name}" for "${name}"`);
       return item;
     }
     // Cast to FolderItem to access children (bins must be cast first)

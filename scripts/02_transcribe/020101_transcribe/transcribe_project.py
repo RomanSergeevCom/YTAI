@@ -65,7 +65,6 @@ LONG_SEGMENT_PAUSE = 1.0     # seconds — split >30s segments at pauses > this
 TICKS_PER_FRAME_25FPS = 10160640000
 TICKS_PER_SECOND = TICKS_PER_FRAME_25FPS * 25  # 254016000000
 
-TEMPLATE_PATH = Path.home() / "YTAI" / "templates" / "premiere_template.prproj"
 
 LANG_MAP = {
     "en": "en-us", "ru": "ru-ru", "ar": "ar-sa", "fr": "fr-fr",
@@ -725,6 +724,8 @@ def parse_args():
     parser.add_argument("--stages", default=None, help="Only run specific stages (e.g. 3,4,5)")
     parser.add_argument("--multicam", action="store_true", help="Multi-camera mode (no combined master files)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would run, then exit")
+    parser.add_argument("--skip-done", action="store_true",
+                        help="Skip if transcript already exists (check Source/ then Transcription/)")
     args = parser.parse_args()
 
     # Input validation
@@ -814,10 +815,13 @@ def detect_input(args):
         sys.exit(1)
 
     # v3.0 structure → 01_Media/Source/Transcription/; legacy → {project}_transcription/
-    if input_path.is_dir() and (input_path / "01_Media" / "Source" / "Video").is_dir():
+    v3 = input_path.is_dir() and (input_path / "01_Media" / "Source" / "Video").is_dir()
+    if v3:
         transcription_dir = work_dir / "01_Media" / "Source" / "Transcription"
+        source_dir = work_dir / "01_Media" / "Source"
     else:
         transcription_dir = work_dir / f"{project_name}_transcription"
+        source_dir = work_dir  # legacy: final outputs go to project root
 
     return {
         "input_path": input_path,
@@ -826,6 +830,7 @@ def detect_input(args):
         "project_name": project_name,
         "work_dir": work_dir,
         "transcription_dir": transcription_dir,
+        "source_dir": source_dir,
         "subfolder_groups": subfolder_groups,
     }
 
@@ -1588,6 +1593,11 @@ def stage4_speaker_mapping(ctx, args):
                     "end": round(w["end"], 3),
                     "confidence": round(w.get("probability", 0.0), 4),
                     "speaker": speaker,
+                    # Carry Whisper segment quality fields for aggregation
+                    "_no_speech_prob": seg.get("no_speech_prob", 0.0),
+                    "_compression_ratio": seg.get("compression_ratio", 0.0),
+                    "_temperature": seg.get("temperature", 0.0),
+                    "_avg_logprob": seg.get("avg_logprob", 0.0),
                 })
 
         # Group into segments
@@ -1599,6 +1609,18 @@ def stage4_speaker_mapping(ctx, args):
             text = " ".join(w["word"] for w in seg["words"])
             confidences = [w["confidence"] for w in seg["words"]]
             avg_conf = sum(confidences) / len(confidences) if confidences else 0.0
+            # Whisper segment quality fields (aggregated from tagged words)
+            nsp = max((w.get("_no_speech_prob", 0.0) for w in seg["words"]), default=0.0)
+            cr = max((w.get("_compression_ratio", 0.0) for w in seg["words"]), default=0.0)
+            temp = max((w.get("_temperature", 0.0) for w in seg["words"]), default=0.0)
+            alp_vals = [w.get("_avg_logprob", 0.0) for w in seg["words"]]
+            alp = sum(alp_vals) / len(alp_vals) if alp_vals else 0.0
+            # low_confidence: 5 conditions (spec v1.0)
+            lc = (avg_conf < LOW_CONFIDENCE_THRESHOLD
+                  or nsp > 0.5
+                  or cr > 2.4
+                  or (cr > 0 and cr < 1.2)
+                  or temp > 0.0)
             transcript_segments.append({
                 "id": idx,
                 "start": seg["start"],
@@ -1612,7 +1634,11 @@ def stage4_speaker_mapping(ctx, args):
                     "confidence": w["confidence"],
                 } for w in seg["words"]],
                 "avg_confidence": round(avg_conf, 4),
-                "low_confidence": bool(avg_conf < LOW_CONFIDENCE_THRESHOLD),
+                "no_speech_prob": round(nsp, 4),
+                "compression_ratio": round(cr, 4),
+                "temperature": round(temp, 4),
+                "avg_logprob": round(alp, 4),
+                "low_confidence": bool(lc),
             })
 
         total_segments += len(transcript_segments)
@@ -2181,6 +2207,38 @@ def generate_combined_transcript(ctx):
             "low_confidence_segments": sum(1 for c in ac if c < LOW_CONFIDENCE_THRESHOLD)}}
 
 
+def _filter_words(words, seg_start, seg_end):
+    """Filter word-level data for word_start/word_end trimming.
+
+    Removes:
+    - Punctuation-only tokens (no alphanumeric content)
+    - Zero-duration words (end <= start) — Whisper artefacts
+    - Words outside segment boundaries (±0.1s tolerance)
+    """
+    filtered = []
+    for w in words:
+        word_text = w.get("word", "")
+        # Skip punctuation-only tokens
+        if not re.sub(r'[^\w]', '', word_text):
+            continue
+        ws = w.get("start", 0)
+        we = w.get("end", 0)
+        # Skip zero-duration
+        if we <= ws:
+            continue
+        # Skip out-of-bounds
+        if ws < seg_start - 0.1 or we > seg_end + 0.1:
+            continue
+        filtered.append({
+            "word": word_text,
+            "start": ws,
+            "end": we,
+            "duration": round(we - ws, 3),
+            "confidence": w.get("confidence", 0),
+        })
+    return filtered
+
+
 def generate_project_json(ctx, args, clip_filter=None, output_path=None):
     """Generate {project}_transcript.json — central project manifest with all data."""
     video_files = ctx["video_files"]
@@ -2258,6 +2316,8 @@ def generate_project_json(ctx, args, clip_filter=None, output_path=None):
             sp_label = seg["speaker"]
             sp_name = smap.get(sp_label, {}).get("name", sp_label)
             dur = round(seg["end"] - seg["start"], 2)
+            # Word-level data for precise trim (word_start/word_end)
+            _wd = _filter_words(seg.get("words", []), seg["start"], seg["end"])
             segs_out.append({
                 "id": seg["id"],
                 "start": seg["start"],
@@ -2265,6 +2325,13 @@ def generate_project_json(ctx, args, clip_filter=None, output_path=None):
                 "duration": dur,
                 "timecode": fmt_timecode(co + seg["start"]),
                 "words": len(seg["words"]),
+                "word_start": _wd[0]["start"] if _wd else seg["start"],
+                "word_end": _wd[-1]["end"] if _wd else seg["end"],
+                "words_data": _wd,
+                "no_speech_prob": seg.get("no_speech_prob", 0.0),
+                "compression_ratio": seg.get("compression_ratio", 0.0),
+                "temperature": seg.get("temperature", 0.0),
+                "avg_logprob": seg.get("avg_logprob", 0.0),
                 "speaker": sp_name,
                 "speaker_id": sp_label,
                 "text": seg["text"],
@@ -2353,12 +2420,15 @@ def generate_project_json(ctx, args, clip_filter=None, output_path=None):
 
     # Add full paths to all structure types
     work_dir = ctx["work_dir"]
+    sd = ctx.get("source_dir", work_dir)
+    pn = ctx["project_name"]
     structure["work_dir"] = str(work_dir)
+    structure["source_dir"] = str(sd)
     structure["transcription_dir_full"] = str(ctx["transcription_dir"])
     structure["transcript_json"] = str(project_path)
-    structure["transcript_xlsx"] = str(work_dir / f"{ctx['project_name']}_transcript.xlsx")
-    structure["transcript_srt"] = str(ctx["transcription_dir"] / f"{ctx['project_name']}_transcript.srt")
-    structure["captions_srt"] = str(ctx["transcription_dir"] / f"{ctx['project_name']}_1_Ingest_captions.srt")
+    structure["transcript_xlsx"] = str(sd / f"{pn}_transcript.xlsx")
+    structure["transcript_srt"] = str(sd / f"{pn}_transcript.srt")
+    structure["captions_srt"] = str(sd / f"{pn}_1_Ingest_captions.srt")
     structure["video_files"] = [str(vf) for vf in video_files]
 
     project = {
@@ -2404,14 +2474,20 @@ def stage5_generate_outputs(ctx, args):
     groups = ctx.get("subfolder_groups")
     multicam = ctx.get("multicam", False)
     if not (groups and multicam):
-        # Generate combined/master files (flat, single file, or multi-folder mode)
-        xlsx_path = generate_xlsx(ctx, args); print(f"  {xlsx_path.name}")
+        # Generate combined/master files → Source/ (v3) or work_dir (legacy)
+        sd = ctx.get("source_dir", ctx["work_dir"])
+        pn = ctx["project_name"]
+        xlsx_path = generate_xlsx(ctx, args,
+            output_path=sd / f"{pn}_transcript.xlsx"); print(f"  {xlsx_path.name}")
         combined = generate_combined_transcript(ctx)
         with open(td/"combined_transcript.json","w") as f: json.dump(combined,f,indent=2,ensure_ascii=False)
         print(f"  combined_transcript.json"); ctx["combined_stats"] = combined["stats"]
-        project_path = generate_project_json(ctx, args); print(f"  {project_path.name}")
-        srt_path = generate_combined_srt(ctx); print(f"  {srt_path.name}")
-        captions_path = generate_combined_word_level_srt(ctx); print(f"  {captions_path.name}")
+        project_path = generate_project_json(ctx, args,
+            output_path=sd / f"{pn}_transcript.json"); print(f"  {project_path.name}")
+        srt_path = generate_combined_srt(ctx,
+            output_path=sd / f"{pn}_transcript.srt"); print(f"  {srt_path.name}")
+        captions_path = generate_combined_word_level_srt(ctx,
+            output_path=sd / f"{pn}_1_Ingest_captions.srt"); print(f"  {captions_path.name}")
     else:
         # Multicam: combined_transcript for stats only, no master xlsx/json/srt
         combined = generate_combined_transcript(ctx)
@@ -2444,23 +2520,17 @@ def stage6_generate_ingest_json(ctx, args):
     t0 = time.time()
     set_terminal_title("YTAI > Stage 6 > Generating ingest JSON")
     from ingest_json import generate as generate_ingest
-    transcript_json_path = ctx["transcription_dir"] / f"{ctx['project_name']}_transcript.json"
+    pn = ctx["project_name"]
+    # Look in Source/ first (v3), fallback to Transcription/ (legacy/old runs)
+    sd = ctx.get("source_dir", ctx["work_dir"])
+    transcript_json_path = sd / f"{pn}_transcript.json"
     if not transcript_json_path.exists():
-        print_warn(f"Transcript JSON not found at {transcript_json_path}, skipping ingest JSON")
+        transcript_json_path = ctx["transcription_dir"] / f"{pn}_transcript.json"
+    if not transcript_json_path.exists():
+        print_warn(f"Transcript JSON not found, skipping ingest JSON")
         return 0.0
     ingest_path = generate_ingest(transcript_json_path)
     print(f"  {ingest_path.name}  {C.GREEN}done{C.RESET}")
-
-    # Copy Premiere template as {project_name}.prproj next to video files
-    prproj_path = ctx["work_dir"] / f"{ctx['project_name']}.prproj"
-    if not prproj_path.exists():
-        if TEMPLATE_PATH.exists():
-            shutil.copy2(TEMPLATE_PATH, prproj_path)
-            print(f"  {prproj_path.name}  {C.GREEN}done{C.RESET}")
-        else:
-            print_warn(f"Premiere template not found: {TEMPLATE_PATH}")
-    else:
-        print(f"  {prproj_path.name}  {C.DIM}already exists, skipped{C.RESET}")
 
     elapsed = time.time() - t0
     print_stage_done(ctx, "Stage 6 complete", elapsed, "6")
@@ -2910,6 +2980,302 @@ def print_summary(ctx, st):
     print(f"  {C.DIM}╚{'═' * W}╝{C.RESET}")
 
 
+def print_project_structure(ctx):
+    """Print project file tree showing where output files were created."""
+    td = ctx["transcription_dir"]
+    project_name = ctx["project_name"]
+    work_dir = ctx["work_dir"]
+
+    def _sz(val):
+        """Format size. Accepts Path or int (bytes)."""
+        if isinstance(val, (int, float)):
+            b = int(val)
+        else:
+            try:
+                b = val.stat().st_size
+            except OSError:
+                return ""
+        if b < 1024:
+            return f"{b} B"
+        if b < 1024 * 1024:
+            return f"{b / 1024:.0f} KB"
+        if b < 1024 * 1024 * 1024:
+            return f"{b / 1024 / 1024:.1f} MB"
+        return f"{b / 1024 / 1024 / 1024:.1f} GB"
+
+    W = 58
+    T = "├── "
+    L = "└── "
+    I = "│   "
+    S = "    "
+
+    print(f"\n  {C.BG_BLUE}{C.WHITE}{C.BOLD} Project Structure {C.RESET}")
+    print(f"  {C.DIM}╭{'─' * W}╮{C.RESET}")
+
+    # Detect v3.0 structure
+    v3 = (work_dir / "01_Media" / "Source" / "Video").is_dir()
+
+    if v3:
+        media = work_dir / "01_Media"
+        source = media / "Source"
+        video_dir = source / "Video"
+        audio_dir = source / "Audio"
+        lut_dir = source / "LUT"
+        setup_dir = source / "Setup"
+        assets_dir = media / "Assets"
+
+        # Gather data
+        videos = sorted([f for f in video_dir.iterdir()
+                        if f.is_file() and f.suffix.lower() in VIDEO_EXTENSIONS
+                        ] if video_dir.is_dir() else [])
+        audio_files = sorted([f for f in audio_dir.iterdir()
+                             if f.is_file() and f.suffix.lower() == '.wav'
+                             ] if audio_dir.is_dir() else [])
+        per_clip = td / "per_clip"
+        clip_dirs = sorted([d for d in per_clip.iterdir() if d.is_dir()
+                           ] if per_clip.is_dir() else [])
+        full_audio = list(td.glob("*_FULL_AUDIO.wav")) if td.is_dir() else []
+        asset_subs = sorted([d.name for d in assets_dir.iterdir() if d.is_dir()]
+                           ) if assets_dir.is_dir() else []
+
+        # ── Project root ──
+        print(f"  {C.BOLD}{project_name}/{C.RESET}")
+        print(f"  │")
+
+        # 01_Media/
+        print(f"  {T}{C.BOLD}01_Media/{C.RESET}")
+
+        # .prproj
+        prproj = media / f"{project_name}.prproj"
+        if prproj.exists():
+            print(f"  {I}{T}{prproj.name}")
+
+        # Assets/
+        if asset_subs:
+            subs_str = " ".join(f"{C.DIM}{s}/{C.RESET}" for s in asset_subs)
+            print(f"  {I}{T}Assets/  {subs_str}")
+
+        # Source/
+        print(f"  {I}{L}{C.BOLD}Source/{C.RESET}")
+        sp = f"  {I}{S}"  # prefix inside Source
+
+        # Video/
+        if videos:
+            total_v = sum(f.stat().st_size for f in videos)
+            print(f"{sp}{T}{C.BOLD}Video/{C.RESET}"
+                  f"  {len(videos)} clips "
+                  f"{C.DIM}({_sz(total_v)}){C.RESET}")
+            for i, v in enumerate(videos):
+                cn = L if i == len(videos) - 1 else T
+                print(f"{sp}{I}{cn}{v.name}"
+                      f"  {C.DIM}{_sz(v)}{C.RESET}")
+        else:
+            print(f"{sp}{T}Video/  {C.DIM}—{C.RESET}")
+
+        # Audio/
+        if audio_files:
+            total_a = sum(f.stat().st_size for f in audio_files)
+            print(f"{sp}{T}{C.BOLD}Audio/{C.RESET}"
+                  f"  {len(audio_files)} synced "
+                  f"{C.DIM}({_sz(total_a)}){C.RESET}")
+        else:
+            print(f"{sp}{T}Audio/  {C.DIM}—{C.RESET}")
+
+        # LUT/
+        lut_files = sorted([f for f in lut_dir.iterdir() if f.is_file()]
+                          ) if lut_dir.is_dir() else []
+        lut_info = f"{len(lut_files)} files" if lut_files else f"{C.DIM}—{C.RESET}"
+        print(f"{sp}{T}LUT/  {lut_info}")
+
+        # Final transcript files — in Source/ (v3) or Transcription/ (legacy)
+        out_files = []
+        for suffix in ["_transcript.json", "_transcript.srt",
+                       "_1_Ingest_captions.srt",
+                       "_transcript.xlsx"]:
+            # Check Source/ first (new), then Transcription/ (old)
+            fp = source / f"{project_name}{suffix}"
+            if not fp.exists():
+                fp = td / f"{project_name}{suffix}"
+            if fp.exists():
+                out_files.append(fp)
+        # Also check project root for xlsx (legacy)
+        if not any(f.name.endswith("_transcript.xlsx") for f in out_files):
+            fp = work_dir / f"{project_name}_transcript.xlsx"
+            if fp.exists():
+                out_files.append(fp)
+
+        for fp in out_files:
+            print(f"{sp}{T}{C.GREEN}{fp.name}{C.RESET}"
+                  f"  {C.GREEN}← NEW  {C.DIM}{_sz(fp)}{C.RESET}")
+
+        # Transcription/ — working files (FULL_AUDIO, per_clip/)
+        if td.is_dir():
+            print(f"{sp}{T}{C.BOLD}Transcription/{C.RESET}")
+            tp = f"{sp}{I}"
+
+            # FULL_AUDIO
+            if full_audio:
+                fa = full_audio[0]
+                print(f"{tp}{T}{fa.name}"
+                      f"  {C.DIM}{_sz(fa)}{C.RESET}")
+
+            # per_clip/
+            if clip_dirs:
+                print(f"{tp}{L}{C.BOLD}per_clip/{C.RESET}"
+                      f"  {len(clip_dirs)} clips")
+                pp = f"{tp}{S}"
+                for j, cd in enumerate(clip_dirs):
+                    cn = L if j == len(clip_dirs) - 1 else T
+                    clip_files = sorted([f.name for f in cd.iterdir()
+                                        if f.is_file()
+                                        and not f.name.startswith('.')])
+                    # Summarize clip contents by type
+                    n_files = len(clip_files)
+                    has_audio = any(f.endswith("_AUDIO.wav") for f in clip_files)
+                    has_xml = any(f.lower().endswith(".xml") for f in clip_files)
+                    has_srt = any(f.endswith(".srt") for f in clip_files)
+                    has_json = any(f.endswith(".json") for f in clip_files)
+                    parts = []
+                    if has_audio: parts.append("WAV")
+                    if has_xml:   parts.append("XML")
+                    if has_srt:   parts.append("SRT")
+                    if has_json:  parts.append("JSON")
+                    items_str = f"{n_files} files ({' + '.join(parts)})" if parts else "empty"
+                    print(f"{pp}{cn}{cd.name}/"
+                          f"  {C.DIM}{items_str}{C.RESET}")
+            elif not full_audio:
+                print(f"{tp}{L}per_clip/  {C.DIM}—{C.RESET}")
+        else:
+            print(f"{sp}{T}Transcription/  {C.DIM}—{C.RESET}")
+
+        # Setup/
+        if setup_dir.is_dir():
+            ingest_json_f = setup_dir / f"{project_name}_ingest.json"
+            logs_dir = setup_dir / "logs"
+            log_count = len(list(logs_dir.glob("*.log"))) if logs_dir.is_dir() else 0
+            setup_files = sorted([f for f in setup_dir.iterdir()
+                                 if f.is_file() and not f.name.startswith('.')])
+
+            print(f"{sp}{L}{C.BOLD}Setup/{C.RESET}")
+            stp = f"{sp}{S}"
+
+            # ingest.json (← NEW from Stage 6)
+            if ingest_json_f.exists():
+                print(f"{stp}{T}{C.GREEN}{ingest_json_f.name}{C.RESET}"
+                      f"  {C.GREEN}← NEW{C.RESET}")
+
+            # Other setup files
+            other_setup = [f for f in setup_files
+                          if f.name != ingest_json_f.name]
+            for sf in other_setup:
+                print(f"{stp}{T}{sf.name}"
+                      f"  {C.DIM}{_sz(sf)}{C.RESET}")
+
+            # logs/
+            if log_count:
+                print(f"{stp}{L}logs/  {C.DIM}{log_count} logs{C.RESET}")
+        else:
+            print(f"{sp}{L}Setup/  {C.DIM}—{C.RESET}")
+
+        # ── Other top-level dirs ──
+        print(f"  │")
+
+        # 99_Pipeline
+        pipe_dir = work_dir / "99_Pipeline"
+        dji_dir = pipe_dir / "DJI_Audio" if pipe_dir.is_dir() else None
+        if dji_dir and dji_dir.is_dir():
+            dji_files = sorted([f for f in dji_dir.iterdir()
+                               if f.is_file() and not f.name.startswith('.')])
+            if dji_files:
+                total_d = sum(f.stat().st_size for f in dji_files)
+                print(f"  {T}{C.BOLD}99_Pipeline/DJI_Audio/{C.RESET}"
+                      f"  {len(dji_files)} files "
+                      f"{C.DIM}({_sz(total_d)}){C.RESET}")
+
+        # Other dirs
+        other_dirs = ["02_Exports", "03_Shorts", "04_Thumbnail", "YouTube"]
+        existing_others = [d for d in other_dirs
+                          if (work_dir / d).is_dir()]
+        gdoc = work_dir / f"{project_name}.gdoc"
+        for i, d in enumerate(existing_others):
+            is_last = (i == len(existing_others) - 1) and not gdoc.exists()
+            cn = L if is_last else T
+            print(f"  {cn}{d}/")
+
+        if gdoc.exists():
+            print(f"  {L}{gdoc.name}")
+
+    else:
+        # Legacy structure
+        print(f"  {C.BOLD}{project_name}/{C.RESET}")
+        print(f"  ├── [video files]")
+        if td.is_dir():
+            print(f"  └── {C.GREEN}{td.name}/"
+                  f"  ← NEW{C.RESET}")
+
+    print(f"  {C.DIM}╰{'─' * W}╯{C.RESET}")
+
+
+def print_next_step(ctx, args):
+    """Print NEXT STEP with copy-pasteable commands (outside box — commands are long)."""
+    project_name = ctx["project_name"]
+    work_dir = ctx["work_dir"]
+    project_rel = str(work_dir)
+
+    # Shorten home path
+    home = str(Path.home())
+    if project_rel.startswith(home):
+        project_rel = "~" + project_rel[len(home):]
+
+    venv = "source ~/YTAI/environment/.venv_transcribe/bin/activate"
+
+    print(f"\n  {C.BG_CYAN}{C.WHITE}{C.BOLD} NEXT STEP {C.RESET}")
+    print(f"  {C.DIM}{'─' * 56}{C.RESET}")
+
+    step = 1
+
+    # 1. Review transcript — check Source/ first, then Transcription/, then project root
+    sd = ctx.get("source_dir", work_dir)
+    xlsx_path = sd / f"{project_name}_transcript.xlsx"
+    if not xlsx_path.exists():
+        xlsx_path = ctx["transcription_dir"] / f"{project_name}_transcript.xlsx"
+    if not xlsx_path.exists():
+        xlsx_path = work_dir / f"{project_name}_transcript.xlsx"
+    if xlsx_path.exists():
+        print(f"  {C.BOLD}{step}.{C.RESET} Review transcript:")
+        print(f"  {C.CYAN}open \"{xlsx_path}\"{C.RESET}")
+        print()
+        step += 1
+
+    # 2. Open in Premiere Pro
+    prproj = work_dir / "01_Media" / f"{project_name}.prproj"
+    if prproj.exists():
+        print(f"  {C.BOLD}{step}.{C.RESET} Open in Premiere Pro:")
+        print(f"  {C.CYAN}open \"{prproj}\"{C.RESET}")
+        print()
+        step += 1
+
+    # 3. UXP Plugin — import into Premiere
+    ingest_json_path = (work_dir / "01_Media" / "Source" / "Setup"
+                        / f"{project_name}_ingest.json")
+    if ingest_json_path.exists():
+        print(f"  {C.BOLD}{step}.{C.RESET} Import via UXP Plugin "
+              f"{C.DIM}(in Premiere Pro){C.RESET}:")
+        print(f"     {C.DIM}Plugins → YTAI Ingest → select ingest.json:{C.RESET}")
+        print(f"  {C.CYAN}{ingest_json_path}{C.RESET}")
+        print()
+        step += 1
+
+    # 4. Re-run transcription (single-line, copy-paste ready)
+    n_arg = f" -n {args.n}" if args.n else ""
+    print(f"  {C.BOLD}{step}.{C.RESET} Re-run transcription:")
+    print(f"  {C.CYAN}{venv} && "
+          f"python3 ~/YTAI/scripts/02_transcribe/"
+          f"020101_transcribe/transcribe_project.py "
+          f"--project \"{project_rel}\"{n_arg}{C.RESET}")
+    print()
+
+
 def try_resume(ctx, args):
     td = ctx["transcription_dir"]; mp = td/"meta.json"
     if not mp.exists(): print_warn("Cannot resume: no meta.json"); sys.exit(1)
@@ -2979,6 +3345,24 @@ def main():
     args = parse_args()
     ctx = detect_input(args)
     ctx["meta_created_at"] = now_iso()
+
+    # --skip-done: exit early if transcript already exists (before preflight)
+    if args.skip_done:
+        sd = ctx.get("source_dir", ctx["work_dir"])
+        td = ctx["transcription_dir"]
+        pn = ctx["project_name"]
+        # Check new location (Source/) first, then old (Transcription/)
+        tj = sd / f"{pn}_transcript.json"
+        if not tj.exists():
+            tj = td / f"{pn}_transcript.json"
+        if tj.exists():
+            print(f"\n  {C.GREEN}✓{C.RESET} Transcript already exists: "
+                  f"{C.BOLD}{tj.parent.name}/{tj.name}{C.RESET}")
+            print(f"    {C.DIM}Skipping transcription (--skip-done){C.RESET}\n")
+            print_project_structure(ctx)
+            print_next_step(ctx, args)
+            sys.exit(0)
+
     resources = preflight(ctx, args)
 
     # --dry-run: print plan and exit
@@ -3068,6 +3452,8 @@ def main():
     ctx["stages_timing"] = st
     write_log(ctx, args, resources, st)
     print_summary(ctx, st)
+    print_project_structure(ctx)
+    print_next_step(ctx, args)
     set_terminal_title(f"YTAI > Done > {ctx['project_name']}")
     print("\a")  # Terminal bell
 

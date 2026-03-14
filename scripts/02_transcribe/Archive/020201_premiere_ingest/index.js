@@ -19,7 +19,7 @@ const { copyLutsToCreativeFolder, applyLumetriToClips } = require("./src/lutMana
 
 // --- Constants ---
 
-const DEBUG_INGEST_PATH = '/Users/romansergeev/YTAI/scripts/02_transcribe/YTAI_Edit/YTAI_Edit_transcription/YTAI_Edit_ingest.json';
+const DEBUG_INGEST_PATH = '/Users/romansergeev/YTAI/scripts/05_editing/999_testing_project/YTCG37_Setup_UAE_Company_Remotely/01_Media/Source/Setup/YTCG37_Setup_UAE_Company_Remotely_ingest.json';
 
 // --- State ---
 
@@ -399,17 +399,25 @@ async function saveToProjectFolder() {
       return;
     }
 
-    const transcriptionDir = `${sourceFolder}/${projectName}_transcription`;
+    // v3.0 structure: logs → 01_Media/Source/Setup/logs/; legacy fallback: _transcription/
+    let logsDir = `${sourceFolder}/01_Media/Source/Setup/logs`;
+    const legacyDir = `${sourceFolder}/${projectName}_transcription`;
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
-    logger.info(`Saving logs to: ${transcriptionDir}`);
+    logger.info(`Saving logs to: ${logsDir}`);
 
-    // --- Save to _transcription folder ---
+    // --- Save to project logs folder ---
     let folder;
     try {
-      folder = await uxpfs.getEntryWithUrl('file://' + transcriptionDir);
+      folder = await uxpfs.getEntryWithUrl('file://' + logsDir);
     } catch (e) {
-      logger.warn(`Cannot access transcription folder: ${e.message}`);
+      // Fallback to legacy path
+      try {
+        folder = await uxpfs.getEntryWithUrl('file://' + legacyDir);
+        logger.info(`Using legacy logs path: ${legacyDir}`);
+      } catch (e2) {
+        logger.warn(`Cannot access logs folder: ${e.message}`);
+      }
     }
 
     if (folder) {

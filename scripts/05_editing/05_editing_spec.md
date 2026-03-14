@@ -55,7 +55,7 @@ YTAI/
 │
 scripts/05_editing/
 ├── 05_editing_spec.md                # Этот документ
-├── 0500_uxp/                         # UXP плагин для Premiere (v1.9.3)
+├── 0500_uxp/                         # UXP плагин для Premiere (v2.1.0)
 │   ├── 0500_uxp_spec.md              # Спецификация
 │   ├── manifest.json                 # UXP manifest v5
 │   ├── package.json                  # Dependencies + test scripts
@@ -65,7 +65,8 @@ scripts/05_editing/
 │   ├── src/shared/                   # Общие утилиты
 │   │   ├── constants.js              # Цвета, ticks, marker types
 │   │   ├── utils.js                  # parseTimecode, tickSec, fmtTime
-│   │   └── logger.js                 # Logger class с buffer + UI callback
+│   │   ├── logger.js                 # Logger class с buffer + UI callback
+│   │   └── clipActions.js            # Shared: applyColor, setSourceInOut, cleanExistingSequence, insertDjiAudio
 │   ├── src/ingest/                   # INGEST pipeline модули
 │   │   ├── ingestLoader.js           # parseIngest(), generateSummary()
 │   │   ├── binManager.js             # createBinStructure(), BIN_NAMES
@@ -82,7 +83,7 @@ scripts/05_editing/
 │   │   ├── screenParser.js           # parseScreens(), formatSrtContent()
 │   │   └── screenBuilder.js          # buildScreenCues() — V1 Assembly copy + V2 PNG overlays
 │   ├── LUTs/                         # .cube LUT файлы
-│   └── tests/                        # Node.js тесты (182 теста)
+│   └── tests/                        # Node.js тесты (186 тестов)
 │       ├── mocks/premierepro.js      # Мок Premiere Pro UXP API
 │       ├── fixtures/                 # Тестовые данные
 │       │   ├── sample_ingest.json
@@ -114,7 +115,8 @@ scripts/05_editing/
 │   └── generate_review.py            # JSON → HTML ревью
 ├── 0504_screen_cues/                 # Вспомогательные скрипты Screen Cues
 │   ├── generate_screen_cues.py       # SRT субтитры для screen cues
-│   └── generate_screen_cues_png.py   # Pillow → PNG оверлеи (запускать до UXP)
+│   ├── generate_screen_cues_png.py   # Pillow → PNG оверлеи (запускать до UXP)
+│   └── run_generate.command          # Shell launcher для UXP → Terminal (auto-close, ANSI colors)
 ├── 999_testing_project/              # Тестовые данные
 └── Archive/                          # Архивированные версии
     ├── 0501_claude_kb/               # → заменён на 0501_brief
@@ -188,37 +190,44 @@ Claude вернёт обновлённый JSON artifact → скачать → 
 
 ### Шаг 4: Загрузка в Premiere (YTAI UXP Panel)
 
-`0500_uxp/` — UXP-плагин v1.9.3 для Premiere Pro с четырьмя пайплайнами.
+`0500_uxp/` — UXP-плагин v2.1.0 для Premiere Pro с четырьмя пайплайнами.
 
 Premiere → Window > Extensions > YTAI Assembly:
 
-#### INGEST (загрузить ingest.json)
+**Workflow (v2.0.0+):** Select Project Folder → auto-detect ingest.json + edit_brief.json → чеклист → Build.
+Fallback: ручная загрузка файлов (кнопки Load появляются при отсутствии auto-detect).
+
+#### INGEST (auto-detect или загрузить ingest.json)
 - Импорт клипов → `00_Source/`
 - Создание `{project} — Ingest` секвенции (все клипы целиком на V1)
 - Импорт SRT и premiere_transcript.json → `02_Transcripts/`
 - Копирование LUTs → Adobe Creative + применение Lumetri Color
 
-#### ASSEMBLY (загрузить edit_brief.json)
+#### ASSEMBLY (auto-detect или загрузить edit_brief.json)
 - **Секвенция:** `{project}_ASSEMBLY`
 - **V1:** USE=TRUE сегменты (block ≠ 99), отсортированы по block → tc_in
+- **A1:** Камерное аудио (наследуется от V1)
+- **A2/A3:** DJI TX аудио (тримменное с теми же in/out, опционально)
 - **Trimmed:** обрезка по tc_in/tc_out + tight repositioning
 - **Chapter markers:** на `is_chapter="TRUE"` сегментах
 - **Comment markers:** speaker + transcript + broll_note + notes
 - **Color labels:** по семантике блока
 
-#### REVIEW (загрузить edit_brief.json)
+#### REVIEW (auto-detect edit_brief.json)
 - **Секвенция:** `{project}_3_Review`
-- **V1:** все сегменты (USE + SKIP) целиком, без тримов
-- **Comment markers:** speaker + transcript + notes
-- **Color labels:** по блокам
+- **V1:** complement (Ingest − Assembly), на абсолютных позициях
+- **A2/A3:** DJI TX аудио (тримменное, на абсолютных позициях, опционально)
+- **Markers:** [CUT]/[ALT]/[SKIP] + speaker + transcript + notes
+- **Color labels:** по категории отказа (CUT=Red, ALT=Yellow, SKIP=Purple)
 
-#### SCREEN CUES (загрузить edit_brief.json)
+#### SCREEN CUES (auto-detect edit_brief.json)
 - **Секвенция:** `{project}_4_ScreenCues`
 - **V1:** Assembly copy (USE=TRUE сегменты, trimmed, как в Assembly)
 - **V2:** PNG оверлеи с текстом screen cues (если PNGs сгенерированы)
+- **A2/A3:** DJI TX аудио (тримменное, как в Assembly, опционально)
 - **Markers:** Orange Comment на позициях screen cues
 - **SRT:** генерируется и импортируется в `02_Transcripts/`
-- **Pre-req:** запустить `python 0504_screen_cues/generate_screen_cues_png.py --brief ...` до Build
+- **Pre-req:** нажать [Generate PNGs] в UXP панели (или `python 0504_screen_cues/generate_screen_cues_png.py --brief ...`) до Build
 
 ---
 
