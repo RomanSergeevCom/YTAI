@@ -30,7 +30,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Sony XML sidecars land in `01_Media/Source/Transcription/per_clip/{scene}/{clip}/` and are not present in the Video folder
   4. Absence of XML sidecars does not error — the script runs to completion gracefully
   5. The full v3.0 folder skeleton (Audio/, Transcription/, Setup/logs/, LUT/) is present even for scenes with no sidecar
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Test scaffolding + core detection functions (is_nested_project, detect_scenes, v3.0 skeleton)
+- [ ] 01-02-PLAN.md — File move implementation (video clips per scene, DJI WAVs flat, XML sidecars with scene layer)
+- [ ] 01-03-PLAN.md — Dry-run summary output + human verification on reference project
 
 ### Phase 2: Audio Sync
 **Goal**: Every clip in every scene has precisely synced TX01 and TX02 WAV files trimmed to clip duration, with sync accuracy reported per clip
@@ -82,7 +87,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Organize | TBD | Not started | - |
+| 1. Organize | 0/3 | Planning complete | - |
 | 2. Audio Sync | TBD | Not started | - |
 | 3. Transcribe | TBD | Not started | - |
 | 4. UXP Plugin | TBD | Not started | - |
