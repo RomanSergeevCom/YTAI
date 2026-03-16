@@ -44,12 +44,12 @@ ProjectName/
 
 ### AUDIO — Извлечение и синхронизация аудио
 
-- [ ] **AUD-01**: Для каждого клипа извлекается `Transcription/per_clip/{scene}/{clip}/{clip}_AUDIO.wav` (ffmpeg, 48kHz stereo) — аналогично `0102_extract_audio`, добавляется сцена-подпапка
-- [ ] **AUD-02**: Для каждой сцены клипы конкатенируются во временный `{scene}_FULL_AUDIO.wav` — используется как reference для DJI sync
-- [ ] **AUD-03**: Для каждого клипа перебираются **все** TX01 WAV из `99_Pipeline/DJI_Audio/` как кандидаты; выбирается лучший по waveform cross-correlation с clip-audio
-- [ ] **AUD-04**: Найденный TX01 WAV обрезается с точным offset → `01_Media/Source/Audio/{clip}_TX01.wav`
-- [ ] **AUD-05**: Аналогично для TX02 → `01_Media/Source/Audio/{clip}_TX02.wav`
-- [ ] **AUD-06**: Скрипт репортует точность sync для каждого клипа: delta в фреймах (target: 0F, допустимо: ≤1F)
+- [x] **AUD-01**: Для каждого клипа извлекается `Transcription/per_clip/{scene}/{clip}/{clip}_AUDIO.wav` (ffmpeg, 48kHz stereo) — аналогично `0102_extract_audio`, добавляется сцена-подпапка
+- [x] **AUD-02**: Для каждой сцены клипы конкатенируются во временный `{scene}_FULL_AUDIO.wav` — используется как reference для DJI sync
+- [x] **AUD-03**: Для каждого клипа перебираются **все** TX01 WAV из `99_Pipeline/DJI_Audio/` как кандидаты; выбирается лучший по waveform cross-correlation с clip-audio
+- [x] **AUD-04**: Найденный TX01 WAV обрезается с точным offset → `01_Media/Source/Audio/{clip}_TX01.wav`
+- [x] **AUD-05**: Аналогично для TX02 → `01_Media/Source/Audio/{clip}_TX02.wav`
+- [x] **AUD-06**: Скрипт репортует точность sync для каждого клипа: delta в фреймах (target: 0F, допустимо: ≤1F)
 - [ ] **AUD-07**: ingest.json каждой сцены: A1=camera embed, A2=TX01_SYNC, A3=TX02_SYNC
 
 ---
@@ -108,12 +108,12 @@ ProjectName/
 | ORG-04 | Phase 1 — Organize | Complete |
 | ORG-05 | Phase 1 — Organize | Complete |
 | ORG-06 | Phase 1 — Organize | Complete |
-| AUD-01 | Phase 2 — Audio Sync | Pending |
-| AUD-02 | Phase 2 — Audio Sync | Pending |
-| AUD-03 | Phase 2 — Audio Sync | Pending |
-| AUD-04 | Phase 2 — Audio Sync | Pending |
-| AUD-05 | Phase 2 — Audio Sync | Pending |
-| AUD-06 | Phase 2 — Audio Sync | Pending |
+| AUD-01 | Phase 2 — Audio Sync | Complete |
+| AUD-02 | Phase 2 — Audio Sync | Complete |
+| AUD-03 | Phase 2 — Audio Sync | Complete |
+| AUD-04 | Phase 2 — Audio Sync | Complete |
+| AUD-05 | Phase 2 — Audio Sync | Complete |
+| AUD-06 | Phase 2 — Audio Sync | Complete |
 | AUD-07 | Phase 2 — Audio Sync | Pending |
 | TRN-01 | Phase 3 — Transcribe | Pending |
 | TRN-02 | Phase 3 — Transcribe | Pending |
