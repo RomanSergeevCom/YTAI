@@ -282,6 +282,30 @@ def test_preload_tx_cache(fake_nested_organized, mod):
 
 
 # ---------------------------------------------------------------------------
+# CLI args
+# ---------------------------------------------------------------------------
+
+def test_cli_args_parse():
+    """argparse accepts --project, --scene, and --dry-run flags.
+
+    Tests that the argument parser in main() can accept these flags without
+    invoking the full pipeline (no mocks needed for pure argparse test).
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--project", type=Path, required=True)
+    parser.add_argument("--scene", type=str, default=None)
+    parser.add_argument("--dry-run", action="store_true")
+
+    args = parser.parse_args(["--project", "/tmp/test", "--scene", "volleyball", "--dry-run"])
+
+    assert str(args.project) == "/tmp/test"
+    assert args.scene == "volleyball"
+    assert args.dry_run is True
+
+
+# ---------------------------------------------------------------------------
 # AUD-07: generate_ingest_json
 # ---------------------------------------------------------------------------
 

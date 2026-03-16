@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-0104_sync_audio_nested.py — Core functions for nested-project audio sync.
+0104_sync_audio_nested.py — Complete CLI for nested-project audio sync.
 
-Provides building blocks for per-clip TX audio synchronization using
-full-waveform cross-correlation. Designed for nested projects produced by
-0100_organize where video files live in named scene subdirectories.
+Orchestrates per-clip TX audio synchronization for nested projects produced by
+0100_organize (scene subdirectories under 01_Media/Source/Video/).
 
 Functions:
   detect_scenes          — Discover scene directories in organized project
@@ -15,15 +14,20 @@ Functions:
   find_best_tx_candidate — Select best TX WAV via cross-correlation
   trim_tx_to_clip        — Trim TX WAV to match clip duration at offset
   residual_to_frames     — Convert sync residual seconds to frame delta
+  generate_ingest_json   — Write per-scene ingest.json with A1/A2/A3 tracks
+  process_clip           — Orchestrate one clip: extract, correlate, trim, verify
+  process_scene          — Orchestrate one scene: all clips + concat + ingest
+  main                   — CLI entry point (--project, --scene, --dry-run)
 
-Part of Phase 2 (Audio Sync). Plan 02 will orchestrate these functions
-into a complete CLI script.
+Part of Phase 2 (Audio Sync).
 """
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import json
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -47,6 +51,19 @@ build_ffmpeg_cmd = _sync.build_ffmpeg_cmd
 get_video_clip_info = _sync.get_video_clip_info
 tee_print = _sync.tee_print
 run_ffmpeg = _sync.run_ffmpeg
+
+# ---------------------------------------------------------------------------
+# Import verify_full from fix_dji_sync.py
+# ---------------------------------------------------------------------------
+_FIX_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "0103_sync_dji_audio"
+    / "fix_dji_sync.py"
+)
+_fix_spec = importlib.util.spec_from_file_location("_fix", _FIX_PATH)
+_fix = importlib.util.module_from_spec(_fix_spec)
+_fix_spec.loader.exec_module(_fix)
+verify_full = _fix.verify_full
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -404,3 +421,238 @@ def generate_ingest_json(
         json.dump(data, f, indent=2)
 
     return out_path
+
+
+# ---------------------------------------------------------------------------
+# Orchestration: process_clip
+# ---------------------------------------------------------------------------
+
+def process_clip(
+    clip_path: Path,
+    project: Path,
+    scene_name: str,
+    tx01_cache: dict,
+    tx02_cache: dict,
+    log_f=None,
+    dry_run: bool = False,
+) -> dict:
+    """Orchestrate one clip: extract audio, correlate, trim TX WAVs, verify.
+
+    Args:
+        clip_path: Path to the source video clip.
+        project: Root path of the organized project.
+        scene_name: Scene directory name (e.g. "volleyball").
+        tx01_cache: Preloaded TX01 WAVs dict (path -> float32 array).
+        tx02_cache: Preloaded TX02 WAVs dict (path -> float32 array).
+        log_f: Optional log file handle.
+        dry_run: If True, skip writing files.
+
+    Returns:
+        Dict with clip_id, clip_path, duration_sec, fps,
+        tx01_path, tx01_delta_frames, tx02_path, tx02_delta_frames,
+        tx01_conf, tx02_conf.
+    """
+    info = get_video_clip_info(clip_path)
+    clip_duration = info["duration"]
+    clip_fps = float(info.get("fps", 25.0))
+
+    # Extract clip audio (48kHz stereo WAV)
+    if not dry_run:
+        extract_clip_audio(clip_path, project, scene_name)
+
+    # Camera audio at 8kHz for cross-correlation
+    cam_8k = extract_mono_8k(clip_path, 0, clip_duration)
+
+    # TX01 correlation
+    tx01_path_str, tx01_offset, tx01_conf = find_best_tx_candidate(cam_8k, tx01_cache)
+    # TX02 correlation
+    tx02_path_str, tx02_offset, tx02_conf = find_best_tx_candidate(cam_8k, tx02_cache)
+
+    tx01_path_rel = None
+    tx01_delta_frames = None
+    tx02_path_rel = None
+    tx02_delta_frames = None
+
+    # TX01 output
+    if tx01_conf >= CONFIDENCE_THRESHOLD and tx01_path_str and not dry_run:
+        out_tx01 = project / "01_Media" / "Source" / "Audio" / f"{clip_path.stem}_TX01.wav"
+        trim_tx_to_clip(Path(tx01_path_str), tx01_offset, clip_duration, out_tx01)
+        residual_sec = verify_full(clip_path, out_tx01, clip_duration)
+        if residual_sec is not None:
+            tx01_delta_frames = residual_to_frames(residual_sec, clip_fps)
+        else:
+            tx01_delta_frames = 0.0
+        tx01_path_rel = str(out_tx01.relative_to(project))
+
+    # TX02 output
+    if tx02_conf >= CONFIDENCE_THRESHOLD and tx02_path_str and not dry_run:
+        out_tx02 = project / "01_Media" / "Source" / "Audio" / f"{clip_path.stem}_TX02.wav"
+        trim_tx_to_clip(Path(tx02_path_str), tx02_offset, clip_duration, out_tx02)
+        residual_sec = verify_full(clip_path, out_tx02, clip_duration)
+        if residual_sec is not None:
+            tx02_delta_frames = residual_to_frames(residual_sec, clip_fps)
+        else:
+            tx02_delta_frames = 0.0
+        tx02_path_rel = str(out_tx02.relative_to(project))
+
+    # Sync report line
+    tx01_str = f"{tx01_delta_frames:.1f}F" if tx01_delta_frames is not None else "LOW_CONF"
+    tx02_str = f"{tx02_delta_frames:.1f}F" if tx02_delta_frames is not None else "LOW_CONF"
+    report = (
+        f"  {clip_path.stem}: "
+        f"TX01={tx01_conf:.1f} ({tx01_str}) "
+        f"TX02={tx02_conf:.1f} ({tx02_str})"
+    )
+    print(report)
+
+    return {
+        "clip_id": clip_path.stem,
+        "clip_path": str(clip_path.relative_to(project)),
+        "duration_sec": clip_duration,
+        "fps": clip_fps,
+        "tx01_path": tx01_path_rel,
+        "tx01_delta_frames": tx01_delta_frames,
+        "tx02_path": tx02_path_rel,
+        "tx02_delta_frames": tx02_delta_frames,
+        "tx01_conf": tx01_conf,
+        "tx02_conf": tx02_conf,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Orchestration: process_scene
+# ---------------------------------------------------------------------------
+
+def process_scene(
+    scene_dir: Path,
+    project: Path,
+    tx01_cache: dict,
+    tx02_cache: dict,
+    log_f=None,
+    dry_run: bool = False,
+) -> list[dict]:
+    """Orchestrate one scene: process all clips, concat audio, write ingest.json.
+
+    Args:
+        scene_dir: Scene directory (e.g. project/01_Media/Source/Video/volleyball).
+        project: Root path of the organized project.
+        tx01_cache: Preloaded TX01 WAVs dict.
+        tx02_cache: Preloaded TX02 WAVs dict.
+        log_f: Optional log file handle.
+        dry_run: If True, skip writing output WAV files.
+
+    Returns:
+        List of clip result dicts from process_clip().
+    """
+    scene_name = scene_dir.name
+    clips = get_scene_clips(scene_dir)
+    print(f"\n=== Scene: {scene_name} ({len(clips)} clips) ===")
+
+    clip_results = []
+    for clip in clips:
+        result = process_clip(
+            clip, project, scene_name, tx01_cache, tx02_cache, log_f, dry_run
+        )
+        clip_results.append(result)
+
+    if not dry_run:
+        audio_paths = [
+            project / "01_Media" / "Source" / "Transcription" / "per_clip"
+            / scene_name / c.stem / f"{c.stem}_AUDIO.wav"
+            for c in clips
+        ]
+        build_scene_concat(audio_paths, scene_name, project)
+
+    # Write ingest.json even in dry_run (metadata, no large files)
+    generate_ingest_json(scene_name, clip_results, project)
+
+    return clip_results
+
+
+# ---------------------------------------------------------------------------
+# CLI: main
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    """CLI entry point for nested-project audio sync.
+
+    Usage:
+        python3 0104_sync_audio_nested.py --project /path/to/project
+        python3 0104_sync_audio_nested.py --project /path/to/project --scene volleyball
+        python3 0104_sync_audio_nested.py --project /path/to/project --dry-run
+    """
+    parser = argparse.ArgumentParser(
+        description="Sync DJI TX audio for nested multi-scene projects"
+    )
+    parser.add_argument("--project", type=Path, required=True, help="Path to project root")
+    parser.add_argument("--scene", type=str, default=None, help="Process only this scene (by name)")
+    parser.add_argument("--dry-run", action="store_true", help="Print plan without writing files")
+    args = parser.parse_args()
+
+    project = args.project.resolve()
+    dji_audio_dir = project / "99_Pipeline" / "DJI_Audio"
+
+    # Detect TX prefixes from filenames in DJI_Audio/
+    tx_prefixes = set()
+    for f in dji_audio_dir.glob("*.wav"):
+        # TX01_MIC001... -> TX01, TX02_MIC024... -> TX02
+        parts = f.stem.split("_")
+        if parts and parts[0].startswith("TX"):
+            tx_prefixes.add(parts[0])
+    tx_prefixes = sorted(tx_prefixes)  # e.g., ["TX01", "TX02"]
+
+    print(f"Project: {project}")
+    print(f"TX prefixes found: {tx_prefixes}")
+    print(f"DJI Audio dir: {dji_audio_dir}")
+
+    # Pre-load TX caches
+    tx_caches = {}
+    for prefix in tx_prefixes:
+        print(f"Loading {prefix} WAVs into memory at 8kHz...")
+        tx_caches[prefix] = preload_tx_cache(dji_audio_dir, prefix)
+        print(f"  Loaded {len(tx_caches[prefix])} WAVs for {prefix}")
+
+    # Default: TX01 and TX02; gracefully handle missing
+    tx01_cache = tx_caches.get("TX01", {})
+    tx02_cache = tx_caches.get("TX02", {})
+
+    # Detect scenes
+    scenes = detect_scenes(project)
+    if args.scene:
+        scenes = [s for s in scenes if s.name == args.scene]
+        if not scenes:
+            print(f"ERROR: Scene '{args.scene}' not found")
+            sys.exit(1)
+
+    print(f"Scenes to process: {[s.name for s in scenes]}")
+    if args.dry_run:
+        print("\n*** DRY RUN — no files will be written ***\n")
+
+    # Ensure output dirs exist
+    (project / "01_Media" / "Source" / "Audio").mkdir(parents=True, exist_ok=True)
+
+    all_results = []
+    for scene_dir in scenes:
+        results = process_scene(scene_dir, project, tx01_cache, tx02_cache, dry_run=args.dry_run)
+        all_results.extend(results)
+
+    # Summary
+    total = len(all_results)
+    low_conf = sum(
+        1 for r in all_results
+        if (r.get("tx01_conf", 0) < CONFIDENCE_THRESHOLD
+            or r.get("tx02_conf", 0) < CONFIDENCE_THRESHOLD)
+    )
+    print(f"\n=== SUMMARY ===")
+    print(f"Total clips processed: {total}")
+    print(f"Low confidence clips: {low_conf}")
+    if low_conf:
+        for r in all_results:
+            if r.get("tx01_conf", 0) < CONFIDENCE_THRESHOLD:
+                print(f"  LOW_CONF TX01: {r['clip_id']} (conf={r.get('tx01_conf', 0):.1f})")
+            if r.get("tx02_conf", 0) < CONFIDENCE_THRESHOLD:
+                print(f"  LOW_CONF TX02: {r['clip_id']} (conf={r.get('tx02_conf', 0):.1f})")
+
+
+if __name__ == "__main__":
+    main()
