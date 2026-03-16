@@ -254,6 +254,103 @@ def move_dji_wavs(project: Path, dji_dir: Path, dry_run: bool = False) -> bool:
     return ok
 
 
+def build_clip_scene_map(scenes: list, project: Path) -> dict:
+    """Build a mapping from clip stem to scene name, from video files found in each scene dir.
+
+    Args:
+        scenes: List of scene folder names at project root.
+        project: Absolute path to the project root.
+
+    Returns:
+        Dict mapping clip stem (e.g. "C5089") to scene name (e.g. "apartment").
+    """
+    clip_scene_map = {}
+    for scene in scenes:
+        scene_dir = project / scene
+        for f in scene_dir.rglob("*"):
+            if f.is_file() and f.suffix.lower() in VIDEO_EXTS:
+                clip_scene_map[f.stem] = scene
+    return clip_scene_map
+
+
+def xml_to_clip_id(xml_path: Path, video_stems: set) -> str | None:
+    """Extract the clip ID from a Sony XML sidecar filename by matching video stems.
+
+    Sony XML naming: C5089M01.XML — try progressively shorter prefixes of the
+    stem until a match is found in video_stems.
+
+    Args:
+        xml_path: Path to the XML sidecar file.
+        video_stems: Set of known video clip stems (e.g. {"C5089", "C5210"}).
+
+    Returns:
+        Matching clip stem (e.g. "C5089") or None if no match found.
+    """
+    stem = xml_path.stem  # e.g. "C5089M01"
+    for length in range(len(stem), 0, -1):
+        prefix = stem[:length]
+        if prefix in video_stems:
+            return prefix
+    return None
+
+
+def move_xml_sidecars(project: Path, scenes: list, tr_dir: Path, dry_run: bool = False) -> bool:
+    """Move Sony XML sidecar files to Transcription/per_clip/{scene}/{clip}/.
+
+    The scene is determined by the scene directory the XML file is found in.
+    If no video stem match is found, falls back to flat per_clip/{clip}/ path.
+
+    Args:
+        project: Absolute path to the project root directory.
+        scenes: List of scene folder names at project root.
+        tr_dir: Destination transcription root (01_Media/Source/Transcription).
+        dry_run: If True, print planned operations without moving files.
+
+    Returns:
+        True if no errors.
+    """
+    # Collect all video stems for clip ID matching.
+    # Scan both the original scene dirs (before move) and the destination Video dir
+    # (after move_scene_clips has already run) to handle both call orderings.
+    video_stems: set = set()
+    for scene in scenes:
+        scene_dir = project / scene
+        for f in scene_dir.rglob("*"):
+            if f.is_file() and f.suffix.lower() in VIDEO_EXTS:
+                video_stems.add(f.stem)
+    # Also scan the destination video dir (clips may already be moved)
+    video_dir = project / "01_Media" / "Source" / "Video"
+    if video_dir.exists():
+        for f in video_dir.rglob("*"):
+            if f.is_file() and f.suffix.lower() in VIDEO_EXTS:
+                video_stems.add(f.stem)
+
+    ok = True
+    for scene in scenes:
+        scene_dir = project / scene
+        for xml in scene_dir.rglob("*"):
+            if not xml.is_file():
+                continue
+            if xml.suffix.lower() not in SIDECAR_EXTS:
+                continue
+            clip_id = xml_to_clip_id(xml, video_stems)
+            if clip_id:
+                # Use the scene where the XML was found (not where the clip lives)
+                dest = tr_dir / "per_clip" / scene / clip_id / xml.name
+            else:
+                # Fall back to flat path for unmatched XMLs
+                dest = tr_dir / "per_clip" / xml.stem / xml.name
+            if dry_run:
+                print(f"  [dry-run] Would move XML: {xml.name} -> {dest}")
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if dest.exists():
+                print(f"[organize] Already exists, skip: {xml.name}")
+                continue
+            shutil.move(str(xml), str(dest))
+    return ok
+
+
 # ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
@@ -304,7 +401,7 @@ def organize(project: Path, dry_run: bool = False) -> bool:
 
         move_scene_clips(scenes, project, video_dir, dry_run=dry_run)
         move_dji_wavs(project, dji_dir, dry_run=dry_run)
-        # TODO: move_xml_sidecars — Plan 02 (Task 2)
+        move_xml_sidecars(project, scenes, tr_dir, dry_run=dry_run)
 
         # Remove empty scene directories at project root after moves
         if not dry_run:
@@ -314,6 +411,9 @@ def organize(project: Path, dry_run: bool = False) -> bool:
                     scene_dir.rmdir()  # Only removes if truly empty
                 except OSError:
                     pass  # Not empty — leave it
+
+    # Summary output
+    print(f"[organize] Done — {len(scenes)} scene(s) processed.")
 
     return True
 
