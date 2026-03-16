@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — Test scaffolding + core detection functions (is_nested_project, detect_scenes, v3.0 skeleton)
 - [x] 01-02-PLAN.md — File move implementation (video clips per scene, DJI WAVs flat, XML sidecars with scene layer)
-- [ ] 01-03-PLAN.md — Dry-run summary output + human verification on reference project
+- [x] 01-03-PLAN.md — Dry-run summary output + human verification on reference project
 
 ### Phase 2: Audio Sync
 **Goal**: Every clip in every scene has precisely synced TX01 and TX02 WAV files trimmed to clip duration, with sync accuracy reported per clip
@@ -47,7 +47,12 @@ Plans:
   3. The sync report for each clip shows delta in frames; all clips on the reference project achieve ≤1F delta
   4. The correct TX WAV candidate is selected per clip even when multiple TX files overlap in time (waveform correlation wins over timestamp proximity)
   5. Per-scene `ingest.json` lists A1=camera embed, A2=TX01_SYNC, A3=TX02_SYNC for every clip in the scene
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Test scaffold + core functions (detect_scenes, extract, correlate, trim, delta reporting)
+- [ ] 02-02-PLAN.md — CLI orchestration + ingest.json generation (process_scene, process_clip, main, --project/--scene/--dry-run)
+- [ ] 02-03-PLAN.md — Integration test on reference project apartment scene + human verification
 
 ### Phase 3: Transcribe
 **Goal**: Every scene has a word-level transcript JSON, and all scenes are merged into a single cross-scene transcript
@@ -88,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Organize | 3/3 | Complete    | 2026-03-16 |
-| 2. Audio Sync | TBD | Not started | - |
+| 2. Audio Sync | 0/3 | Planned | - |
 | 3. Transcribe | TBD | Not started | - |
 | 4. UXP Plugin | TBD | Not started | - |
 | 5. Pipeline Integration | TBD | Not started | - |
