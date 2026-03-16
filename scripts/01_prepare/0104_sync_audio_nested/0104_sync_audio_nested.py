@@ -204,6 +204,7 @@ def build_scene_concat(
         str(out_path),
     ]
     subprocess.run(cmd, check=False)
+    list_path.unlink(missing_ok=True)
     return out_path
 
 
@@ -496,8 +497,19 @@ def process_clip(
         tx02_path_rel = str(out_tx02.relative_to(project))
 
     # Sync report line
-    tx01_str = f"{tx01_delta_frames:.1f}F" if tx01_delta_frames is not None else "LOW_CONF"
-    tx02_str = f"{tx02_delta_frames:.1f}F" if tx02_delta_frames is not None else "LOW_CONF"
+    if tx01_delta_frames is not None:
+        tx01_str = f"{tx01_delta_frames:.1f}F"
+    elif dry_run and tx01_conf >= CONFIDENCE_THRESHOLD:
+        tx01_str = "DRY_RUN"
+    else:
+        tx01_str = "LOW_CONF"
+
+    if tx02_delta_frames is not None:
+        tx02_str = f"{tx02_delta_frames:.1f}F"
+    elif dry_run and tx02_conf >= CONFIDENCE_THRESHOLD:
+        tx02_str = "DRY_RUN"
+    else:
+        tx02_str = "LOW_CONF"
     report = (
         f"  {clip_path.stem}: "
         f"TX01={tx01_conf:.1f} ({tx01_str}) "
