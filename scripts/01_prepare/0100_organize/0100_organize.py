@@ -352,6 +352,140 @@ def move_xml_sidecars(project: Path, scenes: list, tr_dir: Path, dry_run: bool =
 
 
 # ---------------------------------------------------------------------------
+# Dry-run summary
+# ---------------------------------------------------------------------------
+
+def print_dry_run_summary(project: Path, nested: bool, scenes: list, template_dir: Path) -> None:
+    """Print a structured dry-run summary of planned operations.
+
+    Shows what the organize script would do without performing any moves or
+    directory creation. Includes scenes with clip counts, TX folders with WAV
+    counts, XML sidecar destinations, missing v3.0 skeleton dirs, and total
+    file move counts.
+
+    Args:
+        project: Absolute path to the project root directory.
+        nested: True if project is nested (TX folders detected).
+        scenes: List of scene folder names detected at project root.
+        template_dir: Absolute path to Type2_Production template directory.
+    """
+    print("=== DRY RUN: 0100_organize ===")
+    print(f"Project: {project}")
+    if nested:
+        print("Type: Nested project (TX folders detected)")
+    else:
+        print("Type: Flat project")
+    print()
+
+    total_video = 0
+    total_wav = 0
+    total_xml = 0
+
+    # --- Scenes ---
+    if scenes:
+        print(f"Scenes ({len(scenes)}):")
+        for scene in scenes:
+            scene_dir = project / scene
+            video_files = [
+                f for f in scene_dir.rglob("*")
+                if f.is_file() and f.suffix.lower() in VIDEO_EXTS
+            ]
+            # Detect immediate subdirectories that contain video files
+            subdirs = sorted({
+                f.relative_to(scene_dir).parts[0]
+                for f in video_files
+                if len(f.relative_to(scene_dir).parts) > 1
+            })
+            subfolder_note = f"  (has subfolders: {', '.join(s + '/' for s in subdirs)})" if subdirs else ""
+            print(f"  {scene:<24} {len(video_files):>4} clips{subfolder_note}")
+            total_video += len(video_files)
+        print()
+
+    # --- TX folders ---
+    if nested:
+        tx_folders = sorted(
+            d for d in project.iterdir()
+            if d.is_dir() and TX_FOLDER_RE.match(d.name)
+        )
+        if tx_folders:
+            dji_dest = project / "99_Pipeline" / "DJI_Audio"
+            print(f"TX folders ({len(tx_folders)}):")
+            for tx in tx_folders:
+                wavs = [
+                    f for f in tx.rglob("*")
+                    if f.is_file() and f.suffix.lower() in AUDIO_EXTS and DJI_RAW_RE.match(f.name)
+                ]
+                print(f"  {tx.name + '/':<12} {len(wavs):>2} WAV files -> 99_Pipeline/DJI_Audio/")
+                total_wav += len(wavs)
+            print()
+
+    # --- XML sidecars ---
+    if nested and scenes:
+        # Collect video stems for clip-ID matching
+        video_stems: set = set()
+        for scene in scenes:
+            scene_dir = project / scene
+            for f in scene_dir.rglob("*"):
+                if f.is_file() and f.suffix.lower() in VIDEO_EXTS:
+                    video_stems.add(f.stem)
+        # Also check destination video dir (if already partially moved)
+        video_dir_dest = project / "01_Media" / "Source" / "Video"
+        if video_dir_dest.exists():
+            for f in video_dir_dest.rglob("*"):
+                if f.is_file() and f.suffix.lower() in VIDEO_EXTS:
+                    video_stems.add(f.stem)
+
+        xml_entries = []
+        tr_dir = project / "01_Media" / "Source" / "Transcription"
+        for scene in scenes:
+            scene_dir = project / scene
+            for xml in scene_dir.rglob("*"):
+                if not xml.is_file() or xml.suffix.lower() not in SIDECAR_EXTS:
+                    continue
+                clip_id = xml_to_clip_id(xml, video_stems)
+                if clip_id:
+                    dest = tr_dir / "per_clip" / scene / clip_id / xml.name
+                else:
+                    dest = tr_dir / "per_clip" / xml.stem / xml.name
+                xml_entries.append((xml.name, dest))
+                total_xml += 1
+
+        if xml_entries:
+            print(f"XML sidecars ({len(xml_entries)}):")
+            for xml_name, dest in xml_entries:
+                print(f"  {xml_name} -> {dest.relative_to(project)}")
+            print()
+        else:
+            print("XML sidecars: none found")
+            print()
+
+    # --- v3.0 skeleton: dirs that would be created ---
+    if template_dir.exists():
+        missing_dirs = []
+        for root, dirs, _files in os.walk(template_dir):
+            rel = Path(root).relative_to(template_dir)
+            dst_dir = project / rel
+            if not dst_dir.exists():
+                missing_dirs.append(str(rel) + "/")
+        dji_audio = project / "99_Pipeline" / "DJI_Audio"
+        if not dji_audio.exists() and "99_Pipeline/DJI_Audio/" not in missing_dirs:
+            missing_dirs.append("99_Pipeline/DJI_Audio/")
+        if missing_dirs:
+            print(f"Skeleton dirs to create ({len(missing_dirs)}):")
+            for d in missing_dirs:
+                print(f"  {d}")
+            print()
+        else:
+            print("Skeleton: already complete (no dirs to create)")
+            print()
+
+    # --- Totals ---
+    total = total_video + total_wav + total_xml
+    print(f"Total: {total_video} video + {total_wav} WAV + {total_xml} XML = {total} file moves")
+    print("=== END DRY RUN ===")
+
+
+# ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
 
@@ -362,13 +496,13 @@ def organize(project: Path, dry_run: bool = False) -> bool:
       1. Detect if nested (TX folders present)
       2. Detect scene folders
       3. Create v3.0 folder skeleton from template
-      4. TODO: Move video clips per scene into Source/Video/{scene}/  (Plan 02)
-      5. TODO: Move DJI WAVs flat into 99_Pipeline/DJI_Audio/        (Plan 02)
-      6. TODO: Move XML sidecars to per_clip/{scene}/{clip}/          (Plan 02)
+      4. Move video clips per scene into Source/Video/{scene}/
+      5. Move DJI WAVs flat into 99_Pipeline/DJI_Audio/
+      6. Move XML sidecars to per_clip/{scene}/{clip}/
 
     Args:
         project: Absolute path to the project root directory.
-        dry_run: If True, print planned operations without moving files.
+        dry_run: If True, print dry-run summary and return without moving files.
 
     Returns:
         True on success.
@@ -378,12 +512,6 @@ def organize(project: Path, dry_run: bool = False) -> bool:
     nested = is_nested_project(project)
     scenes = detect_scenes(project) if nested else []
 
-    if dry_run or True:  # Always print summary
-        print(f"[organize] Project: {project.name}")
-        print(f"[organize] Mode: {'nested' if nested else 'flat'}")
-        if scenes:
-            print(f"[organize] Scenes detected: {scenes}")
-
     # Resolve template path relative to this script's location:
     # scripts/01_prepare/0100_organize/ -> project_root -> YTAI_Folder_Templates/
     template_dir = (
@@ -392,27 +520,29 @@ def organize(project: Path, dry_run: bool = False) -> bool:
         / "Type2_Production"
     )
 
-    create_v3_skeleton(project, template_dir, dry_run=dry_run)
+    if dry_run:
+        print_dry_run_summary(project, nested, scenes, template_dir)
+        return True
+
+    create_v3_skeleton(project, template_dir, dry_run=False)
 
     if nested:
         video_dir = project / "01_Media" / "Source" / "Video"
         dji_dir = project / "99_Pipeline" / "DJI_Audio"
         tr_dir = project / "01_Media" / "Source" / "Transcription"
 
-        move_scene_clips(scenes, project, video_dir, dry_run=dry_run)
-        move_dji_wavs(project, dji_dir, dry_run=dry_run)
-        move_xml_sidecars(project, scenes, tr_dir, dry_run=dry_run)
+        move_scene_clips(scenes, project, video_dir, dry_run=False)
+        move_dji_wavs(project, dji_dir, dry_run=False)
+        move_xml_sidecars(project, scenes, tr_dir, dry_run=False)
 
         # Remove empty scene directories at project root after moves
-        if not dry_run:
-            for scene in scenes:
-                scene_dir = project / scene
-                try:
-                    scene_dir.rmdir()  # Only removes if truly empty
-                except OSError:
-                    pass  # Not empty — leave it
+        for scene in scenes:
+            scene_dir = project / scene
+            try:
+                scene_dir.rmdir()  # Only removes if truly empty
+            except OSError:
+                pass  # Not empty — leave it
 
-    # Summary output
     print(f"[organize] Done — {len(scenes)} scene(s) processed.")
 
     return True
