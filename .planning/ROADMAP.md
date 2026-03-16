@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Test scaffolding + core detection functions (is_nested_project, detect_scenes, v3.0 skeleton)
-- [ ] 01-02-PLAN.md — File move implementation (video clips per scene, DJI WAVs flat, XML sidecars with scene layer)
+- [x] 01-02-PLAN.md — File move implementation (video clips per scene, DJI WAVs flat, XML sidecars with scene layer)
 - [ ] 01-03-PLAN.md — Dry-run summary output + human verification on reference project
 
 ### Phase 2: Audio Sync
@@ -87,7 +87,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Organize | 1/3 | In progress | - |
+| 1. Organize | 2/3 | In progress | - |
 | 2. Audio Sync | TBD | Not started | - |
 | 3. Transcribe | TBD | Not started | - |
 | 4. UXP Plugin | TBD | Not started | - |

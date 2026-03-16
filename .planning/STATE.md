@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 1 of 5 (Organize)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-03-16 — Completed 01-01: detection functions and v3.0 skeleton
+Last activity: 2026-03-17 — Completed 01-02: file move logic (move_scene_clips, move_dji_wavs, move_xml_sidecars)
 
-Progress: [█░░░░░░░░░] 7%
+Progress: [██░░░░░░░░] 13%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 3 min
-- Total execution time: 0.05 hours
+- Total plans completed: 2
+- Average duration: 9 min
+- Total execution time: 0.30 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-organize | 1 | 3 min | 3 min |
+| 01-organize | 2 | 18 min | 9 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3 min)
+- Last 5 plans: 01-01 (3 min), 01-02 (15 min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -48,6 +48,9 @@ Recent decisions affecting current work:
 - 01-01: Standalone script (not extension of run_pipeline.py) — follows script-per-stage convention
 - 01-01: TX_FOLDER_RE=r'^TX\d+' is the nested-project trigger; scene detection by video-file presence not prefix
 - 01-01: importlib.util.spec_from_file_location for digit-prefixed module names in tests
+- 01-02: Scene for XML determined by XML's source scene dir (not which scene owns the video clip)
+- 01-02: video_stems must scan destination video_dir in addition to source scene dirs (move order dependency)
+- 01-02: rmdir() for safe empty-dir cleanup after file moves
 
 ### Codebase Context
 
@@ -67,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16
-Stopped at: Completed 01-01-PLAN.md — detection functions and v3.0 skeleton
+Last session: 2026-03-17
+Stopped at: Completed 01-02-PLAN.md — file move logic (move_scene_clips, move_dji_wavs, move_xml_sidecars)
 Resume file: None

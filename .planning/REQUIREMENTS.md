@@ -11,9 +11,9 @@
 ### ORGANIZE — Инициализация структуры папок
 
 - [x] **ORG-01**: Скрипт детектирует nested-проект по наличию TX01/ и/или TX02/ папок в корне проекта
-- [ ] **ORG-02**: MP4/MOV-клипы каждой сцены перемещаются в `01_Media/Source/Video/{scene}/`; структура сцен-подпапок сохраняется
-- [ ] **ORG-03**: TX01/, TX02/, TX02_2/ (и любые TX\d+_\d*/ варианты) — все WAV мёрджатся flat в `99_Pipeline/DJI_Audio/`; имена файлов сохраняются
-- [ ] **ORG-04**: Sony XML-сайдкары (`C5089M01.XML`) перемещаются в `01_Media/Source/Transcription/per_clip/{scene}/{clip}/` — рядом с аудио, не мешают видео
+- [x] **ORG-02**: MP4/MOV-клипы каждой сцены перемещаются в `01_Media/Source/Video/{scene}/`; структура сцен-подпапок сохраняется
+- [x] **ORG-03**: TX01/, TX02/, TX02_2/ (и любые TX\d+_\d*/ варианты) — все WAV мёрджатся flat в `99_Pipeline/DJI_Audio/`; имена файлов сохраняются
+- [x] **ORG-04**: Sony XML-сайдкары (`C5089M01.XML`) перемещаются в `01_Media/Source/Transcription/per_clip/{scene}/{clip}/` — рядом с аудио, не мешают видео
 - [x] **ORG-05**: Отсутствие XML-сайдкаров не блокирует pipeline (graceful, как сейчас)
 - [x] **ORG-06**: Создаётся стандартная v3.0 структура папок (шаблон `YTAI_Folder_Templates/Type2_Production`)
 
@@ -103,9 +103,9 @@ ProjectName/
 | Requirement | Phase | Status |
 |---|---|---|
 | ORG-01 | Phase 1 — Organize | Complete |
-| ORG-02 | Phase 1 — Organize | Pending |
-| ORG-03 | Phase 1 — Organize | Pending |
-| ORG-04 | Phase 1 — Organize | Pending |
+| ORG-02 | Phase 1 — Organize | Complete |
+| ORG-03 | Phase 1 — Organize | Complete |
+| ORG-04 | Phase 1 — Organize | Complete |
 | ORG-05 | Phase 1 — Organize | Complete |
 | ORG-06 | Phase 1 — Organize | Complete |
 | AUD-01 | Phase 2 — Audio Sync | Pending |
@@ -142,4 +142,4 @@ ProjectName/
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 — Roadmap created, traceability expanded to individual rows*
+*Last updated: 2026-03-17 — 01-02 complete: ORG-02, ORG-03, ORG-04 marked complete*
