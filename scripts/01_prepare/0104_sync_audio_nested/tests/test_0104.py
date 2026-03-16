@@ -279,3 +279,85 @@ def test_preload_tx_cache(fake_nested_organized, mod):
     arr = cache[key]
     assert isinstance(arr, np.ndarray)
     assert arr.dtype == np.float32
+
+
+# ---------------------------------------------------------------------------
+# AUD-07: generate_ingest_json
+# ---------------------------------------------------------------------------
+
+def test_generate_ingest_json(tmp_path, mod):
+    """generate_ingest_json writes per-scene ingest.json with A1/A2/A3 tracks.
+
+    Given a list of clip_results with tx01 and tx02 paths, should write
+    Setup/{scene}_ingest.json with correct structure.
+    """
+    import json
+
+    # Create the Setup dir (would exist in real projects)
+    (tmp_path / "01_Media" / "Source" / "Setup").mkdir(parents=True)
+
+    clip_results = [
+        {
+            "clip_id": "C5089",
+            "clip_path": "01_Media/Source/Video/volleyball/C5089.MP4",
+            "duration_sec": 4.5,
+            "fps": 25.0,
+            "tx01_path": "01_Media/Source/Audio/C5089_TX01.wav",
+            "tx01_delta_frames": 0.3,
+            "tx02_path": "01_Media/Source/Audio/C5089_TX02.wav",
+            "tx02_delta_frames": 0.5,
+        }
+    ]
+
+    out_path = mod.generate_ingest_json("volleyball", clip_results, tmp_path)
+
+    expected_path = tmp_path / "01_Media" / "Source" / "Setup" / "volleyball_ingest.json"
+    assert out_path == expected_path
+    assert expected_path.exists()
+
+    with open(expected_path) as f:
+        data = json.load(f)
+
+    assert data["scene"] == "volleyball"
+    assert len(data["clips"]) == 1
+    clip = data["clips"][0]
+    assert clip["clip_id"] == "C5089"
+    assert clip["duration_sec"] == 4.5
+    assert clip["fps"] == 25.0
+    assert clip["tracks"]["A1"]["type"] == "camera_embed"
+    assert clip["tracks"]["A2"]["type"] == "TX01_SYNC"
+    assert clip["tracks"]["A2"]["sync_delta_frames"] == 0.3
+    assert clip["tracks"]["A3"]["type"] == "TX02_SYNC"
+    assert clip["tracks"]["A3"]["sync_delta_frames"] == 0.5
+
+
+def test_generate_ingest_json_low_conf(tmp_path, mod):
+    """generate_ingest_json marks LOW_CONF when tx01_path is None.
+
+    When tx01_path is None (low confidence), A2 track should have
+    type=LOW_CONF and path=null.
+    """
+    import json
+
+    (tmp_path / "01_Media" / "Source" / "Setup").mkdir(parents=True)
+
+    clip_results = [
+        {
+            "clip_id": "C5089",
+            "clip_path": "01_Media/Source/Video/volleyball/C5089.MP4",
+            "duration_sec": 4.5,
+            "fps": 25.0,
+            "tx01_path": None,
+            "tx01_delta_frames": None,
+            "tx02_path": "01_Media/Source/Audio/C5089_TX02.wav",
+            "tx02_delta_frames": 0.5,
+        }
+    ]
+
+    out_path = mod.generate_ingest_json("volleyball", clip_results, tmp_path)
+
+    with open(out_path) as f:
+        data = json.load(f)
+
+    assert data["clips"][0]["tracks"]["A2"]["type"] == "LOW_CONF"
+    assert data["clips"][0]["tracks"]["A2"]["path"] is None
