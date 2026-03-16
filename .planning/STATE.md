@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 1 of 5 (Organize)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-17 — Roadmap created for milestone v1.0 Multi-Scene Nested Projects
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-03-16 — Completed 01-01: detection functions and v3.0 skeleton
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 7%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 3 min
+- Total execution time: 0.05 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-organize | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: -
+- Last 5 plans: 01-01 (3 min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -45,6 +45,9 @@ Recent decisions affecting current work:
 - Pending: Waveform match strategy for TX sync (cross-correlation, not timestamp)
 - Pending: Per-scene ingest.json + global merged_transcript.json data model
 - Pending: TX folder naming convention (TX01/, TX02/, TX02_2/)
+- 01-01: Standalone script (not extension of run_pipeline.py) — follows script-per-stage convention
+- 01-01: TX_FOLDER_RE=r'^TX\d+' is the nested-project trigger; scene detection by video-file presence not prefix
+- 01-01: importlib.util.spec_from_file_location for digit-prefixed module names in tests
 
 ### Codebase Context
 
@@ -64,6 +67,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-17
-Stopped at: Roadmap written, ready to plan Phase 1
+Last session: 2026-03-16
+Stopped at: Completed 01-01-PLAN.md — detection functions and v3.0 skeleton
 Resume file: None
