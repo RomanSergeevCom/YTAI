@@ -47,7 +47,7 @@ Plans:
   3. The sync report for each clip shows delta in frames; all clips on the reference project achieve ≤1F delta
   4. The correct TX WAV candidate is selected per clip even when multiple TX files overlap in time (waveform correlation wins over timestamp proximity)
   5. Per-scene `ingest.json` lists A1=camera embed, A2=TX01_SYNC, A3=TX02_SYNC for every clip in the scene
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 02-01-PLAN.md — Test scaffold + core functions (detect_scenes, extract, correlate, trim, delta reporting)
@@ -93,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Organize | 3/3 | Complete    | 2026-03-16 |
-| 2. Audio Sync | 1/3 | In Progress|  |
+| 2. Audio Sync | 2/3 | In Progress|  |
 | 3. Transcribe | TBD | Not started | - |
 | 4. UXP Plugin | TBD | Not started | - |
 | 5. Pipeline Integration | TBD | Not started | - |

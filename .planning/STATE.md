@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md — core functions + 9 TDD tests for nested audio sync
-last_updated: "2026-03-16T23:22:03.314Z"
+stopped_at: Completed 02-02-PLAN.md — CLI orchestration with process_clip/process_scene/main() + generate_ingest_json (AUD-07)
+last_updated: "2026-03-16T23:27:41.816Z"
 last_activity: "2026-03-17 — Completed 02-01: core functions + 9 TDD tests for nested audio sync"
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 100
+  completed_plans: 5
+  percent: 67
 ---
 
 # Project State
@@ -52,6 +52,7 @@ Progress: [███████░░░] 67%
 *Updated after each plan completion*
 | Phase 01-organize P03 | 5 | 2 tasks | 1 files |
 | Phase 02-audio-sync P01 | 8 | 2 tasks | 5 files |
+| Phase 02-audio-sync P02 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 01-03]: Dry-run gate confirmed on YTCR_1_Arty_Dzis: 7 scenes, 325 clips, 16 WAV files match expected structure
 - [Phase 02-audio-sync]: Module fixture (scope=module) defers importlib load for TDD RED compatibility — --collect-only works even before implementation exists
 - [Phase 02-audio-sync]: fftconvolve valid_region slicing: corr[len(cam)-1:len(cam)-1+len(tx)-len(cam)+1] avoids boundary artifacts in cross-correlation
+- [Phase 02-audio-sync]: verify_full returns float|None (residual_sec directly), not dict — adapted process_clip call to use return value with clip_duration arg
+- [Phase 02-audio-sync]: Ingest.json written in dry_run mode (small metadata, useful for inspection without ffmpeg)
 
 ### Codebase Context
 
@@ -92,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T23:22:03.312Z
-Stopped at: Completed 02-01-PLAN.md — core functions + 9 TDD tests for nested audio sync
+Last session: 2026-03-16T23:27:41.814Z
+Stopped at: Completed 02-02-PLAN.md — CLI orchestration with process_clip/process_scene/main() + generate_ingest_json (AUD-07)
 Resume file: None
