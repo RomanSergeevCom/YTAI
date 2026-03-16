@@ -167,6 +167,94 @@ def create_v3_skeleton(project: Path, template_dir: Path, dry_run: bool = False)
 
 
 # ---------------------------------------------------------------------------
+# File move functions
+# ---------------------------------------------------------------------------
+
+def move_scene_clips(scenes: list, project: Path, video_dir: Path, dry_run: bool = False) -> bool:
+    """Move video clips from scene folders into Source/Video/{scene}/ preserving subfolders.
+
+    Uses clip.relative_to(scene_dir) so that GoPro subfolders (100GOPRO/, etc.)
+    are preserved inside the destination scene directory.
+
+    Args:
+        scenes: List of scene folder names found at project root.
+        project: Absolute path to the project root directory.
+        video_dir: Destination root for video clips (01_Media/Source/Video).
+        dry_run: If True, print planned operations without moving files.
+
+    Returns:
+        True if no errors.
+    """
+    ok = True
+    for scene in scenes:
+        scene_dir = project / scene
+        for clip in scene_dir.rglob("*"):
+            if not clip.is_file():
+                continue
+            if clip.suffix.lower() not in VIDEO_EXTS:
+                continue
+            rel = clip.relative_to(scene_dir)
+            dest = video_dir / scene / rel
+            if dry_run:
+                print(f"  [dry-run] Would move video: {clip} -> {dest}")
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if dest.exists():
+                print(f"[organize] Already exists, skip: {dest.name}")
+                continue
+            shutil.move(str(clip), str(dest))
+    return ok
+
+
+def move_dji_wavs(project: Path, dji_dir: Path, dry_run: bool = False) -> bool:
+    """Move DJI WAV files from TX01/, TX02/, TX02_2/ etc. into DJI_Audio/ flat.
+
+    Only files matching DJI_RAW_RE are moved (TX02_MIC037_... pattern).
+
+    Args:
+        project: Absolute path to the project root directory.
+        dji_dir: Destination directory (99_Pipeline/DJI_Audio).
+        dry_run: If True, print planned operations without moving files.
+
+    Returns:
+        True if no errors.
+    """
+    ok = True
+    for d in project.iterdir():
+        if not d.is_dir():
+            continue
+        if not TX_FOLDER_RE.match(d.name):
+            continue
+        for wav in d.rglob("*"):
+            if not wav.is_file():
+                continue
+            if wav.suffix.lower() not in AUDIO_EXTS:
+                continue
+            if not DJI_RAW_RE.match(wav.name):
+                continue
+            dest = dji_dir / wav.name
+            if dry_run:
+                print(f"  [dry-run] Would move WAV: {wav.name} -> {dest}")
+                continue
+            if dest.exists():
+                print(f"[organize] Already exists, skip: {wav.name}")
+                continue
+            shutil.move(str(wav), str(dest))
+    # Remove empty TX directories after moves
+    if not dry_run:
+        for d in project.iterdir():
+            if not d.is_dir():
+                continue
+            if not TX_FOLDER_RE.match(d.name):
+                continue
+            try:
+                d.rmdir()  # Only removes if empty (safe)
+            except OSError:
+                pass  # Not empty — leave it
+    return ok
+
+
+# ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
 
@@ -209,9 +297,23 @@ def organize(project: Path, dry_run: bool = False) -> bool:
 
     create_v3_skeleton(project, template_dir, dry_run=dry_run)
 
-    # TODO: move_scene_clips — Plan 02
-    # TODO: move_dji_wavs   — Plan 02
-    # TODO: move_xml_sidecars — Plan 02
+    if nested:
+        video_dir = project / "01_Media" / "Source" / "Video"
+        dji_dir = project / "99_Pipeline" / "DJI_Audio"
+        tr_dir = project / "01_Media" / "Source" / "Transcription"
+
+        move_scene_clips(scenes, project, video_dir, dry_run=dry_run)
+        move_dji_wavs(project, dji_dir, dry_run=dry_run)
+        # TODO: move_xml_sidecars — Plan 02 (Task 2)
+
+        # Remove empty scene directories at project root after moves
+        if not dry_run:
+            for scene in scenes:
+                scene_dir = project / scene
+                try:
+                    scene_dir.rmdir()  # Only removes if truly empty
+                except OSError:
+                    pass  # Not empty — leave it
 
     return True
 
