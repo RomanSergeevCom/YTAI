@@ -22,6 +22,7 @@ into a complete CLI script.
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 import tempfile
 from pathlib import Path
@@ -334,3 +335,72 @@ def residual_to_frames(residual_sec: float, fps: float) -> float:
         Absolute frame delta as a float.
     """
     return abs(residual_sec) * fps
+
+
+# ---------------------------------------------------------------------------
+# AUD-07: Per-scene ingest.json generation
+# ---------------------------------------------------------------------------
+
+def generate_ingest_json(
+    scene_name: str, clip_results: list[dict], project: Path
+) -> Path:
+    """Write per-scene ingest.json with A1/A2/A3 track metadata.
+
+    Output location:
+      {project}/01_Media/Source/Setup/{scene_name}_ingest.json
+
+    Each clip entry contains:
+      A1: camera_embed (original camera audio)
+      A2: TX01_SYNC (trimmed TX01 WAV) or LOW_CONF if below threshold
+      A3: TX02_SYNC (trimmed TX02 WAV) or LOW_CONF if below threshold
+
+    Args:
+        scene_name: Scene directory name (e.g. "volleyball").
+        clip_results: List of dicts from process_clip(), each containing
+            clip_id, clip_path, duration_sec, fps,
+            tx01_path, tx01_delta_frames, tx02_path, tx02_delta_frames.
+        project: Root path of the organized project.
+
+    Returns:
+        Path to the written ingest.json file.
+    """
+    setup_dir = project / "01_Media" / "Source" / "Setup"
+    setup_dir.mkdir(parents=True, exist_ok=True)
+    out_path = setup_dir / f"{scene_name}_ingest.json"
+
+    clips_data = []
+    for cr in clip_results:
+        tracks = {
+            "A1": {"type": "camera_embed", "path": cr["clip_path"]},
+        }
+        if cr.get("tx01_path"):
+            tracks["A2"] = {
+                "type": "TX01_SYNC",
+                "path": cr["tx01_path"],
+                "sync_delta_frames": cr["tx01_delta_frames"],
+            }
+        else:
+            tracks["A2"] = {"type": "LOW_CONF", "path": None, "sync_delta_frames": None}
+
+        if cr.get("tx02_path"):
+            tracks["A3"] = {
+                "type": "TX02_SYNC",
+                "path": cr["tx02_path"],
+                "sync_delta_frames": cr["tx02_delta_frames"],
+            }
+        else:
+            tracks["A3"] = {"type": "LOW_CONF", "path": None, "sync_delta_frames": None}
+
+        clips_data.append({
+            "clip_id": cr["clip_id"],
+            "clip_path": cr["clip_path"],
+            "duration_sec": cr["duration_sec"],
+            "fps": cr["fps"],
+            "tracks": tracks,
+        })
+
+    data = {"scene": scene_name, "clips": clips_data}
+    with open(out_path, "w") as f:
+        json.dump(data, f, indent=2)
+
+    return out_path
