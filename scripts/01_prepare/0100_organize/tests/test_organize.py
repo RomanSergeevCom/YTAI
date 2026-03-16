@@ -58,23 +58,44 @@ class TestSceneDetection:
 class TestVideoMove:
     def test_scene_clips_moved(self, fake_nested_project):
         """ORG-02: Clips land in Source/Video/{scene}/. (Plan 02)"""
-        pass
+        _org.organize(fake_nested_project)
+        project = fake_nested_project
+        assert (project / "01_Media" / "Source" / "Video" / "volleyball" / "C5210.MP4").exists()
+        assert (project / "01_Media" / "Source" / "Video" / "apartment" / "C5089.MP4").exists()
+        # Source files should no longer be at original location
+        assert not (project / "volleyball" / "C5210.MP4").exists()
+        assert not (project / "apartment" / "C5089.MP4").exists()
 
     def test_gopro_subfolder_preserved(self, fake_nested_project):
         """ORG-02: al_qudra_lake/100GOPRO/ preserved. (Plan 02)"""
-        pass
+        _org.organize(fake_nested_project)
+        project = fake_nested_project
+        # GoPro subfolder structure preserved (not flattened)
+        assert (project / "01_Media" / "Source" / "Video" / "al_qudra_lake" / "100GOPRO" / "GX010001.MP4").exists()
+        assert not (project / "01_Media" / "Source" / "Video" / "al_qudra_lake" / "GX010001.MP4").exists()
 
 
 class TestDjiWavMove:
     def test_dji_wavs_moved_flat(self, fake_nested_project):
         """ORG-03: TX WAVs land flat in 99_Pipeline/DJI_Audio/. (Plan 02)"""
-        pass
+        _org.organize(fake_nested_project)
+        project = fake_nested_project
+        assert (project / "99_Pipeline" / "DJI_Audio" / "TX01_MIC001_20260228_102211_orig.wav").exists()
+        assert (project / "99_Pipeline" / "DJI_Audio" / "TX02_MIC024_20260228_100209_orig.wav").exists()
+        assert (project / "99_Pipeline" / "DJI_Audio" / "TX02_MIC033_20260302_162711_orig.wav").exists()
+        # Source TX dirs should be gone (empty after move)
+        assert not (project / "TX01" / "TX01_MIC001_20260228_102211_orig.wav").exists()
 
 
 class TestXmlSidecar:
     def test_xml_sidecar_with_scene(self, fake_nested_project):
         """ORG-04: XML lands in per_clip/{scene}/{clip}/. (Plan 02)"""
-        pass
+        _org.organize(fake_nested_project)
+        project = fake_nested_project
+        # XML sidecar with scene layer
+        assert (project / "01_Media" / "Source" / "Transcription" / "per_clip" / "volleyball" / "C5089" / "C5089M01.XML").exists()
+        # Must NOT be at flat path (without scene layer)
+        assert not (project / "01_Media" / "Source" / "Transcription" / "per_clip" / "C5089" / "C5089M01.XML").exists()
 
 
 class TestGraceful:
