@@ -102,15 +102,33 @@ ProjectName/
 
 | Requirement | Phase | Status |
 |---|---|---|
-| ORG-01 – ORG-06 | Phase 1 | Pending |
-| AUD-01 – AUD-07 | Phase 2 | Pending |
-| TRN-01 – TRN-03 | Phase 3 | Pending |
-| UXP-01 – UXP-04 | Phase 4 | Pending |
-| PIPE-01 – PIPE-03 | Phase 5 | Pending |
+| ORG-01 | Phase 1 — Organize | Pending |
+| ORG-02 | Phase 1 — Organize | Pending |
+| ORG-03 | Phase 1 — Organize | Pending |
+| ORG-04 | Phase 1 — Organize | Pending |
+| ORG-05 | Phase 1 — Organize | Pending |
+| ORG-06 | Phase 1 — Organize | Pending |
+| AUD-01 | Phase 2 — Audio Sync | Pending |
+| AUD-02 | Phase 2 — Audio Sync | Pending |
+| AUD-03 | Phase 2 — Audio Sync | Pending |
+| AUD-04 | Phase 2 — Audio Sync | Pending |
+| AUD-05 | Phase 2 — Audio Sync | Pending |
+| AUD-06 | Phase 2 — Audio Sync | Pending |
+| AUD-07 | Phase 2 — Audio Sync | Pending |
+| TRN-01 | Phase 3 — Transcribe | Pending |
+| TRN-02 | Phase 3 — Transcribe | Pending |
+| TRN-03 | Phase 3 — Transcribe | Pending |
+| UXP-01 | Phase 4 — UXP Plugin | Pending |
+| UXP-02 | Phase 4 — UXP Plugin | Pending |
+| UXP-03 | Phase 4 — UXP Plugin | Pending |
+| UXP-04 | Phase 4 — UXP Plugin | Pending |
+| PIPE-01 | Phase 5 — Pipeline Integration | Pending |
+| PIPE-02 | Phase 5 — Pipeline Integration | Pending |
+| PIPE-03 | Phase 5 — Pipeline Integration | Pending |
 
 **Coverage:**
-- v1 requirements: 24 total
-- Mapped to phases: 24
+- v1 requirements: 23 total
+- Mapped to phases: 23
 - Unmapped: 0 ✓
 
 ---
@@ -124,4 +142,4 @@ ProjectName/
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after milestone v1.0 kickoff*
+*Last updated: 2026-03-17 — Roadmap created, traceability expanded to individual rows*
