@@ -17,7 +17,7 @@ Output:
     │   │   └── RYA-FX3-0099_AUDIO.wav            (clip audio, 48kHz stereo)
     │   └── RYA-FX3-0100/
     │       └── RYA-FX3-0100_AUDIO.wav
-    └── YTCG37_Hadi_Dawani_FULL_AUDIO.wav         (concatenated for transcription)
+    └── YTCG37_FULL_AUDIO.wav                      (concatenated for transcription)
 
     01_Media/Source/Setup/logs/
     └── YTCG37_Hadi_Dawani_extract_audio_20260113_120000.log
@@ -46,6 +46,14 @@ AUDIO_SUBDIR = "01_Media/Source/Transcription"
 LOGS_SUBDIR = "01_Media/Source/Setup/logs"
 
 MIN_OK_BYTES = 100_000  # 100KB minimum for a valid WAV
+
+CODE_RE = re.compile(r'^(YT[A-Z]{2,4}\d+)_')
+
+
+def project_code(project_dir: Path) -> str:
+    """Extract short code (e.g. 'YTCG37') from project folder name."""
+    m = CODE_RE.match(project_dir.name)
+    return m.group(1) if m else project_dir.name
 
 
 # ============================================================================
@@ -186,7 +194,7 @@ Examples:
 
     # Find clips
     clips = [
-        p for p in clips_dir.iterdir()
+        p for p in clips_dir.rglob("*")
         if p.is_file() and p.suffix in VIDEO_EXTS and not p.name.startswith(".")
     ]
     clips.sort(key=lambda p: natural_key(p.name))
@@ -201,7 +209,7 @@ Examples:
     log_path = logs_dir / f"{project_name}_extract_audio_{ts}.log"
     
     # Path to concatenated audio
-    concat_wav = out_dir / f"{project_name}_FULL_AUDIO.wav"
+    concat_wav = out_dir / f"{project_code(project_dir)}_FULL_AUDIO.wav"
 
     with log_path.open("w", encoding="utf-8") as log_f:
         tee_print(log_f, "=" * 60)

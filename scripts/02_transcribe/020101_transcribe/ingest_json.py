@@ -11,8 +11,18 @@ Usage:
 """
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
+
+SCENE_DIR_RE = re.compile(r'^\d{2}_')
+CODE_RE = re.compile(r'^(YT[A-Z]{2,4}\d+)_')
+
+
+def _project_code(project_name: str) -> str:
+    """Extract short code (e.g. 'YTCG37') from project name."""
+    m = CODE_RE.match(project_name)
+    return m.group(1) if m else project_name
 
 
 VERSION = "1.0"
@@ -81,11 +91,18 @@ def generate(transcript_json_path: Path) -> Path:
             "premiere_transcript": premiere_abs,
         })
 
-    # Check for synced DJI audio files in 01_Media/Source/Audio/
+    # Detect scene from video path (e.g. Video/03_Coffee/clip.MP4 → "03_Coffee")
+    for clip in clips:
+        vp = Path(clip["path"])
+        parent_name = vp.parent.name
+        if SCENE_DIR_RE.match(parent_name):
+            clip["scene"] = parent_name
+
+    # Check for synced DJI audio files in 01_Media/Source/Audio/ (incl. scene subdirs)
     synced_dir = work_dir / "01_Media" / "Source" / "Audio"
     if synced_dir.exists():
         for clip in clips:
-            dji_files = sorted(synced_dir.glob(f"{clip['clip_id']}_TX*.wav"))
+            dji_files = sorted(synced_dir.rglob(f"{clip['clip_id']}_TX*.wav"))
             if dji_files:
                 clip["dji_audio"] = [
                     {"tx": f.stem.split("_")[-1], "path": str(f.resolve())}
@@ -103,6 +120,28 @@ def generate(transcript_json_path: Path) -> Path:
             if structure.get("captions_srt") else "",
     }
 
+    # Per-scene captions: look for {code}_1_{scene}_captions.srt
+    # Check Transcription/captions/ (new) and Setup/ (legacy)
+    code = _project_code(project_name)
+    captions_dir_check = work_dir / "01_Media" / "Source" / "Transcription" / "captions"
+    setup_dir_check = work_dir / "01_Media" / "Source" / "Setup"
+    scene_captions = {}
+    scenes = sorted({c.get("scene", "") for c in clips if c.get("scene")})
+    for scene in scenes:
+        srt_name_new = f"{code}_1_{scene}_captions.srt"
+        srt_name_legacy = f"{project_name}_1_{scene}_captions.srt"
+        for search_dir, srt_name in [
+            (captions_dir_check, srt_name_new),
+            (setup_dir_check, srt_name_legacy),
+            (setup_dir_check, srt_name_new),
+        ]:
+            srt_path = search_dir / srt_name
+            if srt_path.exists():
+                scene_captions[scene] = str(srt_path.resolve())
+                break
+    if scene_captions:
+        files["scene_captions_srt"] = scene_captions
+
     ingest = {
         "version": VERSION,
         "type": "ingest",
@@ -115,12 +154,13 @@ def generate(transcript_json_path: Path) -> Path:
     }
 
     # v3.0 structure: ingest.json → Setup/; legacy: next to transcript
-    if transcript_json_path.parent.name == "Transcription":
+    code = _project_code(project_name)
+    if transcript_json_path.parent.name in ("Transcription", "Setup"):
         setup_dir = transcript_json_path.parent.parent / "Setup"
         setup_dir.mkdir(parents=True, exist_ok=True)
-        ingest_path = setup_dir / f"{project_name}_ingest.json"
+        ingest_path = setup_dir / f"{code}_ingest.json"
     else:
-        ingest_path = transcript_json_path.parent / f"{project_name}_ingest.json"
+        ingest_path = transcript_json_path.parent / f"{code}_ingest.json"
     with open(ingest_path, "w") as f:
         json.dump(ingest, f, indent=2, ensure_ascii=False)
 

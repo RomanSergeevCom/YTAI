@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-YTAI Stage 05: Generate HTML Review from Edit Brief
-Converts {project}_edit_brief.json → {project}_edit_brief_review.html
+YTAI Stage 05: Generate HTML Review from Pre-Edit Brief
+Converts {project}_pre_edit_brief.json → {project}_pre_edit_brief_review.html
 
 Usage:
-    python generate_review.py --brief YTAI_Edit_edit_brief.json
-    python generate_review.py --brief YTAI_Edit_edit_brief.json --output review.html
+    python generate_review.py --brief YTAI_Edit_pre_edit_brief.json
+    python generate_review.py --brief YTAI_Edit_pre_edit_brief.json --output review.html
 """
 
 import argparse
@@ -73,7 +73,7 @@ def escape_html(text: str) -> str:
 
 
 def generate_html(brief: dict) -> str:
-    """Generate HTML review document from {project}_edit_brief.json."""
+    """Generate HTML review document from {project}_pre_edit_brief.json."""
 
     segments = brief.get("segments", [])
     project = brief.get("project", {})
@@ -410,11 +410,11 @@ details[open] summary::before {{ transform: rotate(90deg); }}
 
 def main():
     parser = argparse.ArgumentParser(
-        description="YTAI 05_editing: Generate HTML review from {project}_edit_brief.json"
+        description="YTAI 05_editing: Generate HTML review from {project}_pre_edit_brief.json"
     )
     parser.add_argument(
         "--brief", required=True,
-        help="Path to {project}_edit_brief.json"
+        help="Path to {project}_pre_edit_brief.json"
     )
     parser.add_argument(
         "--output", default=None,

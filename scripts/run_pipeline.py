@@ -89,6 +89,21 @@ SIDECAR_EXTS = {'.xml'}
 # DJI raw audio filename pattern: TX02_MIC037_20260306_102304_orig.wav
 DJI_RAW_RE = re.compile(r'^TX\d{2}_MIC\d{3}_\d{8}_\d{6}', re.IGNORECASE)
 
+# Short project code extraction: YTCG37_Setup_UAE_Company_Remotely → YTCG37
+CODE_RE = re.compile(r'^(YT[A-Z]{2,4}\d+)_')
+
+
+def project_code(project: Path) -> str:
+    """Extract short code (e.g. 'YTCG37') from project folder name."""
+    m = CODE_RE.match(project.name)
+    return m.group(1) if m else project.name
+
+# Camera audio (pre-extracted from video): RYA-ZVE1-1146_AUDIO.wav
+CAMERA_AUDIO_RE = re.compile(r'^.+_AUDIO\.wav$', re.IGNORECASE)
+
+# Scene folder pattern: 01_Interview, 02_Car, 03_Coffee, etc.
+SCENE_DIR_RE = re.compile(r'^\d{2}_')
+
 # v3.0 managed directories — skip during file discovery
 V3_MANAGED_DIRS = {
     '01_Media', '02_Exports', '03_Shorts', '04_Thumbnail',
@@ -316,11 +331,12 @@ def print_footer(completed: int, total: int, elapsed: float,
 
     print()
     print("  Output:")
-    print(f"    per_clip/*/                      — per-clip audio + transcripts")
-    print(f"    Source/*_transcript.json          — main transcript")
-    print(f"    Source/*_transcript.srt           — subtitles")
-    print(f"    Source/*_transcript.xlsx          — Excel transcript")
-    print(f"    Setup/*_ingest.json               — Premiere UXP")
+    print(f"    per_clip/*/                              — per-clip audio + transcripts")
+    print(f"    Setup/{{CODE}}_transcript.json             — main transcript")
+    print(f"    Transcription/transcripts/{{CODE}}_*.srt  — subtitles")
+    print(f"    Transcription/captions/{{CODE}}_*.srt     — captions")
+    print(f"    Setup/{{CODE}}_transcript.xlsx             — Excel transcript")
+    print(f"    Setup/{{CODE}}_ingest.json                 — Premiere UXP")
     if log_path:
         print()
         print(f"  Log: {C.DIM}{log_path}{C.RESET}")
@@ -370,6 +386,7 @@ def discover_media_files(project: Path, log: PipelineLogger) -> dict:
 
     videos = []
     dji_audio = []
+    camera_audio = []
     skipped_audio = []
     lut = []
     sidecars = []
@@ -415,9 +432,12 @@ def discover_media_files(project: Path, log: PipelineLogger) -> dict:
                 if DJI_RAW_RE.match(fname):
                     dji_audio.append(fp)
                     log.debug(f"  Found DJI audio: {rel} ({fmt_size(size)})")
+                elif CAMERA_AUDIO_RE.match(fname):
+                    camera_audio.append(fp)
+                    log.debug(f"  Found camera audio: {rel} ({fmt_size(size)})")
                 else:
                     skipped_audio.append(fp)
-                    log.debug(f"  Skip audio (not DJI raw): {rel}")
+                    log.debug(f"  Skip audio (not DJI/camera): {rel}")
             elif ext in LUT_EXTS:
                 lut.append(fp)
                 log.debug(f"  Found LUT: {rel} ({fmt_size(size)})")
@@ -426,16 +446,18 @@ def discover_media_files(project: Path, log: PipelineLogger) -> dict:
                 log.debug(f"  Found sidecar: {rel} ({fmt_size(size)})")
 
     # Sort naturally
-    for lst in (videos, dji_audio, skipped_audio, lut, sidecars):
+    for lst in (videos, dji_audio, camera_audio, skipped_audio, lut, sidecars):
         lst.sort(key=natural_sort_key)
 
     log.debug(f"Discovery: {len(videos)} video, {len(dji_audio)} DJI audio, "
+              f"{len(camera_audio)} camera audio, "
               f"{len(skipped_audio)} skipped audio, {len(lut)} LUT, "
               f"{len(sidecars)} sidecars")
 
     return {
         "videos": videos,
         "dji_audio": dji_audio,
+        "camera_audio": camera_audio,
         "skipped_audio": skipped_audio,
         "lut": lut,
         "sidecars": sidecars,
@@ -482,8 +504,9 @@ def organize_media_files(project: Path, discovered: dict,
     """
     Move discovered media files to their v3.0 locations.
 
-    - Video → 01_Media/Source/Video/
+    - Video → 01_Media/Source/Video/ (preserving scene subfolders)
     - DJI audio (raw) → 99_Pipeline/DJI_Audio/
+    - Camera audio → Transcription/per_clip/{clip}/
     - LUT (.cube) → 01_Media/Source/LUT/
     - XML sidecars → Transcription/per_clip/{clip}/ (matched to video)
     """
@@ -492,21 +515,92 @@ def organize_media_files(project: Path, discovered: dict,
     lut_dir = project / "01_Media" / "Source" / "LUT"
     tr_dir = project / "01_Media" / "Source" / "Transcription"
 
-    # Standard moves (label, files, destination)
+    # Standard moves (label, files, destination) — flat destination
     moves = [
-        ("Video", discovered["videos"], video_dir),
         ("DJI audio", discovered["dji_audio"], dji_dir),
         ("LUT", discovered["lut"], lut_dir),
     ]
 
     total_files = (sum(len(m[1]) for m in moves) +
+                   len(discovered["videos"]) +
+                   len(discovered.get("camera_audio", [])) +
                    len(discovered["sidecars"]))
     if total_files == 0:
         return True
 
     all_ok = True
 
-    # Move standard files
+    # Move video files — preserve scene subfolders (01_Interview, 02_Car, etc.)
+    if discovered["videos"]:
+        video_dir.mkdir(parents=True, exist_ok=True)
+        total_size = sum(f.stat().st_size for f in discovered["videos"])
+        log.info(f"      Moving {len(discovered['videos'])} video "
+                 f"{C.DIM}({fmt_size(total_size)}){C.RESET} → "
+                 f"{video_dir.relative_to(project)}/")
+
+        for f in discovered["videos"]:
+            scene = _get_scene_name(f, project)
+            if scene:
+                dest = video_dir / scene
+            else:
+                dest = video_dir
+            dest.mkdir(parents=True, exist_ok=True)
+            dst = dest / f.name
+
+            if dst.exists():
+                log.warn(f"        {C.YELLOW}⚠{C.RESET} Already exists, "
+                         f"skip: {f.name}")
+                continue
+
+            if dry_run:
+                scene_tag = f" ({scene})" if scene else ""
+                log.info(f"        → Would move: {f.name}{scene_tag}")
+                continue
+
+            try:
+                size = f.stat().st_size
+                shutil.move(str(f), str(dst))
+                scene_tag = f" → {scene}/" if scene else ""
+                log.info(f"        {C.GREEN}✓{C.RESET} {f.name}{scene_tag} "
+                         f"{C.DIM}({fmt_size(size)}){C.RESET}")
+            except Exception as e:
+                log.error(f"        {C.RED}✗{C.RESET} Failed: {f.name}: {e}")
+                all_ok = False
+
+    # Move camera audio (pre-extracted) → Transcription/per_clip/{clip}/
+    cam_audio = discovered.get("camera_audio", [])
+    if cam_audio:
+        total_size = sum(f.stat().st_size for f in cam_audio)
+        log.info(f"      Moving {len(cam_audio)} camera audio "
+                 f"{C.DIM}({fmt_size(total_size)}){C.RESET} → per_clip/")
+
+        for f in cam_audio:
+            stem = f.stem
+            if stem.upper().endswith("_AUDIO"):
+                stem = stem[:-6]  # Strip _AUDIO suffix
+            per_clip = tr_dir / "per_clip" / stem
+            per_clip.mkdir(parents=True, exist_ok=True)
+            dst = per_clip / f.name
+
+            if dst.exists():
+                log.warn(f"        {C.YELLOW}⚠{C.RESET} Already exists, "
+                         f"skip: {f.name}")
+                continue
+
+            if dry_run:
+                log.info(f"        → Would move: {f.name} → per_clip/{stem}/")
+                continue
+
+            try:
+                size = f.stat().st_size
+                shutil.move(str(f), str(dst))
+                log.info(f"        {C.GREEN}✓{C.RESET} {f.name} → per_clip/{stem}/ "
+                         f"{C.DIM}({fmt_size(size)}){C.RESET}")
+            except Exception as e:
+                log.error(f"        {C.RED}✗{C.RESET} Failed: {f.name}: {e}")
+                all_ok = False
+
+    # Move standard files (DJI audio, LUT)
     for label, files, dest in moves:
         if not files:
             continue
@@ -545,10 +639,8 @@ def organize_media_files(project: Path, discovered: dict,
         video_stems = set()
         for v in discovered["videos"]:
             video_stems.add(v.stem)
-        if video_dir.is_dir():
-            for v in video_dir.iterdir():
-                if v.is_file() and v.suffix.lower() in VIDEO_EXTS:
-                    video_stems.add(v.stem)
+        for v in _list_videos_recursive(video_dir):
+            video_stems.add(v.stem)
 
         log.info(f"      Moving {len(discovered['sidecars'])} sidecar(s) "
                  f"→ per_clip/")
@@ -662,11 +754,7 @@ def _validate_extract_audio(project: Path, log: PipelineLogger) -> bool:
                   f"Source/Video/")
         return False
 
-    videos = sorted(
-        [f for f in video_dir.iterdir()
-         if f.is_file() and f.suffix.lower() in VIDEO_EXTS],
-        key=natural_sort_key
-    )
+    videos = _list_videos_recursive(video_dir)
 
     if not videos:
         log.error(f"      {C.RED}✗{C.RESET} No video files in Source/Video/")
@@ -687,11 +775,7 @@ def _validate_sync_dji(project: Path, log: PipelineLogger) -> bool:
     video_dir = project / "01_Media" / "Source" / "Video"
     dji_dir = project / "99_Pipeline" / "DJI_Audio"
 
-    videos = sorted(
-        [f for f in video_dir.iterdir()
-         if f.is_file() and f.suffix.lower() in VIDEO_EXTS],
-        key=natural_sort_key
-    ) if video_dir.is_dir() else []
+    videos = _list_videos_recursive(video_dir)
 
     if not videos:
         log.error(f"      {C.RED}✗{C.RESET} No video files in Source/Video/")
@@ -723,11 +807,7 @@ def _validate_sync_dji(project: Path, log: PipelineLogger) -> bool:
 def _validate_transcribe(project: Path, log: PipelineLogger) -> bool:
     video_dir = project / "01_Media" / "Source" / "Video"
 
-    videos = sorted(
-        [f for f in video_dir.iterdir()
-         if f.is_file() and f.suffix.lower() in VIDEO_EXTS],
-        key=natural_sort_key
-    ) if video_dir.is_dir() else []
+    videos = _list_videos_recursive(video_dir)
 
     if not videos:
         log.error(f"      {C.RED}✗{C.RESET} No video files in Source/Video/")
@@ -929,12 +1009,33 @@ def has_dji_files(project: Path) -> bool:
     return any(dji.glob("*.wav"))
 
 
+def _list_videos_recursive(video_dir: Path) -> list:
+    """Find video files in Source/Video/ recursively (supports scene subfolders)."""
+    if not video_dir.is_dir():
+        return []
+    return sorted(
+        [f for f in video_dir.rglob("*")
+         if f.is_file() and f.suffix.lower() in VIDEO_EXTS
+         and not f.name.startswith(".")],
+        key=natural_sort_key)
+
+
+def _get_scene_name(file_path: Path, project: Path) -> str | None:
+    """If file is inside a scene folder (01_Interview/ etc.), return folder name."""
+    try:
+        rel = file_path.parent.relative_to(project)
+        top = rel.parts[0] if rel.parts else None
+        if top and SCENE_DIR_RE.match(top):
+            return top
+    except ValueError:
+        pass
+    return None
+
+
 def has_video_files(project: Path) -> bool:
-    """True if video source files exist in Source/Video/."""
+    """True if video source files exist in Source/Video/ (recursive)."""
     video = project / "01_Media" / "Source" / "Video"
-    if not video.is_dir():
-        return False
-    return any(f for f in video.iterdir() if f.suffix.lower() in VIDEO_EXTS)
+    return len(_list_videos_recursive(video)) > 0
 
 
 CHECK_FNS = {
@@ -1330,15 +1431,15 @@ def print_prepare_summary(project: Path, elapsed: float,
     dji_dir = project / "99_Pipeline" / "DJI_Audio"
     per_clip = tr_dir / "per_clip"
 
-    videos = [f for f in video_dir.iterdir()
-              if f.is_file() and f.suffix.lower() in VIDEO_EXTS
-              ] if video_dir.is_dir() else []
+    videos = _list_videos_recursive(video_dir)
     dji_files = [f for f in dji_dir.iterdir()
                  if f.is_file() and f.suffix.lower() == '.wav'
                  ] if dji_dir.is_dir() else []
-    synced = [f for f in audio_dir.iterdir()
-              if f.is_file() and f.suffix.lower() == '.wav'
-              ] if audio_dir.is_dir() else []
+    synced = sorted(
+        [f for f in audio_dir.rglob("*")
+         if f.is_file() and f.suffix.lower() == '.wav'],
+        key=natural_sort_key
+    ) if audio_dir.is_dir() else []
     full_audio = list(tr_dir.glob("*_FULL_AUDIO.wav")) \
         if tr_dir.is_dir() else []
     clip_dirs = [d for d in per_clip.iterdir() if d.is_dir()] \
@@ -1640,8 +1741,7 @@ def list_stages(project: Path) -> None:
     print()
     video_dir = project / "01_Media" / "Source" / "Video"
     if video_dir.is_dir():
-        vids = [f for f in video_dir.iterdir()
-                if f.suffix.lower() in VIDEO_EXTS]
+        vids = _list_videos_recursive(video_dir)
         if vids:
             total = sum(f.stat().st_size for f in vids)
             print(f"  Video:       {len(vids)} files ({fmt_size(total)})")

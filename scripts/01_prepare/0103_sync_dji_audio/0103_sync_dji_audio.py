@@ -50,6 +50,16 @@ LOGS_SUBDIR = "01_Media/Source/Setup/logs"
 
 MIN_OK_BYTES = 100_000  # 100KB minimum for a valid WAV
 
+SCENE_DIR_RE = re.compile(r'^\d{2}_')
+
+CODE_RE = re.compile(r'^(YT[A-Z]{2,4}\d+)_')
+
+
+def project_code(project_dir: Path) -> str:
+    """Extract short code (e.g. 'YTCG37') from project folder name."""
+    m = CODE_RE.match(project_dir.name)
+    return m.group(1) if m else project_dir.name
+
 
 # ============================================================================
 # Utilities
@@ -58,6 +68,29 @@ MIN_OK_BYTES = 100_000  # 100KB minimum for a valid WAV
 def natural_key(s: str):
     """Natural sort for strings with numbers: clip1, clip2, clip10."""
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", s)]
+
+
+def _find_video_path(clip_id: str, video_path_map: dict[str, Path],
+                     clips_dir: Path) -> Path | None:
+    """Find video file path for a clip_id, using prebuilt map or fallback scan."""
+    vpath = video_path_map.get(clip_id)
+    if vpath and vpath.exists():
+        return vpath
+    # Fallback: try all extensions in clips_dir (flat)
+    for ext in VIDEO_EXTS:
+        vpath = clips_dir / f"{clip_id}{ext}"
+        if vpath.exists():
+            return vpath
+    return None
+
+
+def _scene_out_dir(clip_id: str, clip_scene_map: dict[str, str],
+                   out_dir: Path) -> Path:
+    """Return scene-aware output directory: out_dir/{scene}/ or out_dir/."""
+    scene = clip_scene_map.get(clip_id)
+    d = (out_dir / scene) if scene else out_dir
+    d.mkdir(parents=True, exist_ok=True)
+    return d
 
 
 def ffmpeg_exists() -> bool:
@@ -650,6 +683,14 @@ def build_ffmpeg_cmd(segments: list[dict], output_path: Path,
             f"atrim=duration={dur:.6f},"
             f"asetpts=N/SR/TB[out]"
         )
+    elif target_duration and total_audio > target_duration + 0.001:
+        # Truncate to exact video duration (multi-segment overshoot)
+        filter_str = (
+            ";".join(filter_parts)
+            + f";{''.join(concat_inputs)}concat=n={n}:v=0:a=1[raw]"
+            f";[raw]atrim=end={target_duration:.6f},"
+            f"asetpts=N/SR/TB[out]"
+        )
     else:
         filter_str = (
             ";".join(filter_parts)
@@ -742,7 +783,7 @@ Examples:
 
     # ---- Gather data ----
     video_files = sorted(
-        [p for p in clips_dir.iterdir()
+        [p for p in clips_dir.rglob("*")
          if p.is_file() and p.suffix in VIDEO_EXTS and not p.name.startswith(".")],
         key=lambda p: natural_key(p.name)
     )
@@ -751,6 +792,20 @@ Examples:
          if p.is_file() and p.suffix in WAV_EXTS and not p.name.startswith(".")],
         key=lambda p: natural_key(p.name)
     )
+
+    # Build clip_id → video path map and clip_id → scene map
+    video_path_map: dict[str, Path] = {}
+    clip_scene_map: dict[str, str] = {}
+    for vf in video_files:
+        video_path_map[vf.stem] = vf
+        # Check if video is inside a scene subfolder (e.g. 01_Interview/)
+        try:
+            rel = vf.parent.relative_to(clips_dir)
+            top = rel.parts[0] if rel.parts else None
+            if top and SCENE_DIR_RE.match(top):
+                clip_scene_map[vf.stem] = top
+        except ValueError:
+            pass
 
     if not video_files:
         print(f"ERROR: No video clips found in: {clips_dir}", file=sys.stderr)
@@ -906,7 +961,10 @@ Examples:
 
         # Fallback: use MP4 video directly if per_clip WAV not available
         if not camera_wav.exists():
-            camera_wav = clips_dir / f"{longest_clip['clip_id']}.MP4"
+            camera_wav = _find_video_path(
+                longest_clip['clip_id'], video_path_map, clips_dir)
+            if camera_wav is None:
+                camera_wav = clips_dir / f"{longest_clip['clip_id']}.MP4"
 
         if camera_wav.exists() and not args.dry_run:
             tee_print(log_f,
@@ -1046,13 +1104,16 @@ Examples:
         skip_count = 0
         fail_count = 0
         no_overlap_count = 0
+        no_overlap_clips = []  # [{clip_id, tx, scene, duration}]
         total_size = 0
         output_durations = {}  # {(clip_id, tx): duration_sec}
 
         for clip in clips_ok:
             for tx in tx_ids:
                 output_name = f"{clip['clip_id']}_{tx}.wav"
-                output_path = out_dir / output_name
+                clip_out_dir = _scene_out_dir(
+                    clip['clip_id'], clip_scene_map, out_dir)
+                output_path = clip_out_dir / output_name
 
                 # Skip if already exists
                 if output_path.exists() and not args.overwrite:
@@ -1072,6 +1133,12 @@ Examples:
                     tee_print(log_f,
                         f"  {clip['clip_id']} × {tx} → no overlap with DJI")
                     no_overlap_count += 1
+                    no_overlap_clips.append({
+                        "clip_id": clip["clip_id"],
+                        "tx": tx,
+                        "scene": clip_scene_map.get(clip["clip_id"], ""),
+                        "duration": clip["duration"],
+                    })
                     continue
 
                 # Detailed segment logging
@@ -1213,12 +1280,15 @@ Examples:
                 cam_wav = (per_clip_dir / clip["clip_id"]
                            / f"{clip['clip_id']}_AUDIO.wav")
                 if not cam_wav.exists():
-                    cam_wav = clips_dir / f"{clip['clip_id']}.MP4"
-                if not cam_wav.exists():
+                    cam_wav = _find_video_path(
+                        clip['clip_id'], video_path_map, clips_dir)
+                if not cam_wav or not cam_wav.exists():
                     continue
 
                 for tx in tx_ids:
-                    out_path = out_dir / f"{clip['clip_id']}_{tx}.wav"
+                    clip_out = _scene_out_dir(
+                        clip['clip_id'], clip_scene_map, out_dir)
+                    out_path = clip_out / f"{clip['clip_id']}_{tx}.wav"
                     if not out_path.exists():
                         continue
 
@@ -1289,80 +1359,167 @@ Examples:
         prproj_path = None
         xml_path = None
         if success_count > 0 and not args.dry_run:
+            # Import generator module
+            _gen_mod = None
             try:
-                from generate_prproj import generate_prproj
+                import generate_prproj as _gen_mod
             except ImportError:
                 gen_path = Path(__file__).parent / "generate_prproj.py"
                 if gen_path.exists():
                     import importlib.util
                     spec = importlib.util.spec_from_file_location(
                         "generate_prproj", gen_path)
-                    mod = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(mod)
-                    generate_prproj = mod.generate_prproj
-                else:
-                    generate_prproj = None
+                    _gen_mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(_gen_mod)
 
-            if generate_prproj:
+            if _gen_mod:
                 tee_print(log_f, "")
                 tee_print(log_f,
                     f"{BOLD}{MAGENTA}PHASE 4: Generate Premiere project{RST}")
                 tee_print(log_f, f"{DIM}{'-' * 60}{RST}")
 
-                setup_dir = project_dir / "01_Media" / "Source" / "Setup"
-                prproj_name = (f"{project_dir.name}"
+                dji_audio_dir = project_dir / "99_Pipeline" / "DJI_Audio"
+                dji_audio_dir.mkdir(parents=True, exist_ok=True)
+                prproj_name = (f"{project_code(project_dir)}"
                                f"_dji_sync_check.prproj")
-                prproj_path = setup_dir / prproj_name
+                prproj_path = dji_audio_dir / prproj_name
                 xml_path = prproj_path.with_suffix(".xml")
 
-                vc_list = []
-                for clip in clips_ok:
-                    vpath = clips_dir / f"{clip['clip_id']}.MP4"
-                    if not vpath.exists():
-                        for ext in VIDEO_EXTS:
-                            vpath = clips_dir / f"{clip['clip_id']}{ext}"
-                            if vpath.exists():
-                                break
-                    if vpath.exists():
-                        vc_list.append({
-                            "path": vpath,
-                            "duration": clip["duration"],
-                            "clip_id": clip["clip_id"],
-                        })
+                # Check if we have scene folders → multi-scene mode
+                has_scenes = any(
+                    v for v in clip_scene_map.values() if v)
 
-                ac_list = []
-                for clip in clips_ok:
-                    for tx in tx_ids:
-                        apath = out_dir / f"{clip['clip_id']}_{tx}.wav"
-                        if apath.exists():
-                            adur = output_durations.get(
-                                (clip["clip_id"], tx),
-                                clip["duration"])
-                            ac_list.append({
-                                "path": apath,
-                                "duration": adur,
+                if has_scenes:
+                    # ── Multi-scene: one sequence per scene ──
+                    scenes_data: dict[str, dict] = {}
+                    for clip in clips_ok:
+                        scene = clip_scene_map.get(
+                            clip['clip_id'], '_unsorted')
+                        if scene not in scenes_data:
+                            scenes_data[scene] = {
+                                "video_clips": [],
+                                "dji_audio_clips": [],
+                                "tx_ids": set(),
+                            }
+                        vpath = _find_video_path(
+                            clip['clip_id'], video_path_map, clips_dir)
+                        if vpath:
+                            scenes_data[scene]["video_clips"].append({
+                                "path": vpath,
+                                "duration": clip["duration"],
+                                "clip_id": clip["clip_id"],
+                            })
+                        for tx in tx_ids:
+                            clip_out = _scene_out_dir(
+                                clip['clip_id'], clip_scene_map,
+                                out_dir)
+                            apath = (clip_out
+                                     / f"{clip['clip_id']}_{tx}.wav")
+                            if apath.exists():
+                                adur = output_durations.get(
+                                    (clip["clip_id"], tx),
+                                    clip["duration"])
+                                scenes_data[scene][
+                                    "dji_audio_clips"].append({
+                                    "path": apath,
+                                    "duration": adur,
+                                    "clip_id": clip["clip_id"],
+                                    "tx": tx,
+                                })
+                                scenes_data[scene]["tx_ids"].add(tx)
+
+                    # Remove empty scenes
+                    scenes_data = {
+                        k: v for k, v in scenes_data.items()
+                        if v["video_clips"]}
+
+                    if scenes_data:
+                        ok = _gen_mod.generate_multi_scene_prproj(
+                            scenes_data, prproj_path)
+
+                        if ok:
+                            if prproj_path.exists():
+                                tee_print(log_f,
+                                    f"  {GREEN}✓{RST} "
+                                    f"{prproj_path.name}"
+                                    f"  {DIM}(Premiere project)"
+                                    f"{RST}")
+                            if xml_path.exists():
+                                tee_print(log_f,
+                                    f"  {GREEN}✓{RST} "
+                                    f"{xml_path.name}"
+                                    f"  {DIM}(FCP XML){RST}")
+                            for sn in sorted(scenes_data.keys()):
+                                sd = scenes_data[sn]
+                                n_v = len(sd["video_clips"])
+                                n_a = len(sd["dji_audio_clips"])
+                                txs = sorted(sd["tx_ids"])
+                                tee_print(log_f,
+                                    f"    {DIM}Sequence "
+                                    f"\"{sn}\": "
+                                    f"{n_v} clips, "
+                                    f"{n_a} DJI "
+                                    f"({', '.join(txs)}){RST}")
+                        else:
+                            tee_print(log_f,
+                                f"  {RED}✗ Failed to generate "
+                                f"project{RST}")
+                else:
+                    # ── Legacy single-sequence mode ──
+                    vc_list = []
+                    for clip in clips_ok:
+                        vpath = _find_video_path(
+                            clip['clip_id'], video_path_map, clips_dir)
+                        if vpath:
+                            vc_list.append({
+                                "path": vpath,
+                                "duration": clip["duration"],
                                 "clip_id": clip["clip_id"],
                             })
 
-                if vc_list:
-                    ok = generate_prproj(
-                        vc_list, ac_list, prproj_path,
-                        sequence_name="DJI Sync Check")
+                    ac_list = []
+                    for clip in clips_ok:
+                        for tx in tx_ids:
+                            clip_out = _scene_out_dir(
+                                clip['clip_id'], clip_scene_map,
+                                out_dir)
+                            apath = (clip_out
+                                     / f"{clip['clip_id']}_{tx}.wav")
+                            if apath.exists():
+                                adur = output_durations.get(
+                                    (clip["clip_id"], tx),
+                                    clip["duration"])
+                                ac_list.append({
+                                    "path": apath,
+                                    "duration": adur,
+                                    "clip_id": clip["clip_id"],
+                                })
 
-                    if ok:
-                        if prproj_path.exists():
+                    if vc_list:
+                        ok = _gen_mod.generate_prproj(
+                            vc_list, ac_list, prproj_path,
+                            sequence_name="DJI Sync Check")
+
+                        if ok:
+                            if prproj_path.exists():
+                                tee_print(log_f,
+                                    f"  {GREEN}✓{RST} "
+                                    f"{prproj_path.name}"
+                                    f"  {DIM}(Premiere project)"
+                                    f"{RST}")
+                            if xml_path.exists():
+                                tee_print(log_f,
+                                    f"  {GREEN}✓{RST} "
+                                    f"{xml_path.name}"
+                                    f"  {DIM}(FCP XML sequence)"
+                                    f"{RST}")
                             tee_print(log_f,
-                                f"  {GREEN}✓{RST} {prproj_path.name}"
-                                f"  {DIM}(Premiere project){RST}")
-                        if xml_path.exists():
+                                f"    {DIM}Sequence: "
+                                f"\"DJI Sync Check\"{RST}")
+                        else:
                             tee_print(log_f,
-                                f"  {GREEN}✓{RST} {xml_path.name}"
-                                f"  {DIM}(FCP XML sequence){RST}")
-                        tee_print(log_f,
-                            f"    {DIM}Sequence: \"DJI Sync Check\"{RST}")
-                    else:
-                        tee_print(log_f,
-                            f"  {RED}✗ Failed to generate project{RST}")
+                                f"  {RED}✗ Failed to generate "
+                                f"project{RST}")
 
         # ============================================================
         # FINAL SUMMARY (comprehensive, at the very end)
@@ -1398,6 +1555,44 @@ Examples:
             tee_print(log_f,
                 f"  {DIM}Total size{RST}   : {format_size(total_size)}")
 
+        # ── No-overlap clips detail ──
+        if no_overlap_clips:
+            # Deduplicate by clip_id (show once per clip, list TX channels)
+            seen = {}
+            for noc in no_overlap_clips:
+                cid = noc["clip_id"]
+                if cid not in seen:
+                    seen[cid] = {
+                        "scene": noc["scene"],
+                        "duration": noc["duration"],
+                        "tx_list": [noc["tx"]],
+                    }
+                else:
+                    seen[cid]["tx_list"].append(noc["tx"])
+
+            uncovered_dur = sum(v["duration"] for v in seen.values())
+            tee_print(log_f, "")
+            tee_print(log_f,
+                f"{BOLD}{YELLOW}  Clips Without DJI Coverage "
+                f"({len(seen)} clips, "
+                f"{format_timecode(uncovered_dur, FPS)}){RST}")
+            tee_print(log_f, f"  {DIM}{'─' * 56}{RST}")
+            tee_print(log_f,
+                f"  {DIM}{'Clip':20s}  {'Scene':16s}  "
+                f"{'Duration':>12s}  TX{RST}")
+            for cid in sorted(seen):
+                info = seen[cid]
+                txs = ", ".join(info["tx_list"])
+                scene = info["scene"] or "—"
+                tee_print(log_f,
+                    f"  {YELLOW}{cid:20s}{RST}  {scene:16s}  "
+                    f"{format_timecode(info['duration'], FPS):>12s}  "
+                    f"{txs}")
+            tee_print(log_f, f"  {DIM}{'─' * 56}{RST}")
+            tee_print(log_f,
+                f"  {DIM}Camera audio available in "
+                f"Transcription/per_clip/ for these clips{RST}")
+
         # ── Video & Audio statistics ──
         tee_print(log_f, "")
         tee_print(log_f,
@@ -1408,17 +1603,14 @@ Examples:
         total_video_size = 0
         total_video_dur = 0.0
         for clip in clips_ok:
-            vpath = clips_dir / f"{clip['clip_id']}.MP4"
-            if not vpath.exists():
-                for ext in VIDEO_EXTS:
-                    vpath = clips_dir / f"{clip['clip_id']}{ext}"
-                    if vpath.exists():
-                        break
-            vsize = vpath.stat().st_size if vpath.exists() else 0
+            vpath = _find_video_path(
+                clip['clip_id'], video_path_map, clips_dir)
+            vsize = vpath.stat().st_size if vpath else 0
             total_video_size += vsize
             total_video_dur += clip["duration"]
+            vsuffix = vpath.suffix if vpath else ".MP4"
             tee_print(log_f,
-                f"  {CYAN}V{RST}  {clip['clip_id']}{vpath.suffix}  "
+                f"  {CYAN}V{RST}  {clip['clip_id']}{vsuffix}  "
                 f"{DIM}{format_size(vsize)}{RST}  "
                 f"{format_timecode(clip['duration'], FPS)}")
 
@@ -1427,7 +1619,9 @@ Examples:
         total_audio_dur = 0.0
         for clip in clips_ok:
             for tx in tx_ids:
-                apath = out_dir / f"{clip['clip_id']}_{tx}.wav"
+                clip_out = _scene_out_dir(
+                    clip['clip_id'], clip_scene_map, out_dir)
+                apath = clip_out / f"{clip['clip_id']}_{tx}.wav"
                 if apath.exists():
                     asize = apath.stat().st_size
                     adur = output_durations.get(
@@ -1597,21 +1791,18 @@ Examples:
             f"{len(clips_ok)} clips  "
             f"{DIM}({format_size(total_video_size)}){RST}")
         for i, clip in enumerate(clips_ok):
-            vpath = clips_dir / f"{clip['clip_id']}.MP4"
-            if not vpath.exists():
-                for ext in VIDEO_EXTS:
-                    vpath = clips_dir / f"{clip['clip_id']}{ext}"
-                    if vpath.exists():
-                        break
+            vpath = _find_video_path(
+                clip['clip_id'], video_path_map, clips_dir)
             conn = L if i == len(clips_ok) - 1 else T
-            sz = format_size(vpath.stat().st_size) if vpath.exists() else "?"
+            sz = format_size(vpath.stat().st_size) if vpath else "?"
+            vname = vpath.name if vpath else f"{clip['clip_id']}.MP4"
             tee_print(log_f,
-                f"{sp}{I}{conn}{vpath.name}  "
+                f"{sp}{I}{conn}{vname}  "
                 f"{DIM}{sz}  "
                 f"{format_timecode(clip['duration'], FPS)}{RST}")
 
         # Audio/ (DJI synced — NEW files)
-        audio_list = sorted(out_dir.glob("*.wav"))
+        audio_list = sorted(out_dir.rglob("*.wav"))
         if audio_list:
             ta = sum(f.stat().st_size for f in audio_list)
             tee_print(log_f,
@@ -1628,24 +1819,23 @@ Examples:
             tee_print(log_f,
                 f"{sp}{T}Audio/  {DIM}—{RST}")
 
-        # Setup/
-        setup_dir = project_dir / "01_Media" / "Source" / "Setup"
-        setup_files = []
+        # 99_Pipeline/DJI_Audio/
+        sync_files = []
         if prproj_path and prproj_path.exists():
-            setup_files.append(prproj_path)
+            sync_files.append(prproj_path)
         if xml_path and xml_path.exists():
-            setup_files.append(xml_path)
-        if setup_files:
+            sync_files.append(xml_path)
+        if sync_files:
             tee_print(log_f,
-                f"{sp}{L}{BOLD}Setup/{RST}")
-            for k, sf in enumerate(setup_files):
-                conn = L if k == len(setup_files) - 1 else T
+                f"{sp}{L}{BOLD}99_Pipeline/DJI_Audio/{RST}")
+            for k, sf in enumerate(sync_files):
+                conn = L if k == len(sync_files) - 1 else T
                 tee_print(log_f,
                     f"{sp}{S}{conn}{GREEN}{sf.name}{RST}"
                     f"  {GREEN}← NEW{RST}")
         else:
             tee_print(log_f,
-                f"{sp}{L}Setup/")
+                f"{sp}{L}99_Pipeline/DJI_Audio/")
 
         # 99_Pipeline/DJI_Audio/
         dji_files_list = sorted(dji_dir.glob("*.wav")) if dji_dir.exists() else []
@@ -1678,20 +1868,19 @@ Examples:
             f"{BOLD}{BLUE}  Media Statistics{RST}")
         tee_print(log_f, f"  {DIM}{'─' * 56}{RST}")
         for clip in clips_ok:
-            vpath = clips_dir / f"{clip['clip_id']}.MP4"
-            if not vpath.exists():
-                for ext in VIDEO_EXTS:
-                    vpath = clips_dir / f"{clip['clip_id']}{ext}"
-                    if vpath.exists():
-                        break
-            vsize = vpath.stat().st_size if vpath.exists() else 0
+            vpath = _find_video_path(
+                clip['clip_id'], video_path_map, clips_dir)
+            vsize = vpath.stat().st_size if vpath else 0
+            vsuffix = vpath.suffix if vpath else ".MP4"
             tee_print(log_f,
-                f"  {CYAN}V{RST}  {clip['clip_id']}{vpath.suffix}  "
+                f"  {CYAN}V{RST}  {clip['clip_id']}{vsuffix}  "
                 f"{DIM}{format_size(vsize)}{RST}  "
                 f"{format_timecode(clip['duration'], FPS)}")
         for clip in clips_ok:
             for tx in tx_ids:
-                apath = out_dir / f"{clip['clip_id']}_{tx}.wav"
+                clip_out = _scene_out_dir(
+                    clip['clip_id'], clip_scene_map, out_dir)
+                apath = clip_out / f"{clip['clip_id']}_{tx}.wav"
                 if apath.exists():
                     asize = apath.stat().st_size
                     adur = output_durations.get(

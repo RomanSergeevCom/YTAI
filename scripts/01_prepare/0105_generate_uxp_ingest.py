@@ -8,8 +8,8 @@ in the format expected by buildMultiSceneIngest() in the UXP plugin.
 
 UXP format produced:
     {
-      "project_name": "YTCR_1_Arty_Dzis",
-      "project_code": "YTCR_1",
+      "project_name": "YTCR01_Arty_Dzis",
+      "project_code": "YTCR01",
       "media": { "width": 3840, "height": 2160, "fps": 25.0, "sample_rate": 48000 },
       "clips": [
         {
@@ -32,9 +32,10 @@ DJI audio: clip.dji_audio[].tx maps TX01 → A2, TX02 → A3 on the timeline.
 Sequence name per scene: {project_code}_1_{scene} e.g. "YTCR_1_1_apartment".
 
 Usage:
-    python3 0105_generate_uxp_ingest.py --project "/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis"
-    python3 0105_generate_uxp_ingest.py --project "/path/to/project" --scene apartment
+    python3 0105_generate_uxp_ingest.py --project "/Volumes/RYA T7 Black/YTCR01_Arty_Dzis"
+    python3 0105_generate_uxp_ingest.py --project "/path/to/project" --scene drive_home
     python3 0105_generate_uxp_ingest.py --project "/path/to/project" --dry-run
+    python3 0105_generate_uxp_ingest.py --project "/path/to/project" --max-delta 1.0
 """
 from __future__ import annotations
 
@@ -53,8 +54,14 @@ VIDEO_EXTS = {".mp4", ".MP4", ".mov", ".MOV"}
 # Sony FX3 defaults — used if ffprobe unavailable or clip not found
 MEDIA_DEFAULTS = {"width": 3840, "height": 2160, "fps": 25.0, "sample_rate": 48000}
 
-# Regex to extract short project code: "YTCR_1_Arty_Dzis" → "YTCR_1"
-PROJECT_CODE_RE = re.compile(r'^([A-Z]+_\d+)', re.ASCII)
+# Regex to extract short project code:
+#   "YTCG37_Setup_UAE_Company_Remotely" → "YTCG37"
+#   "YTCR01_Arty_Dzis" → "YTCR01"
+PROJECT_CODE_RE = re.compile(r'^(YT[A-Z]{2,4}\d+)_')
+
+# Max sync delta (frames) — TX audio with larger delta is excluded from the timeline.
+# Target: ≤1F (AUD-06). Beyond this the audio is clearly mis-matched.
+DEFAULT_MAX_DELTA = 1.0
 
 
 # ── Media detection ────────────────────────────────────────────────────────────
@@ -95,7 +102,8 @@ def _extract_tx(track_type: str) -> str | None:
     return m.group(1) if m else None
 
 
-def convert_scene(scene_data: dict, project: Path) -> list[dict]:
+def convert_scene(scene_data: dict, project: Path,
+                  max_delta: float = DEFAULT_MAX_DELTA) -> list[dict]:
     """Convert one per-scene ingest dict to a list of UXP clip dicts."""
     scene_name = scene_data["scene"]
     clips_out = []
@@ -116,14 +124,21 @@ def convert_scene(scene_data: dict, project: Path) -> list[dict]:
         filename = abs_clip.name
 
         # ── DJI audio: A2/A3 tracks → dji_audio list ──
+        # Skip tracks where sync delta exceeds max_delta (mis-matched audio).
         dji_audio = []
+        skipped_tx = []
         for key in ("A2", "A3"):
             track = cr.get("tracks", {}).get(key, {})
             tx = _extract_tx(track.get("type", ""))
             path_rel = track.get("path")
-            if tx and path_rel:
-                abs_audio = project / path_rel
-                dji_audio.append({"path": str(abs_audio), "tx": tx})
+            if not tx or not path_rel:
+                continue
+            delta = track.get("sync_delta_frames")
+            if delta is not None and abs(delta) > max_delta:
+                skipped_tx.append(f"{tx}({delta:.2f}F)")
+                continue
+            abs_audio = project / path_rel
+            dji_audio.append({"path": str(abs_audio), "tx": tx})
 
         clip_entry = {
             "clip_id": clip_id,
@@ -134,6 +149,8 @@ def convert_scene(scene_data: dict, project: Path) -> list[dict]:
         }
         if dji_audio:
             clip_entry["dji_audio"] = dji_audio
+        if skipped_tx:
+            clip_entry["_skipped_audio"] = skipped_tx  # informational, ignored by UXP
 
         clips_out.append(clip_entry)
 
@@ -144,6 +161,7 @@ def generate_uxp_ingest(
     project: Path,
     scene_filter: str | None = None,
     dry_run: bool = False,
+    max_delta: float = DEFAULT_MAX_DELTA,
 ) -> Path:
     """Build UXP-format ingest.json from per-scene ingest.json files.
 
@@ -156,10 +174,12 @@ def generate_uxp_ingest(
         Path to the written {project}_ingest.json (or would-be path in dry-run).
     """
     setup_dir = project / SETUP_SUBDIR
-    out_path = setup_dir / f"{project.name}_ingest.json"
+    m_code = PROJECT_CODE_RE.match(project.name)
+    code = m_code.group(1) if m_code else project.name
+    out_path = setup_dir / f"{code}_ingest.json"
 
     # ── Find per-scene ingest.json files ──────────────────────────────────────
-    project_global_stem = f"{project.name}_ingest"
+    project_global_stem = f"{code}_ingest"
     scene_files = sorted(
         f for f in setup_dir.glob("*_ingest.json")
         if f.stem != project_global_stem   # skip own output file
@@ -190,7 +210,7 @@ def generate_uxp_ingest(
         with open(sf) as f:
             scene_data = json.load(f)
 
-        scene_clips = convert_scene(scene_data, project)
+        scene_clips = convert_scene(scene_data, project, max_delta=max_delta)
         all_clips.extend(scene_clips)
 
         # Probe media from first clip in first scene processed
@@ -207,12 +227,13 @@ def generate_uxp_ingest(
 
         # Per-scene summary
         n_dji = sum(len(c.get("dji_audio", [])) for c in scene_clips)
+        n_skipped = sum(len(c.get("_skipped_audio", [])) for c in scene_clips)
+        skip_str = f"  {n_skipped} skipped (delta>{max_delta}F)" if n_skipped else ""
         print(f"  {scene_data['scene']:25s} {len(scene_clips):3d} clips  "
-              f"{n_dji} DJI WAVs")
+              f"{n_dji} DJI WAVs{skip_str}")
 
     # ── Build project code ────────────────────────────────────────────────────
-    m = PROJECT_CODE_RE.match(project.name)
-    project_code = m.group(1) if m else project.name
+    project_code = code  # already computed above from PROJECT_CODE_RE
 
     # ── Assemble output ───────────────────────────────────────────────────────
     uxp_ingest = {
@@ -231,7 +252,7 @@ def generate_uxp_ingest(
     print(f"\nTotal   : {len(all_clips)} clips  {total_dji} DJI WAVs")
     print(f"Scenes  : {len(set(c['scene'] for c in all_clips))}")
     print(f"\nUXP will create sequences named: "
-          f"{project_code}_1_{{scene}}  (e.g. {project_code}_1_{scene_files[0].stem.replace('_ingest','')})")
+          f"{project_code}_{{scene}}  (e.g. {project_code}_{scene_files[0].stem.replace('_ingest','')})")
 
     if dry_run:
         print(f"\n[dry-run] Would write: {out_path}")
@@ -257,6 +278,9 @@ def main() -> None:
                     help="Include only this scene (default: all scenes)")
     ap.add_argument("--dry-run", action="store_true",
                     help="Print plan without writing files")
+    ap.add_argument("--max-delta", type=float, default=DEFAULT_MAX_DELTA,
+                    help=f"Max sync delta in frames — TX audio above this is excluded "
+                         f"(default: {DEFAULT_MAX_DELTA}F)")
     args = ap.parse_args()
 
     project = args.project.resolve()
@@ -264,7 +288,8 @@ def main() -> None:
         print(f"ERROR: Project path not found: {project}", file=sys.stderr)
         sys.exit(1)
 
-    generate_uxp_ingest(project, scene_filter=args.scene, dry_run=args.dry_run)
+    generate_uxp_ingest(project, scene_filter=args.scene, dry_run=args.dry_run,
+                        max_delta=args.max_delta)
 
 
 if __name__ == "__main__":

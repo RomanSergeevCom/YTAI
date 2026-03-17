@@ -2,7 +2,7 @@
 """
 YTAI Stage 05: Generate Assembly / Review Captions SRT
 
-Reads edit_brief.json + per-clip transcript JSONs (word-level timing)
+Reads pre_edit_brief.json + per-clip transcript JSONs (word-level timing)
 and generates timeline-accurate SRT captions:
   - Assembly: {project}_2_Assembly_captions.srt (used segments)
   - Review:   {project}_3_Review_captions.srt   (unused segments)
@@ -13,9 +13,9 @@ Algorithm mirrors assemblyBuilder.js / reviewBuilder.js:
   Both:     Cumulative position on timeline with round(cumulative + duration, 1)
 
 Usage:
-    python generate_assembly_captions.py --brief YTAI_Edit_edit_brief.json
-    python generate_assembly_captions.py --brief path/to/edit_brief.json --review
-    python generate_assembly_captions.py --brief path/to/edit_brief.json --words-per-block 4
+    python generate_assembly_captions.py --brief YTAI_Edit_pre_edit_brief.json
+    python generate_assembly_captions.py --brief path/to/pre_edit_brief.json --review
+    python generate_assembly_captions.py --brief path/to/pre_edit_brief.json --words-per-block 4
 """
 
 import argparse
@@ -65,7 +65,7 @@ def format_srt_time(seconds: float) -> str:
 # ---------------------------------------------------------------------------
 
 def load_brief(brief_path: str) -> dict:
-    """Load edit_brief.json and return parsed dict."""
+    """Load pre_edit_brief.json and return parsed dict."""
     with open(brief_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -552,11 +552,11 @@ def generate_review_srt(brief_path: str, words_per_block: int = 6) -> tuple:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate Assembly or Review captions SRT from edit brief + per-clip transcripts"
+        description="Generate Assembly or Review captions SRT from pre-edit brief + per-clip transcripts"
     )
     parser.add_argument(
         "--brief", required=True,
-        help="Path to {project}_edit_brief.json"
+        help="Path to {project}_pre_edit_brief.json"
     )
     parser.add_argument(
         "--words-per-block", type=int, default=6,

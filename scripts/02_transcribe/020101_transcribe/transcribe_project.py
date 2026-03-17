@@ -72,6 +72,14 @@ LANG_MAP = {
     "ja": "ja-jp", "ko": "ko-kr", "zh": "zh-cn", "hi": "hi-in",
 }
 
+CODE_RE = re.compile(r'^(YT[A-Z]{2,4}\d+)_')
+
+
+def project_code(project_dir: Path) -> str:
+    """Extract short code (e.g. 'YTCG37') from project folder name."""
+    m = CODE_RE.match(project_dir.name)
+    return m.group(1) if m else project_dir.name
+
 # ─── Colors ──────────────────────────────────────────────────────────────────
 
 class C:
@@ -823,11 +831,14 @@ def detect_input(args):
         transcription_dir = work_dir / f"{project_name}_transcription"
         source_dir = work_dir  # legacy: final outputs go to project root
 
+    code = project_code(work_dir)
+
     return {
         "input_path": input_path,
         "input_type": "file" if input_path.is_file() else "folder",
         "video_files": video_files,
         "project_name": project_name,
+        "project_code": code,
         "work_dir": work_dir,
         "transcription_dir": transcription_dir,
         "source_dir": source_dir,
@@ -1824,7 +1835,9 @@ def generate_combined_srt(ctx, clip_filter=None, output_path=None):
             lines += [str(idx), f"{fmt_srt_time(gs)} --> {fmt_srt_time(ge)}",
                       f"[{name}] {seg['text']}", ""]
             idx += 1
-    srt_path = output_path or (ctx["transcription_dir"] / f"{ctx['project_name']}_transcript.srt")
+    transcripts_dir = ctx["transcription_dir"] / "transcripts"
+    transcripts_dir.mkdir(parents=True, exist_ok=True)
+    srt_path = output_path or (transcripts_dir / f"{ctx['project_code']}_transcript.srt")
     with open(srt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     return srt_path
@@ -1878,7 +1891,9 @@ def generate_combined_word_level_srt(ctx, clip_filter=None, output_path=None, wo
                     continue
                 lines += [str(idx), f"{fmt_srt_time(start)} --> {fmt_srt_time(end)}", text, ""]
                 idx += 1
-    srt_path = output_path or (ctx["transcription_dir"] / f"{ctx['project_name']}_1_Ingest_captions.srt")
+    captions_dir = ctx["transcription_dir"] / "captions"
+    captions_dir.mkdir(parents=True, exist_ok=True)
+    srt_path = output_path or (captions_dir / f"{ctx['project_code']}_1_Ingest_captions.srt")
     with open(srt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     return srt_path
@@ -2170,7 +2185,9 @@ def generate_xlsx(ctx, args, clip_filter=None, output_path=None):
     for letter, mw in media_widths.items():
         ws3.column_dimensions[letter].width = mw
 
-    xlsx_path = output_path or (ctx["work_dir"] / f"{ctx['project_name']}_transcript.xlsx")
+    setup_dir = ctx["source_dir"] / "Setup"
+    setup_dir.mkdir(parents=True, exist_ok=True)
+    xlsx_path = output_path or (setup_dir / f"{ctx['project_code']}_transcript.xlsx")
     wb.save(str(xlsx_path))
     return xlsx_path
 
@@ -2269,7 +2286,9 @@ def generate_project_json(ctx, args, clip_filter=None, output_path=None):
         "low_confidence_segments": combined_stats.get("low_confidence_segments", 0),
     }
     # Determine output path early so we can compute relative file paths
-    project_path = output_path or (ctx["transcription_dir"] / f"{ctx['project_name']}_transcript.json")
+    setup_dir_json = ctx["source_dir"] / "Setup"
+    setup_dir_json.mkdir(parents=True, exist_ok=True)
+    project_path = output_path or (setup_dir_json / f"{ctx['project_code']}_transcript.json")
     project_json_dir = project_path.parent
     # Clips
     clips_out = []
@@ -2422,13 +2441,15 @@ def generate_project_json(ctx, args, clip_filter=None, output_path=None):
     work_dir = ctx["work_dir"]
     sd = ctx.get("source_dir", work_dir)
     pn = ctx["project_name"]
+    code = ctx.get("project_code", pn)
+    transcription_dir = ctx["transcription_dir"]
     structure["work_dir"] = str(work_dir)
     structure["source_dir"] = str(sd)
-    structure["transcription_dir_full"] = str(ctx["transcription_dir"])
+    structure["transcription_dir_full"] = str(transcription_dir)
     structure["transcript_json"] = str(project_path)
-    structure["transcript_xlsx"] = str(sd / f"{pn}_transcript.xlsx")
-    structure["transcript_srt"] = str(sd / f"{pn}_transcript.srt")
-    structure["captions_srt"] = str(sd / f"{pn}_1_Ingest_captions.srt")
+    structure["transcript_xlsx"] = str(sd / "Setup" / f"{code}_transcript.xlsx")
+    structure["transcript_srt"] = str(transcription_dir / "transcripts" / f"{code}_transcript.srt")
+    structure["captions_srt"] = str(transcription_dir / "captions" / f"{code}_1_Ingest_captions.srt")
     structure["video_files"] = [str(vf) for vf in video_files]
 
     project = {
