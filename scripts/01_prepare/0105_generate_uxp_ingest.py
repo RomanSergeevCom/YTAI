@@ -179,7 +179,7 @@ def generate_uxp_ingest(
     out_path = setup_dir / f"{code}_ingest.json"
 
     # ── Find per-scene ingest.json files ──────────────────────────────────────
-    project_global_stem = f"{code}_ingest"
+    project_global_stem = f"{project.name}_ingest"
     scene_files = sorted(
         f for f in setup_dir.glob("*_ingest.json")
         if f.stem != project_global_stem   # skip own output file
