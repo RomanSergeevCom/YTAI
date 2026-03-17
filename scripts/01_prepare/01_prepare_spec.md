@@ -1,4 +1,4 @@
-# 01_prepare — Specification v1.0.0
+# 01_prepare — Specification v1.1.0
 
 Фаза подготовки проекта: создание структуры папок, организация медиафайлов, извлечение аудио, синхронизация DJI.
 
@@ -19,7 +19,7 @@
 | 0102 | `extract_audio` | Extract audio | `0102_extract_audio.py` | WAV из каждого клипа + FULL_AUDIO |
 | 0103 | `sync_dji` | DJI sync | `0103_sync_dji_audio.py` | Синхронизация DJI WAV с видеоклипами |
 
-Стадии выполняются последовательно. DJI sync — опциональная (требует `--tz-offset`).
+Стадии выполняются последовательно. DJI sync — опциональная (пропускается если нет DJI файлов). Timezone определяется автоматически.
 
 ## Файлы
 
@@ -41,10 +41,10 @@ scripts/01_prepare/
 ## Запуск
 
 ```bash
-# Полная фаза prepare
+# Полная фаза prepare (timezone auto-detected)
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only prepare
 
-# С DJI sync
+# С явным timezone для DJI sync
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only prepare --tz-offset 4
 
 # Dry run
@@ -53,10 +53,16 @@ python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only prepare --dry-run
 # Отдельные стадии
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only init
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only extract_audio
-python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only sync_dji --tz-offset 4
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only sync_dji
+
+# Напрямую (без pipeline)
+python ~/YTAI/scripts/01_prepare/0102_extract_audio/0102_extract_audio.py --project "$PROJECT"
+python ~/YTAI/scripts/01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py --project "$PROJECT"
 ```
 
 ## Выходная структура
+
+### Flat проект (без scene-папок)
 
 ```
 {project}/
@@ -67,14 +73,24 @@ python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only sync_dji --tz-offset 4
 │       ├── {project}_Source.prproj
 │       ├── Video/                       ← MP4 из корня проекта
 │       ├── Audio/                       ← синхронизированные DJI WAV (после sync_dji)
+│       │   ├── {clip}_TX01.wav
+│       │   └── ...
 │       ├── LUT/                         ← .cube из SD-карты
 │       ├── Transcription/
-│       │   ├── {project}_FULL_AUDIO.wav ← конкатенация всех клипов
+│       │   ├── {CODE}_FULL_AUDIO.wav    ← конкатенация всех клипов
+│       │   ├── captions/                ← *_captions.srt файлы
+│       │   ├── transcripts/             ← *_transcript.srt файлы
 │       │   └── per_clip/
 │       │       └── {clip}/
 │       │           ├── {clip}_AUDIO.wav ← 48kHz stereo WAV
 │       │           └── {clip}M01.XML    ← XML-сайдкар камеры
 │       └── Setup/
+│           ├── {CODE}_ingest.json       ← Premiere UXP
+│           ├── {CODE}_pre-edit_brief.json ← бриф для Assembly
+│           ├── {CODE}_transcript.json   ← транскрипт
+│           ├── {CODE}_transcript.xlsx   ← Excel транскрипт
+│           ├── screen_cues/             ← PNG оверлеи
+│           ├── pre-edit_versions/       ← история версий брифа
 │           └── logs/                    ← логи pipeline
 ├── 99_Pipeline/DJI_Audio/               ← сырые DJI WAV (TX##_MIC###_*)
 ├── 02_Exports/
@@ -83,6 +99,38 @@ python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only sync_dji --tz-offset 4
 ├── YouTube/
 └── {project}.gdoc
 ```
+
+### Scene-aware проект (v1.1.0)
+
+Если видео организованы в scene-папки (`^\d{2}_`), структура зеркалится:
+
+```
+{project}/
+├── 01_Media/Source/
+│   ├── Video/
+│   │   ├── 01_Interview/              ← сцена 1
+│   │   │   ├── RYA-ZVE1-1180.MP4
+│   │   │   └── ...
+│   │   ├── 02_Car/                    ← сцена 2
+│   │   │   └── ...
+│   │   └── 03_Coffee/                 ← сцена 3
+│   │       └── ...
+│   ├── Audio/
+│   │   ├── 01_Interview/              ← DJI аудио зеркалит Video
+│   │   │   ├── RYA-ZVE1-1180_TX01.wav
+│   │   │   └── ...
+│   │   ├── 02_Car/
+│   │   │   └── ...
+│   │   └── 03_Coffee/
+│   │       ├── RYA-ZVE1-1167_TX01.wav ← TX01 (mic 1)
+│   │       ├── RYA-ZVE1-1167_TX02.wav ← TX02 (mic 2)
+│   │       └── ...
+│   └── Setup/
+│       └── logs/
+└── ...
+```
+
+Scene-папки определяются regex `^\d{2}_` из `Source/Video/`.
 
 Используйте `--type footage` для минимальной структуры (без Assets, Shorts, Thumbnail, YouTube, .gdoc).
 
@@ -100,6 +148,8 @@ SD-карта / корень проекта
     │                                              → {project}_FULL_AUDIO.wav
     │
     ├── Source/Video/ + DJI_Audio/  → 0103 sync   → Source/Audio/{clip}_TX{N}.wav
+    │                                              → Source/Audio/{scene}/{clip}_TX{N}.wav (scene-aware)
+    │                                              → 99_Pipeline/DJI_Audio/{CODE}_dji_sync_check.xml (1 or N sequences)
     │
     └── (all prepared)              → 02_transcribe (следующая фаза)
 ```
@@ -108,9 +158,9 @@ SD-карта / корень проекта
 
 ```
 01_Media/Source/Setup/logs/
-├── {project}_run_pipeline_{YYYYMMDD_HHMMSS}.log    ← основной лог
-├── {project}_extract_audio_{YYYYMMDD_HHMMSS}.log   ← лог извлечения аудио
-└── {project}_sync_dji_audio_{YYYYMMDD_HHMMSS}.log  ← лог DJI синхронизации
+├── {project_name}_run_pipeline_{YYYYMMDD_HHMMSS}.log    ← основной лог (полное имя)
+├── {project_name}_extract_audio_{YYYYMMDD_HHMMSS}.log   ← лог извлечения аудио
+└── {project_name}_sync_dji_audio_{YYYYMMDD_HHMMSS}.log  ← лог DJI синхронизации
 ```
 
 ## Опции
@@ -119,7 +169,7 @@ SD-карта / корень проекта
 |------|----------|
 | `--type production` | Полная структура (по умолчанию) |
 | `--type footage` | Минимальная (без Assets, Shorts и т.д.) |
-| `--tz-offset N` | Часовой пояс для DJI sync (часы от UTC) |
+| `--tz-offset N` | Часовой пояс для DJI sync (часы от UTC). Если не указан — auto-detect |
 | `--force` | Перезаписать существующие файлы |
 | `--dry-run` | Только показать план действий |
 

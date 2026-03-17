@@ -3,7 +3,7 @@
 Claude Desktop Project Knowledge для создания монтажных брифов.
 
 **Вход:** `{project}_transcript.json` (из 020101_transcribe)
-**Выход:** `{project}_edit_brief.json` -> auto-detect в 0500_uxp v2.1.0 (ASSEMBLY + REVIEW + SCREEN CUES)
+**Выход:** `{CODE}_pre_pre_edit_brief.json` -> auto-detect в 0500_uxp v2.1.0 (ASSEMBLY + REVIEW + SCREEN CUES)
 **Выход 2:** `{project}_2_Assembly_captions.srt` -> генерируется `generate_assembly_captions.py`
 **Выход 3:** `{project}_3_Review_captions.srt` -> генерируется `generate_assembly_captions.py --review`
 
@@ -19,9 +19,9 @@ Claude Desktop Project Knowledge для создания монтажных бр
 |------|-----------|---------------|
 | `INSTRUCTIONS.md` | Custom Instructions Claude Desktop | -> Custom Instructions |
 | `editing_rules.md` | Правила монтажа + цветовая разметка | -> Project Knowledge |
-| `output_format.md` | JSON-схема edit_brief.json | -> Project Knowledge |
+| `output_format.md` | JSON-схема pre_edit_brief.json | -> Project Knowledge |
 | `example_input.json` | Пример transcript.json | -> Project Knowledge |
-| `example_output.json` | Пример edit_brief.json | -> Project Knowledge |
+| `example_output.json` | Пример pre_edit_brief.json | -> Project Knowledge |
 | `~/YTAI/YTs/YTXX.md` | Профиль канала | -> Project Knowledge |
 
 ## Связи
@@ -31,7 +31,7 @@ Claude Desktop Project Knowledge для создания монтажных бр
     |
     +- {project}_transcript.json --> 050202_claude_kb (Claude Desktop)
     |                                     |
-    |                                     +- {project}_edit_brief.json
+    |                                     +- {CODE}_pre_pre_edit_brief.json
     |                                          |  (auto-detected by UXP v2.1.0 при Select Project Folder)
     |                                          +-->  0500_uxp (ASSEMBLY: use=TRUE, block≠99)
     |                                          +-->  0500_uxp (REVIEW: use=FALSE OR block=99)
@@ -46,14 +46,14 @@ Claude Desktop Project Knowledge для создания монтажных бр
 
 ### Генерация Captions (Assembly + Review)
 
-После создания `edit_brief.json`, LLM запускает:
+После создания `pre_edit_brief.json`, LLM запускает:
 ```bash
-python generate_assembly_captions.py --brief {project}_edit_brief.json
-python generate_assembly_captions.py --brief {project}_edit_brief.json --review
+python generate_assembly_captions.py --brief {CODE}_pre_pre_edit_brief.json
+python generate_assembly_captions.py --brief {CODE}_pre_pre_edit_brief.json --review
 ```
 
 Скрипт (единый для обоих режимов):
-1. Читает edit_brief + per-clip transcript JSONы (word-level timing)
+1. Читает pre_edit_brief + per-clip transcript JSONы (word-level timing)
 2. **Assembly**: фильтрует use=TRUE, block!=99, сортирует по block + brief order
 3. **Review**: фильтрует use=FALSE OR block=99, сортирует по source_file + tc_in
 4. Ремаппит таймкоды слов на соответствующий таймлайн
@@ -61,9 +61,9 @@ python generate_assembly_captions.py --brief {project}_edit_brief.json --review
 
 UXP плагин (0500_uxp v2.1.0) автоматически импортирует оба SRT в 02_Transcripts при Build Assembly / Build Review. Файлы brief и ingest авто-определяются при выборе папки проекта (Select Project Folder → auto-detect).
 
-### Маппинг полей transcript -> edit_brief
+### Маппинг полей transcript -> pre_edit_brief
 
-| transcript.json | edit_brief.json | Назначение в Assembly |
+| transcript.json | pre_edit_brief.json | Назначение в Assembly |
 |----------------|----------------|----------------------|
 | `clips[].filename` | `segments[].source_file` | Ключ для поиска клипа в `00_Source` bin |
 | `segments[].start` (seconds) | `tc_in` (MM:SS.s) | Точка входа (pre-trim перед insert) |
@@ -79,11 +79,11 @@ UXP плагин (0500_uxp v2.1.0) автоматически импортиру
 | `clips[0].media.width` | `project.width` | Настройки секвенции |
 | `project` | `project.project_name` | Имя секвенции: `{name}_2_Assembly` |
 
-> **Примечание:** Поля quality (no_speech_prob, compression_ratio, temperature, avg_logprob, low_confidence) используются Claude для принятия решений о вырезке/включении сегментов. Они НЕ передаются в edit_brief.json — только информируют решения `use`, `priority`, `block`.
+> **Примечание:** Поля quality (no_speech_prob, compression_ratio, temperature, avg_logprob, low_confidence) используются Claude для принятия решений о вырезке/включении сегментов. Они НЕ передаются в pre_edit_brief.json — только информируют решения `use`, `priority`, `block`.
 
-### Маппинг полей edit_brief -> Assembly UXP
+### Маппинг полей pre_edit_brief -> Assembly UXP
 
-| edit_brief.json | Assembly действие | Примечание |
+| pre_edit_brief.json | Assembly действие | Примечание |
 |----------------|-------------------|-----------|
 | `color` | `LABEL_COLOR_INDEX[color]` -> clip label | Per-segment: цвет ставится ПЕРЕД каждой вставкой |
 | `color` | `MARKER_COLOR_INDEX[color]` -> marker color | Отдельная палитра! Green=0, Blue=6, Orange=3 |
@@ -93,9 +93,9 @@ UXP плагин (0500_uxp v2.1.0) автоматически импортиру
 | `block` | Порядок на таймлайне | Сегменты сортируются по block, внутри — по порядку в JSON |
 | `transcript` + `speaker` + `broll_note` + `notes` | Comment в маркере | Объединяются через " \| " |
 
-### Маппинг полей edit_brief -> Review UXP
+### Маппинг полей pre_edit_brief -> Review UXP
 
-| edit_brief.json | Review действие | Примечание |
+| pre_edit_brief.json | Review действие | Примечание |
 |----------------|-----------------|-----------|
 | `use="FALSE"` OR `block=99` | Включается в Review секвенцию | Инверсия Assembly фильтра |
 | `block=99` | Категория **CUT** → Red clip + Red marker | Явно вырезано (шум, ошибки) |

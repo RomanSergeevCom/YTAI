@@ -1,12 +1,12 @@
-# 0500_uxp — Specification v2.1.0
+# 0500_uxp — Specification v2.2.0
 
 UXP-плагин для Adobe Premiere Pro: **Ingest** + **Assembly** + **Review** + **Screen Cues** в одной панели.
 
 **Вход:**
-- INGEST: `{project}_ingest.json` (из 02_transcribe)
-- ASSEMBLY: `{project}_edit_brief.json` (из 0501_brief / Claude KB)
-- REVIEW: `{project}_edit_brief.json` (тот же файл, обратный фильтр)
-- SCREEN CUES: `{project}_edit_brief.json` → `screens[]` массив + PNGs (из 0504_screen_cues)
+- INGEST: `{CODE}_ingest.json` (из 02_transcribe, auto-detect: Setup/{CODE}_ingest.json)
+- ASSEMBLY: `{CODE}_pre_pre_edit_brief.json` (из 0501_brief / Claude KB)
+- REVIEW: `{CODE}_pre_pre_edit_brief.json` (тот же файл, обратный фильтр)
+- SCREEN CUES: `{CODE}_pre_pre_edit_brief.json` → `screens[]` массив + PNGs (из 0504_screen_cues)
 
 **Выход (Premiere Pro):**
 - INGEST: бины `00_Source/`, `02_Transcripts/`, секвенция `{project}_1_Ingest`
@@ -30,11 +30,11 @@ index.js (оркестратор — state, UI helpers, pipelines)
 ├── src/ingest/
 │   ├── ingestLoader.js   ← parseIngest(), generateSummary()
 │   ├── binManager.js     ← createBinStructure(), BIN_NAMES
-│   ├── timelineBuilder.js ← buildIngestSequence(), findProjectItemByName()
+│   ├── timelineBuilder.js ← buildIngestSequence(), buildMultiSceneIngest(), findProjectItemByName()
 │   ├── transcriptImporter.js ← importTranscripts()
 │   └── lutManager.js     ← copyLutsToCreativeFolder(), applyLumetriToClips()
 ├── src/assembly/
-│   ├── briefParser.js    ← parseBrief() — парсер edit_brief.json (Format A + B)
+│   ├── briefParser.js    ← parseBrief() — парсер pre_pre_edit_brief.json (Format A + B)
 │   ├── projectScanner.js ← findSourceBin(), buildClipMap(), validateIngestState()
 │   └── assemblyBuilder.js ← buildAssemblySequence(), sortSegments() (uses clipActions)
 ├── src/review/
@@ -66,12 +66,16 @@ INGEST, ASSEMBLY, REVIEW и SCREENS модули **не импортируют �
   "media": { "width": 3840, "height": 2160, "fps": 25, "sample_rate": 48000 },
   "clips": [{
     "clip_id": "C5402", "filename": "C5402.MP4", "path": "/abs/...", "duration": 156.0,
-    "dji_audio": [{ "tx": "TX02", "path": "/abs/.../C5402_TX02.wav" }]
+    "scene": "03_Coffee",
+    "dji_audio": [{ "tx": "TX01", "path": "/abs/.../03_Coffee/C5402_TX01.wav" },
+                  { "tx": "TX02", "path": "/abs/.../03_Coffee/C5402_TX02.wav" }]
   }],
   "files": { "transcript_json": "...", "transcript_srt": "...", "transcript_xlsx": "..." },
   "source_folder": "/abs/Interview"
 }
 ```
+
+- `scene` — (optional, v2.2.0) Scene folder name (e.g. `"03_Coffee"`). Present when video is in a scene subfolder matching `^\d{2}_`.
 
 ### DJI Audio (опционально)
 
@@ -97,6 +101,33 @@ Assembly:    V1 = USE=TRUE сегменты, A2 = DJI тримменные се�
 Review:      V1 = complement сегменты, A2 = DJI тримменные сегменты (insertDjiAudio)
 Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегменты (insertDjiAudio)
 ```
+
+### Multi-Scene Ingest (v2.2.0)
+
+Если клипы имеют поле `scene`, Ingest создаёт **отдельную секвенцию на каждую сцену** вместо одной общей:
+
+```
+{project}_1_01_Interview    ← V1 + A1 + A2 (TX01)
+{project}_1_02_Car           ← V1 + A1 + A2 (TX01)
+{project}_1_03_Coffee        ← V1 + A1 + A2 (TX01) + A3 (TX02)
+```
+
+**Алгоритм:**
+1. Все медиа (видео + DJI WAV) импортируются в `00_Source` **одной операцией**
+2. Клипы группируются по `clip.scene`
+3. Для каждой сцены создаётся отдельная секвенция
+4. TX→Track маппинг определяется **per-scene**: `sortedTx = [...sceneTxIds].sort()` → TX01→A2, TX02→A3
+
+**Функция:** `buildMultiSceneIngest()` в `timelineBuilder.js`
+
+**Backward compatible:** Если ни один клип не имеет поля `scene` → вызывается `buildIngestSequence()` (старый путь, single sequence).
+
+| Ситуация | Поведение |
+|----------|-----------|
+| Flat проект (нет scene) | 1 секвенция `{project}_1_Ingest` |
+| Scene проект | N секвенций `{project}_1_{sceneName}` |
+| 1 TX на сцену | A2 = TX01 |
+| 2 TX на сцену (Coffee) | A2 = TX01, A3 = TX02 |
 
 ---
 
@@ -141,7 +172,7 @@ Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегмен�
 **Модули:** `src/screens/screenParser.js`, `src/screens/screenBuilder.js`
 **Backward compatible:** brief без screens[] → pipeline disabled
 
-### Формат входа (edit_brief.json)
+### Формат входа (pre_pre_edit_brief.json)
 
 ```json
 {
@@ -249,7 +280,7 @@ Total Ingest = 356.64s
 
 ---
 
-### Обязательные поля edit_brief.json для Assembly
+### Обязательные поля pre_pre_edit_brief.json для Assembly
 
 | Поле | Тип | Назначение | Пример |
 |------|-----|-----------|--------|
@@ -462,7 +493,7 @@ buildAssembly() [index.js]
 ├─ Step 5: setActiveSequence() + save() + validateAssemblyBuild()
 │
 └─ Step 6: importCaptionsSrt() [index.js]
-   ├─ Ищет {project}_2_Assembly_captions.srt рядом с brief
+   ├─ Ищет {CODE}_2_Assembly_captions.srt в Transcription/captions/ (или рядом с brief как fallback)
    ├─ Если найден → project.importFiles([srtPath], true, transcriptsBin, false)
    └─ SRT появляется в 02_Transcripts bin → editor перетаскивает на Caption track
 ```
@@ -527,7 +558,7 @@ buildReview() [index.js]
 ├─ Step 5: setActiveSequence() + save() + validateReviewBuild()
 │
 └─ Step 6: importCaptionsSrt() [index.js]
-   ├─ Ищет {project}_3_Review_captions.srt рядом с brief
+   ├─ Ищет {CODE}_3_Review_captions.srt в Transcription/captions/ (или рядом с brief как fallback)
    ├─ Если найден → project.importFiles([srtPath], true, transcriptsBin, false)
    └─ SRT появляется в 02_Transcripts bin → editor перетаскивает на Caption track
 ```
@@ -556,7 +587,7 @@ buildScreenCuesPipeline() [index.js]
 │  ├─ Phase E: Markers (Orange Comment) at screen timeline positions
 │  └─ Phase F: generateScreenCuesSrt() → srtContent
 │
-├─ Step 3: Write SRT to {briefDir}/{project}_4_ScreenCues_captions.srt
+├─ Step 3: Write SRT to Transcription/captions/{CODE}_4_PreEdit_captions.srt and Transcription/transcripts/{CODE}_4_PreEdit_transcript.srt
 │
 ├─ Step 4: importCaptionsSrt() → import SRT to 02_Transcripts bin
 │
@@ -593,11 +624,11 @@ ASSEMBLY Pipeline                    REVIEW Pipeline             SCREEN CUES Pip
 └── Source/Audio/{clip}_TX{N}.wav ──→ 020101_transcribe (→ ingest.json clips[].dji_audio)
 
 020101_transcribe
-├── transcript.json ──→ 0501_brief (Claude) ──→ edit_brief.json ─┬─→ 0500_uxp ASSEMBLY
+├── transcript.json ──→ 0501_brief (Claude) ──→ pre_edit_brief.json ─┬─→ 0500_uxp ASSEMBLY
 ├── ingest.json    ──→ 0500_uxp INGEST                           ├─→ 0500_uxp REVIEW (обратный фильтр)
 │   (incl. dji_audio)                                             └─→ 0500_uxp SCREEN CUES
 └── per_clip/*.json ──→ generate_assembly_captions.py
-                         + edit_brief.json
+                         + pre_edit_brief.json
                          ↓
                         {project}_2_Assembly_captions.srt ──→ 0500_uxp ASSEMBLY (Step 6: auto-import)
                         {project}_3_Review_captions.srt   ──→ 0500_uxp REVIEW   (Step 6: auto-import)
@@ -717,7 +748,7 @@ briefParser.js
 | Действие | Описание |
 |--------|----------|
 | **Select Project Folder** | `uxpfs.getFolder()` → сохраняет `projectState.folderPath` + `projectName` → `autoDetectFiles()` |
-| **Auto-detect** | Ищет файлы по конвенции: `{folder}/01_Media/Source/{name}_ingest.json` и `{folder}/01_Media/Source/Setup/{name}_edit_brief.json` через `uxpfs.getEntryWithUrl()` |
+| **Auto-detect** | Ищет файлы: `{CODE}_ingest.json` в `Setup/` (приоритет), затем legacy full-name; `{CODE}_pre_edit_brief.json` в `Setup/`, затем legacy `_edit_brief.json` — через `uxpfs.getEntryWithUrl()` |
 | **Checklist** | Визуальный чеклист: ✓ зелёный (найдено) / ✗ красный (не найдено) + подсказка пути для отсутствующих файлов |
 | **Refresh** | Re-run `autoDetectFiles()` — проверить заново после перемещения файлов |
 | **Fallback** | Если auto-detect не нашёл файл → показывается кнопка ручной загрузки (Load Ingest JSON / Load Edit Brief) с оранжевой рамкой |
@@ -729,7 +760,7 @@ let projectState = {
   folderPath: null,     // полный путь к папке проекта
   projectName: null,    // имя проекта (из имени папки)
   ingestPath: null,     // путь к найденному ingest.json
-  briefPath: null,      // путь к найденному edit_brief.json
+  briefPath: null,      // путь к найденному pre_edit_brief.json
   ingestDetected: false, // auto-detect нашёл ingest
   briefDetected: false   // auto-detect нашёл brief
 };

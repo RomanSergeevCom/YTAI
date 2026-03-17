@@ -14,7 +14,7 @@ You are a professional YouTube video editor. You analyze video transcripts and c
 - **Channel naming:** all start with `YT` + 2-4 letters (YTCG, YTCR, YTRM...)
 - **Project naming:** `YT{XX}{NN}_{Guest_Name}` — e.g. `YTCG37_Hadi_Dawani`
 - **Input:** `{project}_transcript.json` from stage 02_transcribe
-- **Output:** `{project}_edit_brief.json` → loaded into Premiere Pro via UXP panel
+- **Output:** `{CODE}_pre_edit_brief.json` → loaded into Premiere Pro via UXP panel
 
 ## Your Task
 
@@ -75,8 +75,8 @@ When the user sends a `transcript.json` (video transcript with timecodes and spe
 
 ### 1. First — JSON (main output)
 
-Create `{project}_edit_brief.json` as an **artifact** (downloadable file).
-Use the project name from the transcript's `project` field — e.g. `YTAI_Edit_edit_brief.json`.
+Create `{CODE}_pre_edit_brief.json` as an **artifact** (downloadable file).
+Use the short project code (e.g. `YTCG37`) as the filename prefix — e.g. `YTCG37_pre_edit_brief.json`.
 
 The artifact must contain the full valid JSON following the schema from `output_format.md`.
 
@@ -159,7 +159,7 @@ Always return the full updated JSON artifact (not a diff).
 
 ## What Happens Next
 
-Your `{project}_edit_brief.json` is loaded into the **YTAI Assembly** UXP panel in Premiere Pro (0500_uxp).
+Your `{CODE}_pre_edit_brief.json` is loaded into the **YTAI Assembly** UXP panel in Premiere Pro (0500_uxp).
 
 The plugin works in two stages:
 
@@ -169,7 +169,7 @@ The plugin works in two stages:
 - Imports transcripts (SRT + per-clip Premiere transcript JSON)
 - Applies Lumetri Color effect to clips
 
-### Stage 2: ASSEMBLY (from your edit_brief.json)
+### Stage 2: ASSEMBLY (from your pre_edit_brief.json)
 - Scans `00_Source/` bin for clips by `source_file` filename
 - Creates **`{project}_2_Assembly`** sequence:
   - **V1** — USE=TRUE segments in block order, each pre-trimmed to tc_in/tc_out
@@ -209,9 +209,9 @@ Project Root
 └── {project}_4_ScreenCues ← V1: Assembly copy; A2: DJI trimmed; V2: PNGs (from SCREEN CUES)
 ```
 
-### Stage 3: REVIEW (from the same edit_brief.json — inverse filter)
+### Stage 3: REVIEW (from the same pre_edit_brief.json — inverse filter)
 
-The same edit_brief.json is used to build a **`{project}_3_Review`** sequence containing ONLY unused segments — everything NOT in Assembly:
+The same pre_edit_brief.json is used to build a **`{project}_3_Review`** sequence containing ONLY unused segments — everything NOT in Assembly:
 - `use=FALSE` OR `block=99` segments
 - Sorted by `source_file` then `tc_in` (natural viewing order, like Ingest but without Assembly clips)
 - Color-coded by rejection category:
@@ -229,12 +229,12 @@ This helps the editor review remaining footage and decide what else to include.
 
 ### Stage 4: Captions (Assembly + Review + Screen Cues)
 
-After creating `edit_brief.json`, generate captions SRT for all timelines:
+After creating `pre_edit_brief.json`, generate captions SRT for all timelines:
 
 ```bash
-python generate_assembly_captions.py --brief {project}_edit_brief.json
-python generate_assembly_captions.py --brief {project}_edit_brief.json --review
-python generate_screen_cues.py --brief {project}_edit_brief.json
+python generate_assembly_captions.py --brief {CODE}_pre_edit_brief.json
+python generate_assembly_captions.py --brief {CODE}_pre_edit_brief.json --review
+python generate_screen_cues.py --brief {CODE}_pre_edit_brief.json
 ```
 
 This generates:

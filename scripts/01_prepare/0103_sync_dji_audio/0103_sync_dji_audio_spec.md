@@ -1,9 +1,9 @@
-# 0103_sync_dji_audio — Specification v1.1.0
+# 0103_sync_dji_audio — Specification v1.2.0
 
 Синхронизация аудио DJI беспроводных микрофонов с видеоклипами камеры.
 
-**Вход:** `Source/Video/*.mp4` + `99_Pipeline/DJI_Audio/*.wav`
-**Выход:** `Source/Audio/{clip}_TX{N}.wav` (синхронизированное аудио для каждого клипа × передатчик)
+**Вход:** `Source/Video/*.mp4` (или `Source/Video/{scene}/*.mp4`) + `99_Pipeline/DJI_Audio/*.wav`
+**Выход:** `Source/Audio/{clip}_TX{N}.wav` или `Source/Audio/{scene}/{clip}_TX{N}.wav`
 
 ---
 
@@ -132,6 +132,8 @@ ffmpeg -f concat -safe 0 -i list.txt -ss {offset} -t {duration} -c copy output.w
 
 ## Выходная структура
 
+### Flat (без scene-папок)
+
 ```
 01_Media/Source/Audio/
 ├── RYA-FX3-0099_TX02.wav      ← DJI аудио, синхронизированное с клипом 0099
@@ -139,7 +141,26 @@ ffmpeg -f concat -safe 0 -i list.txt -ss {offset} -t {duration} -c copy output.w
 └── ...
 ```
 
+### Scene-aware (v1.2.0)
+
+Если видео лежат в scene-папках (`Source/Video/01_Interview/`, `02_Car/`, `03_Coffee/`), выход зеркалит структуру:
+
+```
+01_Media/Source/Audio/
+├── 01_Interview/
+│   ├── RYA-ZVE1-1180_TX01.wav
+│   └── ...
+├── 02_Car/
+│   ├── RYA-ZVE1-1149_TX01.wav
+│   └── ...
+└── 03_Coffee/
+    ├── RYA-ZVE1-1167_TX01.wav   ← TX01 (mic 1)
+    ├── RYA-ZVE1-1167_TX02.wav   ← TX02 (mic 2)
+    └── ...
+```
+
 Нейминг: `{clip_stem}_TX{NN}.wav`
+Scene-папки определяются regex `^\d{2}_` из `Source/Video/`.
 
 ## DJI Raw Audio
 
@@ -154,12 +175,36 @@ ffmpeg -f concat -safe 0 -i list.txt -ss {offset} -t {duration} -c copy output.w
 | Max duration | 30 minutes per file |
 | Regex | `^TX\d{2}_MIC\d{3}_\d{8}_\d{6}` |
 
+## Premiere XML (Phase 4)
+
+После синхронизации генерируется FCP 7 XML для проверки в Premiere Pro.
+
+### Flat проект → 1 sequence
+
+```
+99_Pipeline/DJI_Audio/{CODE}_dji_sync_check.xml
+  └── Sequence "DJI Sync Check": V1 + A1 (camera) + A2 (DJI)
+```
+
+### Scene проект → N sequences (v1.2.0)
+
+```
+99_Pipeline/DJI_Audio/{CODE}_dji_sync_check.xml
+  ├── Sequence "01_Interview": V1 + A1 + A2 (TX01)
+  ├── Sequence "02_Car":       V1 + A1 + A2 (TX01)
+  └── Sequence "03_Coffee":    V1 + A1 + A2 (TX01) + A3 (TX02)
+```
+
+Каждая сцена — отдельный таймлайн. TX-каналы раскладываются по дорожкам: TX01→A2, TX02→A3 и т.д. В Coffee — 2 DJI дорожки друг под другом.
+
+**Workflow:** Open `.prproj` → File > Import `.xml` → sequences appear.
+
 ## Проверка завершённости
 
 ```python
 def check_sync_dji(project: Path) -> bool:
     audio = project / "01_Media" / "Source" / "Audio"
-    return audio.is_dir() and any(audio.glob("*.wav"))
+    return audio.is_dir() and any(audio.rglob("*.wav"))
 ```
 
 ## Опциональность

@@ -1,131 +1,151 @@
-# YTAI Scripts — YouTube AI Pipeline
+# YTAI Scripts — YouTube AI Pipeline v3.0
 
-Автоматизация продакшена YouTube-видео для Connect Group Dubai.
+Автоматизация продакшена YouTube-видео: от сырых файлов камеры до готового таймлайна в Premiere Pro.
+
+## Быстрый старт
+
+```bash
+# 1. Подготовка (init + extract audio + DJI sync)
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT"
+
+# 2. Транскрипция
+source ~/YTAI/environment/.venv_transcribe/bin/activate
+python ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py \
+    --project "$PROJECT" -n 2 -y
+
+# 3. Premiere: открыть UXP плагин → Select Project → Build Ingest → Build Assembly
+```
 
 ## Структура
 
 ```
 scripts/
-├── 00_init/                   # Инициализация проекта
-│   ├── 01_create_template.py
-│   └── 02_apply_template.py
+├── run_pipeline.py                      ← главный скрипт (01_prepare)
 │
-├── 01_prepare/                # Подготовка сырья
-│   ├── 01_concat_clips.py
-│   └── 02_extract_audio.py
+├── 01_prepare/                          ← Фаза 1: подготовка
+│   ├── 01_prepare_spec.md
+│   ├── 0102_extract_audio/
+│   │   ├── 0102_extract_audio.py        ← WAV из каждого MP4
+│   │   └── 0102_extract_audio_spec.md
+│   └── 0103_sync_dji_audio/
+│       ├── 0103_sync_dji_audio.py       ← синхронизация DJI mic → clip
+│       ├── generate_prproj.py           ← XML + .prproj для проверки
+│       └── 0103_sync_dji_audio_spec.md
 │
-├── 02_transcribe/             # Транскрипция ✅ ГОТОВО
-│   └── 01_transcribe_project.py
+├── 02_transcribe/                       ← Фаза 2: транскрипция
+│   └── 020101_transcribe/
+│       ├── transcribe_project.py        ← Whisper + pyannote pipeline
+│       ├── ingest_json.py               ← генерация ingest.json для UXP
+│       └── 020101_transcribe_spec.md
 │
-├── 03_speaker_id/             # Идентификация спикеров ✅ ГОТОВО
-│   ├── 00_process_all.py
-│   ├── 01_extract_speakers.py
-│   ├── 02_analyze_speakers.py
-│   ├── 03_apply_names.py
-│   ├── 04_split_clips.py
-│   └── utils/
+├── 05_editing/                          ← Фаза 3: монтаж в Premiere
+│   ├── 0500_uxp/                        ← UXP плагин Premiere Pro
+│   │   ├── index.js                     ← оркестратор (Ingest/Assembly/Review/Screens)
+│   │   ├── src/ingest/                  ← импорт медиа + таймлайн
+│   │   ├── src/assembly/                ← сборка по pre_edit_brief.json
+│   │   ├── src/review/                  ← complement (неиспользованное)
+│   │   ├── src/screens/                 ← screen cues overlay
+│   │   ├── src/shared/                  ← общие утилиты
+│   │   ├── tests/                       ← 186 тестов (npm test)
+│   │   └── 0500_uxp_spec.md
+│   ├── 0501_brief/                      ← генерация pre_edit_brief.json (Claude)
+│   └── 0504_screen_cues/                ← генерация PNG оверлеев
 │
-├── 04_video_analysis/         # Анализ видео (эмоции, B-roll)
-│   ├── 01_extract_frames.py
-│   ├── 02_detect_scenes.py
-│   ├── 03_detect_emotions.py
-│   ├── 04_detect_gestures.py
-│   ├── 05_find_broll.py
-│   └── 06_generate_visual_brief.py
-│
-├── 05_editing/                # Подготовка к монтажу
-│   ├── 01_build_master_doc.py
-│   ├── 02_chapters.py
-│   ├── 03_highlights.py
-│   ├── 04_export_premiere_xml.py
-│   ├── 05_export_markers.py
-│   └── 06_generate_edit_brief.py
-│
-├── 06_thumbnails/             # Превью + Тайтлы
-│   ├── 01_title_generator.py
-│   ├── 02_thumbnail_prompts.py
-│   └── 03_compose.py
-│
-├── 07_shorts/                 # Shorts / Reels
-│   ├── 01_find_moments.py
-│   ├── 02_export_cuts.py
-│   └── 03_generate_captions.py
-│
-└── 08_youtube/                # Подготовка к публикации
-    ├── 01_description.py
-    ├── 02_chapters.py
-    └── 03_tags.py
+└── environment/                         ← виртуальные окружения
+    └── .venv_transcribe/
 ```
 
-## Полный Workflow
+## Запуск по фазам
+
+### 01_prepare — Подготовка
 
 ```bash
-# 0. Создать проект
-python 00_init/02_apply_template.py --target "/Volumes/RYA Blue/YT_Project"
+# Полный pipeline (init → extract audio → DJI sync)
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT"
 
-# 1. Подготовка
-python 01_prepare/01_concat_clips.py --project "..."
-python 01_prepare/02_extract_audio.py --project "..."
+# Только отдельные стадии
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only init
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only extract_audio
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only sync_dji
 
-# 2. Транскрипция
-python 02_transcribe/01_transcribe_project.py --project "..." -n 2
+# DJI sync напрямую (с явным timezone)
+python ~/YTAI/scripts/01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py \
+    --project "$PROJECT" --tz-offset 4
 
-# 3. Идентификация спикеров
-python 03_speaker_id/00_process_all.py --project "..."
-
-# 4. Анализ видео
-python 04_video_analysis/01_extract_frames.py --project "..."
-python 04_video_analysis/03_detect_emotions.py --project "..."
-
-# 5. Подготовка к монтажу
-python 05_editing/06_generate_edit_brief.py --project "..."
-
-# 6. Превью
-python 06_thumbnails/01_title_generator.py --project "..."
-
-# 7. Shorts
-python 07_shorts/01_find_moments.py --project "..."
-
-# 8. YouTube
-python 08_youtube/01_description.py --project "..."
+# Dry run
+python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --dry-run
 ```
 
-## Статус реализации
+**Вход:** Папка с MP4 + (опционально) DJI WAV в `99_Pipeline/DJI_Audio/`
+**Выход:** v3.0 структура с `Source/Video/`, `Source/Audio/`, extracted WAVs
 
-| Папка | Статус |
-|-------|--------|
-| 00_init | ⏳ Перенести существующие скрипты |
-| 01_prepare | ⏳ Перенести существующие скрипты |
-| 02_transcribe | ✅ ГОТОВО |
-| 03_speaker_id | ✅ ГОТОВО |
-| 04_video_analysis | 📋 TODO |
-| 05_editing | 📋 TODO |
-| 06_thumbnails | 📋 TODO |
-| 07_shorts | 📋 TODO |
-| 08_youtube | 📋 TODO |
-
-## Требования
+### 02_transcribe — Транскрипция
 
 ```bash
-# Python пакеты
-pip install openai-whisper pyannote.audio torch requests openpyxl soundfile
+source ~/YTAI/environment/.venv_transcribe/bin/activate
 
-# FFmpeg
-brew install ffmpeg
+# Полная транскрипция
+python ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py \
+    --project "$PROJECT" -n 2 -y
 
-# Ollama (для LLM)
-brew install ollama
-ollama pull llama3.3:70b-instruct-q4_K_M
+# Только ingest.json (перегенерация)
+python ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py \
+    --project "$PROJECT" --stages 6
+
+# Dry run
+python ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py \
+    --project "$PROJECT" --dry-run
 ```
 
-## Быстрый старт
+**Вход:** v3.0 структура после prepare
+**Выход:** transcript.json, SRT, XLSX, ingest.json, premiere_transcript.json
+
+### 05_editing — Premiere Pro
 
 ```bash
-# Транскрипция
-python 02_transcribe/01_transcribe_project.py --project "/path/to/project" -n 2
+# UXP плагин — запускается из Premiere Pro
+# 1. Открыть .prproj
+# 2. Window → Extensions → YTAI
+# 3. Select Project Folder → Build Ingest → Build Assembly
 
-# Идентификация спикеров
-python 03_speaker_id/00_process_all.py --project "/path/to/project" --no-pause
+# Screen Cues PNGs (перед Build Screen Cues)
+python ~/YTAI/scripts/05_editing/0504_screen_cues/generate_screen_cues_png.py \
+    --brief "$PROJECT/01_Media/Source/Setup/{CODE}_pre_edit_brief.json"
+
+# Тесты UXP
+cd ~/YTAI/scripts/05_editing/0500_uxp && npm test
 ```
 
-См. `QUICKSTART.md` для подробной документации.
+**Вход:** ingest.json (из transcribe), pre_edit_brief.json (из Claude/0501_brief)
+**Выход:** Premiere секвенции (Ingest, Assembly, Review, Screen Cues)
+
+## Scene-aware проекты (v1.2.0+)
+
+Если видео организованы в scene-папки (`01_Interview/`, `02_Car/`, `03_Coffee/` внутри `Source/Video/`):
+
+- **DJI sync** → Audio зеркалит структуру Video + XML с N sequences
+- **ingest.json** → клипы получают поле `scene`
+- **UXP Ingest** → создаёт отдельную секвенцию на каждую сцену
+- **Flat проекты** → всё работает как раньше (backward compatible)
+
+## Зависимости
+
+| Зависимость | Установка | Используется |
+|-------------|-----------|-------------|
+| Python 3.11+ | — | Все скрипты |
+| ffmpeg / ffprobe | `brew install ffmpeg` | 01_prepare, 02_transcribe |
+| whisper (large-v3) | pip (venv_transcribe) | 02_transcribe |
+| pyannote.audio | pip (venv_transcribe) | 02_transcribe |
+| torch (MPS) | pip (venv_transcribe) | 02_transcribe |
+| Node.js 18+ | — | 05_editing тесты |
+| Premiere Pro 25.6+ | — | 05_editing UXP |
+
+## Спецификации
+
+| Файл | Описание |
+|------|----------|
+| `01_prepare/01_prepare_spec.md` | Фаза подготовки: init, extract, DJI sync |
+| `01_prepare/0102_extract_audio/0102_extract_audio_spec.md` | Извлечение аудио |
+| `01_prepare/0103_sync_dji_audio/0103_sync_dji_audio_spec.md` | Синхронизация DJI |
+| `02_transcribe/020101_transcribe/020101_transcribe_spec.md` | Транскрипция + ingest |
+| `05_editing/0500_uxp/0500_uxp_spec.md` | UXP плагин Premiere |

@@ -85,7 +85,27 @@ Saves Whisper quality fields per segment for confidence assessment and editing d
 
 ## Folder Structure
 
-### Variant A: Flat project
+### Variant A-v3: v3.0 Flat project (preferred — Setup/ + Transcription/ structure)
+
+    YTCG37_Setup_UAE_Company_Remotely/
+    +-- 01_Media/Source/
+    |   +-- Setup/
+    |   |   +-- YTCG37_transcript.json         <- main transcript JSON
+    |   |   +-- YTCG37_transcript.xlsx         <- Excel transcript
+    |   |   +-- YTCG37_ingest.json             <- UXP ingest JSON
+    |   +-- Transcription/
+    |       +-- YTCG37_FULL_AUDIO.wav           <- concat audio
+    |       +-- captions/
+    |       |   +-- YTCG37_1_Ingest_captions.srt
+    |       +-- transcripts/
+    |       |   +-- YTCG37_transcript.srt
+    |       +-- per_clip/
+    |           +-- C5090/
+    |               +-- C5090_audio.wav
+    |               +-- C5090_transcript.json
+    |               +-- ...
+
+### Variant A: Flat project (legacy structure)
 
     Interview/
     +-- *.MP4 (video files)
@@ -384,7 +404,8 @@ Fields:
 - `media` — resolution, FPS, sample_rate from first clip
 - `clips[]` — absolute paths to video and premiere transcript JSON
 - `clips[].offset` — clip offset in concatenated audio (for diarization)
-- `clips[].dji_audio` — (optional) DJI microphone sync files from `0103_sync_dji_audio`. Array of `{ tx, path }` objects. Present only when synced DJI WAV files exist in `Source/Audio/`.
+- `clips[].dji_audio` — (optional) DJI microphone sync files from `0103_sync_dji_audio`. Array of `{ tx, path }` objects. Present only when synced DJI WAV files exist in `Source/Audio/`. Uses `rglob` to find files in both flat and scene-subdirectory structures.
+- `clips[].scene` — (optional, v3.2) Scene folder name (e.g. `"03_Coffee"`). Present when video is in a scene subfolder matching `^\d{2}_` pattern. Used by UXP plugin to create per-scene Ingest sequences.
 - `files` — absolute paths to combined transcript JSON, SRT, captions SRT, XLSX
 - `source_folder` — project root folder
 
@@ -448,6 +469,14 @@ Reads `{project}_transcript.json` (inside `_transcription/`), generates `{projec
 Can be run standalone:
 
     python ingest_json.py /path/to/Interview_transcription/Interview_transcript.json
+
+### Scene detection (v3.2)
+
+Для каждого клипа проверяется `Path(clip["path"]).parent.name` — если parent dir matching `^\d{2}_` (e.g. `01_Interview`, `03_Coffee`), добавляется поле `clip["scene"]`.
+
+### DJI audio discovery
+
+Использует `synced_dir.rglob(f"{clip_id}_TX*.wav")` для поиска DJI audio — находит файлы как в flat (`Source/Audio/clip_TX01.wav`), так и в scene-подпапках (`Source/Audio/03_Coffee/clip_TX01.wav`).
 
 ---
 
