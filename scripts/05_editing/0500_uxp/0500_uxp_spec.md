@@ -4,9 +4,9 @@ UXP-плагин для Adobe Premiere Pro: **Ingest** + **Assembly** + **Review
 
 **Вход:**
 - INGEST: `{CODE}_ingest.json` (из 02_transcribe, auto-detect: Setup/{CODE}_ingest.json)
-- ASSEMBLY: `{CODE}_pre_pre_edit_brief.json` (из 0501_brief / Claude KB)
-- REVIEW: `{CODE}_pre_pre_edit_brief.json` (тот же файл, обратный фильтр)
-- SCREEN CUES: `{CODE}_pre_pre_edit_brief.json` → `screens[]` массив + PNGs (из 0504_screen_cues)
+- ASSEMBLY: `{CODE}_pre_edit_brief.json` (из 0501_brief / Claude KB)
+- REVIEW: `{CODE}_pre_edit_brief.json` (тот же файл, обратный фильтр)
+- SCREEN CUES: `{CODE}_pre_edit_brief.json` → `screens[]` массив + PNGs (из 0504_screen_cues)
 
 **Выход (Premiere Pro):**
 - INGEST: бины `00_Source/`, `02_Transcripts/`, секвенция `{project}_1_Ingest`
@@ -34,7 +34,7 @@ index.js (оркестратор — state, UI helpers, pipelines)
 │   ├── transcriptImporter.js ← importTranscripts()
 │   └── lutManager.js     ← copyLutsToCreativeFolder(), applyLumetriToClips()
 ├── src/assembly/
-│   ├── briefParser.js    ← parseBrief() — парсер pre_pre_edit_brief.json (Format A + B)
+│   ├── briefParser.js    ← parseBrief() — парсер pre_edit_brief.json (Format A + B)
 │   ├── projectScanner.js ← findSourceBin(), buildClipMap(), validateIngestState()
 │   └── assemblyBuilder.js ← buildAssemblySequence(), sortSegments() (uses clipActions)
 ├── src/review/
@@ -172,7 +172,7 @@ Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегмен�
 **Модули:** `src/screens/screenParser.js`, `src/screens/screenBuilder.js`
 **Backward compatible:** brief без screens[] → pipeline disabled
 
-### Формат входа (pre_pre_edit_brief.json)
+### Формат входа (pre_edit_brief.json)
 
 ```json
 {
@@ -280,7 +280,7 @@ Total Ingest = 356.64s
 
 ---
 
-### Обязательные поля pre_pre_edit_brief.json для Assembly
+### Обязательные поля pre_edit_brief.json для Assembly
 
 | Поле | Тип | Назначение | Пример |
 |------|-----|-----------|--------|

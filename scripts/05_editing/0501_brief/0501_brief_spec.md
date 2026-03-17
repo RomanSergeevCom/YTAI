@@ -3,7 +3,7 @@
 Claude Desktop Project Knowledge для создания монтажных брифов.
 
 **Вход:** `{project}_transcript.json` (из 020101_transcribe)
-**Выход:** `{CODE}_pre_pre_edit_brief.json` -> auto-detect в 0500_uxp v2.1.0 (ASSEMBLY + REVIEW + SCREEN CUES)
+**Выход:** `{CODE}_pre_edit_brief.json` -> auto-detect в 0500_uxp v2.1.0 (ASSEMBLY + REVIEW + SCREEN CUES)
 **Выход 2:** `{project}_2_Assembly_captions.srt` -> генерируется `generate_assembly_captions.py`
 **Выход 3:** `{project}_3_Review_captions.srt` -> генерируется `generate_assembly_captions.py --review`
 
@@ -31,7 +31,7 @@ Claude Desktop Project Knowledge для создания монтажных бр
     |
     +- {project}_transcript.json --> 050202_claude_kb (Claude Desktop)
     |                                     |
-    |                                     +- {CODE}_pre_pre_edit_brief.json
+    |                                     +- {CODE}_pre_edit_brief.json
     |                                          |  (auto-detected by UXP v2.1.0 при Select Project Folder)
     |                                          +-->  0500_uxp (ASSEMBLY: use=TRUE, block≠99)
     |                                          +-->  0500_uxp (REVIEW: use=FALSE OR block=99)
@@ -48,8 +48,8 @@ Claude Desktop Project Knowledge для создания монтажных бр
 
 После создания `pre_edit_brief.json`, LLM запускает:
 ```bash
-python generate_assembly_captions.py --brief {CODE}_pre_pre_edit_brief.json
-python generate_assembly_captions.py --brief {CODE}_pre_pre_edit_brief.json --review
+python generate_assembly_captions.py --brief {CODE}_pre_edit_brief.json
+python generate_assembly_captions.py --brief {CODE}_pre_edit_brief.json --review
 ```
 
 Скрипт (единый для обоих режимов):
