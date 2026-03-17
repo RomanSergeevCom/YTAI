@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 Phase: 2 of 5 (Audio Sync) — COMPLETE
 Plan: 3 of 3 in current phase (completed)
 Status: Phase 2 complete — ready for Phase 3
-Last activity: 2026-03-17 — Completed 02-03: integration validation on apartment scene, human approved sync quality
+Last activity: 2026-03-17 - Completed quick task 260317-clh: Run full prepare pipeline for YTCG37_Setup_UAE_Company_Remotely
 
 Progress: [████████░░] 83%
 
@@ -72,7 +72,7 @@ Recent decisions affecting current work:
 - 01-02: video_stems must scan destination video_dir in addition to source scene dirs (move order dependency)
 - 01-02: rmdir() for safe empty-dir cleanup after file moves
 - [Phase 01-03]: print_dry_run_summary() prints structured plan before any file operations; 100GOPRO/ .LRV-only subfolder needs no special handling
-- [Phase 01-03]: Dry-run gate confirmed on YTCR_1_Arty_Dzis: 7 scenes, 325 clips, 16 WAV files match expected structure
+- [Phase 01-03]: Dry-run gate confirmed on YTCR01_Arty_Dzis: 7 scenes, 325 clips, 16 WAV files match expected structure
 - [Phase 02-audio-sync]: Module fixture (scope=module) defers importlib load for TDD RED compatibility — --collect-only works even before implementation exists
 - [Phase 02-audio-sync]: fftconvolve valid_region slicing: corr[len(cam)-1:len(cam)-1+len(tx)-len(cam)+1] avoids boundary artifacts in cross-correlation
 - [Phase 02-audio-sync]: verify_full returns float|None (residual_sec directly), not dict — adapted process_clip call to use return value with clip_duration arg
@@ -83,7 +83,7 @@ Recent decisions affecting current work:
 ### Codebase Context
 
 - Codebase mapped to .planning/codebase/ (2026-03-17)
-- Reference nested project: `/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis`
+- Reference nested project: `/Volumes/RYA T7 Black/YTCR01_Arty_Dzis`
   - 7 scene folders, TX01/ (3 WAV), TX02/ (9 WAV), TX02_2/ (4 WAV)
   - Sony FX3 clips (C5XXX.MP4) + GoPro in al_qudra_lake
 - Flat project pipeline is complete and working — all changes must be additive
@@ -95,6 +95,12 @@ None yet.
 ### Blockers/Concerns
 
 - Phase 2 (Audio Sync) complete: validated on apartment scene (40 clips), TX02 sync approved by human. For full run (325 clips), use --scene per scene; confidence threshold 3.0 validated.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260317-clh | Run full prepare pipeline (organize, audio sync, transcribe, brief) for YTCG37_Setup_UAE_Company_Remotely flat structure | 2026-03-17 | 23ff43e | [260317-clh-run-full-prepare-pipeline-organize-audio](./quick/260317-clh-run-full-prepare-pipeline-organize-audio/) |
 
 ## Session Continuity
 
