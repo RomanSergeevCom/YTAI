@@ -25,7 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Depends on**: Nothing (first phase)
 **Requirements**: ORG-01, ORG-02, ORG-03, ORG-04, ORG-05, ORG-06
 **Success Criteria** (what must be TRUE):
-  1. Running the organize script on the reference project (`YTCR_1_Arty_Dzis`) produces scene subfolders under `01_Media/Source/Video/` with all MP4 clips correctly placed
+  1. Running the organize script on the reference project (`YTCR01_Arty_Dzis`) produces scene subfolders under `01_Media/Source/Video/` with all MP4 clips correctly placed
   2. All WAV files from TX01/, TX02/, TX02_2/ land flat in `99_Pipeline/DJI_Audio/` with original filenames preserved
   3. Sony XML sidecars land in `01_Media/Source/Transcription/per_clip/{scene}/{clip}/` and are not present in the Video folder
   4. Absence of XML sidecars does not error — the script runs to completion gracefully
@@ -62,7 +62,7 @@ Plans:
   1. Running transcription on the reference project produces `{scene}_transcript.json` for each of the 7 scenes under `01_Media/Source/Transcription/`
   2. `merged_transcript.json` exists and every word entry carries both `scene_id` and a local timecode within its scene
   3. Transcription can be re-run on a single scene without overwriting other scenes' outputs
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 03-01-PLAN.md — TDD: scene orchestrator core functions + cross-scene transcript merger (detect_scenes, transcribe_scene, collect, merge)
@@ -98,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Organize | 3/3 | Complete    | 2026-03-16 |
 | 2. Audio Sync | 3/3 | Complete   | 2026-03-17 |
-| 3. Transcribe | 0/2 | Not started | - |
+| 3. Transcribe | 1/2 | In Progress|  |
 | 4. UXP Plugin | TBD | Not started | - |
 | 5. Pipeline Integration | TBD | Not started | - |

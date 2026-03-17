@@ -59,9 +59,9 @@ ProjectName/
 
 ### TRANSCRIBE — Транскрипция
 
-- [ ] **TRN-01**: Существующий `transcribe_project.py` запускается per-scene или с `01_Media/Source/Video/` — находит сцены как подпапки; внутренняя логика (Whisper, Pyannote, ingest JSON) без изменений
-- [ ] **TRN-02**: Каждая сцена транскрибируется отдельно → `01_Media/Source/Transcription/{scene}_transcript.json` с word-level таймкодами
-- [ ] **TRN-03**: Все сцены объединяются → `01_Media/Source/Transcription/merged_transcript.json`; каждое слово содержит `scene_id` и локальный таймкод внутри сцены
+- [x] **TRN-01**: Существующий `transcribe_project.py` запускается per-scene или с `01_Media/Source/Video/` — находит сцены как подпапки; внутренняя логика (Whisper, Pyannote, ingest JSON) без изменений
+- [x] **TRN-02**: Каждая сцена транскрибируется отдельно → `01_Media/Source/Transcription/{scene}_transcript.json` с word-level таймкодами
+- [x] **TRN-03**: Все сцены объединяются → `01_Media/Source/Transcription/merged_transcript.json`; каждое слово содержит `scene_id` и локальный таймкод внутри сцены
 
 ---
 
@@ -119,9 +119,9 @@ ProjectName/
 | AUD-06 | Phase 2 — Audio Sync | Complete |
 | AUD-07 | Phase 2 — Audio Sync | Complete |
 | AUD-08 | Phase 2 — Audio Sync | Complete |
-| TRN-01 | Phase 3 — Transcribe | Pending |
-| TRN-02 | Phase 3 — Transcribe | Pending |
-| TRN-03 | Phase 3 — Transcribe | Pending |
+| TRN-01 | Phase 3 — Transcribe | Complete |
+| TRN-02 | Phase 3 — Transcribe | Complete |
+| TRN-03 | Phase 3 — Transcribe | Complete |
 | UXP-01 | Phase 4 — UXP Plugin | Pending |
 | UXP-02 | Phase 4 — UXP Plugin | Pending |
 | UXP-03 | Phase 4 — UXP Plugin | Pending |
@@ -139,7 +139,7 @@ ProjectName/
 
 ## Reference Project
 
-`/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis`
+`/Volumes/RYA T7 Black/YTCR01_Arty_Dzis`
 - 7 сцен: volleyball (114), dubai_driving (51), desert_drive (44), apartment (40), al_qudra_lake (34+GoPro), al_qudra_lake_story (35), drive_home (7)
 - TX01/ (3 WAV, Feb 28), TX02/ (9 WAV, Feb 28), TX02_2/ (WAV, Mar 2)
 - Итого: 325 клипов Sony FX3 + GoPro в al_qudra_lake

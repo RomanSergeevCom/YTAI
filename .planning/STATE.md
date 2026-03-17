@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 02-03-PLAN.md — integration validation on apartment scene + human sync quality approval (AUD-06)
-last_updated: "2026-03-17T00:21:31.988Z"
-last_activity: "2026-03-17 — Completed 02-03: integration validation on apartment scene, human approved sync quality"
+status: in_progress
+stopped_at: Completed 03-01-PLAN.md — scene orchestrator + merge module TDD (TRN-01, TRN-02, TRN-03)
+last_updated: "2026-03-17T07:35:00.000Z"
+last_activity: "2026-03-17 — Completed 03-01: scene orchestrator + merge module, 11 unit tests green"
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 83
+  total_plans: 7
+  completed_plans: 7
+  percent: 85
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** Every word in the transcript has a timecode — the editor selects quotes, the timeline builds itself.
-**Current focus:** Phase 2 — Audio Sync
+**Current focus:** Phase 3 — Transcribe
 
 ## Current Position
 
-Phase: 2 of 5 (Audio Sync) — COMPLETE
-Plan: 3 of 3 in current phase (completed)
-Status: Phase 2 complete — ready for Phase 3
-Last activity: 2026-03-17 - Completed quick task 260317-clh: Run full prepare pipeline for YTCG37_Setup_UAE_Company_Remotely
+Phase: 3 of 5 (Transcribe) — IN PROGRESS
+Plan: 1 of 2 in current phase (completed)
+Status: 03-01 complete — ready for 03-02 CLI orchestrator
+Last activity: 2026-03-17 - Completed 03-01: scene orchestrator + merge module TDD (11 tests green)
 
 Progress: [████████░░] 83%
 
@@ -54,6 +54,7 @@ Progress: [████████░░] 83%
 | Phase 02-audio-sync P01 | 8 | 2 tasks | 5 files |
 | Phase 02-audio-sync P02 | 3 | 2 tasks | 2 files |
 | Phase 02-audio-sync P03 | 10 | 2 tasks | 1 files |
+| Phase 03-transcribe P01 | 3 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [Phase 02-audio-sync]: Ingest.json written in dry_run mode (small metadata, useful for inspection without ffmpeg)
 - [Phase 02-audio-sync P03]: TX02 sync quality approved by human spot-check on apartment scene — confidence threshold 3.0 validated as acceptable
 - [Phase 02-audio-sync P03]: Always run --dry-run gate before live sync on new scenes to confirm clip count matches expectation
+- [Phase 03-transcribe P01]: Per-scene subprocess invocation (Option A): transcribe_project.py called with --project pointing at scene subfolder (flat mode); wrapper copies from legacy {scene}_transcription/ path to canonical Transcription/{scene}_transcript.json via shutil.copy2
+- [Phase 03-transcribe P01]: merged_transcript.json uses sorted(scene_names) for deterministic output; start/end are LOCAL timecodes (not global) — scene_id is the UXP routing key
+- [Phase 03-transcribe P01]: should_transcribe_scene checks canonical Transcription/ path (not legacy path) for idempotent skip logic
 
 ### Codebase Context
 
