@@ -18,7 +18,10 @@ import argparse
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+
+from merge_transcripts import merge_transcripts
 
 
 def detect_scenes(project: Path) -> list:
@@ -126,33 +129,77 @@ def collect_scene_transcript(scene_dir: Path, project: Path) -> Path:
     return dst
 
 
+def print_dry_run_summary(project: Path, scenes: list) -> None:
+    """Print a dry-run summary listing scenes and clip counts.
+
+    Args:
+        project: Project root path.
+        scenes: List of scene Path objects (from detect_scenes).
+    """
+    print(f"=== Nested Transcription: {project.name} ===")
+    print(f"Scenes found: {len(scenes)}")
+    for scene in scenes:
+        count = len([
+            f for f in scene.iterdir()
+            if f.is_file() and f.suffix.upper() in (".MP4", ".MOV")
+        ])
+        print(f"  {scene.name}: {count} clips")
+    print("Mode: DRY-RUN — no transcription will run")
+
+
 def main():
-    """CLI entry point (wired by Plan 02 orchestrator)."""
+    """CLI entry point: orchestrate per-scene transcription with merge."""
     ap = argparse.ArgumentParser(
-        description="Transcribe nested multi-scene project by invoking transcribe_project.py per scene."
+        description="Transcribe nested multi-scene project by invoking transcribe_project.py per scene.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("--project", required=True, type=Path, help="Project root path")
     ap.add_argument("--scene", default=None, help="Process single scene only (optional)")
     ap.add_argument("-n", "--speakers", type=int, default=2, help="Number of speakers for diarization")
-    ap.add_argument("--dry-run", action="store_true", help="Pass --dry-run to transcription script")
+    ap.add_argument("--dry-run", action="store_true", help="Show scene list and clip counts without transcribing")
     ap.add_argument("-y", action="store_true", help="Skip confirmations")
     args = ap.parse_args()
 
     project = args.project.resolve()
+
+    # Validate project structure
+    video_dir = project / "01_Media" / "Source" / "Video"
+    if not video_dir.exists():
+        print(f"Error: {video_dir} does not exist. Is this a nested project?", file=sys.stderr)
+        sys.exit(1)
+
     scenes = detect_scenes(project)
 
+    # Filter to single scene if --scene provided
     if args.scene:
-        scenes = [s for s in scenes if s.name == args.scene]
+        filtered = [s for s in scenes if s.name == args.scene]
+        if not filtered:
+            print(
+                f"Error: Scene '{args.scene}' not found. Available: {[s.name for s in scenes]}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        scenes = filtered
 
+    # Dry-run: print summary and exit
+    if args.dry_run:
+        print_dry_run_summary(project, scenes)
+        sys.exit(0)
+
+    # Process each scene
     for scene_dir in scenes:
         scene_name = scene_dir.name
         if not should_transcribe_scene(project, scene_name):
-            print(f"[SKIP] {scene_name}: transcript already exists")
+            print(f"  Skipping {scene_name} (transcript exists)")
             continue
-        print(f"[TRANSCRIBE] {scene_name}")
-        transcribe_scene(scene_dir, num_speakers=args.speakers, dry_run=args.dry_run)
+        print(f"  Transcribing {scene_name}...")
+        transcribe_scene(scene_dir, args.speakers, dry_run=False)
         collect_scene_transcript(scene_dir, project)
-        print(f"[DONE] {scene_name}: transcript collected")
+        print(f"  Done: {scene_name}")
+
+    # Merge all scene transcripts into merged_transcript.json
+    merge_transcripts(project, [s.name for s in scenes])
+    print("Merge complete: merged_transcript.json")
 
 
 if __name__ == "__main__":
