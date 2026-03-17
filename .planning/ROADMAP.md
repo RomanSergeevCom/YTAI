@@ -62,7 +62,11 @@ Plans:
   1. Running transcription on the reference project produces `{scene}_transcript.json` for each of the 7 scenes under `01_Media/Source/Transcription/`
   2. `merged_transcript.json` exists and every word entry carries both `scene_id` and a local timecode within its scene
   3. Transcription can be re-run on a single scene without overwriting other scenes' outputs
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — TDD: scene orchestrator core functions + cross-scene transcript merger (detect_scenes, transcribe_scene, collect, merge)
+- [ ] 03-02-PLAN.md — CLI orchestration (main, --project/--scene/--dry-run) + human verification on reference project apartment scene
 
 ### Phase 4: UXP Plugin
 **Goal**: The Premiere Pro plugin ingests a multi-scene project, builds per-scene timelines, and lets the editor find and cut words across all scenes
@@ -94,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Organize | 3/3 | Complete    | 2026-03-16 |
 | 2. Audio Sync | 3/3 | Complete   | 2026-03-17 |
-| 3. Transcribe | TBD | Not started | - |
+| 3. Transcribe | 0/2 | Not started | - |
 | 4. UXP Plugin | TBD | Not started | - |
 | 5. Pipeline Integration | TBD | Not started | - |
