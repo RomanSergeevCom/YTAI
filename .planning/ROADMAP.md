@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Organize** - Detect nested project and arrange files into v3.0 folder structure (completed 2026-03-16)
 - [x] **Phase 2: Audio Sync** - Extract per-clip audio and sync all TX WAV files via waveform cross-correlation (completed 2026-03-17)
-- [ ] **Phase 3: Transcribe** - Run Whisper per-scene and merge into cross-scene transcript
+- [x] **Phase 3: Transcribe** - Run Whisper per-scene and merge into cross-scene transcript (completed 2026-03-17)
 - [ ] **Phase 4: UXP Plugin** - Update Premiere Pro plugin to ingest multi-scene projects and enable cross-scene editing
 - [ ] **Phase 5: Pipeline Integration** - Wire nested-mode auto-detection into run_pipeline.py with backward compatibility
 
@@ -62,7 +62,7 @@ Plans:
   1. Running transcription on the reference project produces `{scene}_transcript.json` for each of the 7 scenes under `01_Media/Source/Transcription/`
   2. `merged_transcript.json` exists and every word entry carries both `scene_id` and a local timecode within its scene
   3. Transcription can be re-run on a single scene without overwriting other scenes' outputs
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 03-01-PLAN.md — TDD: scene orchestrator core functions + cross-scene transcript merger (detect_scenes, transcribe_scene, collect, merge)
@@ -98,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Organize | 3/3 | Complete    | 2026-03-16 |
 | 2. Audio Sync | 3/3 | Complete   | 2026-03-17 |
-| 3. Transcribe | 1/2 | In Progress|  |
+| 3. Transcribe | 2/2 | Complete   | 2026-03-17 |
 | 4. UXP Plugin | TBD | Not started | - |
 | 5. Pipeline Integration | TBD | Not started | - |
