@@ -13,7 +13,7 @@ This milestone extends the existing flat-project pipeline to handle multi-scene 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Organize** - Detect nested project and arrange files into v3.0 folder structure (completed 2026-03-16)
-- [ ] **Phase 2: Audio Sync** - Extract per-clip audio and sync all TX WAV files via waveform cross-correlation
+- [x] **Phase 2: Audio Sync** - Extract per-clip audio and sync all TX WAV files via waveform cross-correlation (completed 2026-03-17)
 - [ ] **Phase 3: Transcribe** - Run Whisper per-scene and merge into cross-scene transcript
 - [ ] **Phase 4: UXP Plugin** - Update Premiere Pro plugin to ingest multi-scene projects and enable cross-scene editing
 - [ ] **Phase 5: Pipeline Integration** - Wire nested-mode auto-detection into run_pipeline.py with backward compatibility
@@ -47,12 +47,12 @@ Plans:
   3. The sync report for each clip shows delta in frames; all clips on the reference project achieve ≤1F delta
   4. The correct TX WAV candidate is selected per clip even when multiple TX files overlap in time (waveform correlation wins over timestamp proximity)
   5. Per-scene `ingest.json` lists A1=camera embed, A2=TX01_SYNC, A3=TX02_SYNC for every clip in the scene
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 02-01-PLAN.md — Test scaffold + core functions (detect_scenes, extract, correlate, trim, delta reporting)
-- [ ] 02-02-PLAN.md — CLI orchestration + ingest.json generation (process_scene, process_clip, main, --project/--scene/--dry-run)
-- [ ] 02-03-PLAN.md — Integration test on reference project apartment scene + human verification
+- [x] 02-01-PLAN.md — Test scaffold + core functions (detect_scenes, extract, correlate, trim, delta reporting)
+- [x] 02-02-PLAN.md — CLI orchestration + ingest.json generation (process_scene, process_clip, main, --project/--scene/--dry-run)
+- [x] 02-03-PLAN.md — Integration test on reference project apartment scene + human verification
 
 ### Phase 3: Transcribe
 **Goal**: Every scene has a word-level transcript JSON, and all scenes are merged into a single cross-scene transcript
@@ -93,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Organize | 3/3 | Complete    | 2026-03-16 |
-| 2. Audio Sync | 2/3 | In Progress|  |
+| 2. Audio Sync | 3/3 | Complete   | 2026-03-17 |
 | 3. Transcribe | TBD | Not started | - |
 | 4. UXP Plugin | TBD | Not started | - |
 | 5. Pipeline Integration | TBD | Not started | - |
