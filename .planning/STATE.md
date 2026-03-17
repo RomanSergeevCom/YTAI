@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-stopped_at: Completed 03-01-PLAN.md — scene orchestrator + merge module TDD (TRN-01, TRN-02, TRN-03)
-last_updated: "2026-03-17T07:35:00.000Z"
-last_activity: "2026-03-17 — Completed 03-01: scene orchestrator + merge module, 11 unit tests green"
+status: completed
+stopped_at: Completed quick-260317-fj4 PLAN.md
+last_updated: "2026-03-17T07:59:31.447Z"
+last_activity: "2026-03-17 - Completed 03-02: main() CLI orchestration, apartment scene validated end-to-end"
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
-  percent: 85
+  completed_phases: 3
+  total_plans: 8
+  completed_plans: 8
+  percent: 90
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 3 of 5 (Transcribe) — IN PROGRESS
-Plan: 1 of 2 in current phase (completed)
-Status: 03-01 complete — ready for 03-02 CLI orchestrator
-Last activity: 2026-03-17 - Completed 03-01: scene orchestrator + merge module TDD (11 tests green)
+Phase: 3 of 5 (Transcribe) — COMPLETE
+Plan: 2 of 2 in current phase (completed)
+Status: 03-02 complete — nested transcription CLI validated on reference project
+Last activity: 2026-03-17 - Completed 03-02: main() CLI orchestration, apartment scene validated end-to-end
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -55,6 +55,8 @@ Progress: [████████░░] 83%
 | Phase 02-audio-sync P02 | 3 | 2 tasks | 2 files |
 | Phase 02-audio-sync P03 | 10 | 2 tasks | 1 files |
 | Phase 03-transcribe P01 | 3 | 2 tasks | 7 files |
+| Phase 03-transcribe P02 | 15 | 2 tasks | 1 files |
+| Phase quick-260317-fj4 P01 | 45 | 4 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -83,6 +85,11 @@ Recent decisions affecting current work:
 - [Phase 03-transcribe P01]: Per-scene subprocess invocation (Option A): transcribe_project.py called with --project pointing at scene subfolder (flat mode); wrapper copies from legacy {scene}_transcription/ path to canonical Transcription/{scene}_transcript.json via shutil.copy2
 - [Phase 03-transcribe P01]: merged_transcript.json uses sorted(scene_names) for deterministic output; start/end are LOCAL timecodes (not global) — scene_id is the UXP routing key
 - [Phase 03-transcribe P01]: should_transcribe_scene checks canonical Transcription/ path (not legacy path) for idempotent skip logic
+- [Phase 03-transcribe P02]: merge_transcripts() called after every run (even single-scene) so merged output stays current without requiring all scenes first
+- [Phase 03-transcribe P02]: Dry-run gate confirmed on YTCR01_Arty_Dzis (7 scenes listed, no Whisper) — apartment scene validated with word-level timecodes and scene_id in merged_transcript.json
+- [Phase quick-260317-fj4]: Keep legacy full-name fallbacks in autoDetectFiles() for backward compatibility
+- [Phase quick-260317-fj4]: Logs keep full project name (not CODE) for disambiguation
+- [Phase quick-260317-fj4]: Pre-existing 0504_screen_cues/ edit_brief refs deferred (out of plan scope)
 
 ### Codebase Context
 
@@ -108,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-17T00:00:00.000Z
-Stopped at: Completed 02-03-PLAN.md — integration validation on apartment scene + human sync quality approval (AUD-06)
+Last session: 2026-03-17T07:59:15.695Z
+Stopped at: Completed quick-260317-fj4 PLAN.md
 Resume file: None
