@@ -326,9 +326,9 @@ def test_generate_ingest_json(tmp_path, mod):
             "clip_path": "01_Media/Source/Video/volleyball/C5089.MP4",
             "duration_sec": 4.5,
             "fps": 25.0,
-            "tx01_path": "01_Media/Source/Audio/C5089_TX01.wav",
+            "tx01_path": "01_Media/Source/Audio/volleyball/C5089_TX01.wav",
             "tx01_delta_frames": 0.3,
-            "tx02_path": "01_Media/Source/Audio/C5089_TX02.wav",
+            "tx02_path": "01_Media/Source/Audio/volleyball/C5089_TX02.wav",
             "tx02_delta_frames": 0.5,
         }
     ]
@@ -373,7 +373,7 @@ def test_generate_ingest_json_low_conf(tmp_path, mod):
             "fps": 25.0,
             "tx01_path": None,
             "tx01_delta_frames": None,
-            "tx02_path": "01_Media/Source/Audio/C5089_TX02.wav",
+            "tx02_path": "01_Media/Source/Audio/volleyball/C5089_TX02.wav",
             "tx02_delta_frames": 0.5,
         }
     ]
@@ -385,3 +385,41 @@ def test_generate_ingest_json_low_conf(tmp_path, mod):
 
     assert data["clips"][0]["tracks"]["A2"]["type"] == "LOW_CONF"
     assert data["clips"][0]["tracks"]["A2"]["path"] is None
+
+
+# ---------------------------------------------------------------------------
+# AUD-08: generate_project_ingest_json
+# ---------------------------------------------------------------------------
+
+def test_generate_project_ingest_json(tmp_path, mod):
+    """generate_project_ingest_json aggregates per-scene files into one project file.
+
+    Given two per-scene ingest.json files in Setup/, should write
+    Setup/{project}_ingest.json with a top-level "scenes" list containing both.
+    """
+    import json
+
+    setup_dir = tmp_path / "01_Media" / "Source" / "Setup"
+    setup_dir.mkdir(parents=True)
+
+    # Write two per-scene ingest.json files
+    scene_a = {"scene": "apartment", "clips": [{"clip_id": "C5210"}]}
+    scene_v = {"scene": "volleyball", "clips": [{"clip_id": "C5089"}]}
+    (setup_dir / "apartment_ingest.json").write_text(json.dumps(scene_a))
+    (setup_dir / "volleyball_ingest.json").write_text(json.dumps(scene_v))
+
+    # tmp_path.name is the project name
+    out_path = mod.generate_project_ingest_json(tmp_path)
+
+    expected = setup_dir / f"{tmp_path.name}_ingest.json"
+    assert out_path == expected
+    assert expected.exists()
+
+    with open(expected) as f:
+        data = json.load(f)
+
+    assert data["project"] == tmp_path.name
+    assert len(data["scenes"]) == 2
+    scene_names = [s["scene"] for s in data["scenes"]]
+    assert "apartment" in scene_names
+    assert "volleyball" in scene_names

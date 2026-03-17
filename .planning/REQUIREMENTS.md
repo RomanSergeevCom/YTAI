@@ -28,7 +28,9 @@ ProjectName/
 │       │   │   └── C5211.MP4 ...
 │       │   ├── volleyball/
 │       │   └── drive_home/ ...
-│       ├── Audio/              ← пока пусто; synced WAV появятся после AUD
+│       ├── Audio/
+│       │   ├── apartment/      ← {clip}_TX01.wav, {clip}_TX02.wav (synced, after AUD)
+│       │   └── {scene}/ ...
 │       ├── Transcription/
 │       │   └── per_clip/       ← XML + audio будут здесь
 │       ├── Setup/logs/
@@ -47,10 +49,11 @@ ProjectName/
 - [x] **AUD-01**: Для каждого клипа извлекается `Transcription/per_clip/{scene}/{clip}/{clip}_AUDIO.wav` (ffmpeg, 48kHz stereo) — аналогично `0102_extract_audio`, добавляется сцена-подпапка
 - [x] **AUD-02**: Для каждой сцены клипы конкатенируются во временный `{scene}_FULL_AUDIO.wav` — используется как reference для DJI sync
 - [x] **AUD-03**: Для каждого клипа перебираются **все** TX01 WAV из `99_Pipeline/DJI_Audio/` как кандидаты; выбирается лучший по waveform cross-correlation с clip-audio
-- [x] **AUD-04**: Найденный TX01 WAV обрезается с точным offset → `01_Media/Source/Audio/{clip}_TX01.wav`
-- [x] **AUD-05**: Аналогично для TX02 → `01_Media/Source/Audio/{clip}_TX02.wav`
+- [x] **AUD-04**: Найденный TX01 WAV обрезается с точным offset → `01_Media/Source/Audio/{scene}/{clip}_TX01.wav`
+- [x] **AUD-05**: Аналогично для TX02 → `01_Media/Source/Audio/{scene}/{clip}_TX02.wav`
 - [x] **AUD-06**: Скрипт репортует точность sync для каждого клипа: delta в фреймах (target: 0F, допустимо: ≤1F)
-- [ ] **AUD-07**: ingest.json каждой сцены: A1=camera embed, A2=TX01_SYNC, A3=TX02_SYNC
+- [x] **AUD-07**: ingest.json каждой сцены: A1=camera embed, A2=TX01_SYNC, A3=TX02_SYNC
+- [ ] **AUD-08**: Глобальный `{project}_ingest.json` в Setup/ агрегирует все per-scene ingest.json в список `scenes[]`
 
 ---
 
@@ -64,8 +67,8 @@ ProjectName/
 
 ### UXP — Плагин Premiere Pro (0500_uxp)
 
-- [ ] **UXP-01**: UXP загружает multi-scene ingest из общего `{project}_ingest.json` (список сцен + пути)
-- [ ] **UXP-02**: Для каждой сцены создаётся отдельный Premiere-таймлайн + отдельный слой captions
+- [ ] **UXP-01**: UXP загружает multi-scene ingest из общего `{project}_ingest.json` (список сцен + пути к клипам и аудио)
+- [ ] **UXP-02**: Для каждой сцены создаётся отдельный Premiere-таймлайн с именем `{project_code}_{scene}_1_Ingest`; SRT для сцены импортируется в `02_Transcripts/` (caption добавляется вручную)
 - [ ] **UXP-03**: UXP читает `merged_transcript.json` для построения cross-scene брифа (0501_brief)
 - [ ] **UXP-04**: Word-based резка в ASSEMBLY (0502_assembly) работает по всем сценам: выбрал слово → таймкод → нужная сцена
 
@@ -114,7 +117,8 @@ ProjectName/
 | AUD-04 | Phase 2 — Audio Sync | Complete |
 | AUD-05 | Phase 2 — Audio Sync | Complete |
 | AUD-06 | Phase 2 — Audio Sync | Complete |
-| AUD-07 | Phase 2 — Audio Sync | Pending |
+| AUD-07 | Phase 2 — Audio Sync | Complete |
+| AUD-08 | Phase 2 — Audio Sync | Complete |
 | TRN-01 | Phase 3 — Transcribe | Pending |
 | TRN-02 | Phase 3 — Transcribe | Pending |
 | TRN-03 | Phase 3 — Transcribe | Pending |
@@ -127,7 +131,7 @@ ProjectName/
 | PIPE-03 | Phase 5 — Pipeline Integration | Pending |
 
 **Coverage:**
-- v1 requirements: 23 total
+- v1 requirements: 24 total
 - Mapped to phases: 23
 - Unmapped: 0 ✓
 

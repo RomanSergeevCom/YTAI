@@ -14,7 +14,8 @@ Functions:
   find_best_tx_candidate — Select best TX WAV via cross-correlation
   trim_tx_to_clip        — Trim TX WAV to match clip duration at offset
   residual_to_frames     — Convert sync residual seconds to frame delta
-  generate_ingest_json   — Write per-scene ingest.json with A1/A2/A3 tracks
+  generate_ingest_json          — Write per-scene {scene}_ingest.json with A1/A2/A3 tracks
+  generate_project_ingest_json  — Aggregate all per-scene ingest.json into one {project}_ingest.json
   process_clip           — Orchestrate one clip: extract, correlate, trim, verify
   process_scene          — Orchestrate one scene: all clips + concat + ingest
   main                   — CLI entry point (--project, --scene, --dry-run)
@@ -425,6 +426,44 @@ def generate_ingest_json(
 
 
 # ---------------------------------------------------------------------------
+# AUD-08: Global project ingest.json
+# ---------------------------------------------------------------------------
+
+def generate_project_ingest_json(project: Path) -> Path:
+    """Aggregate all per-scene ingest.json files into one {project}_ingest.json.
+
+    Reads every {scene}_ingest.json from Setup/ and merges them into a single
+    file with a top-level "scenes" list, each entry preserving the original
+    per-scene structure (scene name + clips with A1/A2/A3 tracks).
+
+    Output location:
+      {project}/01_Media/Source/Setup/{project.name}_ingest.json
+
+    Returns:
+        Path to the written project ingest.json file.
+    """
+    setup_dir = project / "01_Media" / "Source" / "Setup"
+    setup_dir.mkdir(parents=True, exist_ok=True)
+
+    scene_files = sorted(
+        f for f in setup_dir.glob("*_ingest.json")
+        if f.stem != f"{project.name}_ingest"  # skip self if exists
+    )
+
+    scenes = []
+    for sf in scene_files:
+        with open(sf) as f:
+            data = json.load(f)
+        scenes.append(data)
+
+    out_path = setup_dir / f"{project.name}_ingest.json"
+    with open(out_path, "w") as f:
+        json.dump({"project": project.name, "scenes": scenes}, f, indent=2)
+
+    return out_path
+
+
+# ---------------------------------------------------------------------------
 # Orchestration: process_clip
 # ---------------------------------------------------------------------------
 
@@ -476,7 +515,8 @@ def process_clip(
 
     # TX01 output
     if tx01_conf >= CONFIDENCE_THRESHOLD and tx01_path_str and not dry_run:
-        out_tx01 = project / "01_Media" / "Source" / "Audio" / f"{clip_path.stem}_TX01.wav"
+        out_tx01 = project / "01_Media" / "Source" / "Audio" / scene_name / f"{clip_path.stem}_TX01.wav"
+        out_tx01.parent.mkdir(parents=True, exist_ok=True)
         trim_tx_to_clip(Path(tx01_path_str), tx01_offset, clip_duration, out_tx01)
         residual_sec = verify_full(clip_path, out_tx01, clip_duration)
         if residual_sec is not None:
@@ -487,7 +527,8 @@ def process_clip(
 
     # TX02 output
     if tx02_conf >= CONFIDENCE_THRESHOLD and tx02_path_str and not dry_run:
-        out_tx02 = project / "01_Media" / "Source" / "Audio" / f"{clip_path.stem}_TX02.wav"
+        out_tx02 = project / "01_Media" / "Source" / "Audio" / scene_name / f"{clip_path.stem}_TX02.wav"
+        out_tx02.parent.mkdir(parents=True, exist_ok=True)
         trim_tx_to_clip(Path(tx02_path_str), tx02_offset, clip_duration, out_tx02)
         residual_sec = verify_full(clip_path, out_tx02, clip_duration)
         if residual_sec is not None:
@@ -647,6 +688,11 @@ def main() -> None:
     for scene_dir in scenes:
         results = process_scene(scene_dir, project, tx01_cache, tx02_cache, dry_run=args.dry_run)
         all_results.extend(results)
+
+    # Generate global project ingest.json (aggregates all per-scene files)
+    if not args.dry_run:
+        proj_ingest = generate_project_ingest_json(project)
+        print(f"\nProject ingest.json: {proj_ingest.relative_to(project)}")
 
     # Summary
     total = len(all_results)
