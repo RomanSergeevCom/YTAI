@@ -65,11 +65,16 @@ def should_transcribe_scene(project: Path, scene_name: str) -> bool:
     return not transcript_path.exists()
 
 
-def transcribe_scene(scene_dir: Path, num_speakers: int, dry_run: bool = False) -> None:
+def transcribe_scene(
+    scene_dir: Path,
+    num_speakers: int | None = None,
+    dry_run: bool = False,
+    language: str | None = None,
+) -> None:
     """Invoke transcribe_project.py for a single scene via subprocess.
 
     The script is called with the scene subfolder as --project (flat mode):
-      {venv_python} transcribe_project.py --project {scene_dir} -n {num_speakers} -y [--dry-run]
+      {venv_python} transcribe_project.py --project {scene_dir} [-n {num_speakers}] -y [--dry-run] [--language {language}]
 
     When transcribe_project.py runs in flat mode (no 01_Media/Source/Video/ inside
     the target), it writes the transcript to:
@@ -80,8 +85,9 @@ def transcribe_scene(scene_dir: Path, num_speakers: int, dry_run: bool = False) 
 
     Args:
         scene_dir: Path to the scene subfolder (e.g. Source/Video/apartment).
-        num_speakers: Number of speakers for diarization (-n flag).
+        num_speakers: Number of speakers for diarization (-n flag). None = auto-detect.
         dry_run: If True, passes --dry-run to the transcription script.
+        language: Whisper language code (e.g. "en"). None = auto-detect.
 
     Raises:
         subprocess.CalledProcessError: If the subprocess exits with non-zero status.
@@ -90,15 +96,11 @@ def transcribe_scene(scene_dir: Path, num_speakers: int, dry_run: bool = False) 
     script = Path(
         "~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py"
     ).expanduser()
-    cmd = [
-        str(venv_python),
-        str(script),
-        "--project",
-        str(scene_dir),
-        "-n",
-        str(num_speakers),
-        "-y",
-    ]
+    cmd = [str(venv_python), str(script), "--project", str(scene_dir), "-y"]
+    if num_speakers is not None:
+        cmd += ["-n", str(num_speakers)]
+    if language:
+        cmd += ["--language", language]
     if dry_run:
         cmd.append("--dry-run")
     subprocess.run(cmd, check=True)
@@ -155,7 +157,8 @@ def main():
     )
     ap.add_argument("--project", required=True, type=Path, help="Project root path")
     ap.add_argument("--scene", default=None, help="Process single scene only (optional)")
-    ap.add_argument("-n", "--speakers", type=int, default=2, help="Number of speakers for diarization")
+    ap.add_argument("-n", "--speakers", type=int, default=None, help="Number of speakers for diarization (default: auto-detect)")
+    ap.add_argument("--language", default=None, help="Whisper language code e.g. 'en' (default: auto-detect)")
     ap.add_argument("--dry-run", action="store_true", help="Show scene list and clip counts without transcribing")
     ap.add_argument("-y", action="store_true", help="Skip confirmations")
     args = ap.parse_args()
@@ -193,7 +196,7 @@ def main():
             print(f"  Skipping {scene_name} (transcript exists)")
             continue
         print(f"  Transcribing {scene_name}...")
-        transcribe_scene(scene_dir, args.speakers, dry_run=False)
+        transcribe_scene(scene_dir, num_speakers=args.speakers, dry_run=False, language=args.language)
         collect_scene_transcript(scene_dir, project)
         print(f"  Done: {scene_name}")
 
