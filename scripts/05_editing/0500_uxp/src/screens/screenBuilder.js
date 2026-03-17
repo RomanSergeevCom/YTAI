@@ -28,15 +28,15 @@ try {
   ppro = require('../../tests/mocks/premierepro');
 }
 
-const { SCREEN_CUE_COLOR, MARKER_TYPE_CHAPTER } = require('../shared/constants');
+const { SCREEN_CUE_COLOR, MARKER_TYPE_CHAPTER, MARKER_TYPE_SEGMENTATION, BLOCK_VALID_COLORS, MARKER_COLOR_INDEX } = require('../shared/constants');
 const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
 const { formatMarkerComment, formatSrtContent } = require('./screenParser');
 
 // Default duration for PNG overlay on V2 (seconds)
 var OVERLAY_DURATION = 5.0;
 
-// Bin name for Screen Cues PNG imports (uses freed 01_ slot after 01_Sequence removal)
-var SCREEN_CUES_BIN_NAME = '01_ScreenCues';
+// Bin name for Pre-Edit PNG imports (uses freed 01_ slot after 01_Sequence removal)
+var SCREEN_CUES_BIN_NAME = '01_PreEdit';
 
 /**
  * Sort segments by block (99 last), preserving brief order within each block.
@@ -75,6 +75,15 @@ function buildSegmentPositionMap(assemblySegments) {
 
 /**
  * Calculate screen cue timeline position on Assembly.
+ *
+ * Placement rules:
+ *   - Block chapter markers are placed at block boundaries (start of first segment).
+ *   - Screen markers can be placed ANYWHERE within a segment, not just at block start.
+ *   - Position = segment's timeline start + offset within segment (tc_in - segment.inSec).
+ *   - Offset is clamped to [0, segment.duration] for safety.
+ *
+ * This allows screens to appear mid-block (e.g., center of a segment) when the
+ * brief specifies a tc_in value within the segment's time range.
  *
  * @param {Object} screen - Parsed screen from screenParser
  * @param {Object} segPositions - { segId: timelineStartSec }
@@ -144,6 +153,55 @@ function generateScreenCuesSrt(screens, assemblySegments) {
 }
 
 /**
+ * Generate transcript SRT content from segments for word-based editing.
+ * Uses cumulative timeline positions by default (Assembly/ScreenCues).
+ * With clipOffsets, uses absolute positioning (Review = Ingest layout).
+ *
+ * @param {Array} assemblySegments - Sorted segments
+ * @param {Object} [clipOffsets] - { filename: offsetSec } for absolute positioning (Review)
+ * @returns {string} SRT file content with speaker + transcript text
+ */
+function generateTranscriptSrt(assemblySegments, clipOffsets) {
+  if (!assemblySegments || assemblySegments.length === 0) return '';
+
+  var blocks = [];
+  var blockNum = 0;
+  var cumTime = 0;
+
+  for (var i = 0; i < assemblySegments.length; i++) {
+    var seg = assemblySegments[i];
+    if (!seg.transcript) {
+      cumTime += seg.duration;
+      continue;
+    }
+
+    blockNum++;
+    var startSec, endSec;
+    if (clipOffsets && seg.sourceFile && clipOffsets[seg.sourceFile] !== undefined) {
+      startSec = clipOffsets[seg.sourceFile] + seg.inSec;
+      endSec = clipOffsets[seg.sourceFile] + seg.outSec;
+    } else {
+      startSec = cumTime;
+      endSec = cumTime + seg.duration;
+    }
+
+    var text = '';
+    if (seg.speaker) text += seg.speaker + ': ';
+    text += seg.transcript;
+
+    blocks.push(
+      blockNum + '\n' +
+      formatSrtTimecode(startSec) + ' --> ' + formatSrtTimecode(endSec) + '\n' +
+      text + '\n'
+    );
+
+    cumTime += seg.duration;
+  }
+
+  return blocks.length > 0 ? blocks.join('\n') + '\n' : '';
+}
+
+/**
  * Find a recently imported item in the project by filename.
  * Searches target bin first (if provided), then root items and one level of bins.
  *
@@ -181,6 +239,89 @@ async function findImportedItem(project, filename, targetBin) {
 }
 
 /**
+ * Generate caption SRT content (word-grouped, 2-line blocks for on-screen subtitles).
+ *
+ * Splits each segment's transcript into words, groups into chunks of N words,
+ * distributes timing evenly across the segment's duration, and formats as
+ * 2-line SRT blocks. Unlike generateTranscriptSrt() which creates one block per segment,
+ * this creates multiple smaller blocks suitable for on-screen reading.
+ *
+ * @param {Array} segments - Sorted segments with .transcript and .duration
+ * @param {number} [wordsPerBlock=6] - Target words per SRT block (clamped to 4-10)
+ * @param {Object} [clipOffsets] - { filename: offsetSec } for absolute positioning (Review layout)
+ * @param {string} [positionTag] - Optional SSA/ASS position tag, e.g. '{\\an8}' for top-center
+ * @returns {string} SRT file content
+ */
+function generateCaptionsSrt(segments, wordsPerBlock, clipOffsets, positionTag) {
+  if (!segments || segments.length === 0) return '';
+
+  var wpb = wordsPerBlock || 6;
+  if (wpb < 4) wpb = 4;
+  if (wpb > 10) wpb = 10;
+
+  var srtBlocks = [];
+  var blockNum = 0;
+  var cumTime = 0;
+
+  for (var i = 0; i < segments.length; i++) {
+    var seg = segments[i];
+    var text = (seg.transcript || '').trim();
+
+    // Compute start position: absolute (Review) or cumulative (Assembly/ScreenCues)
+    var segStart;
+    if (clipOffsets && seg.sourceFile && clipOffsets[seg.sourceFile] !== undefined) {
+      segStart = clipOffsets[seg.sourceFile] + seg.inSec;
+    } else {
+      segStart = cumTime;
+    }
+
+    if (!text) {
+      cumTime += seg.duration;
+      continue;
+    }
+
+    var words = text.split(/\s+/).filter(function (w) { return w.length > 0; });
+    if (words.length === 0) {
+      cumTime += seg.duration;
+      continue;
+    }
+
+    // Group words into chunks of wpb
+    var chunks = [];
+    for (var w = 0; w < words.length; w += wpb) {
+      chunks.push(words.slice(w, w + wpb));
+    }
+
+    // Distribute timing evenly across chunks
+    var chunkDuration = seg.duration / chunks.length;
+
+    for (var c = 0; c < chunks.length; c++) {
+      var chunkWords = chunks[c];
+      var startSec = segStart + c * chunkDuration;
+      var endSec = segStart + (c + 1) * chunkDuration;
+
+      // Split chunk into 2 lines (half/half)
+      var mid = Math.ceil(chunkWords.length / 2);
+      var line1 = chunkWords.slice(0, mid).join(' ');
+      var line2 = chunkWords.slice(mid).join(' ');
+      var srtText = line2 ? line1 + '\n' + line2 : line1;
+      if (positionTag) srtText = positionTag + srtText;
+
+      blockNum++;
+      srtBlocks.push(
+        blockNum + '\n' +
+        formatSrtTimecode(startSec) + ' --> ' + formatSrtTimecode(endSec) + '\n' +
+        srtText + '\n'
+      );
+    }
+
+    cumTime += seg.duration;
+  }
+
+  return srtBlocks.length > 0 ? srtBlocks.join('\n') + '\n' : '';
+}
+
+/**
  * Build the _4_ScreenCues sequence (v1.9.3).
  *
  * V1: Exact copy of Assembly (same segments, order, trims, colors)
@@ -193,7 +334,7 @@ async function findImportedItem(project, filename, targetBin) {
  * @param {Object} clipMap - { filename: ProjectItem } from projectScanner
  * @param {string} projectName - Project name for sequence naming
  * @param {Object} [logger] - Logger instance
- * @param {string} [briefPath] - Path to edit_brief.json (for PNG lookup)
+ * @param {string} [briefPath] - Path to pre_edit_brief.json (for PNG lookup)
  * @param {Array|null} [pngFiles] - Filenames of PNGs found on disk (pre-checked by pipeline), or null
  * @param {Object|null} [screenCuesBin] - Target bin for PNG imports (01_ScreenCues), or null for project root
  * @returns {{ sequence, clips, markers, overlays, skipped, warnings, totalDuration, assemblySegments, srtContent, markerList }}
@@ -231,7 +372,7 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
     }
   }
 
-  var seqName = projectName + '_4_ScreenCues';
+  var seqName = projectName + '_4_PreEdit';
 
   // === Phase B: Clean old sequence ===
   await cleanExistingSequence(project, seqName, logger);
@@ -457,7 +598,7 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
   } else if (pngDir && !hasPngs) {
     if (logger) {
       logger.warn('V2 PNGs: screen_cues/ folder empty or not found — skipping overlays');
-      logger.warn('  Run: python generate_screen_cues_png.py --brief <path_to_edit_brief.json>');
+      logger.warn('  Run: python generate_screen_cues_png.py --brief <path_to_pre_edit_brief.json>');
     }
   } else {
     if (logger) logger.info('No briefPath provided — skipping V2 PNG overlays');
@@ -469,6 +610,54 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
   // This ensures markers are read ONCE and the same references are used
   // for both color and type transactions.
   var markerList = [];
+
+  // E.1: Block-boundary chapter markers (like Assembly) — with block colors (NOT orange)
+  var blockInfo = {};
+  var cumTimeBlock = 0;
+  for (var bi = 0; bi < useSegs.length; bi++) {
+    var bSeg = useSegs[bi];
+    if (!blockInfo[bSeg.block]) {
+      blockInfo[bSeg.block] = {
+        name: bSeg.blockName || ('Chapter ' + bSeg.block),
+        startSec: cumTimeBlock,
+        durationSec: 0,
+        color: bSeg.color,
+        isChapter: bSeg.isChapter
+      };
+    }
+    blockInfo[bSeg.block].durationSec += bSeg.duration;
+    cumTimeBlock += bSeg.duration;
+  }
+
+  var blockKeys = Object.keys(blockInfo).sort(function (a, b) { return Number(a) - Number(b); });
+  for (var bk = 0; bk < blockKeys.length; bk++) {
+    var block = blockInfo[blockKeys[bk]];
+    // Orange is reserved for screen cue markers — pick a different color for block chapters
+    var blockMarkerColor = block.color;
+    if (blockMarkerColor === 'Orange') {
+      // Pick first BLOCK_VALID_COLORS entry with a different marker index from neighbors
+      var prevMIdx = (bk > 0) ? MARKER_COLOR_INDEX[blockInfo[blockKeys[bk - 1]].color] : -1;
+      var nextMIdx = (bk + 1 < blockKeys.length) ? MARKER_COLOR_INDEX[blockInfo[blockKeys[bk + 1]].color] : -1;
+      for (var ci = 0; ci < BLOCK_VALID_COLORS.length; ci++) {
+        var cand = BLOCK_VALID_COLORS[ci];
+        var candIdx = MARKER_COLOR_INDEX[cand];
+        if (candIdx !== undefined && candIdx !== prevMIdx && candIdx !== nextMIdx) {
+          blockMarkerColor = cand;
+          break;
+        }
+      }
+    }
+    markerList.push({
+      name: block.name,
+      type: MARKER_TYPE_CHAPTER,
+      startSec: block.startSec,
+      durationSec: block.durationSec,
+      comment: '',
+      markerColor: blockMarkerColor
+    });
+  }
+
+  // E.2: Screen cue markers — Orange, Segmentation type
   for (var mi = 0; mi < screens.length; mi++) {
     var screen = screens[mi];
     var markerPos = getScreenTimelinePosition(screen, segPositions);
@@ -476,10 +665,11 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
 
     markerList.push({
       name: '[SCR] ' + screen.type,
-      type: MARKER_TYPE_CHAPTER,
+      type: MARKER_TYPE_SEGMENTATION,
       startSec: markerPos,
       durationSec: 0,
-      comment: formatMarkerComment(screen)
+      comment: formatMarkerComment(screen),
+      markerColor: 'Orange'
     });
   }
 
@@ -508,6 +698,8 @@ module.exports = {
   buildSegmentPositionMap,
   getScreenTimelinePosition,
   generateScreenCuesSrt,
+  generateTranscriptSrt,
+  generateCaptionsSrt,
   formatSrtTimecode,
   sortSegments,
   OVERLAY_DURATION,

@@ -33,6 +33,7 @@ const MARKER_COLOR_INDEX = {
   Green: 0,     // Confirmed: ppro GREEN=0
   Red: 1,       // Confirmed: ppro RED=1
   Magenta: 2,   // Confirmed: ppro MAGNETA=2 (Premiere typo)
+  Purple: 2,    // Same as Magenta — Premiere has no separate Purple marker color
   Orange: 3,    // Confirmed: ppro ORANGE=3
   Yellow: 4,    // Confirmed: ppro YELLOW=4
   Blue: 6,      // Confirmed: ppro BLUE=6
@@ -41,10 +42,14 @@ const MARKER_COLOR_INDEX = {
 
 const VALID_COLORS = Object.keys(LABEL_COLOR_INDEX);
 
+// Block-assignable colors (all except Orange, which is reserved for Screen Cues)
+const BLOCK_VALID_COLORS = ['Green', 'Blue', 'Cyan', 'Yellow', 'Red', 'Magenta', 'Purple'];
+
 // Adobe marker type URIs — used for CREATING markers via seq.getMarkers() + createMarker()
 // NOTE: ppro.Marker.MARKER_TYPE_CHAPTER = "Chapter" is a DISPLAY name, NOT for creation!
 const MARKER_TYPE_CHAPTER = 'com.adobe.premiereMarkers.chapter';
 const MARKER_TYPE_COMMENT = 'com.adobe.premiereMarkers.comment';
+const MARKER_TYPE_SEGMENTATION = 'com.adobe.premiereMarkers.segmentation';
 
 // Review sequence color scheme — by exclusion category
 // Used by reviewBuilder.js for _3_Review sequence
@@ -54,13 +59,17 @@ const REVIEW_COLOR_MAP = {
   skip: { label: 'Purple', labelIdx: 8,  markerIdx: 2 }   // use=FALSE, review candidate
 };
 
+// Review producer color — segments where producer/interviewer speaks (context only)
+// Lavender (label index 3) — visually distinct, not used by any block color
+const REVIEW_PRODUCER_COLOR = { label: 'Lavender', labelIdx: 3 };
+
 // Screen Cues color scheme — V2 track + Comment markers
 // Used by screenBuilder.js for Production Cues on Assembly sequence
 const SCREEN_CUE_COLOR = {
   label: 'Orange', labelIdx: 7, markerIdx: 3   // Orange = MANGO=7 (label), ORANGE=3 (marker)
 };
 
-// Screen types — valid screen_type values for screens[] in edit_brief.json
+// Screen types — valid screen_type values for screens[] in pre_edit_brief.json
 const SCREEN_TYPES = [
   'full_overlay',           // Full-screen gradient overlay — text centered
   'half_overlay',           // 1/2 screen gradient left — text on left
@@ -85,10 +94,13 @@ module.exports = {
   LABEL_COLOR_INDEX,
   MARKER_COLOR_INDEX,
   VALID_COLORS,
+  BLOCK_VALID_COLORS,
   MARKER_TYPE_CHAPTER,
   MARKER_TYPE_COMMENT,
+  MARKER_TYPE_SEGMENTATION,
   TICKS_PER_SECOND,
   REVIEW_COLOR_MAP,
+  REVIEW_PRODUCER_COLOR,
   SCREEN_CUE_COLOR,
   SCREEN_TYPES,
   SCREEN_REQUIRED_FIELDS

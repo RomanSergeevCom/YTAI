@@ -1,4 +1,8 @@
-/* briefParser.js — Load & normalize edit_brief.json (supports 2 formats) */
+/* briefParser.js — Load & normalize pre_edit_brief.json (supports 2 formats) */
+
+var constants = require('../shared/constants');
+var MARKER_COLOR_INDEX = constants.MARKER_COLOR_INDEX;
+var BLOCK_VALID_COLORS = constants.BLOCK_VALID_COLORS;
 
 // Parse timecode string "MM:SS.s" or "HH:MM:SS.s" → seconds
 function parseTimecode(tc) {
@@ -41,33 +45,42 @@ function parseBrief(jsonString) {
   var raw = JSON.parse(jsonString);
   var segments;
   var projectName = '';
+  var projectCode = '';
   var projectSettings = {};
   var transcriptionDir = '';
+  var producerSpeaker = '';
 
   if (raw.segments && Array.isArray(raw.segments)) {
     var resultA = normalizeFormatA(raw);
     segments = resultA.segments;
     projectName = resultA.projectName;
+    projectCode = resultA.projectCode;
     projectSettings = resultA.projectSettings;
     transcriptionDir = resultA.transcriptionDir;
+    producerSpeaker = resultA.producerSpeaker || '';
   } else if (raw.clips && Array.isArray(raw.clips)) {
     var resultB = normalizeFormatB(raw);
     segments = resultB.segments;
     projectName = resultB.projectName;
+    projectCode = resultB.projectCode;
     projectSettings = resultB.projectSettings;
     transcriptionDir = resultB.transcriptionDir;
+    producerSpeaker = resultB.producerSpeaker || '';
   } else {
     throw new Error('Unknown brief format: expected "segments" or "clips" array');
   }
 
   var blocks = buildBlocks(segments);
+  fixAdjacentColors(blocks);
 
   return {
     segments: segments,
     blocks: blocks,
     projectName: projectName,
+    projectCode: projectCode,
     projectSettings: projectSettings,
     transcriptionDir: transcriptionDir,
+    producerSpeaker: producerSpeaker,
     raw: raw
   };
 }
@@ -105,7 +118,9 @@ function normalizeFormatA(raw) {
     };
   });
 
-  return { segments: segments, projectName: projectName, projectSettings: projectSettings, transcriptionDir: transcriptionDir };
+  var projectCode = (projectName.match(/^[A-Z]+\d+/) || [projectName])[0];
+  var producerSpeaker = (raw.project && raw.project.producer_speaker) || '';
+  return { segments: segments, projectName: projectName, projectCode: projectCode, projectSettings: projectSettings, transcriptionDir: transcriptionDir, producerSpeaker: producerSpeaker };
 }
 
 // Format B: { clips[{ segments[] }] } — from transcript
@@ -159,7 +174,9 @@ function normalizeFormatB(raw) {
     });
   });
 
-  return { segments: segments, projectName: projectName, projectSettings: projectSettings, transcriptionDir: transcriptionDir };
+  var projectCode = (projectName.match(/^[A-Z]+\d+/) || [projectName])[0];
+  var producerSpeaker = '';  // Format B doesn't have project section
+  return { segments: segments, projectName: projectName, projectCode: projectCode, projectSettings: projectSettings, transcriptionDir: transcriptionDir, producerSpeaker: producerSpeaker };
 }
 
 // Group segments into blocks, compute stats
@@ -191,4 +208,67 @@ function buildBlocks(segments) {
     .map(function (k) { return map[k]; });
 }
 
-module.exports = { parseBrief, parseTimecode, formatTimecode, buildBlocks };
+/**
+ * Fix adjacent blocks that share the same MARKER_COLOR_INDEX value.
+ * Today this affects Purple/Magenta (both index 2).
+ * Swaps the second block's color to a different BLOCK_VALID_COLORS entry
+ * that has a different marker index from both its left and right neighbors.
+ *
+ * Mutates blocks[].color and propagates to blocks[].segments[].color.
+ */
+function fixAdjacentColors(blocks) {
+  if (blocks.length < 2) return blocks;
+
+  // Pre-pass: Replace Orange (reserved for Screen Cues) with a valid block color
+  for (var oi = 0; oi < blocks.length; oi++) {
+    if (blocks[oi].color === 'Orange') {
+      var prevOIdx = (oi > 0) ? MARKER_COLOR_INDEX[blocks[oi - 1].color] : -1;
+      var nextOIdx = (oi + 1 < blocks.length) ? MARKER_COLOR_INDEX[blocks[oi + 1].color] : -1;
+      for (var c = 0; c < BLOCK_VALID_COLORS.length; c++) {
+        var candidate = BLOCK_VALID_COLORS[c];
+        var candidateIdx = MARKER_COLOR_INDEX[candidate];
+        if (candidateIdx !== undefined && candidateIdx !== prevOIdx && candidateIdx !== nextOIdx) {
+          blocks[oi].color = candidate;
+          for (var si = 0; si < blocks[oi].segments.length; si++) {
+            blocks[oi].segments[si].color = candidate;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  for (var i = 1; i < blocks.length; i++) {
+    var prevIdx = MARKER_COLOR_INDEX[blocks[i - 1].color];
+    var currIdx = MARKER_COLOR_INDEX[blocks[i].color];
+
+    if (prevIdx === undefined || currIdx === undefined) continue;
+    if (prevIdx !== currIdx) continue;
+
+    // Collision found — pick a replacement color
+    // Avoid left neighbor's marker index AND right neighbor's (if exists)
+    var rightIdx = (i + 1 < blocks.length) ? MARKER_COLOR_INDEX[blocks[i + 1].color] : -1;
+
+    var newColor = null;
+    for (var c = 0; c < BLOCK_VALID_COLORS.length; c++) {
+      var candidate = BLOCK_VALID_COLORS[c];
+      var candidateIdx = MARKER_COLOR_INDEX[candidate];
+      if (candidateIdx !== undefined && candidateIdx !== prevIdx && candidateIdx !== rightIdx) {
+        newColor = candidate;
+        break;
+      }
+    }
+
+    if (newColor && newColor !== blocks[i].color) {
+      blocks[i].color = newColor;
+      // Propagate to all segments in this block
+      for (var s = 0; s < blocks[i].segments.length; s++) {
+        blocks[i].segments[s].color = newColor;
+      }
+    }
+  }
+
+  return blocks;
+}
+
+module.exports = { parseBrief, parseTimecode, formatTimecode, buildBlocks, fixAdjacentColors };

@@ -3,9 +3,9 @@
  *
  * Four pipelines in one panel:
  *   INGEST:      loads ingest.json → imports clips, builds Ingest sequence
- *   ASSEMBLY:    loads edit_brief.json → builds Assembly sequence from existing clips
+ *   ASSEMBLY:    loads pre_edit_brief.json → builds Assembly sequence from existing clips
  *   REVIEW:      builds Review sequence from unused segments
- *   SCREEN CUES: creates _4_ScreenCues sequence (V1 Assembly copy + V2 PNG overlays + markers + SRT)
+ *   PRE-EDIT:    creates _4_PreEdit sequence (V1 Assembly copy + V2 PNG overlays + markers + SRT)
  *
  * INGEST, ASSEMBLY, REVIEW, and SCREEN CUES modules do NOT import each other.
  * The only connection is the 00_Source bin (created by INGEST, read by others).
@@ -23,7 +23,7 @@ const { fmtTime, escapeHtml, tickSec } = require('./src/shared/utils');
 // --- Module imports: INGEST ---
 const { parseIngest, generateSummary } = require('./src/ingest/ingestLoader');
 const { createBinStructure, BIN_NAMES } = require('./src/ingest/binManager');
-const { buildIngestSequence, findProjectItemByName } = require('./src/ingest/timelineBuilder');
+const { buildIngestSequence, buildMultiSceneIngest, findProjectItemByName } = require('./src/ingest/timelineBuilder');
 const { importTranscripts } = require('./src/ingest/transcriptImporter');
 const { copyLutsToCreativeFolder, applyLumetriToClips } = require('./src/ingest/lutManager');
 
@@ -37,7 +37,17 @@ const { buildReviewSequence, getReviewCategory } = require('./src/review/reviewB
 
 // --- Module imports: SCREENS ---
 const { parseScreens } = require('./src/screens/screenParser');
-const { buildScreenCues, SCREEN_CUES_BIN_NAME } = require('./src/screens/screenBuilder');
+const { buildScreenCues, SCREEN_CUES_BIN_NAME, generateTranscriptSrt, generateCaptionsSrt, buildSegmentPositionMap, getScreenTimelinePosition } = require('./src/screens/screenBuilder');
+
+// --- Module imports: ARCHIVER ---
+const { versionTimestamp, ensureSubfolder, archiveFiles, saveVersion, saveState, loadState, loadLatestVersion, ensureVersionsDir } = require('./src/shared/archiver');
+
+// --- Utility: extract short project code (YTCG49) from full name ---
+function extractProjectCode(name) {
+  if (!name) return 'unknown';
+  var match = name.match(/^(YT[A-Z]{2,4}\d+)_/);
+  return match ? match[1] : name;
+}
 
 // --- State (separate for INGEST and ASSEMBLY) ---
 let ingestState = { data: null, filePath: null, building: false };
@@ -48,7 +58,7 @@ let projectState = {
   folderPath: null,      // native path to project folder
   projectName: null,     // folder name = project name
   ingestPath: null,      // resolved path to _ingest.json (null if not found)
-  briefPath: null,       // resolved path to _edit_brief.json (null if not found)
+  briefPath: null,       // resolved path to _pre_edit_brief.json (null if not found)
   ingestDetected: false,
   briefDetected: false
 };
@@ -205,6 +215,8 @@ function resetAllPipelineStates() {
   setScreensStatus('Detecting files...', 'waiting');
   $('btn-generate-pngs').setAttribute('disabled', 'true');
   $('btn-build-screens').setAttribute('disabled', 'true');
+  $('btn-export-screens').setAttribute('disabled', 'true');
+  $('btn-import-screens').setAttribute('disabled', 'true');
   $('screens-validation').style.display = 'none';
   hideScreensProgress();
 
@@ -241,7 +253,7 @@ async function copyLogPath(pipeline) {
  *
  * Convention:
  *   {PROJECT_NAME}/01_Media/Source/{PROJECT_NAME}_ingest.json
- *   {PROJECT_NAME}/01_Media/Source/Setup/{PROJECT_NAME}_edit_brief.json
+ *   {PROJECT_NAME}/01_Media/Source/Setup/{CODE}_pre_edit_brief.json
  */
 async function selectProjectFolder() {
   try {
@@ -288,7 +300,8 @@ async function selectProjectFolder() {
 }
 
 /**
- * Auto-detect ingest.json and edit_brief.json from the known folder structure.
+ * Auto-detect ingest.json and pre_edit_brief.json from the known folder structure.
+ * Tries CODE-based filenames first (e.g. YTCG37_ingest.json), then full-name legacy fallback.
  * Calls existing loadIngestFromPath() / loadBriefFromPath() on success.
  * Shows fallback load buttons on failure.
  */
@@ -296,42 +309,80 @@ async function autoDetectFiles(folderPath, projectName) {
   var checklistHtml = '';
   hideAllFallbackButtons();
 
-  // --- Ingest ---
-  var ingestPath = folderPath + '/01_Media/Source/' + projectName + '_ingest.json';
-  try {
-    await uxpfs.getEntryWithUrl('file://' + ingestPath);
-    projectState.ingestPath = ingestPath;
-    projectState.ingestDetected = true;
-    checklistHtml += checkItem(true, projectName + '_ingest.json');
-    ingestLogger.info('Auto-detected ingest: ' + ingestPath);
-    await loadIngestFromPath(ingestPath);
-  } catch (e) {
+  var code = extractProjectCode(projectName);
+
+  // --- Ingest --- (try CODE-based first, then legacy full-name)
+  var ingestCandidates = [
+    folderPath + '/01_Media/Source/Setup/' + code + '_ingest.json',
+    folderPath + '/01_Media/Source/Setup/' + projectName + '_ingest.json',  // legacy
+    folderPath + '/01_Media/Source/' + projectName + '_ingest.json',        // legacy
+  ];
+  var ingestFound = false;
+  for (var i = 0; i < ingestCandidates.length; i++) {
+    try {
+      await uxpfs.getEntryWithUrl('file://' + ingestCandidates[i]);
+      projectState.ingestPath = ingestCandidates[i];
+      projectState.ingestDetected = true;
+      ingestFound = true;
+      checklistHtml += checkItem(true, code + '_ingest.json');
+      ingestLogger.info('Auto-detected ingest: ' + ingestCandidates[i]);
+      await loadIngestFromPath(ingestCandidates[i]);
+      break;
+    } catch (e) {
+      // Try next candidate
+    }
+  }
+  if (!ingestFound) {
     projectState.ingestDetected = false;
-    checklistHtml += checkItem(false, projectName + '_ingest.json',
-      'Expected: 01_Media/Source/' + projectName + '_ingest.json');
-    ingestLogger.warn('Ingest not found at expected path: ' + ingestPath);
+    checklistHtml += checkItem(false, code + '_ingest.json',
+      'Expected: 01_Media/Source/Setup/' + code + '_ingest.json');
+    ingestLogger.warn('Ingest not found at: ' + ingestCandidates.join(', '));
     setIngestStatus('Ingest JSON not found. Load manually.', 'waiting');
     showFallback('ingest');
   }
 
-  // --- Brief ---
-  var briefPath = folderPath + '/01_Media/Source/Setup/' + projectName + '_edit_brief.json';
-  try {
-    await uxpfs.getEntryWithUrl('file://' + briefPath);
-    projectState.briefPath = briefPath;
-    projectState.briefDetected = true;
-    checklistHtml += checkItem(true, projectName + '_edit_brief.json');
-    assemblyLogger.info('Auto-detected brief: ' + briefPath);
-    await loadBriefFromPath(briefPath);
-  } catch (e) {
+  // --- Brief --- (try CODE-based pre_edit_brief first, then legacy fallbacks)
+  var briefCandidates = [
+    folderPath + '/01_Media/Source/Setup/' + code + '_pre_edit_brief.json',
+    folderPath + '/01_Media/Source/Setup/' + projectName + '_pre_edit_brief.json',  // legacy
+    folderPath + '/01_Media/Source/Setup/' + projectName + '_edit_brief.json',       // legacy
+  ];
+  var briefFound = false;
+  for (var bi = 0; bi < briefCandidates.length; bi++) {
+    try {
+      await uxpfs.getEntryWithUrl('file://' + briefCandidates[bi]);
+      projectState.briefPath = briefCandidates[bi];
+      projectState.briefDetected = true;
+      briefFound = true;
+      checklistHtml += checkItem(true, code + '_pre_edit_brief.json');
+      assemblyLogger.info('Auto-detected brief: ' + briefCandidates[bi]);
+      await loadBriefFromPath(briefCandidates[bi]);
+      break;
+    } catch (e) {
+      // Try next candidate
+    }
+  }
+  if (!briefFound) {
     projectState.briefDetected = false;
-    checklistHtml += checkItem(false, projectName + '_edit_brief.json',
-      'Expected: 01_Media/Source/Setup/' + projectName + '_edit_brief.json');
-    assemblyLogger.warn('Brief not found at expected path: ' + briefPath);
-    setAssemblyStatus('Edit brief not found. Load manually.', 'waiting');
-    setReviewStatus('Edit brief not found.', 'waiting');
-    setScreensStatus('Edit brief not found.', 'waiting');
+    checklistHtml += checkItem(false, code + '_pre_edit_brief.json',
+      'Expected: 01_Media/Source/Setup/' + code + '_pre_edit_brief.json');
+    assemblyLogger.warn('Pre-edit brief not found at: ' + briefCandidates.join(', '));
+    setAssemblyStatus('Pre-edit brief not found. Load manually.', 'waiting');
+    setReviewStatus('Pre-edit brief not found.', 'waiting');
+    setScreensStatus('Pre-edit brief not found.', 'waiting');
     showFallback('assembly');
+  }
+
+  // Check for saved Pre-Edit state (enable Reload Last button)
+  try {
+    var setupDir = folderPath + '/01_Media/Source/Setup';
+    var versionsDir = setupDir + '/pre-edit_versions';
+    var savedState = await loadState(versionsDir, screensLogger);
+    if (savedState && savedState.briefPath) {
+      screensLogger.info('Saved state found (from ' + (savedState.timestamp || 'unknown') + ')');
+    }
+  } catch (e) {
+    // No saved state — that's fine
   }
 
   $('project-checklist').innerHTML = checklistHtml;
@@ -378,6 +429,7 @@ async function loadIngestFromPath(filePath) {
   const fileEntry = await uxpfs.getEntryWithUrl('file://' + filePath);
   const contents = await fileEntry.read();
   const ingest = parseIngest(contents);
+  ingest.project_code = extractProjectCode(ingest.project_name);
 
   ingestState.data = ingest;
   ingestState.filePath = filePath;
@@ -389,7 +441,7 @@ async function loadIngestFromPath(filePath) {
   $('btn-build-ingest').removeAttribute('disabled');
 
   setIngestStatus('Ingest loaded. Ready to build.', 'ready');
-  ingestLogger.info('Ingest loaded: ' + ingest.clips.length + ' clips, project "' + ingest.project_name + '"');
+  ingestLogger.info('Ingest loaded: ' + ingest.clips.length + ' clips, project "' + ingest.project_name + '" (code: ' + ingest.project_code + ')');
 }
 
 async function loadIngest() {
@@ -400,6 +452,7 @@ async function loadIngest() {
 
     const contents = await file.read();
     const ingest = parseIngest(contents);
+    ingest.project_code = extractProjectCode(ingest.project_name);
 
     ingestState.data = ingest;
     ingestState.filePath = file.nativePath || file.name || 'unknown';
@@ -411,7 +464,7 @@ async function loadIngest() {
     $('btn-build-ingest').removeAttribute('disabled');
 
     setIngestStatus('Ingest loaded. Ready to build.', 'ready');
-    ingestLogger.info('Ingest loaded: ' + ingest.clips.length + ' clips, project "' + ingest.project_name + '"');
+    ingestLogger.info('Ingest loaded: ' + ingest.clips.length + ' clips, project "' + ingest.project_name + '" (code: ' + ingest.project_code + ')');
   } catch (err) {
     ingestLogger.error('Failed to load ingest: ' + err.message);
     setIngestStatus('Error: ' + err.message, 'error');
@@ -419,15 +472,17 @@ async function loadIngest() {
 }
 
 async function cleanBeforeBuild(project, ingest) {
-  const sequenceName = ingest.project_name + '_1_Ingest';
+  var shortCode = ingest.project_code || extractProjectCode(ingest.project_name);
+  var sequenceNameShort = shortCode + '_1_Ingest';
+  var sequenceNameFull = ingest.project_name + '_1_Ingest';
   ingestLogger.info('=== Clean before build ===');
 
   const rootItem = await project.getRootItem();
   const allItems = await rootItem.getItems();
 
   for (const item of allItems) {
-    if (item.name === sequenceName && item.type !== 2) {
-      try { await project.deleteSequence(item); ingestLogger.info('Deleted old sequence: "' + sequenceName + '"'); }
+    if ((item.name === sequenceNameShort || item.name === sequenceNameFull) && item.type !== 2) {
+      try { await project.deleteSequence(item); ingestLogger.info('Deleted old sequence: "' + item.name + '"'); }
       catch (e) { ingestLogger.debug('Cannot delete sequence: ' + e.message); }
     }
     try {
@@ -495,7 +550,23 @@ async function buildIngest() {
     stepStart = Date.now();
     setIngestProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Building sequence...');
     ingestLogger.info('=== Step 3: Importing media & building sequence ===');
-    const result = await buildIngestSequence(project, ingest, bins[BIN_NAMES.SOURCE] || null, null, ingestLogger);
+    // Detect multi-scene mode: if any clip has a "scene" field
+    const hasScenes = ingest.clips.some(c => c.scene);
+    let result;
+    if (hasScenes) {
+      ingestLogger.info('Multi-scene mode detected — building per-scene sequences');
+      const multiResult = await buildMultiSceneIngest(project, ingest, bins[BIN_NAMES.SOURCE] || null, ingestLogger);
+      // Wrap multi-result to be compatible with downstream code
+      result = {
+        sequence: multiResult.sequences.length > 0 ? multiResult.sequences[0].sequence : null,
+        sequences: multiResult.sequences,
+        clipCount: multiResult.totalClipCount,
+        djiCount: multiResult.totalDjiCount,
+        totalDuration: multiResult.sequences.reduce((s, r) => s + r.totalDuration, 0),
+      };
+    } else {
+      result = await buildIngestSequence(project, ingest, bins[BIN_NAMES.SOURCE] || null, null, ingestLogger);
+    }
     stepTimings.push('build ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 4: Import transcripts
@@ -503,7 +574,7 @@ async function buildIngest() {
     stepStart = Date.now();
     setIngestProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Importing transcripts...');
     ingestLogger.info('=== Step 4: Importing transcripts ===');
-    const trResult = await importTranscripts(project, ingest, bins[BIN_NAMES.TRANSCRIPTS] || null, ingestLogger, result.sequence || null);
+    const trResult = await importTranscripts(project, ingest, bins[BIN_NAMES.TRANSCRIPTS] || null, ingestLogger, result.sequence || null, ingest.project_code);
     stepTimings.push('transcripts ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 5: LUTs
@@ -648,6 +719,7 @@ function loadBriefFromString(jsonString, filePath) {
   assemblyState.segments = result.segments;
   assemblyState.blocks = result.blocks;
   assemblyState.projectName = result.projectName;
+  assemblyState.projectCode = result.projectCode || extractProjectCode(result.projectName);
   assemblyState.filePath = filePath;
 
   // Parse screens[] (Production Cues) — optional, backward compatible
@@ -689,22 +761,39 @@ function loadBriefFromString(jsonString, filePath) {
     setScreensStatus(assemblyState.screens.length + ' screens detected. Ready to build.', 'ready');
     $('btn-generate-pngs').removeAttribute('disabled');
     $('btn-build-screens').removeAttribute('disabled');
+    $('btn-export-screens').removeAttribute('disabled');
+    $('btn-import-screens').removeAttribute('disabled');
   } else {
     setScreensStatus('No screens in brief', 'waiting');
     $('btn-generate-pngs').setAttribute('disabled', 'true');
     $('btn-build-screens').setAttribute('disabled', 'true');
+    $('btn-export-screens').setAttribute('disabled', 'true');
+    $('btn-import-screens').setAttribute('disabled', 'true');
   }
 
   setAssemblyStatus('Brief loaded. Ready to build.', 'ready');
   assemblyLogger.info('Brief loaded: ' + result.segments.length + ' segments, ' + result.blocks.length + ' blocks' +
     (screenCount > 0 ? ', ' + screenCount + ' screens' : ''));
 
+  // Save brief_in version (fire-and-forget — this function is synchronous)
+  if (filePath) {
+    (async function () {
+      try {
+        var briefDir = filePath.replace(/[/\\][^/\\]+$/, '');
+        var versionsDir = await ensureVersionsDir(briefDir, assemblyLogger);
+        await saveVersion(jsonString, versionsDir, 'brief_in', 'json', assemblyLogger);
+      } catch (vErr) {
+        assemblyLogger.debug('Version save skipped: ' + vErr.message);
+      }
+    })();
+  }
+
   return result;
 }
 
 async function loadBrief() {
   try {
-    assemblyLogger.info('Opening file picker for edit brief...');
+    assemblyLogger.info('Opening file picker for pre-edit brief...');
     const file = await uxpfs.getFileForOpening({ types: ['json'], allowMultiple: false });
     if (!file) { assemblyLogger.warn('File selection cancelled'); return; }
 
@@ -769,7 +858,7 @@ async function buildAssembly() {
     stepStart = Date.now();
     setAssemblyProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Building Assembly sequence...');
     assemblyLogger.info('=== Step 3: Building Assembly sequence ===');
-    result = await buildAssemblySequence(project, clipMap, assemblyState.segments, assemblyState.projectName, assemblyLogger);
+    result = await buildAssemblySequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, assemblyLogger);
     stepTimings.push('build ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 4: Create chapter markers (block boundaries + per-segment)
@@ -801,11 +890,62 @@ async function buildAssembly() {
     }
     stepTimings.push('validate ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
-    // Step 6: Import Assembly captions SRT (if exists alongside brief)
+    // Step 6: Generate + import Assembly captions & transcript SRTs
     step++;
     stepStart = Date.now();
     setAssemblyProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Captions...');
-    await importCaptionsSrt(project, assemblyState.filePath, assemblyState.projectName, '2_Assembly', 'Assembly', assemblyLogger);
+    assemblyLogger.info('=== Step 6: Assembly Captions ===');
+
+    var projectCode = assemblyState.projectCode || assemblyState.projectName;
+    var useSegsForSrt = assemblyState.segments.filter(function (s) { return s.use && s.block !== 99; });
+
+    if (useSegsForSrt.length > 0 && assemblyState.filePath) {
+      var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
+      var sourceDir = briefDir.replace(/[/\\]Setup$/, '');
+      try {
+        // Ensure Transcription subdirs exist
+        var transcriptionEntry = await uxpfs.getEntryWithUrl('file://' + sourceDir + '/Transcription');
+        var transcriptsFolderEntry = await ensureSubfolder(transcriptionEntry, 'transcripts', assemblyLogger);
+        var captionsFolderEntry = await ensureSubfolder(transcriptionEntry, 'captions', assemblyLogger);
+
+        // 1. Transcript SRT (full text per segment, for word-based editing)
+        var transcriptSrtContent = generateTranscriptSrt(useSegsForSrt);
+        if (transcriptSrtContent) {
+          var trFileName = projectCode + '_2_Assembly_transcript.srt';
+          var trFile = await transcriptsFolderEntry.createFile(trFileName, { overwrite: true });
+          await trFile.write(transcriptSrtContent);
+          assemblyLogger.info('Transcript SRT written: Transcription/transcripts/' + trFileName);
+        }
+
+        // 2. Captions SRT (word-grouped, 2-line blocks for on-screen reading)
+        // Only generate if Python pipeline hasn't already created one (Python has better word-level timing)
+        var captionsFileName = projectCode + '_2_Assembly_captions.srt';
+        var captionsDirPath = sourceDir + '/Transcription/captions';
+        var pythonCaptionsExist = false;
+        try {
+          await uxpfs.getEntryWithUrl('file://' + captionsDirPath + '/' + captionsFileName);
+          pythonCaptionsExist = true;
+          assemblyLogger.info('Python captions found: ' + captionsFileName + ' (keeping)');
+        } catch (e) { /* not found, will generate */ }
+
+        if (!pythonCaptionsExist) {
+          var captionsSrtContent = generateCaptionsSrt(useSegsForSrt);
+          if (captionsSrtContent) {
+            var capFile = await captionsFolderEntry.createFile(captionsFileName, { overwrite: true });
+            await capFile.write(captionsSrtContent);
+            assemblyLogger.info('Captions SRT generated: Transcription/captions/' + captionsFileName);
+          }
+        }
+      } catch (srtWriteErr) {
+        assemblyLogger.warn('SRT write failed (non-fatal): ' + srtWriteErr.message);
+      }
+    } else {
+      assemblyLogger.info('No transcript data for SRT generation');
+    }
+
+    // Import both SRTs to 02_Transcripts bin
+    await importCaptionsSrt(project, assemblyState.filePath, projectCode, '2_Assembly', 'Assembly Captions', assemblyLogger);
+    await importCaptionsSrt(project, assemblyState.filePath, projectCode, '2_Assembly', 'Assembly Transcript', assemblyLogger, 'transcript');
     stepTimings.push('captions ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -817,7 +957,7 @@ async function buildAssembly() {
 
     // ScreenCues reminder — how many screens are ready in the brief
     if (assemblyState.screens && assemblyState.screens.length > 0) {
-      assemblyLogger.info('→ ' + assemblyState.screens.length + ' screens ready in brief. Click "Build Screen Cues" to generate _4_ScreenCues');
+      assemblyLogger.info('→ ' + assemblyState.screens.length + ' screens ready in brief. Click "Build Pre-Edit" to generate _4_PreEdit');
     }
 
     setAssemblyStatus('Assembly built (' + result.clipCount + ' clips)', 'ready');
@@ -836,45 +976,57 @@ async function buildAssembly() {
 }
 
 /**
- * Import captions SRT into the project (02_Transcripts bin).
+ * Import SRT file into the project (02_Transcripts bin).
  *
- * Looks for {project}_{suffix}_captions.srt next to the brief file.
- * Generated by generate_assembly_captions.py — word-level captions with
- * timecodes remapped to the timeline.
- *
+ * Looks for {project}_{suffix}_{srtType}.srt next to the brief file.
  * Non-fatal: if SRT not found or import fails, logs a message and continues.
  *
  * @param {Object} project - Active Premiere Pro project
- * @param {string} briefPath - Path to the loaded edit_brief.json
- * @param {string} projectName - Project name (e.g. "YTAI_Edit")
- * @param {string} suffix - SRT file suffix: "2_Assembly" or "3_Review"
- * @param {string} label - Human label for logs: "Assembly" or "Review"
+ * @param {string} briefPath - Path to the loaded pre_edit_brief.json
+ * @param {string} projectName - Project name (e.g. "YTCG49")
+ * @param {string} suffix - SRT file suffix: "2_Assembly", "3_Review", "4_ScreenCues"
+ * @param {string} label - Human label for logs
  * @param {Object} logger - Logger instance
+ * @param {string} [srtType='captions'] - Type suffix: 'captions', 'transcript'
  */
-async function importCaptionsSrt(project, briefPath, projectName, suffix, label, logger) {
+async function importCaptionsSrt(project, briefPath, projectName, suffix, label, logger, srtType) {
   if (!briefPath || !projectName) {
-    logger.debug('Captions import skipped: no brief path or project name');
+    logger.debug('SRT import skipped: no brief path or project name');
     return;
   }
 
+  // briefPath is in Setup/ — derive Source/ from it
   const briefDir = briefPath.replace(/[/\\][^/\\]+$/, '');
-  const srtFileName = projectName + '_' + suffix + '_captions.srt';
-  const srtPath = briefDir + '/' + srtFileName;
+  const sourceDir = briefDir.replace(/[/\\]Setup$/, '');
+  const srtFileName = projectName + '_' + suffix + '_' + (srtType || 'captions') + '.srt';
+  // SRTs are in Transcription/captions/ (for captions) or Transcription/transcripts/ (for transcripts)
+  var typeLabel = (srtType || 'captions');
+  var srtSubdir = (typeLabel === 'transcript') ? 'transcripts' : 'captions';
+  var srtDir = sourceDir + '/Transcription/' + srtSubdir;
+  var srtCandidates = [
+    srtDir + '/' + srtFileName,
+    briefDir + '/' + srtFileName,  // legacy: next to brief
+  ];
+  const srtPath = srtCandidates[0];
 
-  logger.info('=== Import ' + label + ' Captions ===');
+  logger.info('=== Import ' + label + ' (' + typeLabel + ') ===');
 
-  // Check if file exists
-  try {
-    const entry = await uxpfs.getEntryWithUrl('file://' + srtPath);
-    if (!entry) {
-      logger.info('No ' + label + ' captions SRT found (generate with generate_assembly_captions.py' + (suffix === '3_Review' ? ' --review' : '') + ')');
-      return;
-    }
-    const content = await entry.read();
-    const blockCount = (content.match(/^\d+$/gm) || []).length;
-    logger.debug(label + ' captions: ' + content.length + ' chars, ' + blockCount + ' SRT blocks');
-  } catch (e) {
-    logger.info('No ' + label + ' captions SRT found at: ' + srtFileName);
+  // Check if file exists (try new location first, then legacy)
+  var foundSrtPath = null;
+  for (var si = 0; si < srtCandidates.length; si++) {
+    try {
+      const entry = await uxpfs.getEntryWithUrl('file://' + srtCandidates[si]);
+      if (entry) {
+        foundSrtPath = srtCandidates[si];
+        const content = await entry.read();
+        const blockCount = (content.match(/^\d+$/gm) || []).length;
+        logger.debug(label + ' ' + typeLabel + ': ' + content.length + ' chars, ' + blockCount + ' SRT blocks');
+        break;
+      }
+    } catch (e) { /* try next */ }
+  }
+  if (!foundSrtPath) {
+    logger.info('No ' + label + ' ' + typeLabel + ' SRT found at: ' + srtFileName);
     return;
   }
 
@@ -895,11 +1047,10 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
 
   // Import SRT
   try {
-    await project.importFiles([srtPath], true, transcriptsBin || null, false);
-    logger.info(label + ' captions imported: ' + srtFileName + ' → 02_Transcripts');
-    logger.info('To add captions: drag "' + srtFileName + '" from 02_Transcripts to timeline caption track');
+    await project.importFiles([foundSrtPath], true, transcriptsBin || null, false);
+    logger.info(label + ' ' + typeLabel + ' imported: ' + srtFileName + ' → 02_Transcripts');
   } catch (err) {
-    logger.warn(label + ' captions import failed (non-fatal): ' + err.message);
+    logger.warn(label + ' ' + typeLabel + ' import failed (non-fatal): ' + err.message);
   }
 }
 
@@ -1337,6 +1488,46 @@ async function createReviewMarkers(project, result) {
   const markerList = [];
   let currentSource = '';
 
+  // Block-level chapter markers: group review segments by block, create marker at first occurrence
+  // Only for blocks that have Assembly content (usedCount > 0)
+  var blockFirstPos = {};  // { blockNum: { pos, name, color } }
+  var blockLastPos = {};   // { blockNum: lastEndPos }
+  for (var bi = 0; bi < segs.length; bi++) {
+    var bseg = segs[bi];
+    if (bseg.block > 0 && bseg.block !== 99 && bseg.blockName) {
+      var bpos = bseg._timelinePosition != null ? bseg._timelinePosition : 0;
+      var bendpos = bpos + (bseg.duration || 0);
+      if (!blockFirstPos[bseg.block]) {
+        blockFirstPos[bseg.block] = {
+          pos: bpos,
+          name: bseg.blockName,
+          color: bseg.color || 'Purple'
+        };
+        blockLastPos[bseg.block] = bendpos;
+      } else {
+        if (bendpos > blockLastPos[bseg.block]) {
+          blockLastPos[bseg.block] = bendpos;
+        }
+      }
+    }
+  }
+  // Add block chapter markers
+  for (var bk in blockFirstPos) {
+    var bdata = blockFirstPos[bk];
+    var bColorIdx = MARKER_COLOR_INDEX[bdata.color];
+    markerList.push({
+      name: bdata.name,
+      type: MARKER_TYPE_CHAPTER,
+      startSec: bdata.pos,
+      durationSec: 0.2,
+      comment: 'Block ' + bk + ' — unused segments',
+      markerColor: bColorIdx !== undefined ? bColorIdx : REVIEW_COLOR_MAP.skip.markerIdx
+    });
+  }
+  if (Object.keys(blockFirstPos).length > 0) {
+    reviewLogger.info('Block chapter markers: ' + Object.keys(blockFirstPos).length + ' blocks');
+  }
+
   for (let i = 0; i < segs.length; i++) {
     const seg = segs[i];
     const cat = getReviewCategory(seg);
@@ -1618,7 +1809,11 @@ async function buildReview() {
     stepStart = Date.now();
     setReviewProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Building Review sequence...');
     reviewLogger.info('=== Step 3: Building Review sequence ===');
-    result = await buildReviewSequence(project, clipMap, assemblyState.segments, assemblyState.projectName, reviewLogger, clipDurations);
+    var reviewOpts = {
+      producerSpeaker: (assemblyState.data && assemblyState.data.producerSpeaker) || '',
+      assemblyBlocks: assemblyState.blocks || []
+    };
+    result = await buildReviewSequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, reviewLogger, clipDurations, reviewOpts);
 
     if (!result.sequence) {
       reviewLogger.info('Review sequence not created (no unused segments)');
@@ -1656,11 +1851,47 @@ async function buildReview() {
     }
     stepTimings.push('validate ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
-    // Step 6: Import Review captions SRT (if exists alongside brief)
+    // Step 6: Generate + import Review captions & transcript SRTs
     step++;
     stepStart = Date.now();
     setReviewProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Captions...');
-    await importCaptionsSrt(project, assemblyState.filePath, assemblyState.projectName, '3_Review', 'Review', reviewLogger);
+    reviewLogger.info('=== Step 6: Review Captions ===');
+
+    var reviewProjectCode = assemblyState.projectCode || assemblyState.projectName;
+    if (result.segments && result.segments.length > 0 && assemblyState.filePath) {
+      var reviewBriefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
+      var reviewSourceDir = reviewBriefDir.replace(/[/\\]Setup$/, '');
+      try {
+        // Ensure Transcription subdirs exist
+        var reviewTranscriptionEntry = await uxpfs.getEntryWithUrl('file://' + reviewSourceDir + '/Transcription');
+        var reviewTranscriptsFolderEntry = await ensureSubfolder(reviewTranscriptionEntry, 'transcripts', reviewLogger);
+        var reviewCaptionsFolderEntry = await ensureSubfolder(reviewTranscriptionEntry, 'captions', reviewLogger);
+
+        // 1. Transcript SRT (absolute positioning matching Ingest layout)
+        var reviewTranscriptSrt = generateTranscriptSrt(result.segments, result.clipOffsets);
+        if (reviewTranscriptSrt) {
+          var reviewTrFileName = reviewProjectCode + '_3_Review_transcript.srt';
+          var reviewTrFile = await reviewTranscriptsFolderEntry.createFile(reviewTrFileName, { overwrite: true });
+          await reviewTrFile.write(reviewTranscriptSrt);
+          reviewLogger.info('Transcript SRT written: Transcription/transcripts/' + reviewTrFileName);
+        }
+
+        // 2. Captions SRT (word-grouped, absolute positioning)
+        var reviewCaptionsSrt = generateCaptionsSrt(result.segments, 6, result.clipOffsets);
+        if (reviewCaptionsSrt) {
+          var reviewCapFileName = reviewProjectCode + '_3_Review_captions.srt';
+          var reviewCapFile = await reviewCaptionsFolderEntry.createFile(reviewCapFileName, { overwrite: true });
+          await reviewCapFile.write(reviewCaptionsSrt);
+          reviewLogger.info('Captions SRT written: Transcription/captions/' + reviewCapFileName);
+        }
+      } catch (reviewSrtErr) {
+        reviewLogger.warn('Review SRT write failed (non-fatal): ' + reviewSrtErr.message);
+      }
+    }
+
+    // Import both SRTs to 02_Transcripts bin
+    await importCaptionsSrt(project, assemblyState.filePath, reviewProjectCode, '3_Review', 'Review Captions', reviewLogger);
+    await importCaptionsSrt(project, assemblyState.filePath, reviewProjectCode, '3_Review', 'Review Transcript', reviewLogger, 'transcript');
     stepTimings.push('captions ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -1769,6 +2000,15 @@ async function generateScreenPngs() {
     }
   }
 
+  // Archive existing PNGs before regenerating
+  try {
+    await archiveFiles(pngDirPath, function(name) {
+      return name.endsWith('.png');
+    }, screensLogger);
+  } catch (archiveErr) {
+    screensLogger.debug('PNG archive skipped: ' + archiveErr.message);
+  }
+
   // Write brief path to temp file (communication channel UXP → bash script)
   try {
     var tmpFolder = await uxpfs.getEntryWithUrl('file:///tmp');
@@ -1858,6 +2098,9 @@ async function generateScreenPngs() {
   screensLogger.info('=== GENERATE PNGs COMPLETE ===');
   $('btn-generate-pngs').removeAttribute('disabled');
   $('btn-generate-pngs').classList.add('btn-done');
+
+  // Save debug bundle
+  await screensLogger.saveDebugBundle(assemblyState.data, null, { operation: 'generate_pngs' });
 }
 
 /**
@@ -1882,6 +2125,85 @@ async function generateScreenPngs() {
  *   4. Write SRT file to brief directory
  *   5. Import Screen Cues SRT to 02_Transcripts bin
  */
+/**
+ * Organize project bins after Pre-Edit build.
+ * Moves Ingest + Assembly sequences to "99_Archive" bin.
+ * Keeps Review + Pre-Edit visible at root.
+ */
+async function organizeBins(project, projectCode, logger) {
+  try {
+    var rootItem = await project.getRootItem();
+    var allItems = await rootItem.getItems();
+
+    // Find or create 99_Archive bin
+    var archiveBin = null;
+    for (var i = 0; i < allItems.length; i++) {
+      if (allItems[i].name === '99_Archive') {
+        archiveBin = ppro.FolderItem.cast(allItems[i]);
+        break;
+      }
+    }
+    if (!archiveBin) {
+      project.lockedAccess(function() {
+        project.executeTransaction(function(ca) {
+          ca.addAction(rootItem.createBinAction('99_Archive', true));
+        }, 'Create 99_Archive bin');
+      });
+      allItems = await rootItem.getItems();
+      for (var i = 0; i < allItems.length; i++) {
+        if (allItems[i].name === '99_Archive') {
+          archiveBin = ppro.FolderItem.cast(allItems[i]);
+          break;
+        }
+      }
+    }
+    if (!archiveBin) {
+      if (logger) logger.debug('Could not create 99_Archive bin');
+      return;
+    }
+
+    // Move Ingest and Assembly sequences to archive
+    allItems = await rootItem.getItems();
+    var moved = 0;
+    for (var j = 0; j < allItems.length; j++) {
+      var itemName = allItems[j].name;
+      if (itemName.indexOf('_1_Ingest') !== -1 || itemName.indexOf('_2_Assembly') !== -1) {
+        // Cast to ProjectItem for full API access
+        var castItem = null;
+        try { castItem = ppro.ProjectItem.cast(allItems[j]); } catch (e) { /* */ }
+        var moveTarget = castItem || allItems[j];
+        var didMove = false;
+        if (typeof moveTarget.createMoveBinItemAction === 'function') {
+          try {
+            project.lockedAccess(function() {
+              project.executeTransaction(function(ca) {
+                ca.addAction(moveTarget.createMoveBinItemAction(archiveBin));
+              }, 'Archive: ' + itemName);
+            });
+            didMove = true;
+          } catch (e) { /* */ }
+        }
+        if (!didMove && typeof moveTarget.moveBin === 'function') {
+          try { moveTarget.moveBin(archiveBin); didMove = true; } catch (e) { /* */ }
+        }
+        if (didMove) {
+          moved++;
+          if (logger) logger.info('Archived bin item: ' + itemName);
+        } else {
+          if (logger) logger.debug('Could not move ' + itemName + ' — no move API available');
+        }
+      }
+    }
+    if (logger && moved > 0) logger.info('Bin organization: ' + moved + ' item(s) moved to 99_Archive');
+  } catch (orgErr) {
+    if (logger) logger.debug('organizeBins: ' + orgErr.message);
+  }
+}
+
+/**
+ * Reload last Pre-Edit state from pre-edit_versions/latest_state.json.
+ * Restores brief state so user can click "Build Pre-Edit" without re-running all stages.
+ */
 async function buildScreenCuesPipeline() {
   if (!assemblyState.screens || assemblyState.screens.length === 0) {
     screensLogger.error('No screens in loaded brief');
@@ -1903,6 +2225,147 @@ async function buildScreenCuesPipeline() {
 
     screensLogger.info('=== SCREEN CUES BUILD START ===');
     screensLogger.info('Screens: ' + assemblyState.screens.length + ', Project: ' + assemblyState.projectName);
+
+    // Archive existing _4_PreEdit sequence before creating new one
+    try {
+      var rootItem = await project.getRootItem();
+      var rootItems = await rootItem.getItems();
+
+      // Introspect first item to discover available methods
+      if (rootItems.length > 0) {
+        var sampleItem = rootItems[0];
+        var itemMethods = [];
+        for (var mk in sampleItem) {
+          if (typeof sampleItem[mk] === 'function') itemMethods.push(mk);
+        }
+        screensLogger.debug('ProjectItem methods: [' + itemMethods.join(', ') + ']');
+
+        // Also try casting to ProjectItem
+        try {
+          var castItem = ppro.ProjectItem.cast(sampleItem);
+          if (castItem) {
+            var castMethods = [];
+            for (var ck in castItem) {
+              if (typeof castItem[ck] === 'function') castMethods.push(ck);
+            }
+            screensLogger.debug('ProjectItem.cast methods: [' + castMethods.join(', ') + ']');
+          }
+        } catch (castErr) {
+          screensLogger.debug('ProjectItem.cast not available: ' + castErr.message);
+        }
+      }
+
+      // Find or create 99_Archive bin
+      var archiveBin = null;
+      for (var abi = 0; abi < rootItems.length; abi++) {
+        if (rootItems[abi].name === '99_Archive') {
+          archiveBin = ppro.FolderItem.cast(rootItems[abi]);
+          break;
+        }
+      }
+      if (!archiveBin) {
+        project.lockedAccess(function() {
+          project.executeTransaction(function(ca) {
+            ca.addAction(rootItem.createBinAction('99_Archive', true));
+          }, 'Create 99_Archive bin');
+        });
+        rootItems = await rootItem.getItems();
+        for (var abi2 = 0; abi2 < rootItems.length; abi2++) {
+          if (rootItems[abi2].name === '99_Archive') {
+            archiveBin = ppro.FolderItem.cast(rootItems[abi2]);
+            break;
+          }
+        }
+      }
+
+      // Find and archive old _4_PreEdit sequences (and old _4_ScreenCues)
+      rootItems = await rootItem.getItems();
+      for (var ai = 0; ai < rootItems.length; ai++) {
+        var itemName = rootItems[ai].name;
+        var isPreEdit = itemName.indexOf('_4_PreEdit') !== -1 && itemName.indexOf('_4_PreEdit_v') === -1;
+        var isOldScreenCues = itemName.indexOf('_4_ScreenCues') !== -1;
+        if (isPreEdit || isOldScreenCues) {
+          // Cast to ProjectItem for full API access
+          var castPI = null;
+          try { castPI = ppro.ProjectItem.cast(rootItems[ai]); } catch (e) { /* */ }
+          var targetItem = castPI || rootItems[ai];
+
+          var archiveName = itemName + '_v' + versionTimestamp();
+
+          // Try rename via multiple approaches
+          var renamed = false;
+          // Approach 1: createSetNameAction (like marker API pattern)
+          if (!renamed && typeof targetItem.createSetNameAction === 'function') {
+            try {
+              project.lockedAccess(function() {
+                project.executeTransaction(function(ca) {
+                  ca.addAction(targetItem.createSetNameAction(archiveName));
+                }, 'Rename: ' + itemName);
+              });
+              screensLogger.info('Renamed (setName): ' + itemName + ' → ' + archiveName);
+              renamed = true;
+            } catch (e) { screensLogger.debug('createSetNameAction failed: ' + e.message); }
+          }
+          // Approach 2: createRenameAction
+          if (!renamed && typeof targetItem.createRenameAction === 'function') {
+            try {
+              project.lockedAccess(function() {
+                project.executeTransaction(function(ca) {
+                  ca.addAction(targetItem.createRenameAction(archiveName));
+                }, 'Rename: ' + itemName);
+              });
+              screensLogger.info('Renamed (rename): ' + itemName + ' → ' + archiveName);
+              renamed = true;
+            } catch (e) { screensLogger.debug('createRenameAction failed: ' + e.message); }
+          }
+          // Approach 3: Direct name property
+          if (!renamed) {
+            try {
+              project.lockedAccess(function() {
+                project.executeTransaction(function(ca) {
+                  targetItem.name = archiveName;
+                }, 'Rename: ' + itemName);
+              });
+              if (targetItem.name === archiveName) {
+                screensLogger.info('Renamed (direct): ' + itemName + ' → ' + archiveName);
+                renamed = true;
+              }
+            } catch (e) { screensLogger.debug('Direct name set failed: ' + e.message); }
+          }
+          if (!renamed) {
+            screensLogger.debug('Could not rename ' + itemName + ' — no rename API available');
+          }
+
+          // Try move to 99_Archive
+          if (archiveBin) {
+            var moved = false;
+            if (!moved && typeof targetItem.createMoveBinItemAction === 'function') {
+              try {
+                project.lockedAccess(function() {
+                  project.executeTransaction(function(ca) {
+                    ca.addAction(targetItem.createMoveBinItemAction(archiveBin));
+                  }, 'Archive: ' + itemName);
+                });
+                screensLogger.info('Moved to 99_Archive: ' + itemName);
+                moved = true;
+              } catch (e) { screensLogger.debug('createMoveBinItemAction failed: ' + e.message); }
+            }
+            if (!moved && typeof targetItem.moveBin === 'function') {
+              try {
+                targetItem.moveBin(archiveBin);
+                screensLogger.info('Moved (moveBin): ' + itemName);
+                moved = true;
+              } catch (e) { screensLogger.debug('moveBin failed: ' + e.message); }
+            }
+            if (!moved) {
+              screensLogger.debug('Could not move ' + itemName + ' — no move API available');
+            }
+          }
+        }
+      }
+    } catch (archErr) {
+      screensLogger.debug('Pre-build archive: ' + archErr.message);
+    }
 
     var stepTimings = [];
     var stepStart;
@@ -1983,7 +2446,7 @@ async function buildScreenCuesPipeline() {
     screensLogger.info('=== Step 2: Building Screen Cues sequence (v1.9.3) ===');
     var screenResult = await buildScreenCues(
       project, assemblyState.screens, assemblyState.segments, clipMap,
-      assemblyState.projectName, screensLogger, assemblyState.filePath, pngFiles, screenCuesBin
+      assemblyState.projectCode || assemblyState.projectName, screensLogger, assemblyState.filePath, pngFiles, screenCuesBin
     );
     screensLogger.info('Result: V1=' + screenResult.clips + ' clips, V2=' + screenResult.overlays + ' overlays, ' +
       screenResult.markers + ' markers, ' + screenResult.skipped + ' skipped, ' +
@@ -2009,19 +2472,42 @@ async function buildScreenCuesPipeline() {
     }
     stepTimings.push('markers ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
-    // Step 4: Write SRT file to brief directory
+    // Step 4: Write SRT files to brief directory
     step++;
     stepStart = Date.now();
     setScreensProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Writing SRT...');
-    screensLogger.info('=== Step 4: Write Screen Cues SRT ===');
-    if (screenResult.srtContent && assemblyState.filePath) {
+    screensLogger.info('=== Step 4: Write Screen Cues SRTs ===');
+
+    var screensProjectCode = assemblyState.projectCode || assemblyState.projectName;
+
+    if (assemblyState.filePath) {
+      var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
+      var screensSourceDir = briefDir.replace(/[/\\]Setup$/, '');
       try {
-        var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
-        var srtFileName = assemblyState.projectName + '_4_ScreenCues_captions.srt';
-        var folder = await uxpfs.getEntryWithUrl('file://' + briefDir);
-        var srtFile = await folder.createFile(srtFileName, { overwrite: true });
-        await srtFile.write(screenResult.srtContent);
-        screensLogger.info('SRT written: ' + srtFileName + ' (' + screenResult.srtContent.length + ' chars)');
+        // Ensure Transcription subdirs exist
+        var screensTranscriptionEntry = await uxpfs.getEntryWithUrl('file://' + screensSourceDir + '/Transcription');
+        var screensTranscriptsFolderEntry = await ensureSubfolder(screensTranscriptionEntry, 'transcripts', screensLogger);
+        var screensCaptionsFolderEntry = await ensureSubfolder(screensTranscriptionEntry, 'captions', screensLogger);
+
+        // 1. Transcript SRT (full text per segment, for word-based editing)
+        if (screenResult.assemblySegments && screenResult.assemblySegments.length > 0) {
+          var screensTranscriptSrt = generateTranscriptSrt(screenResult.assemblySegments);
+          if (screensTranscriptSrt) {
+            var screensTrFileName = screensProjectCode + '_4_PreEdit_transcript.srt';
+            var screensTrFile = await screensTranscriptsFolderEntry.createFile(screensTrFileName, { overwrite: true });
+            await screensTrFile.write(screensTranscriptSrt);
+            screensLogger.info('Transcript SRT written: Transcription/transcripts/' + screensTrFileName);
+          }
+
+          // 2. Captions SRT (word-grouped, 2-line blocks for on-screen reading, top-positioned)
+          var screensCaptionsSrt = generateCaptionsSrt(screenResult.assemblySegments, 8, null, '{\\an8}');
+          if (screensCaptionsSrt) {
+            var screensCapFileName = screensProjectCode + '_4_PreEdit_captions.srt';
+            var screensCapFile = await screensCaptionsFolderEntry.createFile(screensCapFileName, { overwrite: true });
+            await screensCapFile.write(screensCaptionsSrt);
+            screensLogger.info('Captions SRT written: Transcription/captions/' + screensCapFileName);
+          }
+        }
       } catch (srtErr) {
         screensLogger.warn('SRT write failed (non-fatal): ' + srtErr.message);
       }
@@ -2031,13 +2517,15 @@ async function buildScreenCuesPipeline() {
 
     stepTimings.push('srt-write ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
-    // Step 5: Import SRT to 02_Transcripts bin
+    // Step 5: Import SRTs to 02_Transcripts bin
     step++;
     stepStart = Date.now();
     setScreensProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Importing SRT...');
-    screensLogger.info('=== Step 5: Import Screen Cues SRT ===');
-    await importCaptionsSrt(project, assemblyState.filePath, assemblyState.projectName,
-      '4_ScreenCues', 'ScreenCues', screensLogger);
+    screensLogger.info('=== Step 5: Import Screen Cues SRTs ===');
+    await importCaptionsSrt(project, assemblyState.filePath, screensProjectCode,
+      '4_PreEdit', 'PreEdit Transcript', screensLogger, 'transcript');
+    await importCaptionsSrt(project, assemblyState.filePath, screensProjectCode,
+      '4_PreEdit', 'PreEdit Captions', screensLogger);
 
     // Activate created sequence + save
     if (screenResult.sequence) {
@@ -2068,6 +2556,47 @@ async function buildScreenCuesPipeline() {
     // Validation panel
     if (screenResult.sequence) {
       await validateScreensBuild(screenResult.sequence, screenResult, markerInfo);
+    }
+
+    // --- Post-build: Versioning, archive, bin organization (non-fatal) ---
+    try {
+      if (assemblyState.filePath) {
+        var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
+        var versionsDir = await ensureVersionsDir(briefDir, screensLogger);
+
+        // Save brief_out version (export data snapshot)
+        var briefOutData = JSON.stringify({
+          project: screensProjectCode,
+          exported_at: new Date().toISOString(),
+          screens: (assemblyState.screens || []).map(function(s) {
+            return { screen_id: s.id, screen_type: s.type, segment_id: s.segmentId,
+              tc_in: s.tcIn || '', title: s.title || '', subtitle: s.subtitle || '',
+              body: s.body || null, prompt: s.prompt || '' };
+          })
+        }, null, 2);
+        await saveVersion(briefOutData, versionsDir, 'brief_out', 'json', screensLogger);
+
+        // Save latest_state.json for Reload Last
+        await saveState(versionsDir, {
+          timestamp: new Date().toISOString(),
+          briefPath: assemblyState.filePath,
+          stage: 'preedit',
+          projectCode: screensProjectCode
+        }, screensLogger);
+
+        // Archive old SRTs (keep only current _4_PreEdit_ files)
+        await archiveFiles(briefDir, function(name) {
+          if (!name.endsWith('.srt')) return false;
+          if (name.indexOf(screensProjectCode + '_4_PreEdit_') === 0) return false;
+          return name.indexOf('_transcript.srt') !== -1 ||
+            name.indexOf('_captions.srt') !== -1;
+        }, screensLogger);
+
+        // Organize bins: move Ingest/Assembly to 99_Archive
+        await organizeBins(project, screensProjectCode, screensLogger);
+      }
+    } catch (postErr) {
+      screensLogger.debug('Post-build operations: ' + postErr.message);
     }
 
     // Save debug bundle
@@ -2127,7 +2656,7 @@ async function saveScreensLogs(project, screenResult) {
  * @returns {{ chapters: number, comments: number }}
  */
 async function createScreenCuesMarkers(project, screenResult) {
-  const { MARKER_TYPE_CHAPTER, SCREEN_CUE_COLOR } = require('./src/shared/constants');
+  const { MARKER_TYPE_CHAPTER, MARKER_COLOR_INDEX, SCREEN_CUE_COLOR } = require('./src/shared/constants');
   const seq = screenResult.sequence;
   const markerList = screenResult.markerList || [];
 
@@ -2240,14 +2769,30 @@ async function createScreenCuesMarkers(project, screenResult) {
         screensLogger.debug('Marker methods: [' + mMethods.join(', ') + ']');
       } catch (e) { /* ignore */ }
 
-      // Transaction 2: Set marker colors to Orange
+      // Transaction 2: Set marker colors — per-marker (block colors + Orange for screen cues)
+      // Build name → markerColorIdx map from markerList
+      var nameColorMap = {};
+      for (var nci = 0; nci < markerList.length; nci++) {
+        var mkEntry = markerList[nci];
+        if (mkEntry.markerColor && MARKER_COLOR_INDEX[mkEntry.markerColor] !== undefined) {
+          nameColorMap[mkEntry.name] = MARKER_COLOR_INDEX[mkEntry.markerColor];
+        }
+      }
+
       try {
         project.lockedAccess(function () {
           project.executeTransaction(function (ca) {
             for (var ci = 0; ci < allMarkers.length; ci++) {
               var marker = allMarkers[ci];
               try {
-                ca.addAction(marker.createSetColorByIndexAction(SCREEN_CUE_COLOR.markerIdx));
+                var mName = marker.getName ? marker.getName() : '';
+                var colorIdx = nameColorMap[mName];
+                if (colorIdx !== undefined) {
+                  ca.addAction(marker.createSetColorByIndexAction(colorIdx));
+                } else {
+                  // Fallback: screen cue orange for unknown markers
+                  ca.addAction(marker.createSetColorByIndexAction(SCREEN_CUE_COLOR.markerIdx));
+                }
                 coloredCount++;
               } catch (e) {
                 screensLogger.debug('  Marker color failed: ' + e.message);
@@ -2255,29 +2800,41 @@ async function createScreenCuesMarkers(project, screenResult) {
             }
           }, 'YTAI ScreenCue Marker Colors');
         });
-        screensLogger.info('Marker colors: ' + coloredCount + '/' + allMarkers.length + ' set to Orange');
+        screensLogger.info('Marker colors: ' + coloredCount + '/' + allMarkers.length + ' colored (block colors + Orange)');
       } catch (colorErr) {
         screensLogger.warn('Marker color setting failed: ' + colorErr.message);
       }
 
-      // Transaction 3: Set marker TYPE to Chapter (using SAME allMarkers refs)
+      // Transaction 3: Set marker TYPE per-marker (using SAME allMarkers refs)
       // createAddMarkerAction ignores the type param — always creates Event.
-      // Must use createSetTypeAction on each marker to change Event → Chapter.
+      // Must use createSetTypeAction on each marker to change Event → Chapter/Segmentation.
+      // Build nameTypeMap from markerList for per-marker type
+      var nameTypeMap = {};
+      for (var nti = 0; nti < markerList.length; nti++) {
+        nameTypeMap[markerList[nti].name] = markerList[nti].type;
+      }
+
+      var chapterTyped = 0;
+      var segTyped = 0;
       try {
         project.lockedAccess(function () {
           project.executeTransaction(function (ca) {
             for (var ti = 0; ti < allMarkers.length; ti++) {
               var marker = allMarkers[ti];
               try {
-                ca.addAction(marker.createSetTypeAction(MARKER_TYPE_CHAPTER));
+                var mName = marker.getName ? marker.getName() : '';
+                var typeUri = nameTypeMap[mName] || MARKER_TYPE_CHAPTER;
+                ca.addAction(marker.createSetTypeAction(typeUri));
                 typedCount++;
+                if (typeUri === MARKER_TYPE_CHAPTER) chapterTyped++;
+                else segTyped++;
               } catch (e) {
                 screensLogger.debug('  Marker type failed: ' + e.message);
               }
             }
           }, 'YTAI ScreenCue Marker Types');
         });
-        screensLogger.info('Marker types: ' + typedCount + '/' + allMarkers.length + ' set to Chapter');
+        screensLogger.info('Marker types: ' + chapterTyped + ' Chapter + ' + segTyped + ' Segmentation (' + typedCount + '/' + allMarkers.length + ')');
       } catch (typeErr) {
         screensLogger.warn('Marker type change failed: ' + typeErr.message);
       }
@@ -2287,6 +2844,532 @@ async function createScreenCuesMarkers(project, screenResult) {
   }
 
   return { chapters: chapterCount, colored: coloredCount, typed: typedCount };
+}
+
+/**
+ * Export Pre-Edit — full timeline data (JSON + HTML review table) to project exports folder.
+ * Creates Setup/exports/{code}_PreEdit_{timestamp}/ with timeline_data.json + timeline_review.html.
+ * Opens folder in Finder after export.
+ */
+async function exportPreEdit() {
+  screensLogger.info('=== Export Pre-Edit ===');
+  try {
+    if (!assemblyState.data && !assemblyState.segments) {
+      screensLogger.warn('No brief data loaded');
+      setScreensStatus('No brief loaded — select project first', 'error');
+      return;
+    }
+
+    setScreensStatus('Exporting Pre-Edit...', 'waiting');
+
+    var projectCode = assemblyState.projectCode || assemblyState.projectName;
+    var projectName = assemblyState.projectName || projectCode;
+    var ts = versionTimestamp();
+    var exportDirName = projectCode + '_PreEdit_' + ts;
+
+    // Compute timeline positions for segments
+    var useSegs = (assemblyState.segments || []).filter(function(s) { return s.use; });
+    var segPositions = buildSegmentPositionMap(useSegs);
+
+    // Build cumulative timeline positions for all segments
+    var cumTime = 0;
+    var segmentsExport = [];
+    for (var si = 0; si < useSegs.length; si++) {
+      var seg = useSegs[si];
+      segmentsExport.push({
+        id: seg.id,
+        sourceFile: seg.sourceFile,
+        inSec: seg.inSec,
+        outSec: seg.outSec,
+        duration: seg.duration,
+        block: seg.block,
+        blockName: seg.blockName,
+        speaker: seg.speaker || '',
+        transcript: seg.transcript || '',
+        color: seg.color,
+        use: seg.use,
+        timelineStartSec: cumTime,
+        timelineEndSec: cumTime + seg.duration
+      });
+      cumTime += seg.duration;
+    }
+    var totalDuration = cumTime;
+
+    // Build blocks export
+    var blockMap = {};
+    var blockCum = 0;
+    for (var bi = 0; bi < useSegs.length; bi++) {
+      var bSeg = useSegs[bi];
+      if (!blockMap[bSeg.block]) {
+        blockMap[bSeg.block] = {
+          id: bSeg.block,
+          name: bSeg.blockName || ('Block ' + bSeg.block),
+          color: bSeg.color,
+          startSec: blockCum,
+          durationSec: 0,
+          segmentCount: 0
+        };
+      }
+      blockMap[bSeg.block].durationSec += bSeg.duration;
+      blockMap[bSeg.block].segmentCount++;
+      blockCum += bSeg.duration;
+    }
+    var blocksExport = Object.keys(blockMap).sort(function(a,b) { return Number(a) - Number(b); }).map(function(k) { return blockMap[k]; });
+
+    // Build screens export with timeline positions
+    var screensExport = (assemblyState.screens || []).map(function(s) {
+      var pos = getScreenTimelinePosition(s, segPositions);
+      return {
+        screen_id: s.id,
+        screen_type: s.type,
+        segment_id: s.segmentId,
+        tc_in: s.tcIn || '',
+        title: s.title || '',
+        subtitle: s.subtitle || '',
+        body: s.body || null,
+        prompt: s.prompt || '',
+        timelinePositionSec: pos !== null ? Math.round(pos * 100) / 100 : null
+      };
+    });
+
+    // Build markers export (chapters + screen cues)
+    var markersExport = [];
+    for (var mk = 0; mk < blocksExport.length; mk++) {
+      var blk = blocksExport[mk];
+      markersExport.push({
+        name: blk.name,
+        type: 'chapter',
+        startSec: Math.round(blk.startSec * 100) / 100,
+        durationSec: Math.round(blk.durationSec * 100) / 100,
+        color: blk.color,
+        comment: ''
+      });
+    }
+    for (var sm = 0; sm < screensExport.length; sm++) {
+      var scr = screensExport[sm];
+      var comment = '[' + (scr.screen_type || '').toUpperCase().replace(/_/g, ' ') + '] ' + (scr.title || '');
+      if (scr.prompt) comment += ' | [PROMPT] ' + scr.prompt;
+      markersExport.push({
+        name: '[SCR] ' + (scr.screen_type || ''),
+        type: 'segmentation',
+        startSec: scr.timelinePositionSec,
+        durationSec: 0,
+        color: 'Orange',
+        comment: comment
+      });
+    }
+
+    // Generate SRT content
+    var transcriptSrt = generateTranscriptSrt(useSegs);
+    var captionsSrt = generateCaptionsSrt(useSegs);
+
+    // Full export JSON
+    var exportData = {
+      project: projectCode,
+      projectName: projectName,
+      exported_at: new Date().toISOString(),
+      brief_path: assemblyState.filePath || '',
+      blocks: blocksExport,
+      segments: segmentsExport,
+      screens: screensExport,
+      markers: markersExport,
+      srt: {
+        transcript: transcriptSrt,
+        captions: captionsSrt
+      },
+      timeline: {
+        totalDuration: Math.round(totalDuration * 10) / 10,
+        v1SegmentCount: useSegs.length,
+        v2OverlayCount: screensExport.length,
+        markerCount: markersExport.length
+      }
+    };
+
+    // Generate HTML review page
+    var html = generateReviewHtml(exportData);
+
+    // Save to exports folder
+    var briefDir = assemblyState.filePath ? assemblyState.filePath.replace(/[/\\][^/\\]+$/, '') : null;
+    if (!briefDir) {
+      screensLogger.warn('No brief directory — using file picker');
+      var file = await uxpfs.getFileForSaving(exportDirName + '_timeline.json', { types: ['json'] });
+      if (!file) { screensLogger.info('Export cancelled'); return; }
+      await file.write(JSON.stringify(exportData, null, 2));
+      setScreensStatus('Exported → ' + file.name, 'ready');
+      return;
+    }
+
+    var setupFolder = await uxpfs.getEntryWithUrl('file://' + briefDir);
+    var exportsFolder = await ensureSubfolder(setupFolder, 'exports', screensLogger);
+    var exportFolder = await ensureSubfolder(exportsFolder, exportDirName, screensLogger);
+
+    // Write JSON
+    var jsonFile = await exportFolder.createFile('timeline_data.json', { overwrite: true });
+    await jsonFile.write(JSON.stringify(exportData, null, 2));
+    screensLogger.info('Written: timeline_data.json');
+
+    // Write HTML
+    var htmlFile = await exportFolder.createFile('timeline_review.html', { overwrite: true });
+    await htmlFile.write(html);
+    screensLogger.info('Written: timeline_review.html');
+
+    var exportPath = briefDir + '/exports/' + exportDirName;
+    var htmlPath = exportPath + '/timeline_review.html';
+    screensLogger.info('Export complete → ' + exportPath);
+
+    // Open HTML review in default browser
+    // UXP shell.openPath works for executable files (.command).
+    // For HTML/folders we need openExternal with file:// URL.
+    var opened = false;
+    var uxpShell = require('uxp').shell;
+
+    // Approach 1: openExternal with file:// URL (opens HTML in browser)
+    if (!opened && typeof uxpShell.openExternal === 'function') {
+      try {
+        var htmlUrl = 'file://' + htmlPath;
+        await uxpShell.openExternal(htmlUrl);
+        screensLogger.info('Opened via openExternal: ' + htmlUrl);
+        opened = true;
+      } catch (e1) {
+        screensLogger.debug('openExternal(html) failed: ' + e1.message);
+      }
+    }
+
+    // Approach 2: openPath with HTML file
+    if (!opened) {
+      try {
+        await uxpShell.openPath(htmlPath);
+        screensLogger.info('Opened via openPath(html): ' + htmlPath);
+        opened = true;
+      } catch (e2) {
+        screensLogger.debug('openPath(html) failed: ' + e2.message);
+      }
+    }
+
+    // Approach 3: openExternal with folder URL
+    if (!opened && typeof uxpShell.openExternal === 'function') {
+      try {
+        await uxpShell.openExternal('file://' + exportPath);
+        screensLogger.info('Opened via openExternal(folder)');
+        opened = true;
+      } catch (e3) {
+        screensLogger.debug('openExternal(folder) failed: ' + e3.message);
+      }
+    }
+
+    // Approach 4: openPath with folder
+    if (!opened) {
+      try {
+        await uxpShell.openPath(exportPath);
+        screensLogger.info('Opened via openPath(folder)');
+        opened = true;
+      } catch (e4) {
+        screensLogger.debug('openPath(folder) failed: ' + e4.message);
+      }
+    }
+
+    // Approach 5: openPath with nativePath from entry
+    if (!opened) {
+      try {
+        var nativePath = htmlFile.nativePath || exportFolder.nativePath;
+        if (nativePath) {
+          await uxpShell.openPath(nativePath);
+          screensLogger.info('Opened via nativePath: ' + nativePath);
+          opened = true;
+        }
+      } catch (e5) {
+        screensLogger.debug('nativePath failed: ' + e5.message);
+      }
+    }
+
+    // Log all shell methods for future debugging
+    var shellMethods = [];
+    for (var sk in uxpShell) {
+      if (typeof uxpShell[sk] === 'function') shellMethods.push(sk);
+    }
+    screensLogger.debug('uxp.shell methods: [' + shellMethods.join(', ') + ']');
+
+    // Last resort: copy path to clipboard
+    if (!opened) {
+      screensLogger.debug('All open methods failed — path copied to clipboard');
+      try { await navigator.clipboard.writeText(exportPath); } catch (e) { /* ignore */ }
+    }
+
+    setScreensStatus('Exported: ' + segmentsExport.length + ' segs, ' + screensExport.length + ' screens, ' + markersExport.length + ' markers → ' + exportDirName, 'ready');
+
+    // Save debug bundle
+    await screensLogger.saveDebugBundle(exportData, null, { operation: 'export', exportPath: exportPath });
+  } catch (err) {
+    screensLogger.error('Export failed: ' + err.message);
+    if (err.stack) screensLogger.debug(err.stack);
+    setScreensStatus('Export failed: ' + err.message, 'error');
+    // Save log even on failure
+    await screensLogger.saveDebugBundle(null, null, { operation: 'export_failed', error: err.message });
+  }
+}
+
+/**
+ * Generate self-contained HTML review page with dark theme tables.
+ */
+function generateReviewHtml(data) {
+  var h = function(s) { return escapeHtml(String(s || '')); };
+  var ft = function(sec) {
+    if (sec === null || sec === undefined) return '—';
+    var m = Math.floor(sec / 60);
+    var s = (sec % 60).toFixed(1);
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  };
+
+  var colorCss = {
+    Green: '#4caf50', Blue: '#2196f3', Cyan: '#00bcd4', Yellow: '#ffeb3b',
+    Red: '#f44336', Magenta: '#e91e63', Purple: '#9c27b0', Orange: '#ff9800',
+    Lavender: '#b39ddb', Rose: '#f48fb1', Mango: '#ffb74d', Cerulean: '#4dd0e1'
+  };
+
+  var lines = [];
+  lines.push('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">');
+  lines.push('<title>' + h(data.projectName) + ' — Pre-Edit Review</title>');
+  lines.push('<style>');
+  lines.push('*{box-sizing:border-box;margin:0;padding:0}');
+  lines.push('body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#1a1a2e;color:#e0e0e0;padding:24px;line-height:1.5}');
+  lines.push('h1{color:#fff;margin-bottom:8px;font-size:1.6em}');
+  lines.push('h2{color:#64b5f6;margin:32px 0 12px;font-size:1.2em;border-bottom:1px solid #333;padding-bottom:6px}');
+  lines.push('.summary{background:#16213e;padding:16px 20px;border-radius:8px;margin:16px 0 24px;display:flex;gap:32px;flex-wrap:wrap}');
+  lines.push('.summary .item{display:flex;flex-direction:column}.summary .label{font-size:.75em;color:#888;text-transform:uppercase}.summary .value{font-size:1.3em;font-weight:600;color:#fff}');
+  lines.push('table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.85em}');
+  lines.push('th{background:#0f3460;color:#e0e0e0;padding:8px 10px;text-align:left;position:sticky;top:0;font-weight:600}');
+  lines.push('td{padding:6px 10px;border-bottom:1px solid #222;vertical-align:top}');
+  lines.push('tr:nth-child(even){background:#16213e}tr:hover{background:#1a1a40}');
+  lines.push('.color-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}');
+  lines.push('.transcript{max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}');
+  lines.push('.prompt{color:#ffb74d;font-style:italic}');
+  lines.push('.tc{font-family:"SF Mono",Menlo,monospace;font-size:.85em;color:#80cbc4}');
+  lines.push('.tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:.75em;font-weight:600}');
+  lines.push('.tag-chapter{background:#0f3460;color:#64b5f6}.tag-screen{background:#4a1a00;color:#ffb74d}');
+  lines.push('@media print{body{background:#fff;color:#000}th{background:#ddd;color:#000}tr:nth-child(even){background:#f5f5f5}}');
+  lines.push('</style></head><body>');
+
+  // Header + Summary
+  lines.push('<h1>' + h(data.projectName) + '</h1>');
+  lines.push('<p style="color:#888;margin-bottom:4px">Pre-Edit Export — ' + h(data.exported_at) + '</p>');
+  lines.push('<div class="summary">');
+  lines.push('<div class="item"><span class="label">Duration</span><span class="value">' + ft(data.timeline.totalDuration) + '</span></div>');
+  lines.push('<div class="item"><span class="label">Segments</span><span class="value">' + data.timeline.v1SegmentCount + '</span></div>');
+  lines.push('<div class="item"><span class="label">Screens</span><span class="value">' + data.timeline.v2OverlayCount + '</span></div>');
+  lines.push('<div class="item"><span class="label">Markers</span><span class="value">' + data.timeline.markerCount + '</span></div>');
+  lines.push('<div class="item"><span class="label">Blocks</span><span class="value">' + data.blocks.length + '</span></div>');
+  lines.push('</div>');
+
+  // Table 1: Blocks
+  lines.push('<h2>Blocks (Chapters)</h2>');
+  lines.push('<table><thead><tr><th>#</th><th>Name</th><th>Start</th><th>Duration</th><th>Color</th><th>Segments</th></tr></thead><tbody>');
+  for (var bi = 0; bi < data.blocks.length; bi++) {
+    var b = data.blocks[bi];
+    var cc = colorCss[b.color] || '#888';
+    lines.push('<tr><td>' + b.id + '</td><td>' + h(b.name) + '</td><td class="tc">' + ft(b.startSec) + '</td><td class="tc">' + ft(b.durationSec) + '</td>');
+    lines.push('<td><span class="color-dot" style="background:' + cc + '"></span>' + h(b.color) + '</td><td>' + b.segmentCount + '</td></tr>');
+  }
+  lines.push('</tbody></table>');
+
+  // Table 2: Segments
+  lines.push('<h2>Segments (Timeline)</h2>');
+  lines.push('<table><thead><tr><th>#</th><th>Block</th><th>Source</th><th>In→Out</th><th>Dur</th><th>Speaker</th><th>Transcript</th><th>Timeline</th></tr></thead><tbody>');
+  for (var si = 0; si < data.segments.length; si++) {
+    var s = data.segments[si];
+    var sc = colorCss[s.color] || '#888';
+    var trunc = (s.transcript || '').substring(0, 120);
+    if ((s.transcript || '').length > 120) trunc += '...';
+    lines.push('<tr><td>' + (si + 1) + '</td>');
+    lines.push('<td><span class="color-dot" style="background:' + sc + '"></span>' + h(s.blockName) + '</td>');
+    lines.push('<td>' + h(s.sourceFile) + '</td>');
+    lines.push('<td class="tc">' + ft(s.inSec) + '→' + ft(s.outSec) + '</td>');
+    lines.push('<td class="tc">' + ft(s.duration) + '</td>');
+    lines.push('<td>' + h(s.speaker) + '</td>');
+    lines.push('<td class="transcript">' + h(trunc) + '</td>');
+    lines.push('<td class="tc">' + ft(s.timelineStartSec) + '→' + ft(s.timelineEndSec) + '</td></tr>');
+  }
+  lines.push('</tbody></table>');
+
+  // Table 3: Screens
+  if (data.screens.length > 0) {
+    lines.push('<h2>Screens (Pre-Edit Cues)</h2>');
+    lines.push('<table><thead><tr><th>#</th><th>Type</th><th>Title</th><th>Subtitle</th><th>Prompt</th><th>Segment</th><th>TC In</th><th>Timeline</th></tr></thead><tbody>');
+    for (var sci = 0; sci < data.screens.length; sci++) {
+      var scr = data.screens[sci];
+      lines.push('<tr><td>' + (sci + 1) + '</td>');
+      lines.push('<td>' + h(scr.screen_type) + '</td>');
+      lines.push('<td>' + h(scr.title) + '</td>');
+      lines.push('<td>' + h(scr.subtitle) + '</td>');
+      lines.push('<td class="prompt">' + h(scr.prompt) + '</td>');
+      lines.push('<td>' + h(scr.segment_id) + '</td>');
+      lines.push('<td class="tc">' + h(scr.tc_in) + '</td>');
+      lines.push('<td class="tc">' + ft(scr.timelinePositionSec) + '</td></tr>');
+    }
+    lines.push('</tbody></table>');
+  }
+
+  // Table 4: Markers
+  lines.push('<h2>Markers</h2>');
+  lines.push('<table><thead><tr><th>#</th><th>Name</th><th>Type</th><th>Start</th><th>Duration</th><th>Color</th><th>Comment</th></tr></thead><tbody>');
+  for (var mi = 0; mi < data.markers.length; mi++) {
+    var m = data.markers[mi];
+    var mc = colorCss[m.color] || '#888';
+    var tagClass = m.type === 'chapter' ? 'tag-chapter' : 'tag-screen';
+    var commentTrunc = (m.comment || '').substring(0, 100);
+    if ((m.comment || '').length > 100) commentTrunc += '...';
+    lines.push('<tr><td>' + (mi + 1) + '</td>');
+    lines.push('<td>' + h(m.name) + '</td>');
+    lines.push('<td><span class="tag ' + tagClass + '">' + h(m.type) + '</span></td>');
+    lines.push('<td class="tc">' + ft(m.startSec) + '</td>');
+    lines.push('<td class="tc">' + (m.durationSec > 0 ? ft(m.durationSec) : '—') + '</td>');
+    lines.push('<td><span class="color-dot" style="background:' + mc + '"></span>' + h(m.color) + '</td>');
+    lines.push('<td>' + h(commentTrunc) + '</td></tr>');
+  }
+  lines.push('</tbody></table>');
+
+  lines.push('</body></html>');
+  return lines.join('\n');
+}
+
+/**
+ * Import Pre-Edit — user picks a JSON via file picker.
+ * File is copied to project folder with correct name, then merged into brief.
+ */
+async function importPreEdit() {
+  screensLogger.info('=== Import Pre-Edit ===');
+  try {
+    if (!assemblyState.filePath) {
+      screensLogger.warn('No brief loaded — filePath is null');
+      setScreensStatus('No brief loaded', 'error');
+      return;
+    }
+
+    // 1. File picker — user chooses which JSON to import
+    var reviewFile = await uxpfs.getFileForOpening({ types: ['json'], allowMultiple: false });
+    if (!reviewFile) {
+      screensLogger.info('Import cancelled by user');
+      return;
+    }
+    screensLogger.info('Importing from: ' + (reviewFile.nativePath || reviewFile.name));
+    var reviewContent = await reviewFile.read();
+    var reviewData = JSON.parse(reviewContent);
+
+    if (!reviewData.screens || !Array.isArray(reviewData.screens)) {
+      setScreensStatus('Invalid file: no screens[] array', 'error');
+      screensLogger.warn('File has no screens[] array');
+      return;
+    }
+    screensLogger.info('Read: ' + reviewData.screens.length + ' screens from ' + reviewFile.name);
+
+    setScreensStatus('Importing ' + reviewData.screens.length + ' screens...', 'waiting');
+
+    // 2. Copy imported file to project folder with correct name
+    var projectCode = assemblyState.projectCode || assemblyState.projectName;
+    var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
+    var correctName = projectCode + '_screen_cues_review.json';
+
+    try {
+      var setupFolder = await uxpfs.getEntryWithUrl('file://' + briefDir);
+      var copyFile = await setupFolder.createFile(correctName, { overwrite: true });
+      await copyFile.write(JSON.stringify(reviewData, null, 2));
+      screensLogger.info('Copied to project: ' + briefDir + '/' + correctName);
+    } catch (copyErr) {
+      screensLogger.debug('Copy to project folder skipped: ' + copyErr.message);
+    }
+
+    // 3. Read current brief
+    var briefEntry = await uxpfs.getEntryWithUrl('file://' + assemblyState.filePath);
+    var briefContent = await briefEntry.read();
+    var briefJson = JSON.parse(briefContent);
+
+    // 4. Archive current brief version before merge
+    try {
+      var versionsDir = await ensureVersionsDir(briefDir, screensLogger);
+      await saveVersion(briefContent, versionsDir, 'brief_before_import', 'json', screensLogger);
+    } catch (vErr) {
+      screensLogger.debug('Pre-import version save skipped: ' + vErr.message);
+    }
+
+    // 5. Merge review screens into brief
+    var briefScreens = briefJson.screens || [];
+    var changed = 0;
+    var added = 0;
+    var removed = 0;
+
+    // Build map of review screens by id
+    var reviewMap = {};
+    for (var ri = 0; ri < reviewData.screens.length; ri++) {
+      reviewMap[reviewData.screens[ri].screen_id] = reviewData.screens[ri];
+    }
+
+    // Update existing screens
+    for (var bsi = briefScreens.length - 1; bsi >= 0; bsi--) {
+      var bScreen = briefScreens[bsi];
+      var bId = bScreen.screen_id || bScreen.id;
+      var reviewScreen = reviewMap[bId];
+
+      if (reviewScreen) {
+        var fields = ['title', 'subtitle', 'body', 'screen_type', 'prompt'];
+        for (var fi = 0; fi < fields.length; fi++) {
+          var field = fields[fi];
+          if (reviewScreen[field] !== undefined && reviewScreen[field] !== bScreen[field]) {
+            screensLogger.debug('  ' + bId + '.' + field + ': "' + (bScreen[field] || '') + '" \u2192 "' + (reviewScreen[field] || '') + '"');
+            bScreen[field] = reviewScreen[field];
+            changed++;
+          }
+        }
+        delete reviewMap[bId];
+      } else {
+        screensLogger.info('  Removed: ' + bId);
+        briefScreens.splice(bsi, 1);
+        removed++;
+      }
+    }
+
+    // Add new screens from review
+    var newIds = Object.keys(reviewMap);
+    for (var ni = 0; ni < newIds.length; ni++) {
+      var newScreen = reviewMap[newIds[ni]];
+      briefScreens.push({
+        screen_id: newScreen.screen_id,
+        screen_type: newScreen.screen_type,
+        segment_id: newScreen.segment_id,
+        tc_in: newScreen.tc_in,
+        title: newScreen.title,
+        subtitle: newScreen.subtitle || '',
+        body: newScreen.body || null,
+        prompt: newScreen.prompt || ''
+      });
+      screensLogger.info('  Added: ' + newScreen.screen_id);
+      added++;
+    }
+
+    briefJson.screens = briefScreens;
+
+    // 6. Save updated brief
+    var updatedContent = JSON.stringify(briefJson, null, 2);
+    var briefFolder = await uxpfs.getEntryWithUrl('file://' + briefDir);
+    var briefFileName = assemblyState.filePath.split('/').pop();
+    var briefOut = await briefFolder.createFile(briefFileName, { overwrite: true });
+    await briefOut.write(updatedContent);
+
+    screensLogger.info('Brief updated: ' + changed + ' changed, ' + added + ' added, ' + removed + ' removed');
+
+    // 7. Re-parse brief
+    loadBriefFromString(updatedContent, assemblyState.filePath);
+
+    var summary = changed + ' changed, ' + added + ' added, ' + removed + ' removed';
+    setScreensStatus('Imported (' + fmtTime(0) + '): ' + summary + '. Generate PNGs \u2192 Build.', 'ready');
+    screensLogger.info('Import complete (' + summary + '). Run: Generate PNGs \u2192 Build Pre-Edit');
+
+    // Save debug bundle
+    await screensLogger.saveDebugBundle(assemblyState.data, null, { operation: 'import', summary: summary });
+  } catch (err) {
+    screensLogger.error('Import failed: ' + err.message);
+    if (err.stack) screensLogger.debug(err.stack);
+    setScreensStatus('Import failed: ' + err.message, 'error');
+    await screensLogger.saveDebugBundle(null, null, { operation: 'import_failed', error: err.message });
+  }
 }
 
 /**
@@ -2364,7 +3447,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // REVIEW buttons
   $('btn-build-review').addEventListener('click', buildReview);
 
-  // SCREEN CUES buttons
+  // PRE-EDIT buttons (wrap async to catch unhandled rejections)
+  $('btn-export-screens').addEventListener('click', function() {
+    exportPreEdit().catch(function(e) { screensLogger.error('Export error: ' + e.message); setScreensStatus('Export error: ' + e.message, 'error'); });
+  });
+  $('btn-import-screens').addEventListener('click', function() {
+    screensLogger.info('Import Pre-Edit button clicked');
+    setScreensStatus('Importing...', 'waiting');
+    importPreEdit().catch(function(e) { screensLogger.error('Import error: ' + e.message); setScreensStatus('Import error: ' + e.message, 'error'); });
+  });
   $('btn-generate-pngs').addEventListener('click', generateScreenPngs);
   $('btn-build-screens').addEventListener('click', buildScreenCuesPipeline);
 
