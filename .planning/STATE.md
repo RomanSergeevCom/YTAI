@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 Phase: 3 of 5 (Transcribe) — COMPLETE
 Plan: 2 of 2 in current phase (completed)
 Status: 03-02 complete — nested transcription CLI validated on reference project
-Last activity: 2026-03-17 - Completed 03-02: main() CLI orchestration, apartment scene validated end-to-end
+Last activity: 2026-03-17 - Completed quick task 260317-fj4: Refactor folder structure (short naming, pre-edit_brief, Transcription subfolders)
 
 Progress: [█████████░] 90%
 
@@ -110,9 +110,10 @@ None yet.
 
 ### Quick Tasks Completed
 
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 260317-clh | Run full prepare pipeline (organize, audio sync, transcribe, brief) for YTCG37_Setup_UAE_Company_Remotely flat structure | 2026-03-17 | 23ff43e | [260317-clh-run-full-prepare-pipeline-organize-audio](./quick/260317-clh-run-full-prepare-pipeline-organize-audio/) |
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260317-clh | Run full prepare pipeline (organize, audio sync, transcribe, brief) for YTCG37_Setup_UAE_Company_Remotely flat structure | 2026-03-17 | 23ff43e | | [260317-clh-run-full-prepare-pipeline-organize-audio](./quick/260317-clh-run-full-prepare-pipeline-organize-audio/) |
+| 260317-fj4 | Refactor folder structure: short naming, pre-edit_brief, Transcription subfolders, DJI_Audio | 2026-03-17 | 1bbc0db | Verified | [260317-fj4-refactor-folder-structure-short-naming-p](./quick/260317-fj4-refactor-folder-structure-short-naming-p/) |
 
 ## Session Continuity
 
