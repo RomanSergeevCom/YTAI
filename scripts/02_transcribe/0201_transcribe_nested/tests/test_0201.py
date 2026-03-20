@@ -136,13 +136,12 @@ def test_collect_scene_transcript(tmp_path, mod):
     """
     import json
 
-    # Set up scene dir with legacy output path (as written by transcribe_project.py)
+    # Set up scene dir with transcript at scene root (as written by transcribe_project.py)
     scene_dir = tmp_path / "01_Media" / "Source" / "Video" / "apartment"
-    legacy_dir = scene_dir / "apartment_transcription"
-    legacy_dir.mkdir(parents=True)
+    scene_dir.mkdir(parents=True)
 
     src_data = {"project": "apartment", "clips": []}
-    src_path = legacy_dir / "apartment_transcript.json"
+    src_path = scene_dir / "apartment_transcript.json"
     src_path.write_text(json.dumps(src_data))
 
     # Canonical destination dir (would exist in real project)
@@ -151,7 +150,7 @@ def test_collect_scene_transcript(tmp_path, mod):
 
     result = mod.collect_scene_transcript(scene_dir, tmp_path)
 
-    expected_dst = dst_dir / "apartment_transcript.json"
+    expected_dst = dst_dir / "scenes" / "apartment_transcript.json"
     assert result == expected_dst
     assert expected_dst.exists()
 

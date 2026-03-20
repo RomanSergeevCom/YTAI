@@ -19,9 +19,12 @@ import json
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
-from merge_transcripts import merge_transcripts
+from merge_transcripts import merge_transcripts, generate_merged_xlsx
+
+FALLBACK_CONFIDENCE_THRESHOLD = 0.5
 
 
 def detect_scenes(project: Path) -> list:
@@ -48,21 +51,22 @@ def detect_scenes(project: Path) -> list:
 def should_transcribe_scene(project: Path, scene_name: str) -> bool:
     """Return True if the scene needs transcription (transcript not yet present).
 
-    Checks for the canonical output file at:
-      {project}/01_Media/Source/Transcription/{scene_name}_transcript.json
+    Checks two locations (canonical first, then scene-level fallback):
+      1. {project}/01_Media/Source/Transcription/{scene_name}_transcript.json
+      2. {project}/01_Media/Source/Video/{scene_name}/{scene_name}_transcript.json
 
     Args:
         project: Project root path.
         scene_name: Name of the scene subfolder (e.g. "apartment").
 
     Returns:
-        True if transcript file does NOT exist (scene needs transcription).
-        False if transcript already exists (skip — idempotent re-run).
+        True if transcript file does NOT exist anywhere (scene needs transcription).
+        False if transcript already exists at either location.
     """
-    transcript_path = (
-        project / "01_Media" / "Source" / "Transcription" / f"{scene_name}_transcript.json"
-    )
-    return not transcript_path.exists()
+    canonical = project / "01_Media" / "Source" / "Transcription" / "scenes" / f"{scene_name}_transcript.json"
+    canonical_flat = project / "01_Media" / "Source" / "Transcription" / f"{scene_name}_transcript.json"
+    scene_level = project / "01_Media" / "Source" / "Video" / scene_name / f"{scene_name}_transcript.json"
+    return not canonical.exists() and not canonical_flat.exists() and not scene_level.exists()
 
 
 def transcribe_scene(
@@ -110,7 +114,7 @@ def collect_scene_transcript(scene_dir: Path, project: Path) -> Path:
     """Copy per-scene transcript from legacy path to canonical Transcription/ path.
 
     transcribe_project.py (flat mode) writes to:
-      {scene_dir}/{scene_name}_transcription/{scene_name}_transcript.json
+      {scene_dir}/{scene_name}_transcript.json
 
     This function copies it to the canonical v3 location:
       {project}/01_Media/Source/Transcription/{scene_name}_transcript.json
@@ -123,12 +127,72 @@ def collect_scene_transcript(scene_dir: Path, project: Path) -> Path:
         Path to the destination transcript file.
     """
     scene_name = scene_dir.name
-    src = scene_dir / f"{scene_name}_transcription" / f"{scene_name}_transcript.json"
-    dst_dir = project / "01_Media" / "Source" / "Transcription"
+    src = scene_dir / f"{scene_name}_transcript.json"
+    dst_dir = project / "01_Media" / "Source" / "Transcription" / "scenes"
     dst_dir.mkdir(parents=True, exist_ok=True)
     dst = dst_dir / f"{scene_name}_transcript.json"
     shutil.copy2(src, dst)
     return dst
+
+
+def read_scene_confidence(transcript_path: Path) -> tuple:
+    """Read avg_confidence and language from a scene transcript JSON.
+
+    Returns:
+        (avg_confidence: float, language: str)
+    """
+    with open(transcript_path) as f:
+        data = json.load(f)
+    conf = data.get("stats", {}).get("avg_confidence", 0.0)
+    lang = data.get("language", "unknown")
+    return conf, lang
+
+
+def clear_scene_transcription(scene_dir: Path, project: Path) -> None:
+    """Remove scene transcript files to allow re-transcription.
+
+    Deletes:
+      - {scene_dir}/{scene}_transcript.json (scene-level)
+      - Transcription/{scene}_transcript.json (canonical)
+      - {scene_dir}/{scene}_transcription/ (entire dir)
+    """
+    scene_name = scene_dir.name
+    canonical = project / "01_Media" / "Source" / "Transcription" / "scenes" / f"{scene_name}_transcript.json"
+    canonical_flat = project / "01_Media" / "Source" / "Transcription" / f"{scene_name}_transcript.json"
+    scene_level = scene_dir / f"{scene_name}_transcript.json"
+    tx_dir = scene_dir / f"{scene_name}_transcription"
+
+    for p in [canonical, canonical_flat, scene_level]:
+        if p.exists():
+            p.unlink()
+    if tx_dir.exists():
+        shutil.rmtree(tx_dir)
+
+
+def scan_scene_durations(scenes: list) -> dict:
+    """Pre-scan scenes to estimate total duration (via clip count * avg clip duration).
+
+    Returns {scene_name: {"clips": N, "est_duration_min": float}}.
+    """
+    AVG_CLIP_SEC = 30  # rough estimate per clip
+    result = {}
+    for scene_dir in scenes:
+        clips = [f for f in scene_dir.iterdir()
+                 if f.is_file() and f.suffix.upper() in (".MP4", ".MOV")]
+        est_min = len(clips) * AVG_CLIP_SEC / 60
+        result[scene_dir.name] = {"clips": len(clips), "est_duration_min": round(est_min, 1)}
+    return result
+
+
+def fmt_elapsed(seconds: float) -> str:
+    """Format seconds as Xh Ym or Ym Zs."""
+    m = int(seconds) // 60
+    s = int(seconds) % 60
+    if m >= 60:
+        h = m // 60
+        m = m % 60
+        return f"{h}h {m:02d}m"
+    return f"{m}m {s:02d}s"
 
 
 def print_dry_run_summary(project: Path, scenes: list) -> None:
@@ -158,7 +222,8 @@ def main():
     ap.add_argument("--project", required=True, type=Path, help="Project root path")
     ap.add_argument("--scene", default=None, help="Process single scene only (optional)")
     ap.add_argument("-n", "--speakers", type=int, default=None, help="Number of speakers for diarization (default: auto-detect)")
-    ap.add_argument("--language", default=None, help="Whisper language code e.g. 'en' (default: auto-detect)")
+    ap.add_argument("--language", default=None, help="Whisper language code e.g. 'ru' (default: auto-detect)")
+    ap.add_argument("--fallback", default=None, help="Fallback language if primary gives avg_confidence < 0.5 (e.g. 'en')")
     ap.add_argument("--dry-run", action="store_true", help="Show scene list and clip counts without transcribing")
     ap.add_argument("-y", action="store_true", help="Skip confirmations")
     args = ap.parse_args()
@@ -189,20 +254,96 @@ def main():
         print_dry_run_summary(project, scenes)
         sys.exit(0)
 
-    # Process each scene
-    for scene_dir in scenes:
-        scene_name = scene_dir.name
-        if not should_transcribe_scene(project, scene_name):
-            print(f"  Skipping {scene_name} (transcript exists)")
-            continue
-        print(f"  Transcribing {scene_name}...")
-        transcribe_scene(scene_dir, num_speakers=args.speakers, dry_run=False, language=args.language)
-        collect_scene_transcript(scene_dir, project)
-        print(f"  Done: {scene_name}")
+    # Pre-scan scene durations for progress display
+    scene_info = scan_scene_durations(scenes)
+    total_clips = sum(v["clips"] for v in scene_info.values())
+    print(f"\n=== Nested Transcription: {project.name} ===")
+    print(f"Scenes: {len(scenes)} | Clips: {total_clips}")
+    for s in scenes:
+        info = scene_info[s.name]
+        print(f"  {s.name:<25s} {info['clips']:>3d} clips  ~{info['est_duration_min']:.0f} min")
+    print()
 
-    # Merge all scene transcripts into merged_transcript.json
-    merge_transcripts(project, [s.name for s in scenes])
-    print("Merge complete: merged_transcript.json")
+    # Process each scene
+    scene_results = []  # (name, language, confidence, action, elapsed_sec)
+    overall_start = time.time()
+    scenes_done = 0
+
+    for idx, scene_dir in enumerate(scenes, 1):
+        scene_name = scene_dir.name
+        scene_start = time.time()
+        info = scene_info[scene_name]
+        canonical = project / "01_Media" / "Source" / "Transcription" / "scenes" / f"{scene_name}_transcript.json"
+        scene_level = scene_dir / f"{scene_name}_transcript.json"
+
+        elapsed_total = time.time() - overall_start
+        print(f"=== Scene {idx}/{len(scenes)}: {scene_name} ({info['clips']} clips) "
+              f"| Elapsed: {fmt_elapsed(elapsed_total)} ===")
+
+        if canonical.exists():
+            conf, lang = read_scene_confidence(canonical)
+            scene_results.append((scene_name, lang, conf, "skipped", 0))
+            print(f"  Skipping (transcript exists, {lang}, conf={conf:.2f})")
+            scenes_done += 1
+            continue
+
+        if scene_level.exists():
+            print(f"  Collecting (already transcribed)...")
+            collect_scene_transcript(scene_dir, project)
+            conf, lang = read_scene_confidence(canonical)
+            scene_results.append((scene_name, lang, conf, "collected", 0))
+            print(f"  Collected ({lang}, conf={conf:.2f})")
+            scenes_done += 1
+            continue
+
+        # Transcribe with primary language
+        print(f"  Transcribing...")
+        transcribe_scene(scene_dir, num_speakers=args.speakers, language=args.language)
+        collect_scene_transcript(scene_dir, project)
+        conf, lang = read_scene_confidence(canonical)
+        action = "transcribed"
+
+        # Fallback: if confidence too low and fallback language provided
+        if args.fallback and conf < FALLBACK_CONFIDENCE_THRESHOLD:
+            print(f"  Low confidence ({conf:.2f}) with '{lang}', retrying with '{args.fallback}'...")
+            clear_scene_transcription(scene_dir, project)
+            transcribe_scene(scene_dir, num_speakers=args.speakers, language=args.fallback)
+            collect_scene_transcript(scene_dir, project)
+            conf, lang = read_scene_confidence(canonical)
+            action = f"fallback({args.fallback})"
+
+        scene_elapsed = time.time() - scene_start
+        scenes_done += 1
+        scene_results.append((scene_name, lang, conf, action, scene_elapsed))
+
+        # Estimate remaining time
+        remaining_scenes = len(scenes) - idx
+        if scenes_done > 0:
+            avg_per_scene = (time.time() - overall_start) / scenes_done
+            est_remaining = avg_per_scene * remaining_scenes
+            print(f"  Done: {scene_name} ({lang}, conf={conf:.2f}) in {fmt_elapsed(scene_elapsed)}"
+                  f" | ~{fmt_elapsed(est_remaining)} remaining")
+        else:
+            print(f"  Done: {scene_name} ({lang}, conf={conf:.2f}) in {fmt_elapsed(scene_elapsed)}")
+
+    # Summary table
+    total_elapsed = time.time() - overall_start
+    print(f"\n{'Scene':<25s} {'Language':<8s} {'Conf':>6s}  {'Time':>8s}  {'Action'}")
+    print("-" * 70)
+    for name, lang, conf, action, elapsed in scene_results:
+        t = fmt_elapsed(elapsed) if elapsed > 0 else "-"
+        print(f"  {name:<23s} {lang:<8s} {conf:>6.2f}  {t:>8s}  {action}")
+    print("-" * 70)
+    print(f"  {'TOTAL':<23s} {'':8s} {'':>6s}  {fmt_elapsed(total_elapsed):>8s}")
+
+    # Merge all scene transcripts into {project}_transcript.json
+    transcribed = [s.name for s in scenes]
+    merge_transcripts(project, transcribed)
+    print(f"\nMerge complete: {project.name}_transcript.json ({len(transcribed)} scenes)")
+
+    # Generate merged XLSX
+    xlsx_path = generate_merged_xlsx(project, transcribed)
+    print(f"XLSX complete: {xlsx_path.name}")
 
 
 if __name__ == "__main__":

@@ -46,7 +46,7 @@ def sample_transcript_json(tmp_path):
     """Create a valid volleyball_transcript.json with 2 clips and 3 words total.
 
     Structure matches the transcript.json schema from transcribe_project.py:
-      { "project": str, "clips": [{ "clip_id": str, "transcript_segments": [{ "words_data": [...], "speaker": str }] }] }
+      { "project": str, "clips": [{ "clip_id": str, "segments": [{ "words_data": [...], "speaker": str }] }] }
 
     Returns path to the written file.
     """
@@ -59,7 +59,7 @@ def sample_transcript_json(tmp_path):
                 "filename": "C5001.MP4",
                 "duration": 45.0,
                 "offset": 0.0,
-                "transcript_segments": [
+                "segments": [
                     {
                         "speaker": "SPEAKER_00",
                         "words_data": [
@@ -74,7 +74,7 @@ def sample_transcript_json(tmp_path):
                 "filename": "C5002.MP4",
                 "duration": 30.0,
                 "offset": 45.0,
-                "transcript_segments": [
+                "segments": [
                     {
                         "speaker": "SPEAKER_01",
                         "words_data": [
