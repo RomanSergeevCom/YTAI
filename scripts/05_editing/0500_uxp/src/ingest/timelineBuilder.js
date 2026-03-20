@@ -254,7 +254,7 @@ async function buildIngestSequence(project, ingest, sourceBin, sequenceBin, logg
   }
 
   // Step 2: Create sequence — try createSequenceFromMedia, fallback to preset, then default
-  const sequenceName = `${ingest.project_name}_1_Ingest`;
+  const sequenceName = `${ingest.project_code || ingest.project_name}_1_Ingest`;
   const firstClipName = clips[0].filename;
   const firstClip = await findProjectItemByName(project, firstClipName, logger);
 
@@ -439,4 +439,225 @@ async function buildIngestSequence(project, ingest, sourceBin, sequenceBin, logg
   };
 }
 
-module.exports = { buildIngestSequence, findProjectItemByName };
+/**
+ * Build multiple ingest sequences — one per scene folder.
+ * Groups clips by clip.scene, imports all media once, then creates
+ * separate sequences per scene with proper DJI audio track layout.
+ *
+ * @param {Object} project - Premiere Pro project
+ * @param {Object} ingest - Parsed ingest JSON (clips must have .scene field)
+ * @param {Object|null} sourceBin - Target bin for imported media (00_Source)
+ * @param {Object} logger - Logger instance
+ * @returns {{ sequences: Object[], totalClipCount: number, totalDjiCount: number }}
+ */
+async function buildMultiSceneIngest(project, ingest, sourceBin, logger) {
+  const clips = ingest.clips;
+
+  // ── Group clips by scene ──
+  const sceneMap = {};
+  for (const clip of clips) {
+    const scene = clip.scene || '_all';
+    if (!sceneMap[scene]) sceneMap[scene] = [];
+    sceneMap[scene].push(clip);
+  }
+  const sceneNames = Object.keys(sceneMap).sort();
+  logger.info(`Multi-scene ingest: ${sceneNames.length} scene(s): ${sceneNames.join(', ')}`);
+
+  // ── Step 1: Create scene sub-bins and import media per scene ──
+  const { createSceneBins } = require('./binManager');
+  let sceneBins = {};
+  if (sourceBin) {
+    try {
+      sceneBins = await createSceneBins(project, sourceBin, sceneNames, logger);
+    } catch (binErr) {
+      logger.warn(`Scene sub-bins creation failed: ${binErr.message} — using flat import`);
+    }
+  }
+
+  // Import media per scene into its sub-bin (or flat into sourceBin if no sub-bins)
+  let totalImported = 0;
+  for (const sceneName of sceneNames) {
+    const sceneClipList = sceneMap[sceneName];
+    const targetBin = sceneBins[sceneName] || sourceBin || null;
+
+    const sceneSourceFiles = sceneClipList.map(c => c.path);
+    const sceneDjiFiles = [];
+    for (const clip of sceneClipList) {
+      if (clip.dji_audio) {
+        for (const dji of clip.dji_audio) {
+          sceneDjiFiles.push(dji.path);
+        }
+      }
+    }
+
+    const allSceneFiles = sceneSourceFiles.concat(sceneDjiFiles);
+    logger.info(`Importing ${sceneName}: ${sceneSourceFiles.length} video + ${sceneDjiFiles.length} DJI → ${targetBin ? targetBin.name : 'root'}`);
+    try {
+      await project.importFiles(allSceneFiles, true, targetBin, false);
+      totalImported += allSceneFiles.length;
+    } catch (importErr) {
+      logger.error(`importFiles failed for ${sceneName}: ${importErr.message}`);
+      throw importErr;
+    }
+  }
+  logger.info(`Import complete: ${totalImported} file(s) across ${sceneNames.length} scene(s)`);
+
+  if (sourceBin) {
+    await listBinItems(sourceBin, logger);
+  }
+
+  // ── Step 2: Build one sequence per scene ──
+  const results = [];
+  let totalClipCount = 0;
+  let totalDjiCount = 0;
+
+  for (const sceneName of sceneNames) {
+    const sceneClips = sceneMap[sceneName];
+    const projectCode = ingest.project_code || ingest.project_name;
+    const sequenceName = `${projectCode}_${sceneName}`;
+
+    logger.info(`\n=== Scene: ${sceneName} (${sceneClips.length} clips) ===`);
+
+    // Determine TX channels in this scene for consistent track assignment
+    const sceneTxIds = new Set();
+    for (const clip of sceneClips) {
+      if (clip.dji_audio) {
+        for (const dji of clip.dji_audio) {
+          sceneTxIds.add(dji.tx);
+        }
+      }
+    }
+    const sortedTx = [...sceneTxIds].sort(); // e.g. ["TX01", "TX02"]
+    logger.info(`Scene TX channels: ${sortedTx.join(', ') || 'none'}`);
+
+    // Create sequence from first clip
+    const firstClipName = sceneClips[0].filename;
+    const firstClip = await findProjectItemByName(project, firstClipName, logger);
+
+    let sequence;
+    let sequenceMethod = 'unknown';
+    if (firstClip) {
+      const castFirst = ppro.ClipProjectItem.cast(firstClip);
+      sequence = await project.createSequenceFromMedia(
+        sequenceName, castFirst ? [castFirst] : [firstClip]);
+      sequenceMethod = 'createSequenceFromMedia';
+    } else {
+      logger.warn(`First clip "${firstClipName}" not found, using preset`);
+      let usedPreset = false;
+      try {
+        sequence = await project.createSequence(sequenceName, SEQUENCE_DEFAULTS.presetPath);
+        sequenceMethod = 'preset';
+        usedPreset = true;
+      } catch (presetErr) {
+        logger.debug(`Preset not available: ${presetErr.message}`);
+      }
+      if (!usedPreset) {
+        sequence = await project.createSequence(sequenceName);
+        sequenceMethod = 'default';
+        if (ingest.media) {
+          await applyMediaSettings(project, sequence, ingest.media, logger);
+        }
+      }
+    }
+    logger.info(`Sequence "${sequenceName}" created (method=${sequenceMethod})`);
+
+    const seqSettings = await logSequenceSettings(sequence, logger);
+    const seqEditor = ppro.SequenceEditor.getEditor(sequence);
+
+    // Place clips on V1/A1
+    const startIndex = sequenceMethod === 'createSequenceFromMedia' ? 1 : 0;
+    let cumulativePosition = startIndex > 0 ? sceneClips[0].duration : 0;
+    let placedCount = startIndex > 0 ? 1 : 0;
+
+    if (startIndex > 0) {
+      logger.info(`[1/${sceneClips.length}] First clip "${sceneClips[0].filename}" already on V1`);
+    }
+
+    for (let i = startIndex; i < sceneClips.length; i++) {
+      const clip = sceneClips[i];
+      const clipItem = await findProjectItemByName(project, clip.filename, logger);
+      if (!clipItem) {
+        logger.error(`Clip not found: ${clip.filename}`);
+        cumulativePosition = Math.round((cumulativePosition + clip.duration) * 10) / 10;
+        continue;
+      }
+
+      const insertTime = ppro.TickTime.createWithSeconds(cumulativePosition);
+      try {
+        project.lockedAccess(() => {
+          project.executeTransaction((compoundAction) => {
+            const action = seqEditor.createInsertProjectItemAction(
+              clipItem, insertTime, 0, 0, true);
+            compoundAction.addAction(action);
+          }, `Insert ${clip.clip_id}`);
+        });
+        placedCount++;
+        logger.info(`[${i + 1}/${sceneClips.length}] "${clip.filename}" (${clip.duration}s) @ ${cumulativePosition}s`);
+      } catch (insertErr) {
+        logger.error(`Failed to insert "${clip.filename}": ${insertErr.message}`);
+      }
+      cumulativePosition = Math.round((cumulativePosition + clip.duration) * 10) / 10;
+    }
+
+    // Place DJI audio — use sortedTx for consistent track assignment
+    // TX01 → A2 (track 1), TX02 → A3 (track 2), etc.
+    let djiPlaced = 0;
+    if (sortedTx.length > 0) {
+      const txToTrack = {};
+      for (let t = 0; t < sortedTx.length; t++) {
+        txToTrack[sortedTx[t]] = 1 + t; // A2=1, A3=2
+      }
+
+      let djiInsertTime = 0;
+      for (const clip of sceneClips) {
+        if (clip.dji_audio && clip.dji_audio.length > 0) {
+          for (const dji of clip.dji_audio) {
+            const audioTrack = txToTrack[dji.tx];
+            if (audioTrack === undefined) continue;
+
+            const djiStem = dji.path.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '');
+            const djiItem = await findProjectItemByName(project, djiStem, logger);
+            if (!djiItem) {
+              logger.warn(`DJI audio not found: ${djiStem}`);
+              continue;
+            }
+
+            const insertTime = ppro.TickTime.createWithSeconds(djiInsertTime);
+            try {
+              project.lockedAccess(() => {
+                project.executeTransaction((compoundAction) => {
+                  const action = seqEditor.createInsertProjectItemAction(
+                    djiItem, insertTime, -1, audioTrack, true);
+                  compoundAction.addAction(action);
+                }, `Insert DJI ${dji.tx} for ${clip.clip_id}`);
+              });
+              djiPlaced++;
+              logger.info(`DJI ${dji.tx}: "${djiStem}" → A${audioTrack + 1} @ ${djiInsertTime}s`);
+            } catch (djiErr) {
+              logger.error(`Failed DJI "${djiStem}": ${djiErr.message}`);
+            }
+          }
+        }
+        djiInsertTime = Math.round((djiInsertTime + clip.duration) * 10) / 10;
+      }
+      logger.info(`DJI audio: ${djiPlaced} file(s) placed (${sortedTx.join(', ')})`);
+    }
+
+    totalClipCount += placedCount;
+    totalDjiCount += djiPlaced;
+    results.push({
+      sceneName,
+      sequence,
+      sequenceMethod,
+      seqSettings,
+      clipCount: placedCount,
+      djiCount: djiPlaced,
+      totalDuration: cumulativePosition,
+    });
+  }
+
+  logger.info(`\nMulti-scene ingest complete: ${results.length} sequence(s), ${totalClipCount} clips, ${totalDjiCount} DJI`);
+  return { sequences: results, totalClipCount, totalDjiCount };
+}
+
+module.exports = { buildIngestSequence, buildMultiSceneIngest, findProjectItemByName };

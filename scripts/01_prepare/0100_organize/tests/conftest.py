@@ -1,7 +1,7 @@
 """Shared pytest fixtures for 0100_organize tests.
 
 Provides fake project trees that replicate the reference nested project
-structure (YTCR_1_Arty_Dzis) and a minimal flat project.
+structure (YTCR01_Arty_Dzis) and a minimal flat project.
 """
 import sys
 from pathlib import Path
@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 def fake_nested_project(tmp_path):
     """Create a fake nested (multi-scene) project with TX folders and scenes.
 
-    Structure mirrors YTCR_1_Arty_Dzis:
+    Structure mirrors YTCR01_Arty_Dzis:
       TX01/TX01_MIC001_20260228_102211_orig.wav
       TX02/TX02_MIC024_20260228_100209_orig.wav
       TX02_2/TX02_MIC033_20260302_162711_orig.wav

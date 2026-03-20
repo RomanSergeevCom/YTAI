@@ -63,6 +63,10 @@ const REVIEW_COLOR_MAP = {
 // Lavender (label index 3) — visually distinct, not used by any block color
 const REVIEW_PRODUCER_COLOR = { label: 'Lavender', labelIdx: 3 };
 
+// Review expert color — segments where expert/talent on camera speaks
+// Teal (label index 10) — vivid, easy to find on timeline
+const REVIEW_EXPERT_COLOR = { label: 'Teal', labelIdx: 10 };
+
 // Screen Cues color scheme — V2 track + Comment markers
 // Used by screenBuilder.js for Production Cues on Assembly sequence
 const SCREEN_CUE_COLOR = {
@@ -101,6 +105,7 @@ module.exports = {
   TICKS_PER_SECOND,
   REVIEW_COLOR_MAP,
   REVIEW_PRODUCER_COLOR,
+  REVIEW_EXPERT_COLOR,
   SCREEN_CUE_COLOR,
   SCREEN_TYPES,
   SCREEN_REQUIRED_FIELDS

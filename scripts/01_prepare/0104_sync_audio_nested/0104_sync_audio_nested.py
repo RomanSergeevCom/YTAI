@@ -30,6 +30,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -69,7 +70,7 @@ verify_full = _fix.verify_full
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-CONFIDENCE_THRESHOLD = 3.0
+CONFIDENCE_THRESHOLD = 50.0  # raised from 3.0 — false positives score 10-20, true matches 100+
 SR = 8000
 VIDEO_EXTS = {".MP4", ".MOV", ".mp4", ".mov"}
 
@@ -303,6 +304,94 @@ def find_best_tx_candidate(
 
 
 # ---------------------------------------------------------------------------
+# AUD-04b: Spanning TX candidate (clip split across two consecutive WAV files)
+# ---------------------------------------------------------------------------
+
+def find_next_tx_file(tx_path_str: str, tx_wav_cache: dict) -> str | None:
+    """Return the next TX WAV path in sorted order after tx_path_str."""
+    sorted_paths = sorted(tx_wav_cache.keys())
+    try:
+        idx = sorted_paths.index(tx_path_str)
+        if idx + 1 < len(sorted_paths):
+            return sorted_paths[idx + 1]
+    except ValueError:
+        pass
+    return None
+
+
+def find_spanning_tx_candidate(
+    cam_audio_8k: np.ndarray,
+    tx_wav_cache: dict[str, np.ndarray],
+    best_single_path: str,
+    sr: int = 8000,
+    search_margin: float = 120.0,
+) -> tuple[str, str, float, float, float] | None:
+    """Search for a camera clip that spans two consecutive TX WAV files.
+
+    DJI Mic 2 auto-splits recordings every ~30 minutes. A clip filmed at the
+    boundary has partial audio in file N and the rest in file N+1. Single-file
+    cross-correlation fails in this case.
+
+    Tries ALL consecutive pairs in the cache (not just best_single_path → next)
+    because the best single-file match might be a false positive from a different
+    recording, while the true spanning pair may score higher.
+
+    Args:
+        cam_audio_8k:      Camera audio at sr Hz.
+        tx_wav_cache:      Dict path → float32 array.
+        best_single_path:  Unused — kept for API compatibility.
+        sr:                Sample rate (default 8000 Hz).
+        search_margin:     Extra seconds to include from each side (default 120s).
+
+    Returns:
+        Best (path1, path2, offset_in_path1, dur_from_path1, confidence)
+        or None if no consecutive pairs available.
+    """
+    sorted_paths = sorted(tx_wav_cache.keys())
+    if len(sorted_paths) < 2:
+        return None
+
+    cam_dur = len(cam_audio_8k) / sr
+    cam_n   = (cam_audio_8k - cam_audio_8k.mean()) / (cam_audio_8k.std() + 1e-10)
+    cam_fl  = cam_n[::-1]
+
+    best_result = None
+    best_conf   = -1.0
+
+    for i in range(len(sorted_paths) - 1):
+        p1_str = sorted_paths[i]
+        p2_str = sorted_paths[i + 1]
+        tx1 = tx_wav_cache[p1_str]
+        tx2 = tx_wav_cache[p2_str]
+
+        n_from_tx1 = int(min(len(tx1), (cam_dur + search_margin) * sr))
+        n_from_tx2 = int(min(len(tx2), search_margin * sr))
+        tx1_start  = len(tx1) - n_from_tx1
+        window     = np.concatenate([tx1[tx1_start:], tx2[:n_from_tx2]])
+
+        if len(window) < len(cam_n):
+            continue
+
+        tx_n   = (window - window.mean()) / (window.std() + 1e-10)
+        corr   = fftconvolve(tx_n, cam_fl, mode="full")
+        valid_s = len(cam_n) - 1
+        region  = corr[valid_s : valid_s + len(window) - len(cam_n) + 1]
+
+        peak_i   = int(np.argmax(region))
+        peak_val = float(region[peak_i])
+        mean_val = float(np.mean(np.abs(region)))
+        conf     = peak_val / (mean_val + 1e-10)
+
+        if conf > best_conf:
+            offset_in_tx1 = (tx1_start / sr) + peak_i / sr
+            dur_from_tx1  = len(tx1) / sr - offset_in_tx1
+            best_conf   = conf
+            best_result = (p1_str, p2_str, offset_in_tx1, dur_from_tx1, conf)
+
+    return best_result
+
+
+# ---------------------------------------------------------------------------
 # AUD-05: TX trimming
 # ---------------------------------------------------------------------------
 
@@ -336,6 +425,63 @@ def trim_tx_to_clip(
         str(output_path),
     ]
     subprocess.run(cmd, check=False)
+    return output_path
+
+
+def trim_spanning_tx_to_clip(
+    tx1_path: Path,
+    tx2_path: Path,
+    offset_in_tx1: float,
+    dur_from_tx1: float,
+    clip_duration: float,
+    output_path: Path,
+) -> Path:
+    """Trim and concatenate two consecutive TX WAV files into one synced clip WAV.
+
+    Used when a clip spans the boundary between two DJI auto-split recordings.
+
+    Args:
+        tx1_path:       First TX WAV file (contains clip start).
+        tx2_path:       Second TX WAV file (contains clip end).
+        offset_in_tx1:  Start position within tx1_path (seconds).
+        dur_from_tx1:   Duration taken from tx1 (seconds).
+        clip_duration:  Total clip duration (seconds).
+        output_path:    Destination WAV path.
+
+    Returns:
+        Path to the concatenated output WAV.
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    dur_from_tx2 = clip_duration - dur_from_tx1
+
+    p1 = output_path.with_suffix(".part1.wav")
+    p2 = output_path.with_suffix(".part2.wav")
+
+    subprocess.run([
+        "ffmpeg", "-hide_banner", "-loglevel", "warning", "-y",
+        "-ss", f"{offset_in_tx1:.6f}", "-t", f"{dur_from_tx1:.6f}",
+        "-i", str(tx1_path), "-c:a", "pcm_s16le", "-ar", "48000", str(p1),
+    ], check=False)
+
+    subprocess.run([
+        "ffmpeg", "-hide_banner", "-loglevel", "warning", "-y",
+        "-ss", "0", "-t", f"{dur_from_tx2:.6f}",
+        "-i", str(tx2_path), "-c:a", "pcm_s16le", "-ar", "48000", str(p2),
+    ], check=False)
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+        f.write(f"file '{p1}'\nfile '{p2}'\n")
+        lst = f.name
+
+    subprocess.run([
+        "ffmpeg", "-hide_banner", "-loglevel", "warning", "-y",
+        "-f", "concat", "-safe", "0", "-i", lst,
+        "-c", "copy", str(output_path),
+    ], check=False)
+
+    Path(lst).unlink(missing_ok=True)
+    p1.unlink(missing_ok=True)
+    p2.unlink(missing_ok=True)
     return output_path
 
 
@@ -397,18 +543,30 @@ def generate_ingest_json(
                 "type": "TX01_SYNC",
                 "path": cr["tx01_path"],
                 "sync_delta_frames": cr["tx01_delta_frames"],
+                "source_wav": cr.get("tx01_source_wav"),
+                "confidence": round(cr.get("tx01_conf", 0), 2),
             }
         else:
-            tracks["A2"] = {"type": "LOW_CONF", "path": None, "sync_delta_frames": None}
+            tracks["A2"] = {
+                "type": "LOW_CONF", "path": None, "sync_delta_frames": None,
+                "source_wav": cr.get("tx01_source_wav"),
+                "confidence": round(cr.get("tx01_conf", 0), 2),
+            }
 
         if cr.get("tx02_path"):
             tracks["A3"] = {
                 "type": "TX02_SYNC",
                 "path": cr["tx02_path"],
                 "sync_delta_frames": cr["tx02_delta_frames"],
+                "source_wav": cr.get("tx02_source_wav"),
+                "confidence": round(cr.get("tx02_conf", 0), 2),
             }
         else:
-            tracks["A3"] = {"type": "LOW_CONF", "path": None, "sync_delta_frames": None}
+            tracks["A3"] = {
+                "type": "LOW_CONF", "path": None, "sync_delta_frames": None,
+                "source_wav": cr.get("tx02_source_wav"),
+                "confidence": round(cr.get("tx02_conf", 0), 2),
+            }
 
         clips_data.append({
             "clip_id": cr["clip_id"],
@@ -510,51 +668,72 @@ def process_clip(
 
     tx01_path_rel = None
     tx01_delta_frames = None
+    tx01_source_wav = None
     tx02_path_rel = None
     tx02_delta_frames = None
+    tx02_source_wav = None
 
-    # TX01 output
-    if tx01_conf >= CONFIDENCE_THRESHOLD and tx01_path_str and not dry_run:
-        out_tx01 = project / "01_Media" / "Source" / "Audio" / scene_name / f"{clip_path.stem}_TX01.wav"
-        out_tx01.parent.mkdir(parents=True, exist_ok=True)
-        trim_tx_to_clip(Path(tx01_path_str), tx01_offset, clip_duration, out_tx01)
-        residual_sec = verify_full(clip_path, out_tx01, clip_duration)
-        if residual_sec is not None:
-            tx01_delta_frames = residual_to_frames(residual_sec, clip_fps)
-        else:
-            tx01_delta_frames = 0.0
-        tx01_path_rel = str(out_tx01.relative_to(project))
+    def _process_tx(tx_path_str, tx_offset, tx_conf, tx_cache, label):
+        """Try single-file match, then spanning fallback. Returns (path_rel, delta_f, source_wav, conf)."""
+        out = project / "01_Media" / "Source" / "Audio" / scene_name / f"{clip_path.stem}_{label}.wav"
 
-    # TX02 output
-    if tx02_conf >= CONFIDENCE_THRESHOLD and tx02_path_str and not dry_run:
-        out_tx02 = project / "01_Media" / "Source" / "Audio" / scene_name / f"{clip_path.stem}_TX02.wav"
-        out_tx02.parent.mkdir(parents=True, exist_ok=True)
-        trim_tx_to_clip(Path(tx02_path_str), tx02_offset, clip_duration, out_tx02)
-        residual_sec = verify_full(clip_path, out_tx02, clip_duration)
-        if residual_sec is not None:
-            tx02_delta_frames = residual_to_frames(residual_sec, clip_fps)
-        else:
-            tx02_delta_frames = 0.0
-        tx02_path_rel = str(out_tx02.relative_to(project))
+        if tx_conf >= CONFIDENCE_THRESHOLD and tx_path_str:
+            # Single-file match
+            if not dry_run:
+                out.parent.mkdir(parents=True, exist_ok=True)
+                trim_tx_to_clip(Path(tx_path_str), tx_offset, clip_duration, out)
+                res = verify_full(clip_path, out, clip_duration)
+                delta = residual_to_frames(res, clip_fps) if res is not None else 0.0
+            else:
+                delta = None
+            src = Path(tx_path_str).name
+            return str(out.relative_to(project)), delta, src, tx_conf
+
+        # Spanning fallback: try tail of best file + head of next file
+        if tx_path_str and tx_cache:
+            span = find_spanning_tx_candidate(cam_8k, tx_cache, tx_path_str)
+            if span is not None:
+                p1, p2, off_in_p1, dur_from_p1, span_conf = span
+                if span_conf >= CONFIDENCE_THRESHOLD:
+                    if not dry_run:
+                        out.parent.mkdir(parents=True, exist_ok=True)
+                        trim_spanning_tx_to_clip(
+                            Path(p1), Path(p2), off_in_p1, dur_from_p1, clip_duration, out
+                        )
+                        res = verify_full(clip_path, out, clip_duration)
+                        delta = residual_to_frames(res, clip_fps) if res is not None else 0.0
+                    else:
+                        delta = None
+                    src = f"{Path(p1).name}+{Path(p2).name}"
+                    return str(out.relative_to(project)), delta, src, span_conf
+
+        return None, None, Path(tx_path_str).name if tx_path_str else None, tx_conf
+
+    tx01_path_rel, tx01_delta_frames, tx01_source_wav, tx01_conf = _process_tx(
+        tx01_path_str, tx01_offset, tx01_conf, tx01_cache, "TX01"
+    )
+    tx02_path_rel, tx02_delta_frames, tx02_source_wav, tx02_conf = _process_tx(
+        tx02_path_str, tx02_offset, tx02_conf, tx02_cache, "TX02"
+    )
 
     # Sync report line
     if tx01_delta_frames is not None:
-        tx01_str = f"{tx01_delta_frames:.1f}F"
+        tx01_str = f"{tx01_delta_frames:.3f}F"
     elif dry_run and tx01_conf >= CONFIDENCE_THRESHOLD:
         tx01_str = "DRY_RUN"
     else:
         tx01_str = "LOW_CONF"
 
     if tx02_delta_frames is not None:
-        tx02_str = f"{tx02_delta_frames:.1f}F"
+        tx02_str = f"{tx02_delta_frames:.3f}F"
     elif dry_run and tx02_conf >= CONFIDENCE_THRESHOLD:
         tx02_str = "DRY_RUN"
     else:
         tx02_str = "LOW_CONF"
     report = (
         f"  {clip_path.stem}: "
-        f"TX01={tx01_conf:.1f} ({tx01_str}) "
-        f"TX02={tx02_conf:.1f} ({tx02_str})"
+        f"TX01={tx01_conf:.1f} ({tx01_str}) src={tx01_source_wav}  "
+        f"TX02={tx02_conf:.1f} ({tx02_str}) src={tx02_source_wav}"
     )
     print(report)
 
@@ -565,8 +744,10 @@ def process_clip(
         "fps": clip_fps,
         "tx01_path": tx01_path_rel,
         "tx01_delta_frames": tx01_delta_frames,
+        "tx01_source_wav": tx01_source_wav,
         "tx02_path": tx02_path_rel,
         "tx02_delta_frames": tx02_delta_frames,
+        "tx02_source_wav": tx02_source_wav,
         "tx01_conf": tx01_conf,
         "tx02_conf": tx02_conf,
     }
@@ -684,10 +865,58 @@ def main() -> None:
     # Ensure output dirs exist
     (project / "01_Media" / "Source" / "Audio").mkdir(parents=True, exist_ok=True)
 
+    # Open file log
+    log_dir = project / "01_Media" / "Source" / "Setup" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    scene_tag = args.scene or "all"
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_path = log_dir / f"{ts}_sync_{scene_tag}.log"
+
     all_results = []
-    for scene_dir in scenes:
-        results = process_scene(scene_dir, project, tx01_cache, tx02_cache, dry_run=args.dry_run)
-        all_results.extend(results)
+    with open(log_path, "w") as log_f:
+        def _log(line: str) -> None:
+            print(line)
+            log_f.write(line + "\n")
+            log_f.flush()
+
+        _log(f"=== Sync log {ts} ===")
+        _log(f"Project: {project}")
+        _log(f"Scenes:  {[s.name for s in scenes]}")
+        _log(f"TX01 files: {sorted(Path(k).name for k in tx01_cache)}")
+        _log(f"TX02 files: {sorted(Path(k).name for k in tx02_cache)}")
+        _log("")
+
+        for scene_dir in scenes:
+            _log(f"\n=== Scene: {scene_dir.name} ===")
+            clips = get_scene_clips(scene_dir)
+            clip_results = []
+            for clip in clips:
+                result = process_clip(
+                    clip, project, scene_dir.name, tx01_cache, tx02_cache,
+                    log_f, args.dry_run
+                )
+                clip_results.append(result)
+                # Write detail line to log
+                log_f.write(
+                    f"  {result['clip_id']}: "
+                    f"TX01 conf={result['tx01_conf']:.2f} delta={result['tx01_delta_frames']} "
+                    f"src={result['tx01_source_wav']}  "
+                    f"TX02 conf={result['tx02_conf']:.2f} delta={result['tx02_delta_frames']} "
+                    f"src={result['tx02_source_wav']}\n"
+                )
+                log_f.flush()
+            all_results.extend(clip_results)
+
+            if not args.dry_run:
+                audio_paths = [
+                    project / "01_Media" / "Source" / "Transcription" / "per_clip"
+                    / scene_dir.name / c.stem / f"{c.stem}_AUDIO.wav"
+                    for c in clips
+                ]
+                build_scene_concat(audio_paths, scene_dir.name, project)
+            generate_ingest_json(scene_dir.name, clip_results, project)
+
+    print(f"\nLog written: {log_path.relative_to(project)}")
 
     # Generate global project ingest.json (aggregates all per-scene files)
     if not args.dry_run:
@@ -710,6 +939,7 @@ def main() -> None:
                 print(f"  LOW_CONF TX01: {r['clip_id']} (conf={r.get('tx01_conf', 0):.1f})")
             if r.get("tx02_conf", 0) < CONFIDENCE_THRESHOLD:
                 print(f"  LOW_CONF TX02: {r['clip_id']} (conf={r.get('tx02_conf', 0):.1f})")
+    print(f"Log: {log_path.relative_to(project)}")
 
 
 if __name__ == "__main__":

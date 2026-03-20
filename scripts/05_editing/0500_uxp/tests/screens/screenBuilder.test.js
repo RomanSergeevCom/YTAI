@@ -5,6 +5,8 @@ const {
   buildSegmentPositionMap,
   getScreenTimelinePosition,
   generateScreenCuesSrt,
+  generateTranscriptSrt,
+  generateCaptionsSrt,
   formatSrtTimecode,
   sortSegments,
   OVERLAY_DURATION
@@ -198,6 +200,16 @@ describe('getScreenTimelinePosition', () => {
     var pos = getScreenTimelinePosition(screen, segPositions);
     assert.equal(pos, 10);
   });
+
+  it('places screen mid-block (center of segment)', () => {
+    // Segment starts at timeline position 20, segment is inSec=10..outSec=30 (20s long)
+    // tcInSec=20 means offset = 20-10 = 10 → position = 20+10 = 30
+    var segPositions = { 'seg_mid': 20 };
+    var screen = makeScreen({ segmentId: 'seg_mid', tcInSec: 20 });
+    screen.segment = { inSec: 10, outSec: 30, duration: 20 };
+    var pos = getScreenTimelinePosition(screen, segPositions);
+    assert.equal(pos, 30, 'Screen should be placed at mid-point of segment on timeline');
+  });
 });
 
 // --- buildScreenCues (v1.9.3: V1 Assembly copy + V2 overlays + markers + SRT) ---
@@ -243,7 +255,7 @@ describe('buildScreenCues', () => {
 
     var createCalls = ppro._recorder.getCalls('Project.createSequenceFromMedia');
     assert.ok(createCalls.length >= 1, 'Should call createSequenceFromMedia');
-    assert.ok(createCalls[0].args[0].includes('_4_ScreenCues'));
+    assert.ok(createCalls[0].args[0].includes('_4_PreEdit'));
   });
 
   it('inserts remaining V1 segments via createInsertProjectItemAction', async () => {
@@ -283,12 +295,20 @@ describe('buildScreenCues', () => {
     ];
     var result = await buildScreenCues(project, screens, allSegs, makeClipMap(), 'TestProject');
 
-    // Markers are no longer created inside buildScreenCues — they are prepared as markerList
-    // and created by createScreenCuesMarkers() in index.js (same pattern as Assembly)
-    assert.equal(result.markers, 2);
-    assert.ok(result.markerList.length >= 2, 'markerList should have 2+ entries');
-    assert.ok(result.markerList[0].name.includes('[SCR]'), 'marker name should include [SCR]');
-    assert.equal(result.markerList[0].type, 'com.adobe.premiereMarkers.chapter', 'marker type should be Chapter URI');
+    // Markers include block-boundary chapters (2 blocks) + screen cue markers (2 screens) = 4
+    assert.equal(result.markers, 4);
+    assert.ok(result.markerList.length >= 4, 'markerList should have 4 entries');
+    // First markers are block boundaries, then screen cue markers
+    var scrMarkers = result.markerList.filter(function (m) { return m.name.indexOf('[SCR]') === 0; });
+    assert.equal(scrMarkers.length, 2, 'Should have 2 screen cue markers');
+    assert.ok(scrMarkers[0].markerColor === 'Orange', 'Screen cue markers should be Orange');
+    var blockMarkers = result.markerList.filter(function (m) { return m.name.indexOf('[SCR]') !== 0; });
+    assert.equal(blockMarkers.length, 2, 'Should have 2 block markers');
+    assert.ok(blockMarkers[0].markerColor !== 'Orange', 'Block markers should NOT be Orange');
+    // Block markers should be Chapter type
+    assert.equal(blockMarkers[0].type, 'com.adobe.premiereMarkers.chapter', 'block marker type should be Chapter URI');
+    // Screen cue markers should be Segmentation type
+    assert.equal(scrMarkers[0].type, 'com.adobe.premiereMarkers.segmentation', 'screen cue marker type should be Segmentation URI');
     assert.ok(result.markerList[0].startSec >= 0, 'marker startSec should be >= 0');
   });
 
@@ -320,9 +340,9 @@ describe('buildScreenCues', () => {
 
     // No briefPath = no PNG overlays
     assert.equal(result.overlays, 0);
-    // But V1, markers, SRT should still work
+    // But V1, markers (2 block + 1 screen cue), SRT should still work
     assert.equal(result.clips, 3);
-    assert.equal(result.markers, 1);
+    assert.equal(result.markers, 3, '2 block markers + 1 screen cue marker');
     assert.ok(result.srtContent.length > 0);
   });
 
@@ -333,7 +353,7 @@ describe('buildScreenCues', () => {
 
     assert.equal(result.overlays, 0, 'No overlays when pngFiles is null');
     assert.equal(result.clips, 3, 'V1 should still build');
-    assert.equal(result.markers, 1, 'Markers should still be created');
+    assert.equal(result.markers, 3, '2 block markers + 1 screen cue marker');
   });
 
   it('skips V2 when pngFiles is empty array', async () => {
@@ -369,5 +389,128 @@ describe('buildScreenCues', () => {
     var skipWarnings = result.warnings.filter(function (w) { return w.includes('scr_002') && w.includes('not generated'); });
     assert.equal(skipWarnings.length, 1, 'Should warn about missing scr_002 PNG');
     assert.ok(result.skipped >= 1, 'At least one screen should be skipped');
+  });
+});
+
+// --- generateTranscriptSrt ---
+
+describe('generateTranscriptSrt', () => {
+  it('generates SRT from segment transcripts', () => {
+    var segs = [
+      { id: 's1', duration: 10, speaker: 'Speaker 1', transcript: 'Hello world', sourceFile: 'clip.mp4', inSec: 0, outSec: 10 },
+      { id: 's2', duration: 5, speaker: '', transcript: 'Second segment', sourceFile: 'clip.mp4', inSec: 10, outSec: 15 }
+    ];
+    var srt = generateTranscriptSrt(segs);
+    assert.ok(srt.length > 0);
+    assert.ok(srt.includes('Speaker 1: Hello world'));
+    assert.ok(srt.includes('Second segment'));
+    assert.ok(srt.includes('00:00:10,000'), 'Second segment starts at 10s (cumulative)');
+  });
+
+  it('returns empty string for empty segments', () => {
+    assert.equal(generateTranscriptSrt([]), '');
+    assert.equal(generateTranscriptSrt(null), '');
+  });
+
+  it('handles segments without speaker', () => {
+    var segs = [{ id: 's1', duration: 5, speaker: '', transcript: 'No speaker text', sourceFile: 'c.mp4', inSec: 0, outSec: 5 }];
+    var srt = generateTranscriptSrt(segs);
+    assert.ok(srt.includes('No speaker text'));
+    assert.ok(!srt.includes(': No speaker text'), 'Should not have colon prefix for empty speaker');
+  });
+
+  it('uses absolute positioning with clipOffsets', () => {
+    var segs = [
+      { id: 's1', duration: 5, speaker: '', transcript: 'At offset 30', sourceFile: 'clip_A.mp4', inSec: 10, outSec: 15 }
+    ];
+    var offsets = { 'clip_A.mp4': 30 };
+    var srt = generateTranscriptSrt(segs, offsets);
+    // Should start at 30 + 10 = 40s
+    assert.ok(srt.includes('00:00:40,000'), 'Should use absolute position 30+10=40s');
+    assert.ok(srt.includes('00:00:45,000'), 'Should end at 30+15=45s');
+  });
+});
+
+// --- generateCaptionsSrt ---
+
+describe('generateCaptionsSrt', () => {
+  it('generates word-grouped SRT blocks', () => {
+    var segs = [
+      { id: 's1', duration: 12, transcript: 'one two three four five six seven eight nine ten eleven twelve', sourceFile: 'c.mp4', inSec: 0, outSec: 12 }
+    ];
+    var srt = generateCaptionsSrt(segs, 6);
+    assert.ok(srt.length > 0);
+    // 12 words / 6 per block = 2 blocks
+    assert.ok(srt.includes('1\n'));
+    assert.ok(srt.includes('2\n'));
+  });
+
+  it('splits each block into 2 lines', () => {
+    var segs = [
+      { id: 's1', duration: 6, transcript: 'one two three four five six', sourceFile: 'c.mp4', inSec: 0, outSec: 6 }
+    ];
+    var srt = generateCaptionsSrt(segs, 6);
+    // 6 words → ceil(6/2)=3 per line: "one two three\nfour five six"
+    assert.ok(srt.includes('one two three\nfour five six'));
+  });
+
+  it('distributes timing evenly across chunks', () => {
+    var segs = [
+      { id: 's1', duration: 10, transcript: 'a b c d e f g h i j k l', sourceFile: 'c.mp4', inSec: 0, outSec: 10 }
+    ];
+    var srt = generateCaptionsSrt(segs, 6);
+    // 12 words / 6 = 2 chunks, each 5s
+    assert.ok(srt.includes('00:00:00,000'));
+    assert.ok(srt.includes('00:00:05,000'));
+  });
+
+  it('handles cumulative position across segments', () => {
+    var segs = [
+      { id: 's1', duration: 5, transcript: 'hello world foo bar', sourceFile: 'c.mp4', inSec: 0, outSec: 5 },
+      { id: 's2', duration: 5, transcript: 'baz qux quux corge', sourceFile: 'c.mp4', inSec: 5, outSec: 10 }
+    ];
+    var srt = generateCaptionsSrt(segs, 4);
+    assert.ok(srt.includes('00:00:05,000'), 'Second segment should start at 5s');
+  });
+
+  it('skips segments without transcript but advances cumulative time', () => {
+    var segs = [
+      { id: 's1', duration: 5, transcript: '', sourceFile: 'c.mp4', inSec: 0, outSec: 5 },
+      { id: 's2', duration: 5, transcript: 'hello world foo bar', sourceFile: 'c.mp4', inSec: 5, outSec: 10 }
+    ];
+    var srt = generateCaptionsSrt(segs, 4);
+    assert.ok(srt.includes('00:00:05,000'), 'Should advance past empty segment');
+  });
+
+  it('returns empty for empty/null segments', () => {
+    assert.equal(generateCaptionsSrt([]), '');
+    assert.equal(generateCaptionsSrt(null), '');
+  });
+
+  it('clamps wordsPerBlock to 4-10 range', () => {
+    var segs = [{ id: 's1', duration: 10, transcript: 'a b c d e f g h', sourceFile: 'c.mp4', inSec: 0, outSec: 10 }];
+    var srt = generateCaptionsSrt(segs, 2); // should clamp to 4
+    // 8 words / 4 = 2 blocks
+    assert.ok(srt.includes('1\n'));
+    assert.ok(srt.includes('2\n'));
+  });
+
+  it('defaults to 6 words per block', () => {
+    var segs = [{ id: 's1', duration: 12, transcript: 'a b c d e f g h i j k l', sourceFile: 'c.mp4', inSec: 0, outSec: 12 }];
+    var srt = generateCaptionsSrt(segs);
+    // 12 words / 6 = 2 blocks
+    assert.ok(srt.includes('1\n'));
+    assert.ok(srt.includes('2\n'));
+    assert.ok(!srt.includes('3\n'));
+  });
+
+  it('uses absolute positioning with clipOffsets', () => {
+    var segs = [
+      { id: 's1', duration: 10, transcript: 'a b c d e f', sourceFile: 'clip_B.mp4', inSec: 20, outSec: 30 }
+    ];
+    var offsets = { 'clip_B.mp4': 60 };
+    var srt = generateCaptionsSrt(segs, 6, offsets);
+    // Position = 60 + 20 = 80s
+    assert.ok(srt.includes('00:01:20,000'), 'Should start at 80s (60+20)');
   });
 });

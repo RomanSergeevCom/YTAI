@@ -4,6 +4,7 @@ const {
   LABEL_COLOR_INDEX,
   MARKER_COLOR_INDEX,
   VALID_COLORS,
+  BLOCK_VALID_COLORS,
   MARKER_TYPE_CHAPTER,
   MARKER_TYPE_COMMENT,
   TICKS_PER_SECOND,
@@ -73,6 +74,11 @@ describe('MARKER_COLOR_INDEX', () => {
     assert.equal(MARKER_COLOR_INDEX.Orange, 3);
   });
 
+  it('maps Purple to 2 (same as Magenta — no separate Purple marker in Premiere)', () => {
+    assert.equal(MARKER_COLOR_INDEX.Purple, 2);
+    assert.equal(MARKER_COLOR_INDEX.Purple, MARKER_COLOR_INDEX.Magenta);
+  });
+
   it('does NOT have White (index 5 missing in real Premiere)', () => {
     assert.equal(MARKER_COLOR_INDEX.White, undefined);
   });
@@ -104,6 +110,26 @@ describe('VALID_COLORS', () => {
     assert.ok(VALID_COLORS.includes('Green'));
     assert.ok(VALID_COLORS.includes('Blue'));
     assert.ok(VALID_COLORS.includes('Orange'));
+  });
+});
+
+// --- BLOCK_VALID_COLORS ---
+
+describe('BLOCK_VALID_COLORS', () => {
+  it('does NOT include Orange (reserved for Screen Cues)', () => {
+    assert.ok(!BLOCK_VALID_COLORS.includes('Orange'));
+  });
+
+  it('includes all other Assembly colors', () => {
+    for (const color of ['Green', 'Blue', 'Cyan', 'Yellow', 'Red', 'Magenta', 'Purple']) {
+      assert.ok(BLOCK_VALID_COLORS.includes(color), 'Missing: ' + color);
+    }
+  });
+
+  it('all entries exist in MARKER_COLOR_INDEX', () => {
+    for (const color of BLOCK_VALID_COLORS) {
+      assert.ok(MARKER_COLOR_INDEX[color] !== undefined, color + ' not in MARKER_COLOR_INDEX');
+    }
   });
 });
 

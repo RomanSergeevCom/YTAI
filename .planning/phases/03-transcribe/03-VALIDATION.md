@@ -64,7 +64,7 @@ created: 2026-03-17
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| All 7 scenes produce transcript JSON on reference project | TRN-01 | Requires real project on external drive; Whisper runtime | Run `python transcribe_nested.py --project /Volumes/.../YTCR_1_Arty_Dzis --dry-run`, then live on one scene |
+| All 7 scenes produce transcript JSON on reference project | TRN-01 | Requires real project on external drive; Whisper runtime | Run `python transcribe_nested.py --project /Volumes/.../YTCR01_Arty_Dzis --dry-run`, then live on one scene |
 | merged_transcript.json word entries have correct scene timecodes | TRN-02 | Requires real transcript output | Inspect merged output for `scene_id` and local timecode fields |
 
 ---

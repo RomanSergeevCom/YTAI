@@ -5,7 +5,7 @@ status: human_needed
 score: 9/10 must-haves verified
 re_verification: false
 human_verification:
-  - test: "Run python scripts/01_prepare/0100_organize/0100_organize.py --project \"/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis\" --dry-run and read the output"
+  - test: "Run python scripts/01_prepare/0100_organize/0100_organize.py --project \"/Volumes/RYA T7 Black/YTCR01_Arty_Dzis\" --dry-run and read the output"
     expected: "Output shows 'Nested project detected', 7 scenes listed with clip counts, 3 TX folders (TX01: 3 WAV, TX02: 9 WAV, TX02_2: 4 WAV), exit code 0, and no files are moved from the reference drive"
     why_human: "The reference project lives on an external drive (/Volumes/RYA T7 Black/). Whether the drive is mounted and whether the script correctly reads real production file names cannot be verified programmatically here. Plan 03 Task 2 was a human-verify checkpoint — its approval (commit 31705bc) is documented but the drive state is not re-verifiable at verification time."
 ---
@@ -57,7 +57,7 @@ human_verification:
 | `0100_organize.py::move_scene_clips` | `01_Media/Source/Video/{scene}/` | `clip.relative_to(scene_dir)` for GoPro preservation | ✓ WIRED | Pattern `clip.relative_to(scene_dir)` at line 196; `rel = clip.relative_to(scene_dir); dest = video_dir / scene / rel`; GoPro test passes |
 | `0100_organize.py::move_dji_wavs` | `99_Pipeline/DJI_Audio/` | `shutil.move` flat; `dji_dir / wav.name` | ✓ WIRED | `dest = dji_dir / wav.name` at line 235; DJI_RAW_RE filter confirmed working against all 3 fixture filenames |
 | `0100_organize.py::move_xml_sidecars` | `Transcription/per_clip/{scene}/{clip}/` | `clip_scene_map` lookup at `tr_dir / "per_clip" / scene / clip_id / xml.name` | ✓ WIRED | Pattern `per_clip.*scene` confirmed at lines 339 and 447; two-pass video_stems collection handles post-move ordering |
-| `0100_organize.py` | external drive project | `--project` argument | ? HUMAN | Dry-run on `/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis` was human-verified (commit 31705bc); drive not available for re-verification |
+| `0100_organize.py` | external drive project | `--project` argument | ? HUMAN | Dry-run on `/Volumes/RYA T7 Black/YTCR01_Arty_Dzis` was human-verified (commit 31705bc); drive not available for re-verification |
 
 ---
 
@@ -93,11 +93,11 @@ No blockers or functional stubs found. All `pass` stubs from Plan 01 were filled
 **Test:** Mount `/Volumes/RYA T7 Black/` and run:
 ```
 python scripts/01_prepare/0100_organize/0100_organize.py \
-  --project "/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis" \
+  --project "/Volumes/RYA T7 Black/YTCR01_Arty_Dzis" \
   --dry-run
 ```
 **Expected:** Output shows "Nested project (TX folders detected)", exactly 7 scenes (volleyball 114, dubai_driving 51, desert_drive 44, apartment 40, al_qudra_lake 34, al_qudra_lake_story 35, drive_home 7), TX folders showing TX01: 3 WAV, TX02: 9 WAV, TX02_2: 4 WAV (total 16), exit code 0, no files moved.
-**Why human:** Reference project lives on an external drive. Plan 03 Task 2 was a blocking human-verify checkpoint and was approved (commit 31705bc, message "chore(01-03): mark Task 2 verified — dry-run approved on YTCR_1_Arty_Dzis"). This verification cannot be repeated without the drive mounted.
+**Why human:** Reference project lives on an external drive. Plan 03 Task 2 was a blocking human-verify checkpoint and was approved (commit 31705bc, message "chore(01-03): mark Task 2 verified — dry-run approved on YTCR01_Arty_Dzis"). This verification cannot be repeated without the drive mounted.
 
 ---
 

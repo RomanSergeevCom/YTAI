@@ -118,6 +118,90 @@ def draw_text_with_shadow(draw, xy, text, font, fill=TEXT_WHITE, shadow_offset=3
     draw.text((x, y), text, font=font, fill=fill)
 
 
+def wrap_text(draw, text, font, max_width):
+    """Word-wrap text to fit within max_width pixels. Returns list of sub-lines."""
+    words = text.split()
+    if not words:
+        return ['']
+    lines = []
+    current = ''
+    for word in words:
+        test = (current + ' ' + word).strip() if current else word
+        bb = draw.textbbox((0, 0), test, font=font)
+        if bb[2] - bb[0] <= max_width:
+            current = test
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines if lines else [text]
+
+
+def draw_list_body(draw, img, lines, font, x_left, y_start, h, w=None, centered=False, max_width=None):
+    """Render body lines as a left-aligned bullet list with a lime accent bar.
+
+    If centered=True: compute block width from longest line, center block on screen,
+    then left-align text within that block (for full_overlay).
+    If centered=False: start text at x_left directly (for half/three_fifths).
+    If max_width is set: wrap lines that exceed max_width (keeps text within overlay area).
+    Returns final y_cursor.
+    """
+    if not lines:
+        return y_start
+
+    bullet = "– "
+    bullet_w = draw.textbbox((0, 0), bullet, font=font)[2]
+    line_gap = int(h * 0.016)
+    bar_w = 6  # px at 4K
+    bar_pad = int(h * 0.014)
+
+    # Wrap lines that are too wide
+    avail_body_w = (max_width - bullet_w) if max_width else None
+    final_texts = []
+    for ln in lines:
+        if avail_body_w and ln:
+            parts = wrap_text(draw, ln, font, avail_body_w)
+            for i, part in enumerate(parts):
+                final_texts.append(bullet + part if i == 0 else '   ' + part)
+        else:
+            final_texts.append(bullet + ln)
+
+    # Compute block_x
+    if centered and w:
+        max_tw = max(
+            (draw.textbbox((0, 0), t, font=font)[2] - draw.textbbox((0, 0), t, font=font)[0])
+            for t in final_texts
+        ) if final_texts else 0
+        block_x = (w - max_tw) // 2
+    else:
+        block_x = x_left
+
+    # First pass: total height for accent bar
+    temp_y = y_start
+    for t in final_texts:
+        bb = draw.textbbox((0, 0), t, font=font)
+        temp_y += (bb[3] - bb[1]) + line_gap
+
+    # Lime accent bar (left of text block)
+    bar_x0 = block_x - bar_pad - bar_w
+    bar_x1 = bar_x0 + bar_w
+    draw.rectangle(
+        [bar_x0, y_start - int(h * 0.004), bar_x1, temp_y - line_gap + int(h * 0.008)],
+        fill=BG_ACCENT
+    )
+
+    # Second pass: draw text
+    y_cursor = y_start
+    for t in final_texts:
+        draw_text_with_shadow(draw, (block_x, y_cursor), t, font, TEXT_LIGHT)
+        bb = draw.textbbox((0, 0), t, font=font)
+        y_cursor += (bb[3] - bb[1]) + line_gap
+
+    return y_cursor
+
+
 def draw_rounded_rect(draw, bbox, radius, fill):
     """Draw a rounded rectangle."""
     x0, y0, x1, y1 = bbox
@@ -151,7 +235,7 @@ def render_full_overlay(img, draw, screen, w, h):
     draw.rectangle([(0, 0), (w, h)], fill=(10, 22, 40, 120))
 
     # Title — large, centered
-    font_title = get_font(int(h * 0.06), bold=True)
+    font_title = get_font(int(h * 0.09), bold=True)
     title = screen.get("title", "")
     bbox = draw.textbbox((0, 0), title, font=font_title)
     tw = bbox[2] - bbox[0]
@@ -159,26 +243,25 @@ def render_full_overlay(img, draw, screen, w, h):
 
     subtitle = screen.get("subtitle", "")
     body = screen.get("body", "")
-    y_cursor = int(h * 0.35)
+    y_cursor = int(h * 0.30)
 
     tx = (w - tw) // 2
     draw_text_with_shadow(draw, (tx, y_cursor), title, font_title, TEXT_WHITE)
-    y_cursor += th + int(h * 0.02)
+    y_cursor += th + int(h * 0.045)
 
     if subtitle:
-        font_sub = get_font(int(h * 0.03))
+        font_sub = get_font(int(h * 0.042))
         bbox_s = draw.textbbox((0, 0), subtitle, font=font_sub)
         sx = (w - (bbox_s[2] - bbox_s[0])) // 2
         draw_text_with_shadow(draw, (sx, y_cursor), subtitle, font_sub, TEXT_LIGHT)
-        y_cursor += (bbox_s[3] - bbox_s[1]) + int(h * 0.02)
+        y_cursor += (bbox_s[3] - bbox_s[1]) + int(h * 0.05)
 
     if body:
-        font_body = get_font(int(h * 0.022))
-        for line in body.split('\n'):
-            bbox_b = draw.textbbox((0, 0), line, font=font_body)
-            bx = (w - (bbox_b[2] - bbox_b[0])) // 2
-            draw_text_with_shadow(draw, (bx, y_cursor), line, font_body, TEXT_LIGHT)
-            y_cursor += (bbox_b[3] - bbox_b[1]) + int(h * 0.01)
+        font_body = get_font(int(h * 0.030))
+        y_cursor = draw_list_body(
+            draw, img, body.split('\n'), font_body,
+            x_left=0, y_start=y_cursor, h=h, w=w, centered=True
+        )
 
     # Type label
     font_label = get_font(int(h * 0.02))
@@ -188,36 +271,41 @@ def render_full_overlay(img, draw, screen, w, h):
 
 def render_half_overlay(img, draw, screen, w, h):
     """1/2 screen gradient left — navy fading to transparent, text on left."""
-    # Gradient: navy on left 50%, fade to transparent
+    # Gradient: navy on left 45%, fade to transparent
     fade_start = int(w * 0.45)
     fade_end = int(w * 0.6)
     draw.rectangle([(0, 0), (fade_start, h)], fill=(10, 22, 40, 120))
     draw_gradient_left(img, fade_start, fade_end, 0, h,
                        (10, 22, 40, 120), (10, 22, 40, 0))
 
-    # Text on left side
+    # Text on left side — constrained to gradient area
     x_left = int(w * 0.04)
     y_cursor = int(h * 0.35)
+    max_text_w = fade_start - x_left - int(h * 0.02)
 
-    font_title = get_font(int(h * 0.05), bold=True)
+    font_title = get_font(int(h * 0.075), bold=True)
     draw_text_with_shadow(draw, (x_left, y_cursor), screen.get("title", ""), font_title, TEXT_WHITE)
     bbox_t = draw.textbbox((0, 0), screen.get("title", ""), font=font_title)
-    y_cursor += (bbox_t[3] - bbox_t[1]) + int(h * 0.02)
+    y_cursor += (bbox_t[3] - bbox_t[1]) + int(h * 0.04)
 
     subtitle = screen.get("subtitle", "")
     if subtitle:
-        font_sub = get_font(int(h * 0.028))
-        draw_text_with_shadow(draw, (x_left, y_cursor), subtitle, font_sub, TEXT_LIGHT)
-        bbox_s = draw.textbbox((0, 0), subtitle, font=font_sub)
-        y_cursor += (bbox_s[3] - bbox_s[1]) + int(h * 0.02)
+        font_sub = get_font(int(h * 0.038))
+        sub_lines = wrap_text(draw, subtitle, font_sub, max_text_w)
+        for sub_ln in sub_lines:
+            draw_text_with_shadow(draw, (x_left, y_cursor), sub_ln, font_sub, TEXT_LIGHT)
+            bbox_s = draw.textbbox((0, 0), sub_ln, font=font_sub)
+            y_cursor += (bbox_s[3] - bbox_s[1]) + int(h * 0.01)
+        y_cursor += int(h * 0.03)
 
     body = screen.get("body", "")
     if body:
-        font_body = get_font(int(h * 0.022))
-        for line in body.split('\n'):
-            draw_text_with_shadow(draw, (x_left, y_cursor), line, font_body, TEXT_LIGHT)
-            bbox_b = draw.textbbox((0, 0), line, font=font_body)
-            y_cursor += (bbox_b[3] - bbox_b[1]) + int(h * 0.01)
+        font_body = get_font(int(h * 0.028))
+        draw_list_body(
+            draw, img, body.split('\n'), font_body,
+            x_left=x_left, y_start=y_cursor, h=h, centered=False,
+            max_width=max_text_w
+        )
 
     font_label = get_font(int(h * 0.018))
     draw_text_with_shadow(draw, (x_left, int(h * 0.03)),
@@ -226,36 +314,41 @@ def render_half_overlay(img, draw, screen, w, h):
 
 def render_three_fifths_overlay(img, draw, screen, w, h):
     """3/5 screen gradient left — navy fading to transparent, text on left."""
-    # Gradient: navy on left 60%, fade to transparent
+    # Gradient: navy on left 55%, fade to transparent
     fade_start = int(w * 0.55)
     fade_end = int(w * 0.72)
     draw.rectangle([(0, 0), (fade_start, h)], fill=(10, 22, 40, 120))
     draw_gradient_left(img, fade_start, fade_end, 0, h,
                        (10, 22, 40, 120), (10, 22, 40, 0))
 
-    # Text on left side
+    # Text on left side — constrained to gradient area
     x_left = int(w * 0.04)
     y_cursor = int(h * 0.35)
+    max_text_w = fade_start - x_left - int(h * 0.02)
 
-    font_title = get_font(int(h * 0.05), bold=True)
+    font_title = get_font(int(h * 0.075), bold=True)
     draw_text_with_shadow(draw, (x_left, y_cursor), screen.get("title", ""), font_title, TEXT_WHITE)
     bbox_t = draw.textbbox((0, 0), screen.get("title", ""), font=font_title)
-    y_cursor += (bbox_t[3] - bbox_t[1]) + int(h * 0.02)
+    y_cursor += (bbox_t[3] - bbox_t[1]) + int(h * 0.04)
 
     subtitle = screen.get("subtitle", "")
     if subtitle:
-        font_sub = get_font(int(h * 0.028))
-        draw_text_with_shadow(draw, (x_left, y_cursor), subtitle, font_sub, TEXT_LIGHT)
-        bbox_s = draw.textbbox((0, 0), subtitle, font=font_sub)
-        y_cursor += (bbox_s[3] - bbox_s[1]) + int(h * 0.02)
+        font_sub = get_font(int(h * 0.038))
+        sub_lines = wrap_text(draw, subtitle, font_sub, max_text_w)
+        for sub_ln in sub_lines:
+            draw_text_with_shadow(draw, (x_left, y_cursor), sub_ln, font_sub, TEXT_LIGHT)
+            bbox_s = draw.textbbox((0, 0), sub_ln, font=font_sub)
+            y_cursor += (bbox_s[3] - bbox_s[1]) + int(h * 0.01)
+        y_cursor += int(h * 0.03)
 
     body = screen.get("body", "")
     if body:
-        font_body = get_font(int(h * 0.022))
-        for line in body.split('\n'):
-            draw_text_with_shadow(draw, (x_left, y_cursor), line, font_body, TEXT_LIGHT)
-            bbox_b = draw.textbbox((0, 0), line, font=font_body)
-            y_cursor += (bbox_b[3] - bbox_b[1]) + int(h * 0.01)
+        font_body = get_font(int(h * 0.028))
+        draw_list_body(
+            draw, img, body.split('\n'), font_body,
+            x_left=x_left, y_start=y_cursor, h=h, centered=False,
+            max_width=max_text_w
+        )
 
     font_label = get_font(int(h * 0.018))
     draw_text_with_shadow(draw, (x_left, int(h * 0.03)),
@@ -417,9 +510,9 @@ def generate_screen_pngs(brief_path: str, output_dir: str = None) -> dict:
 
         # Prepare screen data
         screen_data = {
-            "title": str(raw.get("title", "")).strip()[:100],
-            "subtitle": str(raw.get("subtitle", "")).strip()[:100],
-            "body": str(raw.get("body", "")).strip()[:500],
+            "title": (str(raw.get("title") or "")).strip()[:100],
+            "subtitle": (str(raw.get("subtitle") or "")).strip()[:100],
+            "body": (str(raw.get("body") or "")).strip()[:500],
         }
 
         # Create transparent PNG

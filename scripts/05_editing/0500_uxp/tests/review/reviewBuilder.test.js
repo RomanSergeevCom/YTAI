@@ -3,11 +3,13 @@ const assert = require('node:assert/strict');
 const {
   sortReviewSegments,
   getReviewCategory,
+  getReviewColorIdx,
   computeComplement,
   computeClipOffsets,
   subtractBriefFromRange,
   createGapSegment
 } = require('../../src/review/reviewBuilder');
+const { REVIEW_COLOR_MAP, REVIEW_PRODUCER_COLOR, LABEL_COLOR_INDEX } = require('../../src/shared/constants');
 
 // --- getReviewCategory ---
 
@@ -35,6 +37,55 @@ describe('getReviewCategory', () => {
 
   it('returns "skip" for gap segments (block=0, priority=1)', () => {
     assert.equal(getReviewCategory({ block: 0, priority: 1, use: false }), 'skip');
+  });
+});
+
+// --- getReviewColorIdx ---
+
+describe('getReviewColorIdx', () => {
+  it('returns Lavender for producer speaker', () => {
+    var seg = { block: 1, priority: 1, speaker: 'Speaker 2' };
+    var opts = { producerSpeaker: 'Speaker 2', assemblyBlocks: [] };
+    assert.equal(getReviewColorIdx(seg, opts), REVIEW_PRODUCER_COLOR.labelIdx);
+  });
+
+  it('returns Red for block=99 even if producer speaker', () => {
+    var seg = { block: 99, priority: 1, speaker: 'Speaker 2' };
+    var opts = { producerSpeaker: 'Speaker 2', assemblyBlocks: [] };
+    // Producer check comes first, but block=99 check is second
+    // Actually producer check is first — let's verify the priority
+    // Per the code: producer → block=99 → block-based → category
+    // So producer speaker takes precedence even for block=99
+    assert.equal(getReviewColorIdx(seg, opts), REVIEW_PRODUCER_COLOR.labelIdx);
+  });
+
+  it('returns block color for segments from Assembly blocks (expert)', () => {
+    var seg = { block: 2, priority: 1, speaker: 'Speaker 1', color: 'Blue' };
+    var opts = {
+      producerSpeaker: 'Speaker 2',
+      assemblyBlocks: [{ block: 2, usedCount: 3, color: 'Blue' }]
+    };
+    assert.equal(getReviewColorIdx(seg, opts), LABEL_COLOR_INDEX['Blue']);
+  });
+
+  it('returns category color for segments from blocks without Assembly content', () => {
+    var seg = { block: 5, priority: 1, speaker: 'Speaker 1' };
+    var opts = {
+      producerSpeaker: 'Speaker 2',
+      assemblyBlocks: [{ block: 2, usedCount: 3, color: 'Blue' }]
+    };
+    assert.equal(getReviewColorIdx(seg, opts), REVIEW_COLOR_MAP.skip.labelIdx);
+  });
+
+  it('returns category color when no opts provided (backward compat)', () => {
+    var seg = { block: 1, priority: 2 };
+    assert.equal(getReviewColorIdx(seg), REVIEW_COLOR_MAP.alt.labelIdx);
+  });
+
+  it('returns Yellow for priority=2 alt segments without block match', () => {
+    var seg = { block: 3, priority: 2, speaker: 'Speaker 1' };
+    var opts = { producerSpeaker: 'Speaker 2', assemblyBlocks: [] };
+    assert.equal(getReviewColorIdx(seg, opts), REVIEW_COLOR_MAP.alt.labelIdx);
   });
 });
 

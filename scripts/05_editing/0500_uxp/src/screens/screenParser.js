@@ -123,8 +123,16 @@ function parseScreens(rawScreens, segments, logger) {
       tcInSec: parseTimecode(raw.tc_in || linkedSegment.tcIn || '00:00.0'),
       title: truncate(String(raw.title || '').trim(), MAX_TITLE),
       subtitle: truncate(String(raw.subtitle || '').trim(), MAX_SUBTITLE),
-      body: truncate(String(raw.body || '').trim(), MAX_BODY)
+      body: truncate(String(raw.body || '').trim(), MAX_BODY),
+      prompt: String(raw.prompt || '').trim()
     };
+
+    // Validate tc_in is within segment range
+    var segEndSec = linkedSegment.inSec + (linkedSegment.duration || 0);
+    if (screen.tcInSec < linkedSegment.inSec || screen.tcInSec > segEndSec) {
+      warnings.push(screenId + ': tc_in ' + screen.tcIn + ' outside segment range [' +
+        (linkedSegment.tcIn || '0') + ', ' + (linkedSegment.tcOut || segEndSec) + ']');
+    }
 
     screens.push(screen);
 
@@ -160,6 +168,9 @@ function formatMarkerComment(screen) {
   if (screen.body) {
     // Replace newlines with ' / ' for single-line marker comment
     parts.push(screen.body.replace(/\n/g, ' / '));
+  }
+  if (screen.prompt) {
+    parts.push('[PROMPT] ' + screen.prompt);
   }
 
   var result = parts.join(' | ');

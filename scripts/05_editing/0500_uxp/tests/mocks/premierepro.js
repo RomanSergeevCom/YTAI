@@ -622,6 +622,7 @@ const Constants = {
 const MarkerStatic = {
   MARKER_TYPE_COMMENT: 'Comment',
   MARKER_TYPE_CHAPTER: 'Chapter',
+  MARKER_TYPE_SEGMENTATION: 'Segmentation',
   MARKER_TYPE_WEBLINK: 'WebLink',
   MARKER_TYPE_FLVCUEPOINT: 'FlashCuePoint'
 };

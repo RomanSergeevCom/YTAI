@@ -160,6 +160,49 @@ describe('parseScreens', () => {
     assert.equal(result.screens[0].type, 'full_overlay');
   });
 
+  it('parses prompt field', () => {
+    var segs = makeSegments();
+    var raw = [
+      { screen_id: 'scr_001', type: 'full_overlay', segment_id: 'seg_001', title: 'Skyline',
+        prompt: 'Aerial view of Dubai Marina at sunset, cinematic 4K' }
+    ];
+    var result = parseScreens(raw, segs);
+    assert.equal(result.screens[0].prompt, 'Aerial view of Dubai Marina at sunset, cinematic 4K');
+  });
+
+  it('defaults prompt to empty string when absent', () => {
+    var segs = makeSegments();
+    var raw = [
+      { screen_id: 'scr_001', type: 'full_overlay', segment_id: 'seg_001', title: 'No Prompt' }
+    ];
+    var result = parseScreens(raw, segs);
+    assert.equal(result.screens[0].prompt, '');
+  });
+
+  it('warns when tc_in is outside segment range', () => {
+    var segs = makeSegments();
+    // seg_001 has inSec=0, duration=10 → valid range [0, 10]
+    var raw = [
+      { screen_id: 'scr_001', type: 'full_overlay', segment_id: 'seg_001', tc_in: '00:15.0', title: 'Too Late' }
+    ];
+    var result = parseScreens(raw, segs);
+    // Screen should still be parsed but with a warning
+    assert.equal(result.screens.length, 1);
+    var tcWarnings = result.warnings.filter(function(w) { return w.includes('outside segment range'); });
+    assert.equal(tcWarnings.length, 1, 'Should warn about tc_in outside range');
+  });
+
+  it('does not warn when tc_in is within segment range', () => {
+    var segs = makeSegments();
+    var raw = [
+      { screen_id: 'scr_001', type: 'full_overlay', segment_id: 'seg_001', tc_in: '00:05.0', title: 'Mid' }
+    ];
+    var result = parseScreens(raw, segs);
+    assert.equal(result.screens.length, 1);
+    var tcWarnings = result.warnings.filter(function(w) { return w.includes('outside segment range'); });
+    assert.equal(tcWarnings.length, 0, 'Should not warn for valid tc_in');
+  });
+
   it('can reference use=FALSE segments', () => {
     var segs = makeSegments();
     var raw = [
@@ -197,6 +240,19 @@ describe('formatMarkerComment', () => {
     var screen = { type: 'chapter_bar', title: 'T'.repeat(100), subtitle: 'S'.repeat(50), body: 'B'.repeat(100) };
     var result = formatMarkerComment(screen);
     assert.ok(result.length <= MAX_MARKER_COMMENT);
+  });
+
+  it('includes prompt with [PROMPT] prefix', () => {
+    var screen = { type: 'full_overlay', title: 'Skyline', subtitle: '', body: '',
+      prompt: 'Aerial view of Dubai at sunset' };
+    var result = formatMarkerComment(screen);
+    assert.ok(result.includes('[PROMPT] Aerial view of Dubai at sunset'));
+  });
+
+  it('omits prompt when empty', () => {
+    var screen = { type: 'full_overlay', title: 'Skyline', subtitle: '', body: '', prompt: '' };
+    var result = formatMarkerComment(screen);
+    assert.ok(!result.includes('[PROMPT]'));
   });
 
   it('returns empty string for null', () => {

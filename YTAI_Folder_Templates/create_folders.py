@@ -23,6 +23,10 @@ from datetime import datetime
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TYPE1_TEMPLATE = os.path.join(SCRIPT_DIR, "Type1_Footage")
 TYPE2_TEMPLATE = os.path.join(SCRIPT_DIR, "Type2_Production")
+PRPROJ_TEMPLATE = os.path.join(
+    os.path.dirname(SCRIPT_DIR), "scripts", "01_prepare",
+    "0101_init_folders", "RYA_example.prproj"
+)
 
 
 def write_log(base_path: str, folder_type: str, folder_name: str) -> str:
@@ -68,12 +72,10 @@ NEXT STEPS
 4. Run pipeline → 01_Media/Source/Transcription/
 """
     else:
-        log_content += f"""1. Rename PROJECT_NAME.gdoc → {folder_name}.gdoc
-2. Rename PROJECT_NAME_Source.prproj → {folder_name}_Source.prproj
-3. Rename PROJECT_NAME.prproj → {folder_name}.prproj
-4. Copy camera MP4 to: 01_Media/Source/Video/
-5. Copy DJI WAV to: 99_Pipeline/DJI_Audio/
-6. Add music/graphics to: 01_Media/Assets/
+        log_content += f"""1. Copy camera MP4 to: 01_Media/Source/Video/
+2. Copy DJI WAV to: 99_Pipeline/DJI_Audio/
+3. Add music/graphics to: 01_Media/Assets/
+4. Open 01_Media/{folder_name}.prproj in Premiere Pro
 """
     
     log_content += f"""
@@ -140,7 +142,21 @@ def copy_template(template_path: str, dest_path: str, folder_type: str) -> None:
         for f in files:
             if f == '.gitkeep':
                 os.remove(os.path.join(root, f))
-    
+
+    # Type 2: rename PROJECT_NAME.gdoc and copy .prproj template
+    if "Type 2" in folder_type:
+        gdoc_src = os.path.join(dest_path, "PROJECT_NAME.gdoc")
+        gdoc_dst = os.path.join(dest_path, f"{folder_name}.gdoc")
+        if os.path.exists(gdoc_src) and not os.path.exists(gdoc_dst):
+            os.rename(gdoc_src, gdoc_dst)
+
+        prproj_dst = os.path.join(dest_path, "01_Media", f"{folder_name}.prproj")
+        if not os.path.exists(prproj_dst):
+            if os.path.exists(PRPROJ_TEMPLATE):
+                shutil.copy2(PRPROJ_TEMPLATE, prproj_dst)
+            else:
+                open(prproj_dst, "w").close()  # empty placeholder if template missing
+
     # Print structure
     print(f"📁 {folder_name}/")
     for line in get_tree(dest_path):
@@ -170,12 +186,10 @@ def copy_template(template_path: str, dest_path: str, folder_type: str) -> None:
 ✅ Type 2 (Production) ready!
 
 📋 Next steps:
-   1. Rename PROJECT_NAME.gdoc → {folder_name}.gdoc
-   2. Rename PROJECT_NAME_Source.prproj → {folder_name}_Source.prproj
-   3. Rename PROJECT_NAME.prproj → {folder_name}.prproj
-   4. Copy camera MP4 to: 01_Media/Source/Video/
-   5. Copy DJI WAV to: 99_Pipeline/DJI_Audio/
-   6. Add music/graphics to: 01_Media/Assets/
+   1. Copy camera MP4 to: 01_Media/Source/Video/
+   2. Copy DJI WAV to: 99_Pipeline/DJI_Audio/
+   3. Add music/graphics to: 01_Media/Assets/
+   4. Open 01_Media/{folder_name}.prproj in Premiere Pro
 
 📝 Log: 01_Media/Source/Setup/logs/{log_filename}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

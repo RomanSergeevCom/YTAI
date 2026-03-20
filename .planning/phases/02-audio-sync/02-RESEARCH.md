@@ -403,7 +403,7 @@ def residual_to_frames(residual_sec: float, fps: float) -> float:
 | AUD-03 | Best TX WAV selected by waveform correlation (not timestamp) | unit | `python3 -m pytest .../tests/test_0104.py::test_candidate_selection -x` | Wave 0 |
 | AUD-04 | TX01 WAV trimmed to clip duration at correct offset | unit | `python3 -m pytest .../tests/test_0104.py::test_tx01_trim -x` | Wave 0 |
 | AUD-05 | TX02 WAV trimmed to clip duration at correct offset | unit | `python3 -m pytest .../tests/test_0104.py::test_tx02_trim -x` | Wave 0 |
-| AUD-06 | Sync delta reported in frames; ≤1F on reference project | integration (manual) | manual on YTCR_1_Arty_Dzis | manual |
+| AUD-06 | Sync delta reported in frames; ≤1F on reference project | integration (manual) | manual on YTCR01_Arty_Dzis | manual |
 | AUD-07 | Per-scene ingest.json has A1/A2/A3 tracks | unit | `python3 -m pytest .../tests/test_0104.py::test_ingest_tracks -x` | Wave 0 |
 
 ### Sampling Rate

@@ -65,7 +65,7 @@ created: 2026-03-17
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Reference project YTCR_1_Arty_Dzis dry-run output | ORG-01–06 | Live volume required | Run `python 0100_organize.py --project "/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis" --dry-run` and verify printed plan |
+| Reference project YTCR01_Arty_Dzis dry-run output | ORG-01–06 | Live volume required | Run `python 0100_organize.py --project "/Volumes/RYA T7 Black/YTCR01_Arty_Dzis" --dry-run` and verify printed plan |
 | v3.0 skeleton matches YTAI_Folder_Templates | ORG-06 | Template comparison | Inspect created dirs against `YTAI_Folder_Templates/Type2_Production/` |
 
 ---

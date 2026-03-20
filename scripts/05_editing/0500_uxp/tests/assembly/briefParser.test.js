@@ -2,7 +2,8 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { parseBrief, parseTimecode, formatTimecode, buildBlocks } = require('../../src/assembly/briefParser');
+const { parseBrief, parseTimecode, formatTimecode, buildBlocks, fixAdjacentColors } = require('../../src/assembly/briefParser');
+const { MARKER_COLOR_INDEX } = require('../../src/shared/constants');
 
 const FIXTURE_PATH = path.join(__dirname, '..', 'fixtures', 'sample_brief.json');
 const sampleJSON = fs.readFileSync(FIXTURE_PATH, 'utf8');
@@ -74,6 +75,19 @@ describe('parseBrief — Format A (segments array)', () => {
   it('returns project name from project section', () => {
     const result = parseBrief(sampleJSON);
     assert.equal(result.projectName, 'YTCG37_Setup_UAE_Company_Remotely');
+  });
+
+  it('returns producerSpeaker from project.producer_speaker', () => {
+    // Add producer_speaker to the fixture
+    const json = JSON.parse(sampleJSON);
+    json.project.producer_speaker = 'Speaker 2';
+    const result = parseBrief(JSON.stringify(json));
+    assert.equal(result.producerSpeaker, 'Speaker 2');
+  });
+
+  it('returns empty producerSpeaker when not set', () => {
+    const result = parseBrief(sampleJSON);
+    assert.equal(result.producerSpeaker, '');
   });
 
   it('returns project settings', () => {
@@ -211,5 +225,77 @@ describe('parseBrief — Format B (clips array)', () => {
     assert.equal(result.segments[0].speaker, 'Host');
     assert.equal(result.segments[0].inSec, 0);
     assert.equal(result.segments[0].outSec, 30);
+  });
+});
+
+// --- fixAdjacentColors ---
+
+describe('fixAdjacentColors', () => {
+  it('swaps second block when adjacent blocks have same marker index (Purple+Magenta)', () => {
+    var blocks = [
+      { id: 1, color: 'Purple', segments: [{ color: 'Purple' }] },
+      { id: 2, color: 'Magenta', segments: [{ color: 'Magenta' }] }
+    ];
+    fixAdjacentColors(blocks);
+    // Second block should no longer share marker index 2
+    assert.notEqual(MARKER_COLOR_INDEX[blocks[1].color], MARKER_COLOR_INDEX[blocks[0].color]);
+    // Color propagated to segments
+    assert.equal(blocks[1].segments[0].color, blocks[1].color);
+  });
+
+  it('does not change non-colliding adjacent blocks', () => {
+    var blocks = [
+      { id: 1, color: 'Green', segments: [{ color: 'Green' }] },
+      { id: 2, color: 'Blue', segments: [{ color: 'Blue' }] }
+    ];
+    fixAdjacentColors(blocks);
+    assert.equal(blocks[0].color, 'Green');
+    assert.equal(blocks[1].color, 'Blue');
+  });
+
+  it('avoids right neighbor marker index when selecting replacement', () => {
+    var blocks = [
+      { id: 1, color: 'Purple', segments: [{ color: 'Purple' }] },
+      { id: 2, color: 'Magenta', segments: [{ color: 'Magenta' }] },
+      { id: 3, color: 'Green', segments: [{ color: 'Green' }] }
+    ];
+    fixAdjacentColors(blocks);
+    // Block 2 should avoid both Purple's marker index (2) and Green's (0)
+    assert.notEqual(MARKER_COLOR_INDEX[blocks[1].color], MARKER_COLOR_INDEX['Purple']);
+    assert.notEqual(MARKER_COLOR_INDEX[blocks[1].color], MARKER_COLOR_INDEX['Green']);
+  });
+
+  it('handles single block without error', () => {
+    var blocks = [{ id: 1, color: 'Purple', segments: [] }];
+    fixAdjacentColors(blocks);
+    assert.equal(blocks[0].color, 'Purple');
+  });
+
+  it('handles empty array without error', () => {
+    fixAdjacentColors([]);
+  });
+
+  it('replaces Orange block with valid block color', () => {
+    var blocks = [
+      { id: 1, color: 'Green', segments: [{ color: 'Green' }] },
+      { id: 2, color: 'Orange', segments: [{ color: 'Orange' }, { color: 'Orange' }] }
+    ];
+    fixAdjacentColors(blocks);
+    assert.notEqual(blocks[1].color, 'Orange', 'Orange should be replaced');
+    // Propagated to all segments
+    assert.equal(blocks[1].segments[0].color, blocks[1].color);
+    assert.equal(blocks[1].segments[1].color, blocks[1].color);
+  });
+
+  it('replaces Orange avoiding neighbor marker indices', () => {
+    var blocks = [
+      { id: 1, color: 'Green', segments: [{ color: 'Green' }] },
+      { id: 2, color: 'Orange', segments: [{ color: 'Orange' }] },
+      { id: 3, color: 'Blue', segments: [{ color: 'Blue' }] }
+    ];
+    fixAdjacentColors(blocks);
+    assert.notEqual(blocks[1].color, 'Orange', 'Orange should be replaced');
+    assert.notEqual(MARKER_COLOR_INDEX[blocks[1].color], MARKER_COLOR_INDEX['Green'], 'Should avoid left neighbor');
+    assert.notEqual(MARKER_COLOR_INDEX[blocks[1].color], MARKER_COLOR_INDEX['Blue'], 'Should avoid right neighbor');
   });
 });

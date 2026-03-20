@@ -459,7 +459,7 @@ Tests use `tmp_path` (pytest fixture) to create a fake project with minimal file
 ### Primary (HIGH confidence)
 - `/Users/romansergeev/YTAI/scripts/run_pipeline.py` — full organize logic, `discover_media_files()`, `organize_media_files()`, `_get_scene_name()`, `DJI_RAW_RE`, `V3_MANAGED_DIRS`, `_deep_merge_template()`, `run_init()`
 - `/Users/romansergeev/YTAI/YTAI_Folder_Templates/Type2_Production/` — verified complete folder structure via `find`
-- `/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis/` — verified reference project structure: 7 scene folders, TX01/TX02/TX02_2/ with exact WAV filenames, `al_qudra_lake/100GOPRO/` subfolder confirmed
+- `/Volumes/RYA T7 Black/YTCR01_Arty_Dzis/` — verified reference project structure: 7 scene folders, TX01/TX02/TX02_2/ with exact WAV filenames, `al_qudra_lake/100GOPRO/` subfolder confirmed
 - `/Users/romansergeev/YTAI/scripts/01_prepare/0102_extract_audio/0102_extract_audio.py` — per_clip path convention, VIDEO_EXTS set
 - `/Users/romansergeev/YTAI/scripts/01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py` — DJI_SUBDIR, AUDIO_SUBDIR, CLIPS_SUBDIR constants
 

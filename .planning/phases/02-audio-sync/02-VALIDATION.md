@@ -43,7 +43,7 @@ created: 2026-03-17
 | 2-01-03 | 01 | 0 | AUD-03 | unit | `pytest tests/test_0104.py::test_find_best_tx_candidate -x` | W0 | pending |
 | 2-01-04 | 01 | 0 | AUD-04 | unit | `pytest tests/test_0104.py::test_trim_tx_to_clip -x` | W0 | pending |
 | 2-01-05 | 01 | 0 | AUD-05 | unit | `pytest tests/test_0104.py::test_trim_tx_to_clip -x` | W0 | pending |
-| 2-01-06 | 01 | 1 | AUD-06 | manual | manual on YTCR_1_Arty_Dzis apartment scene | manual | pending |
+| 2-01-06 | 01 | 1 | AUD-06 | manual | manual on YTCR01_Arty_Dzis apartment scene | manual | pending |
 | 2-01-07 | 01 | 0 | AUD-07 | unit | `pytest tests/test_0104.py::test_generate_ingest_json -x` | W0 | pending |
 
 *Status: pending / green / red / flaky*
@@ -65,7 +65,7 @@ created: 2026-03-17
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Sync delta <=1F per clip on reference project | AUD-06 | Live volume + real audio correlation required | Run `python 0104_sync_audio_nested.py --project "/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis" --scene apartment` and verify sync report shows <=1F for all 40 clips |
+| Sync delta <=1F per clip on reference project | AUD-06 | Live volume + real audio correlation required | Run `python 0104_sync_audio_nested.py --project "/Volumes/RYA T7 Black/YTCR01_Arty_Dzis" --scene apartment` and verify sync report shows <=1F for all 40 clips |
 | Correct TX WAV selected when overlapping | AUD-03 | Requires real TX WAVs crossing scene boundaries | Inspect sync report — verify TX01 candidate path differs across clips if TX01_MIC001 ends mid-scene |
 
 ---

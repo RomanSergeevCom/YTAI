@@ -10,7 +10,7 @@ requires:
     provides: move_scene_clips, move_dji_wavs, move_xml_sidecars functions with full test coverage
 provides:
   - Validated organize script with structured dry-run output
-  - Human-approved end-to-end verification on real reference project (YTCR_1_Arty_Dzis)
+  - Human-approved end-to-end verification on real reference project (YTCR01_Arty_Dzis)
   - Phase 1 gate cleared — organize script safe to run on production data
 affects: [02-transcribe, 03-audio-sync, run_pipeline.py]
 
@@ -43,7 +43,7 @@ completed: 2026-03-17
 
 # Phase 1 Plan 03: Dry-Run Verification Summary
 
-**Structured dry-run output added to organize script and human-verified against 7-scene/325-clip reference project YTCR_1_Arty_Dzis**
+**Structured dry-run output added to organize script and human-verified against 7-scene/325-clip reference project YTCR01_Arty_Dzis**
 
 ## Performance
 
@@ -63,7 +63,7 @@ completed: 2026-03-17
 ## Task Commits
 
 1. **Task 1: Add structured dry-run summary output to organize script** - `9469233` (feat)
-2. **Task 2: Verify dry-run output on reference project YTCR_1_Arty_Dzis** - `31705bc` (chore — human-verify checkpoint approved)
+2. **Task 2: Verify dry-run output on reference project YTCR01_Arty_Dzis** - `31705bc` (chore — human-verify checkpoint approved)
 
 **Plan metadata:** _(this summary commit)_
 

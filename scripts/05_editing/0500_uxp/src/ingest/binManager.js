@@ -66,4 +66,43 @@ async function createBinStructure(project, logger) {
   return bins;
 }
 
-module.exports = { createBinStructure, BIN_NAMES };
+/**
+ * Create scene sub-bins inside 00_Source.
+ * E.g. 00_Source/01_Interview, 00_Source/02_Car, 00_Source/03_Coffee
+ *
+ * @param {Object} project - Premiere Pro project
+ * @param {Object} sourceBin - The 00_Source FolderItem
+ * @param {string[]} sceneNames - Array of scene names (e.g. ['01_Interview', '02_Car'])
+ * @param {Object} logger - Logger instance
+ * @returns {Object} Map of scene name -> FolderItem reference
+ */
+async function createSceneBins(project, sourceBin, sceneNames, logger) {
+  if (!sourceBin || !sceneNames || sceneNames.length === 0) {
+    logger.debug('No scene bins to create');
+    return {};
+  }
+
+  project.lockedAccess(() => {
+    project.executeTransaction((compoundAction) => {
+      for (const scene of sceneNames) {
+        const action = sourceBin.createBinAction(scene, true);
+        compoundAction.addAction(action);
+      }
+    }, 'Create scene sub-bins');
+  });
+
+  // Get created sub-bins and cast to FolderItem
+  const sceneBins = {};
+  const items = await sourceBin.getItems();
+  for (const item of items) {
+    if (sceneNames.includes(item.name)) {
+      const folder = ppro.FolderItem.cast(item);
+      sceneBins[item.name] = folder || item;
+    }
+  }
+
+  logger.info(`Scene sub-bins: ${Object.keys(sceneBins).join(', ')}`);
+  return sceneBins;
+}
+
+module.exports = { createBinStructure, createSceneBins, BIN_NAMES };

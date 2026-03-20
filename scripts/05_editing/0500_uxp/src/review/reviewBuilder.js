@@ -11,9 +11,11 @@
  * Assembly segments are empty gaps. Editor sees WHERE content was removed.
  *
  * Color scheme by exclusion category:
- *   Red    — block=99 (explicitly cut: noise, errors, repeats)
- *   Yellow — priority=2 (alternative take, might be useful)
- *   Purple — use=FALSE, no specific reason / synthetic gap (review candidate)
+ *   Teal     — expert/talent speaking (non-producer speaker with name)
+ *   Lavender — producer/interviewer speaking
+ *   Red      — block=99 (explicitly cut: noise, errors, repeats)
+ *   Yellow   — priority=2 (alternative take, might be useful)
+ *   Purple   — use=FALSE, no specific reason / synthetic gap (review candidate)
  *
  * Pattern mirrors assemblyBuilder.js — same pre-trim + insert flow,
  * reuses shared clipActions for trim/color operations.
@@ -29,7 +31,7 @@ try {
   ppro = require('../../tests/mocks/premierepro');
 }
 
-const { REVIEW_COLOR_MAP } = require('../shared/constants');
+const { REVIEW_COLOR_MAP, REVIEW_PRODUCER_COLOR, REVIEW_EXPERT_COLOR, LABEL_COLOR_INDEX } = require('../shared/constants');
 const { applyColorByIndex, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
 
 // Minimum gap duration (seconds) — gaps shorter than this are skipped
@@ -45,6 +47,40 @@ function getReviewCategory(seg) {
   if (seg.block === 99) return 'cut';
   if (seg.priority === 2 || seg.priority === '2') return 'alt';
   return 'skip';
+}
+
+/**
+ * Determine label color index for a review segment.
+ * Priority: producer speaker → block=99 cut → block-based color → category fallback.
+ *
+ * @param {Object} seg - Normalized segment
+ * @param {Object} [opts] - { producerSpeaker: string, assemblyBlocks: Array }
+ * @returns {number} Premiere label color index
+ */
+function getReviewColorIdx(seg, opts) {
+  // 1. Producer speaker → Lavender (context only, not for final edit)
+  if (opts && opts.producerSpeaker && seg.speaker === opts.producerSpeaker) {
+    return REVIEW_PRODUCER_COLOR.labelIdx;
+  }
+  // 1.5. Expert/talent on camera — any non-empty, non-producer speaker → Teal
+  if (seg.speaker && seg.speaker !== '') {
+    return REVIEW_EXPERT_COLOR.labelIdx;
+  }
+  // 2. block=99 → Red (always — explicitly cut content)
+  if (seg.block === 99) return REVIEW_COLOR_MAP.cut.labelIdx;
+  // 3. Segment from a block that has Assembly content → use block's own color
+  if (opts && opts.assemblyBlocks && seg.block > 0) {
+    for (var i = 0; i < opts.assemblyBlocks.length; i++) {
+      var bd = opts.assemblyBlocks[i];
+      if (bd.block === seg.block && bd.usedCount > 0 && bd.color) {
+        var idx = LABEL_COLOR_INDEX[bd.color];
+        if (idx !== undefined) return idx;
+      }
+    }
+  }
+  // 4. Fallback → category-based (Yellow for alt, Purple for skip)
+  var cat = getReviewCategory(seg);
+  return REVIEW_COLOR_MAP[cat].labelIdx;
 }
 
 /**
@@ -330,9 +366,10 @@ function computeClipOffsets(clipDurations) {
  * @param {string} projectName - Project name for sequence naming
  * @param {Object} logger - Logger instance
  * @param {Object} clipDurations - { filename: durationSec } for complement calculation
+ * @param {Object} [opts] - { producerSpeaker: string, assemblyBlocks: Array } for color logic
  * @returns {{ sequence, segments, clipCount, totalDuration, clipOffsets, ingestDuration }}
  */
-async function buildReviewSequence(project, clipMap, segments, projectName, logger, clipDurations) {
+async function buildReviewSequence(project, clipMap, segments, projectName, logger, clipDurations, opts) {
   const seqName = projectName + '_3_Review';
 
   // Compute review segments using complement approach
@@ -396,9 +433,9 @@ async function buildReviewSequence(project, clipMap, segments, projectName, logg
 
   if (logger) logger.info('First clip: "' + firstRawItem.name + '" cast=' + (castOk ? 'OK' : 'FAILED (using raw)'));
 
-  // Set color by review category BEFORE creating sequence
+  // Set color by review logic (speaker → block → category) BEFORE creating sequence
   var firstCat = getReviewCategory(firstSeg);
-  var firstColorIdx = REVIEW_COLOR_MAP[firstCat].labelIdx;
+  var firstColorIdx = getReviewColorIdx(firstSeg, opts);
   applyColorByIndex(project, firstRawItem, firstColorIdx, firstSeg.id, logger);
 
   // Set source in/out BEFORE creating sequence
@@ -457,9 +494,9 @@ async function buildReviewSequence(project, clipMap, segments, projectName, logg
     var castClip = ppro.ClipProjectItem.cast(rawItem);
     var clipForTrim = castClip || rawItem;
 
-    // Set color by review category BEFORE insert
+    // Set color by review logic (speaker → block → category) BEFORE insert
     var cat = getReviewCategory(seg);
-    var colorIdx = REVIEW_COLOR_MAP[cat].labelIdx;
+    var colorIdx = getReviewColorIdx(seg, opts);
     applyColorByIndex(project, rawItem, colorIdx, seg.id, logger);
 
     // Set source in/out points BEFORE insert (using CAST item)
@@ -558,6 +595,7 @@ module.exports = {
   buildReviewSequence,
   sortReviewSegments,
   getReviewCategory,
+  getReviewColorIdx,
   computeComplement,
   computeClipOffsets,
   subtractBriefFromRange,

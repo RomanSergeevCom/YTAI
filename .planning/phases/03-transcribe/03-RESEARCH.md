@@ -139,7 +139,7 @@ def detect_scenes(project: Path) -> list[Path]:
     ])
 ```
 
-Note: The reference project (YTCR_1_Arty_Dzis) has scene names like `volleyball`, `apartment`, `desert_drive` — NOT prefixed with `\d{2}_`. The `\d{2}_` pattern in `ingest_json.py` is for the **older** multi-folder style. Scene detection for nested projects should match any non-hidden subdirectory of `Source/Video/`.
+Note: The reference project (YTCR01_Arty_Dzis) has scene names like `volleyball`, `apartment`, `desert_drive` — NOT prefixed with `\d{2}_`. The `\d{2}_` pattern in `ingest_json.py` is for the **older** multi-folder style. Scene detection for nested projects should match any non-hidden subdirectory of `Source/Video/`.
 
 ### Pattern 2: Per-Scene Transcription Invocation
 
@@ -180,7 +180,7 @@ def collect_scene_transcript(scene_dir: Path, project: Path) -> Path:
 # merged_transcript.json structure (new, for Phase 4 UXP consumption)
 {
     "version": "1.0",
-    "project": "YTCR_1_Arty_Dzis",
+    "project": "YTCR01_Arty_Dzis",
     "scenes": ["volleyball", "apartment", "desert_drive", ...],
     "words": [
         {
@@ -201,7 +201,7 @@ def collect_scene_transcript(scene_dir: Path, project: Path) -> Path:
 
 ### Anti-Patterns to Avoid
 
-- **Pointing the transcription script at the project root for all scenes at once:** Produces a single `YTCR_1_Arty_Dzis_transcript.json` — not per-scene, breaks TRN-02 and TRN-03 independently.
+- **Pointing the transcription script at the project root for all scenes at once:** Produces a single `YTCR01_Arty_Dzis_transcript.json` — not per-scene, breaks TRN-02 and TRN-03 independently.
 - **Hardcoding scene names:** Detect from filesystem; reference project has 7 scenes but the pattern must generalize.
 - **Global timecodes in merged_transcript.json:** The UXP plugin routes by `scene_id` then seeks within scene. Global timecodes are meaningless across different Premiere timelines.
 - **Re-running all scenes when only one changed:** The script must support `--scene` to process a single scene (TRN-03 success criterion 3).
@@ -224,7 +224,7 @@ def collect_scene_transcript(scene_dir: Path, project: Path) -> Path:
 ## Common Pitfalls
 
 ### Pitfall 1: scene_transcript.json Naming Mismatch
-**What goes wrong:** `transcribe_project.py` names output based on the folder name passed to `--project`. If you pass `Source/Video/apartment`, the output is `apartment_transcript.json`. If you pass the project root, the output is `YTCR_1_Arty_Dzis_transcript.json`.
+**What goes wrong:** `transcribe_project.py` names output based on the folder name passed to `--project`. If you pass `Source/Video/apartment`, the output is `apartment_transcript.json`. If you pass the project root, the output is `YTCR01_Arty_Dzis_transcript.json`.
 **Why it happens:** The script uses `input_path.name` as `project_name`.
 **How to avoid:** Always pass the scene subfolder as `--project`; the wrapper controls output collection.
 **Warning signs:** Output JSON named after project root, not scene.

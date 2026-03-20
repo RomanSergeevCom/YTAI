@@ -34,7 +34,7 @@ See REQUIREMENTS.md for full list with REQ-IDs.
 - Wireless mics: DJI-style TX01 / TX02 lavalier mics, each recording to a dedicated WAV folder with timestamp in filename
 - Current flat-project pipeline handles single-scene projects well
 - Nested projects (multi-scene) require per-scene organize + sync + transcription, then cross-scene brief assembly
-- Reference project: `/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis` — 7 scenes, 3 TX folders (TX01, TX02, TX02_2)
+- Reference project: `/Volumes/RYA T7 Black/YTCR01_Arty_Dzis` — 7 scenes, 3 TX folders (TX01, TX02, TX02_2)
 
 ## Constraints
 

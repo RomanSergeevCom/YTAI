@@ -6,7 +6,7 @@ score: 11/12 must-haves verified
 human_verification:
   - test: "Run the script on the reference project (apartment scene) and confirm apartment_ingest.json has 40 clips each with A2.type=TX01_SYNC and A3.type=TX02_SYNC. Spot-check 2-3 clips for audio alignment."
     expected: "All 40 clips processed, sync delta ≤1F for each, ingest.json A1/A2/A3 structure correct."
-    why_human: "The external drive /Volumes/RYA T7 Black/YTCR_1_Arty_Dzis is not mounted in this environment. Runtime artifacts (apartment_ingest.json, TX*.wav files) cannot be verified programmatically. The 02-03-SUMMARY.md reports human approval was obtained during plan execution."
+    why_human: "The external drive /Volumes/RYA T7 Black/YTCR01_Arty_Dzis is not mounted in this environment. Runtime artifacts (apartment_ingest.json, TX*.wav files) cannot be verified programmatically. The 02-03-SUMMARY.md reports human approval was obtained during plan execution."
 ---
 
 # Phase 2: Audio Sync Verification Report
@@ -98,7 +98,7 @@ No anti-patterns detected in `scripts/01_prepare/0104_sync_audio_nested/0104_syn
 **Test:** Mount the reference drive and run:
 ```
 python scripts/01_prepare/0104_sync_audio_nested/0104_sync_audio_nested.py \
-  --project "/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis" \
+  --project "/Volumes/RYA T7 Black/YTCR01_Arty_Dzis" \
   --scene apartment \
   --dry-run
 ```
@@ -109,7 +109,7 @@ then the live run, and verify:
 
 **Expected:** All 40 clips processed, sync delta ≤1F, ingest.json structure correct.
 
-**Why human:** The external project drive (`/Volumes/RYA T7 Black/YTCR_1_Arty_Dzis`) is not mounted in this environment. Runtime file outputs cannot be verified programmatically. Note: 02-03-SUMMARY.md documents that this verification was completed and approved during plan execution — this item is a re-confirmation gate only.
+**Why human:** The external project drive (`/Volumes/RYA T7 Black/YTCR01_Arty_Dzis`) is not mounted in this environment. Runtime file outputs cannot be verified programmatically. Note: 02-03-SUMMARY.md documents that this verification was completed and approved during plan execution — this item is a re-confirmation gate only.
 
 ---
 
