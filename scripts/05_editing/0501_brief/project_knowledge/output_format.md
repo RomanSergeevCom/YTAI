@@ -1,4 +1,4 @@
-# Output JSON Format: {project}_edit_brief.json
+# Output JSON Format: {CODE}_pre_edit_brief.json
 
 JSON contains three sections: `segments` (array), `screens` (array, optional), and `project` (settings).
 
@@ -24,7 +24,7 @@ Each element is one video segment. Numbering is sequential across all clips.
 |-------|------|---------|-----|-------------|
 | `segment_name` | string | auto | 100 chars | Segment name ("Opening question about business") |
 | `speaker` | string | — | — | Who is speaking (from `speaker` field in transcript) |
-| `transcript` | string | — | 500 chars | Segment text. Truncate if longer than 500 |
+| `transcript` | string | — | 500 chars | Brief summary or key phrase of the segment (NOT the full text). Full text is pulled from transcript.json at display time via source_file + tc_in/tc_out lookup. Can be empty — used as editor note. |
 | `track` | string | `"V1"` | — | Always `"V1"` — the panel decides inclusion based on `use` field |
 | `color` | string | by block | — | One of: Cyan, Blue, Green, Yellow, Red, Magenta, Orange, Purple |
 | `priority` | int | 1 | 1-9 | 1 = primary take, 2 = alternative take (→ ALT/Yellow in Review), 9 = cut/noise (→ CUT/Red in Review) |
@@ -47,7 +47,7 @@ Formula: `MM = floor(seconds / 60)`, `SS.s = seconds % 60` (one decimal place)
 
 1. **tc_in / tc_out** — local time within the clip (segment's `start`/`end` fields in transcript.json)
 2. **Segments with use="FALSE"** must also be included — they are kept in the brief for review and reference
-3. **transcript** — truncate to 500 characters, no line breaks
+3. **transcript** — brief summary or key phrase (max 500 chars). Full text is sourced from transcript.json at display time. The brief is the source of truth for *what to do*; transcript.json is the source of truth for *what was said*.
 4. **segment_id** numbered sequentially across all clips
 5. **source_file** — exact filename with extension
 6. **Block 99** — reserved for cuts, noise, expletives, between-takes content. Always color **Red**, priority **9**
@@ -195,6 +195,93 @@ Project settings. Core values taken from `clips[0].media` in transcript.json.
 |-----|------|---------|-------------|
 | `_transcription_dir` | string | `""` | Transcription folder name for loading Premiere transcripts (e.g. `"YTAI_Edit_transcription"`) |
 
+## changelog[] (from v2 onwards)
+
+Version history of editing decisions. Added when the brief is updated (v2, v3, etc.). Each entry documents what changed, why, and who requested it.
+
+**Not present in v1** — only appears after the first round of edits.
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `version` | string | Version tag: `"v2"`, `"v3"`, etc. |
+| `date` | string | ISO date: `"2026-03-20"` |
+| `source` | string | What triggered this version: `"editor_markers"`, `"chat_request"`, `"review_notes"` |
+| `summary` | string | One-line summary of all changes in this version |
+| `changes` | array | List of individual changes |
+
+### Change entry fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | string | `"cut"`, `"add"`, `"move"`, `"trim"`, `"reorder"`, `"merge"`, `"split"`, `"recolor"` |
+| `segment_id` | string | Which segment was changed (e.g. `"seg_035"`) |
+| `description` | string | Human-readable description of the change |
+| `reason` | string | Why — from editor notes, chat, or auto-detected |
+| `was` | string | Previous value (for trim/move: old tc, old block) |
+| `now` | string | New value |
+
+### Example
+
+```json
+"changelog": [
+  {
+    "version": "v2",
+    "date": "2026-03-20",
+    "source": "editor_markers",
+    "summary": "Removed Hook flash 1h per editor note, trimmed ROI segment, kept block 2a per editor request",
+    "changes": [
+      {
+        "type": "cut",
+        "segment_id": "seg_017",
+        "description": "Moved 1h (EOI day) to Block 99",
+        "reason": "Editor note: 'давай этот блок уберем'"
+      },
+      {
+        "type": "trim",
+        "segment_id": "seg_035",
+        "description": "Trimmed tc_out from 17:54.5 to 17:27.9",
+        "reason": "Last 16s 'ROI punchline' already used in Hook",
+        "was": "17:54.5",
+        "now": "17:27.9"
+      },
+      {
+        "type": "add",
+        "segment_id": "seg_107",
+        "description": "Moved from SKIP to Block 11 (Market Intelligence)",
+        "reason": "Editor note: 'нужно оставить несколько моментов'"
+      }
+    ]
+  }
+]
+```
+
+### How changelog renders in HTML
+
+Each version gets a collapsible section at the top of the HTML review:
+
+```html
+<details open>
+  <summary>📋 v2 — 3 changes (2026-03-20, from editor markers)</summary>
+  <table>
+    <tr><td>🔴 CUT</td><td>seg_017</td><td>1h · EOI day → Block 99</td><td>Editor: давай этот блок уберем</td></tr>
+    <tr><td>✂️ TRIM</td><td>seg_035</td><td>tc_out: 17:54.5 → 17:27.9</td><td>ROI punchline duplicate</td></tr>
+    <tr><td>🟢 ADD</td><td>seg_107</td><td>SKIP → Block 11</td><td>Editor: нужно оставить моменты</td></tr>
+  </table>
+</details>
+```
+
+### How changelog affects segment notes
+
+When a segment is changed, its `notes` field gets a version tag prepended:
+
+```
+[v2 editor] давай этот блок уберем | Original notes: HOOK FLASH 8 — 34 sec...
+```
+
+This way even without the changelog section, each segment shows its edit history inline.
+
 ## ASSEMBLY Sequence Workflow
 
 The UXP panel (0500_uxp) creates one sequence from the edit brief:
@@ -231,10 +318,10 @@ All YTAI project files use `{project}_` prefix for identification:
 | File | Pattern | Example |
 |------|---------|---------|
 | Transcript | `{project}_transcript.json` | `YTAI_Edit_transcript.json` |
-| Edit brief | `{project}_edit_brief.json` | `YTAI_Edit_edit_brief.json` |
+| Edit brief | `{CODE}_pre_edit_brief.json` | `YTCG37_pre_edit_brief.json` |
 | Assembly SRT | `{project}_2_Assembly_captions.srt` | auto from `generate_assembly_captions.py` |
 | Review SRT | `{project}_3_Review_captions.srt` | auto from `generate_assembly_captions.py --review` |
-| Screen Cues SRT | `{project}_4_ScreenCues_captions.srt` | auto from `generate_screen_cues.py` |
-| Review HTML | `{project}_edit_brief_review.html` | auto from `generate_review.py` |
+| Screen Cues SRT | `{CODE}_4_PreEdit_captions.srt` | auto from `generate_screen_cues.py` |
+| Review HTML | `{CODE}_pre_edit_brief_review.html` | auto from `generate_review.py` |
 
-The `{project}` value comes from the `project` field in transcript.json (e.g. `"YTAI_Edit"`).
+`{CODE}` = short project code extracted from project name (e.g. `YTCG37` from `YTCG37_Hadi_Dawani`).

@@ -72,8 +72,56 @@ def escape_html(text: str) -> str:
             .replace('"', "&quot;"))
 
 
-def generate_html(brief: dict) -> str:
-    """Generate HTML review document from {project}_pre_edit_brief.json."""
+def build_transcript_lookup(transcript_data: dict) -> dict:
+    """Build a lookup: {filename: [{start, end, text, confidence, low_confidence}, ...]}."""
+    lookup = {}
+    for clip in transcript_data.get("clips", []):
+        fname = clip.get("filename", "")
+        segs = []
+        for s in clip.get("segments", []):
+            segs.append({
+                "start": s.get("start", 0),
+                "end": s.get("end", 0),
+                "text": s.get("text", ""),
+                "confidence": s.get("confidence", s.get("avg_confidence", 0)),
+                "low_confidence": s.get("low_confidence", False),
+            })
+        lookup[fname] = segs
+    return lookup
+
+
+def lookup_full_text(tx_lookup: dict, source_file: str, tc_in_sec: float, tc_out_sec: float) -> tuple:
+    """Look up full transcript text for a brief segment from transcript.json.
+
+    Returns (full_text, avg_confidence, has_low_conf).
+    """
+    segs = tx_lookup.get(source_file, [])
+    if not segs:
+        return "", 0, False
+
+    matched = []
+    for s in segs:
+        # Check overlap > 0.5s
+        overlap = min(s["end"], tc_out_sec) - max(s["start"], tc_in_sec)
+        if overlap > 0.5:
+            matched.append(s)
+
+    if not matched:
+        return "", 0, False
+
+    full_text = " ".join(s["text"] for s in matched)
+    avg_conf = sum(s["confidence"] for s in matched) / len(matched)
+    has_low = any(s["low_confidence"] for s in matched)
+    return full_text, avg_conf, has_low
+
+
+def generate_html(brief: dict, transcript_data: dict = None) -> str:
+    """Generate HTML review document from {project}_pre_edit_brief.json.
+
+    If transcript_data is provided, full segment text is looked up from
+    transcript.json instead of using the brief's truncated transcript field.
+    """
+    tx_lookup = build_transcript_lookup(transcript_data) if transcript_data else {}
 
     segments = brief.get("segments", [])
     project = brief.get("project", {})
@@ -333,11 +381,28 @@ details[open] summary::before {{ transform: rotate(90deg); }}
             tc_in = seg.get("tc_in", "?")
             tc_out = seg.get("tc_out", "?")
             dur = parse_timecode(tc_out) - parse_timecode(tc_in)
-            transcript = seg.get("transcript", "")
             broll = seg.get("broll_note", "")
             notes = seg.get("notes", "")
             priority = seg.get("priority", 1)
             is_chapter = seg.get("is_chapter", "").upper() == "TRUE"
+
+            # Look up full text from transcript.json if available
+            tc_in_sec = parse_timecode(tc_in)
+            tc_out_sec = parse_timecode(tc_out)
+            full_text, seg_conf, has_low_conf = lookup_full_text(tx_lookup, source, tc_in_sec, tc_out_sec)
+            display_text = full_text if full_text else seg.get("transcript", "")
+
+            # Confidence badge
+            conf_badge = ""
+            if full_text and seg_conf > 0:
+                if seg_conf >= 0.85:
+                    conf_badge = f' <span class="badge" style="background:#2E7D32;color:white">{seg_conf:.0%}</span>'
+                elif seg_conf >= 0.65:
+                    conf_badge = f' <span class="badge" style="background:#9E8A00;color:white">{seg_conf:.0%}</span>'
+                else:
+                    conf_badge = f' <span class="badge" style="background:#A3282E;color:white">{seg_conf:.0%}</span>'
+                if has_low_conf:
+                    conf_badge += ' <span class="badge" style="background:#A3282E;color:white">⚠ CHECK</span>'
 
             use_badge = '<span class="badge badge-use">USE</span>' if is_used else '<span class="badge badge-skip">SKIP</span>'
             chapter_badge = ' <span class="badge badge-chapter">CHAPTER</span>' if is_chapter else ''
@@ -355,11 +420,10 @@ details[open] summary::before {{ transform: rotate(90deg); }}
                     <span class="seg-speaker">{escape_html(speaker)}</span>
                     <span class="seg-time">{escape_html(tc_in)} → {escape_html(tc_out)}</span>
                     <span class="seg-duration">{dur:.0f}s</span>
-                    {use_badge}{chapter_badge}{priority_badge}
+                    {use_badge}{chapter_badge}{priority_badge}{conf_badge}
                 </div>
 """)
-            if transcript:
-                display_text = transcript[:200] + ("..." if len(transcript) > 200 else "")
+            if display_text:
                 html_parts.append(f'                <div class="seg-text">"{escape_html(display_text)}"</div>')
 
             if broll or notes:
@@ -420,6 +484,10 @@ def main():
         "--output", default=None,
         help="Output HTML path (default: same dir as brief, _review.html)"
     )
+    parser.add_argument(
+        "--transcript", default=None,
+        help="Path to {project}_transcript.json for full-text lookup (optional)"
+    )
     args = parser.parse_args()
 
     brief_path = Path(args.brief)
@@ -430,7 +498,17 @@ def main():
     with open(brief_path, "r", encoding="utf-8") as f:
         brief = json.load(f)
 
-    html = generate_html(brief)
+    transcript_data = None
+    if args.transcript:
+        tx_path = Path(args.transcript)
+        if tx_path.exists():
+            with open(tx_path, "r", encoding="utf-8") as f:
+                transcript_data = json.load(f)
+            print(f"  Transcript loaded: {tx_path.name} ({len(transcript_data.get('clips', []))} clips)")
+        else:
+            print(f"  Warning: transcript not found: {tx_path}")
+
+    html = generate_html(brief, transcript_data)
 
     if args.output:
         output_path = Path(args.output)
