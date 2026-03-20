@@ -375,6 +375,7 @@
 
       <div class="btn-row">
         <sp-button id="btn-build-ingest" disabled>Build Ingest</sp-button>
+        <sp-button id="btn-import-srts" disabled variant="secondary" size="s">Import SRTs</sp-button>
       </div>
 
       <div class="validation-panel" id="ingest-validation"></div>
@@ -404,6 +405,7 @@
 
       <div class="btn-row">
         <sp-button id="btn-build-assembly" disabled>Build Assembly</sp-button>
+        <sp-button id="btn-export-markers" disabled variant="secondary" size="s">Export Markers</sp-button>
       </div>
 
       <div class="validation-panel" id="assembly-validation"></div>
@@ -430,9 +432,9 @@
       <div class="validation-panel" id="review-validation"></div>
     </div>
 
-    <!-- ═══════════ SCREEN CUES SECTION ═══════════ -->
+    <!-- ═══════════ PRE-EDIT SECTION ═══════════ -->
     <div class="section-header">
-      <span class="section-label">Screen Cues</span>
+      <span class="section-label">Pre-Edit</span>
     </div>
 
     <div class="section-content">
@@ -445,8 +447,12 @@
       <div class="progress-text" id="screens-progress-text"></div>
 
       <div class="btn-row">
+        <sp-button id="btn-export-screens" disabled variant="secondary">Export Pre-Edit</sp-button>
+        <sp-button id="btn-import-screens" disabled variant="secondary">Import Pre-Edit</sp-button>
+      </div>
+      <div class="btn-row">
         <sp-button id="btn-generate-pngs" disabled>Generate PNGs</sp-button>
-        <sp-button id="btn-build-screens" disabled>Build Screen Cues</sp-button>
+        <sp-button id="btn-build-screens" disabled>Build Pre-Edit</sp-button>
       </div>
 
       <div class="validation-panel" id="screens-validation"></div>
@@ -479,9 +485,9 @@
     </div>
     <div id="review-log-panel" class="log-panel"></div>
 
-    <!-- ═══════════ SCREEN CUES LOG ═══════════ -->
+    <!-- ═══════════ PRE-EDIT LOG ═══════════ -->
     <div class="log-header">
-      <span class="section-label">Screen Cues Log</span>
+      <span class="section-label">Pre-Edit Log</span>
       <span class="log-path-text" id="screens-log-path"></span>
       <button class="clear-log-btn" id="btn-copy-screens-log-path">copy path</button>
       <button class="clear-log-btn" id="btn-clear-screens-log">clear</button>

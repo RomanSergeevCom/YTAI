@@ -194,6 +194,8 @@ function resetAllPipelineStates() {
   $('ingest-summary').style.display = 'none';
   $('ingest-file-info').textContent = '';
   $('btn-build-ingest').setAttribute('disabled', 'true');
+  $('btn-import-srts').setAttribute('disabled', 'true');
+  $('btn-export-markers').setAttribute('disabled', 'true');
   $('ingest-validation').style.display = 'none';
   hideIngestProgress();
 
@@ -387,6 +389,8 @@ async function autoDetectFiles(folderPath, projectName) {
 
   $('project-checklist').innerHTML = checklistHtml;
   $('project-actions-row').style.display = 'flex';
+  $('btn-import-srts').removeAttribute('disabled');
+  $('btn-export-markers').removeAttribute('disabled');
   ingestLogger.info('Auto-detection complete: ingest=' + projectState.ingestDetected + ', brief=' + projectState.briefDetected);
 }
 
@@ -440,8 +444,55 @@ async function loadIngestFromPath(filePath) {
   $('ingest-file-info').textContent = 'File: ' + filePath;
   $('btn-build-ingest').removeAttribute('disabled');
 
-  setIngestStatus('Ingest loaded. Ready to build.', 'ready');
   ingestLogger.info('Ingest loaded: ' + ingest.clips.length + ' clips, project "' + ingest.project_name + '" (code: ' + ingest.project_code + ')');
+
+  // Check if sequences already exist in the Premiere project
+  var existingSeqs = await detectExistingSequences(ingest);
+  if (existingSeqs.length > 0) {
+    setIngestStatus('Sequences built (' + existingSeqs.length + '). Rebuild if needed.', 'ready');
+    $('btn-build-ingest').textContent = 'Rebuild Ingest';
+    ingestLogger.info('Found ' + existingSeqs.length + ' existing sequence(s): ' + existingSeqs.join(', '));
+  } else {
+    setIngestStatus('Ingest loaded. Ready to build.', 'ready');
+  }
+}
+
+/**
+ * Check if ingest sequences already exist in the active Premiere project.
+ * Multi-scene: looks for {code}_{sceneName} per scene.
+ * Single: looks for {code}_1_Ingest.
+ * @returns {string[]} names of existing sequences
+ */
+async function detectExistingSequences(ingest) {
+  var found = [];
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) return found;
+
+    var rootItem = await project.getRootItem();
+    var allItems = await rootItem.getItems();
+    var code = ingest.project_code || extractProjectCode(ingest.project_name);
+    var hasScenes = ingest.clips.some(function(c) { return c.scene; });
+
+    // Build set of expected sequence names
+    var expected = {};
+    if (hasScenes) {
+      var scenes = {};
+      ingest.clips.forEach(function(c) { if (c.scene) scenes[c.scene] = true; });
+      Object.keys(scenes).forEach(function(s) { expected[code + '_' + s] = true; });
+    } else {
+      expected[code + '_1_Ingest'] = true;
+    }
+
+    for (var i = 0; i < allItems.length; i++) {
+      if (expected[allItems[i].name]) {
+        found.push(allItems[i].name);
+      }
+    }
+  } catch (e) {
+    ingestLogger.debug('Sequence detection failed: ' + e.message);
+  }
+  return found;
 }
 
 async function loadIngest() {
@@ -709,7 +760,44 @@ async function loadBriefFromPath(filePath) {
   assemblyLogger.info('Loading brief from path: ' + filePath);
   const fileEntry = await uxpfs.getEntryWithUrl('file://' + filePath);
   const contents = await fileEntry.read();
-  return loadBriefFromString(contents, filePath);
+  var result = loadBriefFromString(contents, filePath);
+
+  // Check if Assembly/Review sequences already exist
+  var code = result.projectCode || extractProjectCode(result.projectName);
+  var existingStages = [];
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (project) {
+      var rootItem = await project.getRootItem();
+      var allItems = await rootItem.getItems();
+      var stageNames = {
+        '_2_Assembly': 'Assembly',
+        '_3_Review': 'Review',
+        '_4_PreEdit': 'PreEdit',
+      };
+      for (var i = 0; i < allItems.length; i++) {
+        for (var suffix in stageNames) {
+          if (allItems[i].name === code + suffix) {
+            existingStages.push(stageNames[suffix]);
+          }
+        }
+      }
+    }
+  } catch (e) { assemblyLogger.debug('Stage sequence detection failed: ' + e.message); }
+
+  if (existingStages.length > 0) {
+    assemblyLogger.info('Found existing stage sequences: ' + existingStages.join(', '));
+    if (existingStages.indexOf('Assembly') >= 0) {
+      setAssemblyStatus('Assembly exists. Rebuild if needed.', 'ready');
+      $('btn-build-assembly').textContent = 'Rebuild Assembly';
+    }
+    if (existingStages.indexOf('Review') >= 0) {
+      setReviewStatus('Review exists. Rebuild if needed.', 'ready');
+      $('btn-build-review').textContent = 'Rebuild Review';
+    }
+  }
+
+  return result;
 }
 
 function loadBriefFromString(jsonString, filePath) {
@@ -798,7 +886,48 @@ async function loadBrief() {
     if (!file) { assemblyLogger.warn('File selection cancelled'); return; }
 
     const contents = await file.read();
-    loadBriefFromString(contents, file.nativePath || file.name || 'unknown');
+    var sourcePath = file.nativePath || file.name || 'unknown';
+
+    // Auto-copy to Setup/Assembly/ with version
+    if (projectState.folderPath) {
+      try {
+        var assemblyDir = projectState.folderPath + '/01_Media/Source/Setup/Assembly';
+        var assemblyEntry;
+        try {
+          assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
+        } catch (e) {
+          var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/01_Media/Source/Setup');
+          assemblyEntry = await ensureSubfolder(setupEntry, 'Assembly', assemblyLogger);
+        }
+
+        // Find next version (shared counter across _in and _out)
+        var code = extractProjectCode(projectState.projectName);
+        var existingFiles = await assemblyEntry.getEntries();
+        var maxVer = 0;
+        var verRe = new RegExp(code + '.*_v(\\d+)');
+        for (var fi = 0; fi < existingFiles.length; fi++) {
+          var vm = existingFiles[fi].name.match(verRe);
+          if (vm) {
+            var vn = parseInt(vm[1], 10);
+            if (vn > maxVer) maxVer = vn;
+          }
+        }
+        var version = maxVer + 1;
+        var versionedName = code + '_2_Assembly_v' + version + '_in.json';
+
+        var outFile = await assemblyEntry.createFile(versionedName, { overwrite: true });
+        await outFile.write(contents);
+        var savedPath = assemblyDir + '/' + versionedName;
+        assemblyLogger.info('Brief saved: Setup/Assembly/' + versionedName + ' (v' + version + ')');
+
+        // Load from the saved location
+        sourcePath = savedPath;
+      } catch (copyErr) {
+        assemblyLogger.debug('Brief copy to Assembly/ skipped: ' + copyErr.message);
+      }
+    }
+
+    loadBriefFromString(contents, sourcePath);
   } catch (err) {
     assemblyLogger.error('Failed to load brief: ' + err.message);
     setAssemblyStatus('Error: ' + err.message, 'error');
@@ -960,9 +1089,20 @@ async function buildAssembly() {
       assemblyLogger.info('→ ' + assemblyState.screens.length + ' screens ready in brief. Click "Build Pre-Edit" to generate _4_PreEdit');
     }
 
-    setAssemblyStatus('Assembly built (' + result.clipCount + ' clips)', 'ready');
+    setAssemblyStatus('Assembly built (' + result.clipCount + ' clips). Building Review...', 'ready');
 
     await saveAssemblyLogs(project, clipMap, result);
+
+    // Auto-build Review after Assembly
+    assemblyLogger.info('=== Auto-building Review ===');
+    try {
+      await buildReview();
+      assemblyLogger.info('Review auto-build complete');
+    } catch (reviewErr) {
+      assemblyLogger.warn('Review auto-build failed (non-fatal): ' + reviewErr.message);
+    }
+
+    setAssemblyStatus('Assembly + Review built (' + result.clipCount + ' clips)', 'ready');
 
   } catch (err) {
     assemblyLogger.error('ASSEMBLY BUILD FAILED: ' + err.message);
@@ -1052,6 +1192,356 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
   } catch (err) {
     logger.warn(label + ' ' + typeLabel + ' import failed (non-fatal): ' + err.message);
   }
+}
+
+/**
+ * Import all SRT files (transcripts + captions) for every timeline stage.
+ *
+ * Scans Transcription/transcripts/ and Transcription/captions/ for SRT files,
+ * then imports each into the 02_Transcripts bin. Also checks Setup/ for legacy SRTs.
+ *
+ * Can be run standalone (button) — does not require Build Ingest/Assembly.
+ */
+async function importAllSrts() {
+  const project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+  if (!projectState.folderPath) { setIngestStatus('Select project folder first', 'error'); return; }
+
+  ingestLogger.info('=== Import All SRTs ===');
+  setIngestStatus('Importing SRTs...', 'waiting');
+
+  var sourceDir = projectState.folderPath + '/01_Media/Source';
+  var imported = 0;
+  var skipped = 0;
+
+  // Find 02_Transcripts bin (create if missing)
+  let transcriptsBin = null;
+  try {
+    const rootItem = await project.getRootItem();
+    const allItems = await rootItem.getItems();
+    for (const item of allItems) {
+      if (item.name === BIN_NAMES.TRANSCRIPTS) {
+        transcriptsBin = ppro.FolderItem.cast(item);
+        break;
+      }
+    }
+    if (!transcriptsBin) {
+      ingestLogger.info('Creating ' + BIN_NAMES.TRANSCRIPTS + ' bin');
+      const action = ppro.FolderItem.createAddItemAction(BIN_NAMES.TRANSCRIPTS);
+      await project.applyActions([action]);
+      const updatedItems = await rootItem.getItems();
+      for (const item of updatedItems) {
+        if (item.name === BIN_NAMES.TRANSCRIPTS) {
+          transcriptsBin = ppro.FolderItem.cast(item);
+          break;
+        }
+      }
+    }
+  } catch (e) {
+    ingestLogger.warn('Cannot find/create 02_Transcripts bin: ' + e.message);
+  }
+
+  // Collect SRT search dirs (flat list + per-scene Video subdirs)
+  var searchDirs = [
+    sourceDir + '/Transcription/transcripts',
+    sourceDir + '/Transcription/captions',
+    sourceDir + '/Setup',
+    sourceDir,
+  ];
+
+  // Also scan Video/{scene}/ directories for per-scene SRTs
+  try {
+    var videoDirEntry = await uxpfs.getEntryWithUrl('file://' + sourceDir + '/Video');
+    if (videoDirEntry) {
+      var sceneDirs = await videoDirEntry.getEntries();
+      for (var si = 0; si < sceneDirs.length; si++) {
+        if (sceneDirs[si].isFolder) {
+          searchDirs.push(sourceDir + '/Video/' + sceneDirs[si].name);
+        }
+      }
+    }
+  } catch (e) {
+    ingestLogger.debug('No Video/ dir or cannot list scenes: ' + e.message);
+  }
+
+  // Track already-imported filenames to avoid duplicates
+  var importedNames = {};
+
+  // Get existing items in 02_Transcripts to skip re-imports
+  if (transcriptsBin) {
+    try {
+      var existingItems = await transcriptsBin.getItems();
+      for (var ei = 0; ei < existingItems.length; ei++) {
+        importedNames[existingItems[ei].name] = true;
+      }
+    } catch (e) { /* empty bin */ }
+  }
+
+  for (var di = 0; di < searchDirs.length; di++) {
+    try {
+      var dirEntry = await uxpfs.getEntryWithUrl('file://' + searchDirs[di]);
+      if (!dirEntry) continue;
+      var entries = await dirEntry.getEntries();
+      for (var fi = 0; fi < entries.length; fi++) {
+        var entry = entries[fi];
+        if (!entry.name || !entry.name.endsWith('.srt')) continue;
+        if (importedNames[entry.name]) {
+          ingestLogger.debug('Skip (already in bin): ' + entry.name);
+          skipped++;
+          continue;
+        }
+        try {
+          var nativePath = searchDirs[di] + '/' + entry.name;
+          await project.importFiles([nativePath], true, transcriptsBin || null, false);
+          importedNames[entry.name] = true;
+          imported++;
+          ingestLogger.info('Imported: ' + entry.name);
+        } catch (importErr) {
+          ingestLogger.warn('Failed to import ' + entry.name + ': ' + importErr.message);
+        }
+      }
+    } catch (dirErr) {
+      ingestLogger.debug('Dir not found: ' + searchDirs[di]);
+    }
+  }
+
+  if (imported > 0) {
+    setIngestStatus(imported + ' SRT(s) imported' + (skipped > 0 ? ' (' + skipped + ' already in bin)' : ''), 'ready');
+  } else if (skipped > 0) {
+    setIngestStatus('All ' + skipped + ' SRT(s) already in 02_Transcripts', 'ready');
+  } else {
+    setIngestStatus('No SRT files found in project', 'error');
+  }
+  ingestLogger.info('=== Import SRTs complete: ' + imported + ' imported, ' + skipped + ' skipped ===');
+}
+
+/**
+ * Export markers from active sequence as JSON.
+ *
+ * Reads marker names and positions from the current sequence and writes
+ * to Setup/{CODE}_{suffix}_markers.json. Marker names carry editor notes
+ * (UXP API cannot read marker comments, only names).
+ */
+/**
+ * Export markers by saving the project and launching Python script
+ * that reads the .prproj file directly (includes comments, positions, duration).
+ *
+ * UXP API cannot read marker comments — but .prproj (gzip XML) contains everything.
+ * Uses shell.openPath() to run run_export_markers.command in Terminal.
+ */
+/**
+ * Export markers by reading .prproj file directly (gzip XML → DVAMarker JSON).
+ * Everything runs inside UXP — no Terminal, no Python.
+ * Writes to Setup/Assembly/{seq}_v{N}_out.json + ~/Downloads/.
+ */
+async function exportMarkers() {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setAssemblyStatus('No active project', 'error'); return; }
+  if (!projectState.folderPath) { setAssemblyStatus('Select project folder first', 'error'); return; }
+
+  assemblyLogger.info('=== Export Markers (UXP native) ===');
+  setAssemblyStatus('Saving project...', 'waiting');
+  $('btn-export-markers').setAttribute('disabled', 'true');
+
+  // Step 1: Save project so .prproj is current
+  try {
+    await project.save();
+    assemblyLogger.info('Project saved');
+  } catch (saveErr) {
+    assemblyLogger.warn('Save failed (continuing): ' + saveErr.message);
+  }
+
+  try {
+    // Step 2: Find .prproj file
+    setAssemblyStatus('Reading .prproj...', 'waiting');
+    var mediaDir = projectState.folderPath + '/01_Media';
+    var prprojPath = null;
+
+    try {
+      var mediaDirEntry = await uxpfs.getEntryWithUrl('file://' + mediaDir);
+      var mediaEntries = await mediaDirEntry.getEntries();
+      for (var mi = 0; mi < mediaEntries.length; mi++) {
+        if (mediaEntries[mi].name.endsWith('.prproj')) {
+          prprojPath = mediaDir + '/' + mediaEntries[mi].name;
+          break;
+        }
+      }
+    } catch (e) {}
+
+    if (!prprojPath) {
+      throw new Error('No .prproj file found in 01_Media/');
+    }
+    assemblyLogger.info('Found: ' + prprojPath.split('/').pop());
+
+    // Step 3: Read .prproj as binary and decompress gzip
+    var prprojEntry = await uxpfs.getEntryWithUrl('file://' + prprojPath);
+    var rawBytes = await prprojEntry.read({ format: require('uxp').storage.formats.binary });
+    assemblyLogger.info('Read ' + (rawBytes.byteLength / 1024 / 1024).toFixed(1) + ' MB');
+
+    var pako = require('./lib/pako_inflate.min.js');
+    var decompressed = pako.inflate(new Uint8Array(rawBytes), { to: 'string' });
+    var text = decompressed;
+    assemblyLogger.info('Decompressed: ' + (text.length / 1024 / 1024).toFixed(1) + ' MB text');
+
+    // Step 4: Extract DVAMarker blocks
+    setAssemblyStatus('Parsing markers...', 'waiting');
+    var TICKS_PER_SEC = 254016000000;
+    var blockMatches = text.match(/<DVAMarker>(.*?)<\/DVAMarker>/gs) || [];
+    assemblyLogger.info('DVAMarker blocks: ' + blockMatches.length);
+
+    var markers = [];
+    for (var bi = 0; bi < blockMatches.length; bi++) {
+      var raw = blockMatches[bi].replace(/<\/?DVAMarker>/g, '').trim();
+      try {
+        var obj = JSON.parse(raw);
+        var dva = obj.DVAMarker || {};
+        if (!dva.mName) continue;
+
+        var st = dva.mStartTime || {};
+        var startTicks = (typeof st === 'object') ? (st.ticks || 0) : (parseInt(st) || 0);
+        var dur = dva.mDuration || {};
+        var durTicks = (typeof dur === 'object') ? (dur.ticks || 0) : (parseInt(dur) || 0);
+
+        var entry = {
+          name: dva.mName || '',
+          position_sec: Math.round(startTicks / TICKS_PER_SEC * 100) / 100,
+        };
+        if (durTicks > 0) {
+          entry.duration_sec = Math.round(durTicks / TICKS_PER_SEC * 100) / 100;
+          entry.is_chapter = true;
+        }
+        if (dva.mComment) entry.comment = dva.mComment;
+        if (dva.mType) entry.type = dva.mType;
+
+        markers.push(entry);
+      } catch (parseErr) {
+        // Skip unparseable blocks
+      }
+    }
+
+    markers.sort(function(a, b) { return a.position_sec - b.position_sec; });
+    var chapters = markers.filter(function(m) { return m.is_chapter; });
+    assemblyLogger.info('Parsed: ' + markers.length + ' markers (' + chapters.length + ' chapters)');
+
+    // Step 5: Find active sequence name
+    var seqName = 'YTCR01_2_Assembly';
+    try {
+      var seq = await project.getActiveSequence();
+      if (seq && seq.name) seqName = seq.name;
+    } catch (e) {}
+
+    // Step 6: Classify markers into Assembly and Review
+    var assemblyMarkers = [];
+    var reviewMarkers = [];
+    for (var ci = 0; ci < markers.length; ci++) {
+      var mName = markers[ci].name || '';
+      if (mName.indexOf('[CUT]') === 0 || mName.indexOf('[ALT]') === 0 || mName.indexOf('[SKIP]') === 0) {
+        reviewMarkers.push(markers[ci]);
+      } else if (mName.indexOf('Source:') === 0) {
+        assemblyMarkers.push(markers[ci]);
+        reviewMarkers.push(markers[ci]);
+      } else {
+        assemblyMarkers.push(markers[ci]);
+      }
+    }
+    var assemblyChapters = assemblyMarkers.filter(function(m) { return m.is_chapter && (m.name || '').indexOf('Source:') !== 0; });
+
+    assemblyLogger.info('Assembly: ' + assemblyMarkers.length + ' markers (' + assemblyChapters.length + ' chapters)');
+    assemblyLogger.info('Review: ' + reviewMarkers.length + ' markers');
+
+    var output = {
+      sequence: seqName,
+      source: prprojPath.split('/').pop(),
+      exported_at: new Date().toISOString(),
+      assembly: {
+        markers_count: assemblyMarkers.length,
+        chapters_count: assemblyChapters.length,
+        markers: assemblyMarkers,
+      },
+      review: {
+        markers_count: reviewMarkers.length,
+        markers: reviewMarkers,
+      },
+    };
+
+    // Step 6b: Embed relevant transcript clips
+    var sourceClips = {};
+    for (var sci = 0; sci < markers.length; sci++) {
+      if (markers[sci].name && markers[sci].name.indexOf('Source: ') === 0) {
+        sourceClips[markers[sci].name.replace('Source: ', '')] = true;
+      }
+    }
+    try {
+      var trDir = projectState.folderPath + '/01_Media/Source/Transcription';
+      var trFileName = projectState.projectName + '_transcript.json';
+      var trEntry = await uxpfs.getEntryWithUrl('file://' + trDir + '/' + trFileName);
+      var trContent = await trEntry.read();
+      var fullTx = JSON.parse(trContent);
+      output.transcript = {
+        project: fullTx.project || '',
+        language: fullTx.language || '',
+        speakers: fullTx.speakers || {},
+        stats: fullTx.stats || {},
+        clips: fullTx.clips || [],
+      };
+      assemblyLogger.info('Transcript embedded: ' + (fullTx.clips || []).length + ' clips');
+    } catch (trErr) {
+      assemblyLogger.debug('Transcript embed skipped: ' + trErr.message);
+    }
+
+    // Step 7: Find next version and write to Setup/Assembly/
+    setAssemblyStatus('Writing files...', 'waiting');
+    var assemblyDir = projectState.folderPath + '/01_Media/Source/Setup/Assembly';
+    var assemblyEntry;
+    try {
+      assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
+    } catch (e) {
+      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/01_Media/Source/Setup');
+      assemblyEntry = await ensureSubfolder(setupEntry, 'Assembly', assemblyLogger);
+    }
+
+    var existingFiles = await assemblyEntry.getEntries();
+    var maxVer = 0;
+    var verRe = new RegExp(seqName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '_v(\\d+)');
+    for (var fi = 0; fi < existingFiles.length; fi++) {
+      var vm = existingFiles[fi].name.match(verRe);
+      if (vm) {
+        var vn = parseInt(vm[1], 10);
+        if (vn > maxVer) maxVer = vn;
+      }
+    }
+    var version = maxVer + 1;
+    output.version = version;
+    output.direction = 'out';
+
+    var fileName = seqName + '_v' + version + '_out.json';
+    var jsonContent = JSON.stringify(output, null, 2);
+
+    // Write to Setup/Assembly/
+    var outFile = await assemblyEntry.createFile(fileName, { overwrite: true });
+    await outFile.write(jsonContent);
+    assemblyLogger.info('Written: Setup/Assembly/' + fileName);
+
+    // Write to ~/Downloads/
+    try {
+      var homePath = require('os').homedir();
+      var dlEntry = await uxpfs.getEntryWithUrl('file://' + homePath + '/Downloads');
+      var dlFile = await dlEntry.createFile(fileName, { overwrite: true });
+      await dlFile.write(jsonContent);
+      assemblyLogger.info('Copied: ~/Downloads/' + fileName);
+    } catch (dlErr) {
+      assemblyLogger.debug('Downloads copy failed: ' + dlErr.message);
+    }
+
+    setAssemblyStatus('Exported v' + version + ': ' + markers.length + ' markers → ' + fileName, 'ready');
+
+  } catch (err) {
+    assemblyLogger.error('Marker export failed: ' + err.message);
+    if (err.stack) assemblyLogger.debug(err.stack);
+    setAssemblyStatus('Export failed: ' + err.message, 'error');
+  }
+
+  $('btn-export-markers').removeAttribute('disabled');
 }
 
 /**
@@ -1797,7 +2287,7 @@ async function buildReview() {
     const scanResult = await validateIngestState(project, assemblyState.segments, reviewLogger);
     clipMap = scanResult.clipMap;
 
-    let clipDurations = await getClipDurationsFromIngest(project, assemblyState.projectName, reviewLogger);
+    let clipDurations = await getClipDurationsFromIngest(project, assemblyState.projectCode || assemblyState.projectName, reviewLogger);
     if (!clipDurations || Object.keys(clipDurations).length === 0) {
       clipDurations = getClipDurationsFromBrief(assemblyState.segments);
       reviewLogger.warn('Using brief-based durations (Ingest sequence not found)');
@@ -3439,10 +3929,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // INGEST buttons (btn-load-ingest is fallback — hidden by default)
   $('btn-load-ingest').addEventListener('click', loadIngest);
   $('btn-build-ingest').addEventListener('click', buildIngest);
+  $('btn-import-srts').addEventListener('click', importAllSrts);
 
   // ASSEMBLY buttons (btn-load-brief is fallback — hidden by default)
   $('btn-load-brief').addEventListener('click', loadBrief);
   $('btn-build-assembly').addEventListener('click', buildAssembly);
+  $('btn-export-markers').addEventListener('click', exportMarkers);
 
   // REVIEW buttons
   $('btn-build-review').addEventListener('click', buildReview);

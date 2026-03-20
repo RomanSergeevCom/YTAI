@@ -139,13 +139,37 @@ async function cleanExistingSequence(project, seqName, logger) {
     const rootItem = await project.getRootItem();
     const allItems = await rootItem.getItems();
 
+    // Find max version number among existing _v{N} sequences
+    var maxVersion = 0;
+    var versionRe = new RegExp('^' + seqName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '_v(\\d+)$');
+    for (var vi = 0; vi < allItems.length; vi++) {
+      var vm = allItems[vi].name.match(versionRe);
+      if (vm) {
+        var vn = parseInt(vm[1], 10);
+        if (vn > maxVersion) maxVersion = vn;
+      }
+    }
+
     for (const item of allItems) {
       if (item.name === seqName && item.type !== 2) {
+        // Rename to _v{N+1} instead of deleting
+        var newVersion = maxVersion + 1;
+        var newName = seqName + '_v' + newVersion;
         try {
-          await project.deleteSequence(item);
-          if (logger) logger.info('Deleted old sequence: "' + seqName + '"');
-        } catch (e) {
-          if (logger) logger.debug('Cannot delete sequence "' + seqName + '": ' + e.message);
+          project.lockedAccess(function () {
+            project.executeTransaction(function (ca) {
+              ca.addAction(item.createSetNameAction(newName));
+            }, 'Rename ' + seqName + ' to ' + newName);
+          });
+          if (logger) logger.info('Renamed "' + seqName + '" → "' + newName + '"');
+        } catch (renameErr) {
+          // Fallback: delete if rename fails
+          try {
+            await project.deleteSequence(item);
+            if (logger) logger.info('Deleted old sequence: "' + seqName + '" (rename failed: ' + renameErr.message + ')');
+          } catch (e) {
+            if (logger) logger.debug('Cannot delete sequence "' + seqName + '": ' + e.message);
+          }
         }
       }
     }
