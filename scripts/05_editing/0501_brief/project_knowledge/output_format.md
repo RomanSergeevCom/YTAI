@@ -119,6 +119,8 @@ Production Cues for the editor/motion designer. Each screen describes a visual o
 | `chapter_bar` | Bottom center bar (бар снизу по центру — название главы) | title |
 | `lower_third` | Centered rounded bar (закруглённый бар снизу — имя спикера) | title |
 
+**IMPORTANT: Use ONLY the 5 types listed above.** Do NOT invent types like `chapter_title`, `info_graphic`, `title_card`, etc. — they will be rejected by the UXP plugin.
+
 ### Rules
 
 1. **screen_id** — sequential across all screens: `scr_001`, `scr_002`, etc.

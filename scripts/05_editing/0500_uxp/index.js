@@ -1212,7 +1212,7 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
     return;
   }
 
-  // Find 02_Transcripts bin
+  // Find 01_Transcripts bin
   let transcriptsBin = null;
   try {
     const rootItem = await project.getRootItem();
@@ -1224,13 +1224,49 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
       }
     }
   } catch (e) {
-    logger.debug('Cannot find 02_Transcripts bin: ' + e.message);
+    logger.debug('Cannot find 01_Transcripts bin: ' + e.message);
+  }
+
+  // Create sub-bin for this timeline stage (e.g. YTXX01_2_Assembly_v1_transcripts)
+  var targetBin = transcriptsBin;
+  if (transcriptsBin && suffix) {
+    var subBinName = projectName + '_' + suffix + '_transcripts';
+    try {
+      // Check if sub-bin already exists
+      var existingItems = await transcriptsBin.getItems();
+      var found = false;
+      for (var ei = 0; ei < existingItems.length; ei++) {
+        if (existingItems[ei].name === subBinName) {
+          targetBin = ppro.FolderItem.cast(existingItems[ei]) || existingItems[ei];
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        project.lockedAccess(function() {
+          project.executeTransaction(function(ca) {
+            ca.addAction(transcriptsBin.createBinAction(subBinName, true));
+          }, 'Create ' + subBinName);
+        });
+        // Re-fetch to get reference
+        existingItems = await transcriptsBin.getItems();
+        for (var ni = 0; ni < existingItems.length; ni++) {
+          if (existingItems[ni].name === subBinName) {
+            targetBin = ppro.FolderItem.cast(existingItems[ni]) || existingItems[ni];
+            break;
+          }
+        }
+        logger.info('Created bin: 01_Transcripts/' + subBinName);
+      }
+    } catch (binErr) {
+      logger.debug('Sub-bin creation failed: ' + binErr.message);
+    }
   }
 
   // Import SRT
   try {
-    await project.importFiles([foundSrtPath], true, transcriptsBin || null, false);
-    logger.info(label + ' ' + typeLabel + ' imported: ' + srtFileName + ' → 02_Transcripts');
+    await project.importFiles([foundSrtPath], true, targetBin || null, false);
+    logger.info(label + ' ' + typeLabel + ' imported: ' + srtFileName + ' → 01_Transcripts/' + (suffix ? projectName + '_' + suffix + '_transcripts' : ''));
   } catch (err) {
     logger.warn(label + ' ' + typeLabel + ' import failed (non-fatal): ' + err.message);
   }
@@ -2311,7 +2347,21 @@ async function buildReview() {
       producerSpeaker: (assemblyState.data && assemblyState.data.producerSpeaker) || '',
       assemblyBlocks: assemblyState.blocks || []
     };
-    result = await buildReviewSequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, reviewLogger, clipDurations, reviewOpts, assemblyState.briefVersion);
+    // Build scene map from ingest data (clip → scene)
+    var sceneMap = null;
+    if (ingestState.data && ingestState.data.clips) {
+      var hasScenes = ingestState.data.clips.some(function(c) { return c.scene; });
+      if (hasScenes) {
+        sceneMap = {};
+        ingestState.data.clips.forEach(function(c) {
+          var scene = c.scene || 'default';
+          if (!sceneMap[scene]) sceneMap[scene] = [];
+          sceneMap[scene].push(c.filename || (c.clip_id + '.MP4'));
+        });
+        reviewLogger.info('Per-scene Review: ' + Object.keys(sceneMap).join(', '));
+      }
+    }
+    result = await buildReviewSequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, reviewLogger, clipDurations, reviewOpts, assemblyState.briefVersion, sceneMap);
 
     if (!result.sequence) {
       reviewLogger.info('Review sequence not created (no unused segments)');

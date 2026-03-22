@@ -2559,13 +2559,28 @@ def _generate_prompt_helper(setup_dir, code, transcript_data, compact_data):
         seq_lines.append(f"  - **{seq_name}** — {clips_str}")
 
     assembly_path = f"{setup_dir / f'{code}_Claude4_assembly.json'}"
+    save_path = f"{setup_dir / 'Assembly' / f'{code}_pre_edit_brief_v1_in.json'}"
 
     doc = f"""# {code} — Claude Assembly Prompt Helper
 
-## Assembly JSON (copy path below)
+Create an Assembly brief for this project using the transcript below:
 
 ```
 {assembly_path}
+```
+
+Save the result as JSON to:
+
+```
+{save_path}
+```
+
+You have write access via MCP filesystem server (ytai-projects).
+
+After saving, run snap_to_words for precise word boundaries:
+```bash
+source ~/YTAI/environment/.venv_transcribe/bin/activate
+python ~/YTAI/scripts/05_editing/0502_assembly/snap_to_words.py "{save_path}"
 ```
 
 ## Project
