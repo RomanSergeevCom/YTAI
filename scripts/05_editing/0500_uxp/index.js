@@ -1446,7 +1446,12 @@ async function exportMarkers() {
           if (typeof m0[k] === 'function') m0methods.push(k);
         }
         assemblyLogger.debug('Marker[0] methods: [' + m0methods.join(', ') + ']');
-        assemblyLogger.debug('Marker[0] name=' + m0.name + ' type=' + m0.type + ' comments=' + (m0.comments || ''));
+        var m0comment = m0.comments || '';
+        if (!m0comment && m0.getComments) try { m0comment = m0.getComments(); } catch(e) {}
+        if (!m0comment) m0comment = m0.comment || '';
+        assemblyLogger.debug('Marker[0] name=' + m0.name + ' type=' + m0.type + ' comments="' + m0comment + '"' +
+          ' | .comments=' + JSON.stringify(m0.comments) + ' .comment=' + JSON.stringify(m0.comment) +
+          ' hasGetComments=' + (typeof m0.getComments === 'function'));
       } catch (e) { assemblyLogger.debug('Marker introspection failed: ' + e.message); }
 
       for (var mi = 0; mi < rawMarkers.length; mi++) {
@@ -1471,7 +1476,11 @@ async function exportMarkers() {
           entry.is_chapter = true;
         }
 
-        if (rm.comments) entry.comment = rm.comments;
+        // Get comments — try property, then getComments(), then comment (singular)
+        var commentText = rm.comments || '';
+        if (!commentText) try { commentText = rm.getComments ? rm.getComments() : ''; } catch (e) {}
+        if (!commentText) commentText = rm.comment || '';
+        if (commentText) entry.comment = commentText;
         if (rm.type) entry.type = rm.type;
         markers.push(entry);
       }
