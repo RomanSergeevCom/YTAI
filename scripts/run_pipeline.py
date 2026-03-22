@@ -140,7 +140,7 @@ PHASES = [
             {
                 "id": "sync_dji",
                 "name": "DJI sync",
-                "script": "01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py",
+                "script": "01_prepare/0105_multiwindow_sync_dji/0105_multiwindow_sync_dji.py",
                 "optional": True,
             },
         ],
@@ -831,9 +831,11 @@ def _validate_transcribe(project: Path, log: PipelineLogger) -> bool:
         log.info(f"        (transcribe extracts own 16kHz audio from video)")
 
     audio_dir = project / "01_Media" / "Source" / "Audio"
-    synced = [f for f in audio_dir.iterdir()
-              if f.is_file() and f.suffix.lower() == '.wav'
-              ] if audio_dir.is_dir() else []
+    synced = sorted(
+        [f for f in audio_dir.rglob("*")
+         if f.is_file() and f.suffix.lower() == '.wav'],
+        key=natural_sort_key
+    ) if audio_dir.is_dir() else []
     if synced:
         log.info(f"      DJI synced: {len(synced)} files "
                  f"{C.DIM}(included in ingest.json){C.RESET}")
@@ -903,7 +905,7 @@ def _verify_sync_dji(project: Path, log: PipelineLogger):
     audio_dir = project / "01_Media" / "Source" / "Audio"
 
     synced = sorted(
-        [f for f in audio_dir.iterdir()
+        [f for f in audio_dir.rglob("*")
          if f.is_file() and f.suffix.lower() == '.wav'],
         key=natural_sort_key
     ) if audio_dir.is_dir() else []
@@ -987,9 +989,9 @@ def check_extract_audio(project: Path) -> bool:
 
 
 def check_sync_dji(project: Path) -> bool:
-    """True if synced DJI audio exists."""
+    """True if synced DJI audio exists (supports scene subfolders)."""
     audio = project / "01_Media" / "Source" / "Audio"
-    return audio.is_dir() and any(audio.glob("*.wav"))
+    return audio.is_dir() and any(audio.rglob("*.wav"))
 
 
 def check_transcribe(project: Path) -> bool:
@@ -1192,10 +1194,10 @@ def run_init(project: Path, folder_type: str,
 
 
 def _list_media(dirpath: Path, exts: set) -> list:
-    """List media files in dir, sorted naturally."""
+    """List media files in dir recursively, sorted naturally."""
     if not dirpath.is_dir():
         return []
-    files = [f for f in dirpath.iterdir()
+    files = [f for f in dirpath.rglob("*")
              if f.is_file() and f.suffix.lower() in exts
              and not f.name.startswith('.')]
     files.sort(key=natural_sort_key)
@@ -1394,7 +1396,7 @@ def print_dji_warning(project: Path, log: PipelineLogger):
     dji_files = [f for f in dji_dir.iterdir()
                  if f.is_file() and f.suffix.lower() == '.wav'
                  ] if dji_dir.is_dir() else []
-    synced = [f for f in audio_dir.iterdir()
+    synced = [f for f in audio_dir.rglob("*")
               if f.is_file() and f.suffix.lower() == '.wav'
               ] if audio_dir.is_dir() else []
 
@@ -1938,6 +1940,22 @@ def run_pipeline(args) -> int:
                 log.info("")
                 print_project_tree(project, log)
                 print_dji_warning(project, log)
+
+                # Generate lite ingest.json (video + DJI audio, no transcripts)
+                try:
+                    _ingest_mod = (SCRIPTS_DIR / "02_transcribe"
+                                   / "020101_transcribe" / "ingest_json.py")
+                    import importlib.util
+                    _spec = importlib.util.spec_from_file_location(
+                        "ingest_json", _ingest_mod)
+                    _mod = importlib.util.module_from_spec(_spec)
+                    _spec.loader.exec_module(_mod)
+                    ingest_path = _mod.generate_lite(project)
+                    log.info(f"      {C.GREEN}✓{C.RESET} Lite ingest.json → "
+                             f"{ingest_path.relative_to(project)}")
+                except Exception as e:
+                    log.warn(f"      {C.YELLOW}⚠{C.RESET} "
+                             f"Lite ingest.json skipped: {e}")
         else:
             log.error(f"\n  {C.BG_YELLOW}{C.WHITE}{C.BOLD} Phase "
                       f"{pidx + 1}/{total_phases} {C.RESET} "
