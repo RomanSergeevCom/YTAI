@@ -27,10 +27,12 @@ scripts/
 │   ├── 0102_extract_audio/
 │   │   ├── 0102_extract_audio.py        ← WAV из каждого MP4
 │   │   └── 0102_extract_audio_spec.md
-│   └── 0103_sync_dji_audio/
-│       ├── 0103_sync_dji_audio.py       ← синхронизация DJI mic → clip
-│       ├── generate_prproj.py           ← XML + .prproj для проверки
-│       └── 0103_sync_dji_audio_spec.md
+│   ├── 0103_sync_dji_audio/              ← legacy metadata-based sync
+│   │   ├── 0103_sync_dji_audio.py
+│   │   └── 0103_sync_dji_audio_spec.md
+│   └── 0105_multiwindow_sync_dji/       ← текущий sync (multi-window correlation)
+│       ├── 0105_multiwindow_sync_dji.py ← cross-correlation + spanning
+│       └── 0105_multiwindow_sync_dji_spec.md
 │
 ├── 02_transcribe/                       ← Фаза 2: транскрипция
 │   └── 020101_transcribe/
@@ -68,9 +70,9 @@ python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only init
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only extract_audio
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only sync_dji
 
-# DJI sync напрямую (с явным timezone)
-python ~/YTAI/scripts/01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py \
-    --project "$PROJECT" --tz-offset 4
+# DJI sync напрямую (multi-window cross-correlation)
+python ~/YTAI/scripts/01_prepare/0105_multiwindow_sync_dji/0105_multiwindow_sync_dji.py \
+    --project "$PROJECT"
 
 # Dry run
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --dry-run

@@ -1,4 +1,4 @@
-# 01_prepare — Specification v1.1.0
+# 01_prepare — Specification v1.2.0
 
 Фаза подготовки проекта: создание структуры папок, организация медиафайлов, извлечение аудио, синхронизация DJI.
 
@@ -17,9 +17,12 @@
 |---|-----|--------|--------|----------|
 | 0101 | `init` | Init folders | встроен в `run_pipeline.py` | Создание папок + организация файлов |
 | 0102 | `extract_audio` | Extract audio | `0102_extract_audio.py` | WAV из каждого клипа + FULL_AUDIO |
-| 0103 | `sync_dji` | DJI sync | `0103_sync_dji_audio.py` | Синхронизация DJI WAV с видеоклипами |
+| 0105 | `sync_dji` | DJI sync | `0105_multiwindow_sync_dji.py` | Синхронизация DJI WAV с видеоклипами |
 
-Стадии выполняются последовательно. DJI sync — опциональная (пропускается если нет DJI файлов). Timezone определяется автоматически.
+Стадии выполняются последовательно. DJI sync — опциональная (пропускается если нет DJI файлов).
+
+> **v1.2.0**: DJI sync заменён с metadata-based (0103) на multi-window cross-correlation (0105).
+> Новый алгоритм не требует timezone, работает с indoor-сценами и spanning клипами (DJI auto-split на 30мин).
 
 ## Файлы
 
@@ -32,8 +35,11 @@ scripts/01_prepare/
 │   ├── 0102_extract_audio.py
 │   └── 0102_extract_audio_spec.md
 ├── 0103_sync_dji_audio/
-│   ├── 0103_sync_dji_audio.py
+│   ├── 0103_sync_dji_audio.py           ← legacy metadata-based sync
 │   └── 0103_sync_dji_audio_spec.md
+├── 0105_multiwindow_sync_dji/
+│   ├── 0105_multiwindow_sync_dji.py     ← текущий sync (multi-window correlation)
+│   └── 0105_multiwindow_sync_dji_spec.md
 └── Archive/
     └── 01_concat_clips.py               ← legacy, не используется
 ```
@@ -43,9 +49,6 @@ scripts/01_prepare/
 ```bash
 # Полная фаза prepare (timezone auto-detected)
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only prepare
-
-# С явным timezone для DJI sync
-python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only prepare --tz-offset 4
 
 # Dry run
 python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only prepare --dry-run
@@ -57,7 +60,8 @@ python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only sync_dji
 
 # Напрямую (без pipeline)
 python ~/YTAI/scripts/01_prepare/0102_extract_audio/0102_extract_audio.py --project "$PROJECT"
-python ~/YTAI/scripts/01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py --project "$PROJECT"
+python ~/YTAI/scripts/01_prepare/0105_multiwindow_sync_dji/0105_multiwindow_sync_dji.py --project "$PROJECT"
+python ~/YTAI/scripts/01_prepare/0105_multiwindow_sync_dji/0105_multiwindow_sync_dji.py --project "$PROJECT" --overwrite
 ```
 
 ## Выходная структура

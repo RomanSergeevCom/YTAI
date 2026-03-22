@@ -142,11 +142,11 @@ python ~/YTAI/scripts/01_prepare/0102_extract_audio/0102_extract_audio.py --proj
 
 ### DJI audio sync
 ```bash
-# Auto-detect timezone
-python ~/YTAI/scripts/01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py --project "$PROJECT"
+# Multi-window cross-correlation sync (auto-detects DJI files, no timezone needed)
+python ~/YTAI/scripts/01_prepare/0105_multiwindow_sync_dji/0105_multiwindow_sync_dji.py --project "$PROJECT"
 
-# Explicit timezone
-python ~/YTAI/scripts/01_prepare/0103_sync_dji_audio/0103_sync_dji_audio.py --project "$PROJECT" --tz-offset 4
+# Re-sync (overwrite existing)
+python ~/YTAI/scripts/01_prepare/0105_multiwindow_sync_dji/0105_multiwindow_sync_dji.py --project "$PROJECT" --overwrite
 ```
 
 ### Transcription
