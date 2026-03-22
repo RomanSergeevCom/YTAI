@@ -12,6 +12,7 @@ Usage:
 
 import json
 import re
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -120,27 +121,26 @@ def generate(transcript_json_path: Path) -> Path:
             if structure.get("captions_srt") else "",
     }
 
-    # Per-scene captions: look for {code}_1_{scene}_captions.srt
-    # Check Transcription/captions/ (new) and Setup/ (legacy)
+    # Per-scene SRTs: look in Transcription/{scene}/
     code = _project_code(project_name)
-    captions_dir_check = work_dir / "01_Media" / "Source" / "Transcription" / "captions"
-    setup_dir_check = work_dir / "01_Media" / "Source" / "Setup"
-    scene_captions = {}
+    tr_dir = work_dir / "01_Media" / "Source" / "Transcription"
     scenes = sorted({c.get("scene", "") for c in clips if c.get("scene")})
+    scene_captions = {}
+    scene_transcripts = {}
     for scene in scenes:
-        srt_name_new = f"{code}_1_{scene}_captions.srt"
-        srt_name_legacy = f"{project_name}_1_{scene}_captions.srt"
-        for search_dir, srt_name in [
-            (captions_dir_check, srt_name_new),
-            (setup_dir_check, srt_name_legacy),
-            (setup_dir_check, srt_name_new),
-        ]:
-            srt_path = search_dir / srt_name
-            if srt_path.exists():
-                scene_captions[scene] = str(srt_path.resolve())
-                break
+        scene_dir = tr_dir / scene
+        # Word-level captions
+        cap_path = scene_dir / f"{code}_{scene}_captions.srt"
+        if cap_path.exists():
+            scene_captions[scene] = str(cap_path.resolve())
+        # Sentence-level transcript
+        tr_path = scene_dir / f"{code}_{scene}_transcript.srt"
+        if tr_path.exists():
+            scene_transcripts[scene] = str(tr_path.resolve())
     if scene_captions:
         files["scene_captions_srt"] = scene_captions
+    if scene_transcripts:
+        files["scene_transcript_srt"] = scene_transcripts
 
     ingest = {
         "version": VERSION,
@@ -167,10 +167,140 @@ def generate(transcript_json_path: Path) -> Path:
     return ingest_path
 
 
+VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".mts", ".avi", ".mkv"}
+MEDIA_DEFAULTS = {"width": 3840, "height": 2160, "fps": 25.0, "sample_rate": 48000}
+
+
+def _probe_media(clip_path: Path) -> dict:
+    """Use ffprobe to get width, height, fps, sample_rate from a video clip."""
+    try:
+        out = subprocess.check_output(
+            ["ffprobe", "-v", "quiet", "-print_format", "json",
+             "-show_streams", str(clip_path)],
+            stderr=subprocess.DEVNULL, timeout=10,
+        )
+        streams = json.loads(out).get("streams", [])
+        media = {}
+        for s in streams:
+            if s.get("codec_type") == "video" and "width" not in media:
+                media["width"] = s["width"]
+                media["height"] = s["height"]
+                fr = s.get("r_frame_rate") or s.get("avg_frame_rate", "25/1")
+                num, den = (int(x) for x in fr.split("/"))
+                media["fps"] = round(num / den, 3)
+            if s.get("codec_type") == "audio" and "sample_rate" not in media:
+                media["sample_rate"] = int(s.get("sample_rate", 48000))
+        return {**MEDIA_DEFAULTS, **media}
+    except Exception:
+        return dict(MEDIA_DEFAULTS)
+
+
+def _probe_duration(clip_path: Path) -> float:
+    """Get video duration in seconds via ffprobe."""
+    try:
+        out = subprocess.check_output(
+            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", str(clip_path)],
+            stderr=subprocess.DEVNULL, timeout=10,
+        )
+        return round(float(out.strip()), 3)
+    except Exception:
+        return 0.0
+
+
+def generate_lite(project: Path) -> Path:
+    """Generate lite ingest.json from video files + DJI audio (no transcripts needed).
+
+    Called at the end of prepare phase so UXP plugin can import media immediately.
+    Transcribe phase overwrites this with full ingest.json via generate().
+
+    Args:
+        project: Absolute path to project root.
+
+    Returns:
+        Path to the written {CODE}_ingest.json in Setup/.
+    """
+    project = Path(project).resolve()
+    video_dir = project / "01_Media" / "Source" / "Video"
+    audio_dir = project / "01_Media" / "Source" / "Audio"
+    setup_dir = project / "01_Media" / "Source" / "Setup"
+
+    # Find all video files recursively (supports scene subfolders)
+    videos = sorted(
+        [f for f in video_dir.rglob("*")
+         if f.is_file() and f.suffix.lower() in VIDEO_EXTS
+         and not f.name.startswith(".")],
+        key=lambda p: p.name,
+    )
+
+    if not videos:
+        raise FileNotFoundError(f"No video files found in {video_dir}")
+
+    # Probe media from first video
+    media = _probe_media(videos[0])
+
+    # Build clips list
+    clips = []
+    cumulative_offset = 0.0
+    for v in videos:
+        clip_id = v.stem
+        duration = _probe_duration(v)
+
+        clip_entry = {
+            "clip_id": clip_id,
+            "filename": v.name,
+            "path": str(v),
+            "duration": duration,
+            "offset": round(cumulative_offset, 3),
+        }
+
+        # Scene from parent folder (e.g. Video/01_apartment/clip.MP4)
+        parent_name = v.parent.name
+        if SCENE_DIR_RE.match(parent_name):
+            clip_entry["scene"] = parent_name
+
+        # DJI synced audio
+        if audio_dir.exists():
+            dji_files = sorted(audio_dir.rglob(f"{clip_id}_TX*.wav"))
+            if dji_files:
+                clip_entry["dji_audio"] = [
+                    {"tx": f.stem.split("_")[-1], "path": str(f.resolve())}
+                    for f in dji_files
+                ]
+
+        clips.append(clip_entry)
+        cumulative_offset += duration
+
+    code = _project_code(project.name)
+    ingest = {
+        "version": VERSION,
+        "type": "ingest_lite",
+        "project_name": project.name,
+        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "media": media,
+        "clips": clips,
+        "files": {},
+        "source_folder": str(project),
+    }
+
+    setup_dir.mkdir(parents=True, exist_ok=True)
+    ingest_path = setup_dir / f"{code}_ingest.json"
+    with open(ingest_path, "w") as f:
+        json.dump(ingest, f, indent=2, ensure_ascii=False)
+
+    return ingest_path
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Generate ingest JSON from transcript JSON")
     parser.add_argument("transcript_json", help="Path to {project}_transcript.json")
+    parser.add_argument("--lite", action="store_true",
+                        help="Generate lite ingest (video+DJI only, no transcripts). "
+                             "Pass project path instead of transcript path.")
     args = parser.parse_args()
-    path = generate(Path(args.transcript_json))
+    if args.lite:
+        path = generate_lite(Path(args.transcript_json))
+    else:
+        path = generate(Path(args.transcript_json))
     print(f"Ingest JSON written: {path}")

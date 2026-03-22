@@ -79,6 +79,13 @@ def classify_markers(markers: list) -> tuple:
 
     for m in markers:
         name = m.get('name', '')
+        comment = m.get('comment', '')
+
+        # User edit markers (/ prefix in comment) — always include in assembly
+        if comment.startswith('/'):
+            assembly.append(m)
+            continue
+
         if not name:
             continue
 
@@ -104,12 +111,95 @@ def classify_markers(markers: list) -> tuple:
     return dedup(assembly), dedup(review)
 
 
+def enrich_markers_with_timecodes(markers: list, transcript: dict) -> list:
+    """Add tc_in, tc_out, source_file to each marker using position-based matching.
+
+    Uses Source: markers as clip anchors on the timeline, then finds the
+    transcript segment at the marker's offset within each clip.
+    """
+    # Build clip timeline from Source: markers
+    clip_regions = []
+    for m in sorted(markers, key=lambda x: x['position_sec']):
+        if m['name'].startswith('Source: '):
+            clip_regions.append({
+                'timeline_start': m['position_sec'],
+                'filename': m['name'].replace('Source: ', ''),
+            })
+
+    if not clip_regions:
+        return markers
+
+    # Build per-clip segment index from transcript
+    clip_segments = {}
+    for clip in transcript.get('clips', []):
+        segs = []
+        for s in clip.get('segments', []):
+            segs.append({
+                'start': s['start'], 'end': s['end'],
+                'text': s.get('text', ''),
+                'confidence': s.get('confidence', s.get('avg_confidence', 0)),
+                'low_confidence': s.get('low_confidence', False),
+            })
+        clip_segments[clip['filename']] = segs
+
+    def find_clip_and_offset(pos):
+        for i, cr in enumerate(clip_regions):
+            next_start = clip_regions[i + 1]['timeline_start'] if i + 1 < len(clip_regions) else float('inf')
+            if cr['timeline_start'] <= pos < next_start:
+                return cr['filename'], pos - cr['timeline_start']
+        return None, 0
+
+    def find_segment_at_offset(filename, offset, tolerance=5.0):
+        best, best_dist = None, float('inf')
+        for s in clip_segments.get(filename, []):
+            if s['start'] - tolerance <= offset <= s['end'] + tolerance:
+                dist = abs((s['start'] + s['end']) / 2 - offset)
+                if dist < best_dist:
+                    best_dist = dist
+                    best = s
+        return best
+
+    # Enrich each marker
+    enriched = 0
+    for m in markers:
+        if m['name'].startswith('Source:'):
+            continue
+        fname, offset = find_clip_and_offset(m['position_sec'])
+        if not fname:
+            continue
+        seg = find_segment_at_offset(fname, offset)
+        if seg:
+            m['source_file'] = fname
+            m['tc_in'] = round(seg['start'], 1)
+            m['tc_out'] = round(seg['end'], 1)
+            m['full_text'] = seg['text']
+            m['confidence'] = round(seg['confidence'], 3)
+            m['low_confidence'] = seg['low_confidence']
+            enriched += 1
+        else:
+            m['source_file'] = fname
+
+    print(f"Enriched: {enriched}/{len([m for m in markers if not m['name'].startswith('Source:')])} markers with tc_in/tc_out")
+    return markers
+
+
 def build_marker_entry(m: dict) -> dict:
     """Build clean marker dict for output."""
     entry = {
         'name': m['name'],
         'position_sec': m['position_sec'],
     }
+    if m.get('source_file'):
+        entry['source_file'] = m['source_file']
+    if m.get('tc_in') is not None:
+        entry['tc_in'] = m['tc_in']
+        entry['tc_out'] = m['tc_out']
+    if m.get('full_text'):
+        entry['full_text'] = m['full_text']
+    if m.get('confidence'):
+        entry['confidence'] = m['confidence']
+    if m.get('low_confidence'):
+        entry['low_confidence'] = True
     if m['duration_sec'] > 0:
         entry['duration_sec'] = m['duration_sec']
         entry['is_chapter'] = True
@@ -150,6 +240,16 @@ def export_markers(project: Path) -> Path:
 
     print(f"Markers:  {len(all_markers)} total, {len(named)} named, {len(with_comments)} with comments")
 
+    # Enrich with tc_in/tc_out from transcript
+    tr_dir = project / "01_Media" / "Source" / "Transcription"
+    transcript_path = tr_dir / f"{project.name}_transcript.json"
+    if transcript_path.exists():
+        with open(transcript_path) as f:
+            full_tx = json.load(f)
+        named = enrich_markers_with_timecodes(named, full_tx)
+    else:
+        full_tx = {}
+
     # Classify into Assembly and Review
     assembly_markers, review_markers = classify_markers(named)
     assembly_chapters = [m for m in assembly_markers if m.get('duration_sec', 0) > 0 and not m['name'].startswith('Source:')]
@@ -160,7 +260,8 @@ def export_markers(project: Path) -> Path:
 
     # Build output
     code = re.match(r'^(YT[A-Z]{2,4}\d+)_', project.name)
-    seq_name = (code.group(1) if code else project.name) + "_2_Assembly"
+    code_str = code.group(1) if code else project.name
+    seq_name = code_str + "_Assembly"
 
     output = {
         "sequence": seq_name,
@@ -178,24 +279,29 @@ def export_markers(project: Path) -> Path:
         },
     }
 
-    # Embed full transcript
-    tr_dir = project / "01_Media" / "Source" / "Transcription"
-    transcript_path = tr_dir / f"{project.name}_transcript.json"
-    if transcript_path.exists():
-        with open(transcript_path) as f:
-            full_tx = json.load(f)
-        output['transcript'] = {
-            'project': full_tx.get('project', ''),
-            'language': full_tx.get('language', ''),
-            'speakers': full_tx.get('speakers', {}),
-            'stats': full_tx.get('stats', {}),
-            'clips': full_tx.get('clips', []),
-        }
-        print(f"Transcript: {len(full_tx.get('clips', []))} clips embedded")
+    # Transcript NOT embedded — too large (3MB+), Claude Desktop has transcript_assembly.json separately
 
-    # Write to Setup/Assembly/
+    # Embed latest brief so Claude Desktop has segments + / comments in one file
     assembly_dir = project / "01_Media" / "Source" / "Setup" / "Assembly"
     assembly_dir.mkdir(parents=True, exist_ok=True)
+    brief_re = re.compile(re.escape(code_str) + r'_Assembly_v(\d+)_in\.json$')
+    latest_brief = None
+    latest_brief_ver = 0
+    if assembly_dir.exists():
+        for f in assembly_dir.iterdir():
+            bm = brief_re.search(f.name)
+            if bm:
+                bv = int(bm.group(1))
+                if bv > latest_brief_ver:
+                    latest_brief_ver = bv
+                    latest_brief = f
+    if latest_brief:
+        with open(latest_brief, encoding='utf-8') as bf:
+            output['brief'] = json.load(bf)
+        output['brief_source'] = latest_brief.name
+        print(f"Brief:      {latest_brief.name} embedded ({len(output['brief'].get('segments', []))} segments)")
+
+    # Write to Setup/Assembly/
 
     version = find_next_version(assembly_dir, seq_name)
     output['version'] = version

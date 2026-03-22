@@ -64,7 +64,7 @@ Premiere → Window → Extensions → **YTAI Assembly** → load `{project}_edi
 
 The **0500_uxp** plugin works in four stages:
 
-1. **INGEST** (from ingest.json): imports clips + DJI WAVs → `00_Source/` bin + `{project}_1_Ingest` sequence
+1. **INGEST** (from ingest.json): imports clips + DJI WAVs → `00_Source/{CODE}_{scene}/` sub-bins + `{project}_1_{scene}` sequences
 2. **ASSEMBLY** (from edit_brief.json): reads `00_Source/` → builds `{project}_2_Assembly` sequence (V1: trimmed clips + A2: DJI audio + colored Chapter markers)
 3. **REVIEW** (from edit_brief.json): builds `{project}_3_Review` sequence (complement of Assembly, V1 + A2)
 4. **SCREEN CUES** (from edit_brief.json): builds `{project}_4_ScreenCues` sequence (V1: Assembly copy + V2: PNG overlays + A2: DJI audio)

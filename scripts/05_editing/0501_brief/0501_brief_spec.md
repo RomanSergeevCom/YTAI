@@ -1,9 +1,10 @@
-# 050202_claude_kb — Specification v1.3.0
+# 0505_claude_kb — Specification v1.3.0
 
 Claude Desktop Project Knowledge для создания монтажных брифов.
 
 **Вход:** `{project}_transcript.json` (из 020101_transcribe)
-**Выход:** `{CODE}_pre_edit_brief.json` -> auto-detect в 0500_uxp v2.1.0 (ASSEMBLY + REVIEW + SCREEN CUES)
+**Выход:** `{CODE}_Claude4_assembly.json` (в Setup/) -> auto-detect в 0500_uxp v2.1.0 (ASSEMBLY + REVIEW + SCREEN CUES)
+**Выход (prompt):** `{CODE}_Claude4_assembly_prompt.md` (в Setup/) — промпт-хелпер для Claude
 **Выход 2:** `{project}_2_Assembly_captions.srt` -> генерируется `generate_assembly_captions.py`
 **Выход 3:** `{project}_3_Review_captions.srt` -> генерируется `generate_assembly_captions.py --review`
 
@@ -29,9 +30,10 @@ Claude Desktop Project Knowledge для создания монтажных бр
 ```
 020101_transcribe
     |
-    +- {project}_transcript.json --> 050202_claude_kb (Claude Desktop)
+    +- {project}_transcript.json --> 0505_claude_kb (Claude Desktop)
     |                                     |
-    |                                     +- {CODE}_pre_edit_brief.json
+    |                                     +- {CODE}_Claude4_assembly.json (в Setup/)
+    |                                     +- {CODE}_Claude4_assembly_prompt.md (в Setup/)
     |                                          |  (auto-detected by UXP v2.1.0 при Select Project Folder)
     |                                          +-->  0500_uxp (ASSEMBLY: use=TRUE, block≠99)
     |                                          +-->  0500_uxp (REVIEW: use=FALSE OR block=99)
@@ -46,10 +48,10 @@ Claude Desktop Project Knowledge для создания монтажных бр
 
 ### Генерация Captions (Assembly + Review)
 
-После создания `pre_edit_brief.json`, LLM запускает:
+После создания `{CODE}_Claude4_assembly.json`, LLM запускает:
 ```bash
-python generate_assembly_captions.py --brief {CODE}_pre_edit_brief.json
-python generate_assembly_captions.py --brief {CODE}_pre_edit_brief.json --review
+python generate_assembly_captions.py --brief {CODE}_Claude4_assembly.json
+python generate_assembly_captions.py --brief {CODE}_Claude4_assembly.json --review
 ```
 
 Скрипт (единый для обоих режимов):
@@ -59,7 +61,7 @@ python generate_assembly_captions.py --brief {CODE}_pre_edit_brief.json --review
 4. Ремаппит таймкоды слов на соответствующий таймлайн
 5. Генерирует `{project}_2_Assembly_captions.srt` или `{project}_3_Review_captions.srt`
 
-UXP плагин (0500_uxp v2.1.0) автоматически импортирует оба SRT в 02_Transcripts при Build Assembly / Build Review. Файлы brief и ingest авто-определяются при выборе папки проекта (Select Project Folder → auto-detect).
+UXP плагин (0500_uxp v2.1.0) автоматически импортирует оба SRT в 01_Transcripts при Build Assembly / Build Review. Файлы brief и ingest авто-определяются при выборе папки проекта (Select Project Folder → auto-detect).
 
 ### Маппинг полей transcript -> pre_edit_brief
 

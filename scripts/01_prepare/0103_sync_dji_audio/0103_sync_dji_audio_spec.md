@@ -1,5 +1,7 @@
 # 0103_sync_dji_audio — Specification v1.2.0
 
+> **Legacy** — Superseded by 0105_multiwindow_sync_dji (multi-window cross-correlation). This script is kept for reference but 0105 is the production sync.
+
 Синхронизация аудио DJI беспроводных микрофонов с видеоклипами камеры.
 
 **Вход:** `Source/Video/*.mp4` (или `Source/Video/{scene}/*.mp4`) + `99_Pipeline/DJI_Audio/*.wav`

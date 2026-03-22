@@ -3,7 +3,7 @@
 Python-скрипт для генерации Assembly captions SRT с таймкодами Assembly-таймлайна.
 
 **Вход:**
-- `{project}_edit_brief.json` (из 050202_claude_kb)
+- `{CODE}_Claude4_assembly.json` (из 0501_brief, в Setup/)
 - `per_clip/{clip_id}/{clip_id}_transcript.json` (из 020101_transcribe, word-level timing)
 
 **Выход:**
@@ -20,16 +20,16 @@ Python-скрипт для генерации Assembly captions SRT с тайм�
 ## Использование
 
 ```bash
-python generate_assembly_captions.py --brief {project}_edit_brief.json
-python generate_assembly_captions.py --brief path/to/edit_brief.json --words-per-block 4
-python generate_assembly_captions.py --brief path/to/edit_brief.json --output custom_output.srt
+python generate_assembly_captions.py --brief {CODE}_Claude4_assembly.json
+python generate_assembly_captions.py --brief path/to/Claude4_assembly.json --words-per-block 4
+python generate_assembly_captions.py --brief path/to/Claude4_assembly.json --output custom_output.srt
 ```
 
 ### Параметры CLI
 
 | Параметр | Тип | Default | Описание |
 |----------|-----|---------|----------|
-| `--brief` | string | (обязательно) | Путь к edit_brief.json |
+| `--brief` | string | (обязательно) | Путь к Claude4_assembly.json |
 | `--words-per-block` | int | 6 | Слов на SRT-блок (2 строки по N/2 слов) |
 | `--output` | string | auto | Выходной путь (default: `{project}_2_Assembly_captions.srt` рядом с brief) |
 
@@ -90,7 +90,7 @@ format_srt_time(seconds) → str
     Seconds → HH:MM:SS,mmm
 
 load_brief(path) → dict
-    Загрузка edit_brief.json
+    Загрузка Claude4_assembly.json
 
 sort_segments(segments) → list
     Фильтрация + сортировка (зеркалит assemblyBuilder.js)
@@ -169,15 +169,15 @@ Timing: секунды относительно начала Assembly секве
 020101_transcribe
 ├── per_clip/{clip_id}_transcript.json ─┐
 │                                       ├──→ generate_assembly_captions.py
-050202_claude_kb                        │         │
-└── edit_brief.json ────────────────────┘         │
+0505_claude_kb                        │         │
+└── Claude4_assembly.json ──────────────┘         │
                                                   ↓
                                     {project}_2_Assembly_captions.srt
                                                   │
                                                   ↓
                                     050105_assembly_uxp (Step 6: auto-import)
                                          │
-                                    02_Transcripts bin → editor drag to Caption track
+                                    01_Transcripts bin → editor drag to Caption track
 ```
 
 ### Именование
@@ -214,7 +214,7 @@ Timing: секунды относительно начала Assembly секве
 
 ```bash
 # Базовый запуск
-python generate_assembly_captions.py --brief 999_testing_project/YTAI_Edit/YTAI_Edit_edit_brief.json
+python generate_assembly_captions.py --brief 999_testing_project/YTAI_Edit/YTAI_Edit_Claude4_assembly.json
 
 # Ожидаемый результат:
 #   Segments processed: 5

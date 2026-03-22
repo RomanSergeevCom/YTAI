@@ -369,8 +369,8 @@ function computeClipOffsets(clipDurations) {
  * @param {Object} [opts] - { producerSpeaker: string, assemblyBlocks: Array } for color logic
  * @returns {{ sequence, segments, clipCount, totalDuration, clipOffsets, ingestDuration }}
  */
-async function buildReviewSequence(project, clipMap, segments, projectName, logger, clipDurations, opts) {
-  const seqName = projectName + '_3_Review';
+async function buildReviewSequence(project, clipMap, segments, projectName, logger, clipDurations, opts, briefVersion) {
+  const seqName = projectName + '_3_Review' + (briefVersion ? '_v' + briefVersion : '');
 
   // Compute review segments using complement approach
   const reviewSegs = sortReviewSegments(segments, clipDurations);

@@ -9,8 +9,9 @@ UXP-плагин для Adobe Premiere Pro: **Ingest** + **Assembly** + **Review
 - SCREEN CUES: `{CODE}_pre_edit_brief.json` → `screens[]` массив + PNGs (из 0504_screen_cues)
 
 **Выход (Premiere Pro):**
-- INGEST: бины `00_Source/`, `02_Transcripts/`, секвенция `{project}_1_Ingest`
+- INGEST: бины `00_Source/` (clips + DJI), `01_Transcripts/` (per-scene transcript sub-bins), секвенция `{project}_1_Ingest`
 - SCREEN CUES: бин `01_ScreenCues/` (PNG оверлеи)
+- **Sequences at project root** — Premiere UXP API limitation: sequences cannot be moved into bins
 - ASSEMBLY: секвенция `{project}_2_Assembly` (V1: trimmed, colored clips + markers)
 - REVIEW: секвенция `{project}_3_Review` (V1 only, unused segments, colored by cut category)
 - SCREEN CUES: секвенция `{project}_4_ScreenCues` (V1: Assembly copy, V2: PNG overlays, markers, SRT)
@@ -53,9 +54,9 @@ INGEST, ASSEMBLY, REVIEW и SCREENS модули **не импортируют �
 ## INGEST Pipeline (6 шагов)
 
 1. **Clean** — удалить старые бины и секвенцию
-2. **Bins** — создать `00_Source`, `02_Transcripts`
+2. **Bins** — создать `00_Source`, `01_Transcripts`
 3. **Sequence** — импорт клипов → `{project}_1_Ingest` (все клипы целиком на V1)
-4. **Transcripts** — импорт SRT и premiere_transcript.json
+4. **Transcripts** — импорт per-scene SRTs (`{CODE}_{scene}_transcript.srt`, `{CODE}_{scene}_captions.srt`) into `01_Transcripts/{CODE}_{scene}_transcripts/` sub-bins; general SRTs (`{project}_1_Ingest_captions.srt`, `{project}_1_Ingest_transcript.srt`) are NOT imported
 5. **LUTs** — копирование .cube в Adobe Creative, применение Lumetri
 6. **Activate** — сохранение проекта + валидация (V1 count, resolution, transcripts, Lumetri)
 
@@ -113,10 +114,11 @@ Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегмен�
 ```
 
 **Алгоритм:**
-1. Все медиа (видео + DJI WAV) импортируются в `00_Source` **одной операцией**
-2. Клипы группируются по `clip.scene`
-3. Для каждой сцены создаётся отдельная секвенция
-4. TX→Track маппинг определяется **per-scene**: `sortedTx = [...sceneTxIds].sort()` → TX01→A2, TX02→A3
+1. Клипы группируются по `clip.scene`
+2. В `00_Source` создаются подбины `{CODE}_{scene}` (e.g. `YTCR01_al_qudra_lake`, `YTCR01_desert_drive`)
+3. Медиа (видео + DJI WAV) импортируются в соответствующий подбин сцены
+4. Для каждой сцены создаётся отдельная секвенция
+5. TX→Track маппинг определяется **per-scene**: `sortedTx = [...sceneTxIds].sort()` → TX01→A2, TX02→A3
 
 **Функция:** `buildMultiSceneIngest()` в `timelineBuilder.js`
 
@@ -124,8 +126,8 @@ Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегмен�
 
 | Ситуация | Поведение |
 |----------|-----------|
-| Flat проект (нет scene) | 1 секвенция `{project}_1_Ingest` |
-| Scene проект | N секвенций `{project}_1_{sceneName}` |
+| Flat проект (нет scene) | 1 секвенция `{project}_1_Ingest`, клипы в `00_Source` |
+| Scene проект | N подбинов `00_Source/{CODE}_{scene}`, N секвенций `{project}_1_{sceneName}` |
 | 1 TX на сцену | A2 = TX01 |
 | 2 TX на сцену (Coffee) | A2 = TX01, A3 = TX02 |
 
@@ -138,7 +140,7 @@ Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегмен�
 3. **Build** — `buildAssemblySequence()` (V1 only, USE=TRUE, block≠99, pre-trimmed, per-segment colors)
 4. **Markers** — маркеры в 4 транзакциях: создание → покраска → смена типа на Chapter
 5. **Activate** — открытие секвенции + сохранение + валидация
-6. **Captions** — `importCaptionsSrt()` — import `{project}_2_Assembly_captions.srt` в 02_Transcripts
+6. **Captions** — `importCaptionsSrt()` — import `{project}_2_Assembly_captions.srt` в 01_Transcripts
 
 > **Screen Cues** — отдельный pipeline (v1.9.3+), не часть Assembly. См. секцию ниже.
 
@@ -155,14 +157,14 @@ Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегмен�
 - **V1:** Точная копия Assembly (те же сегменты, порядок, тримы, цвета блоков)
 - **V2:** PNG overlays на позициях screen cues (OVERLAY_DURATION = 5s)
 - **Markers:** Orange Comment markers на позициях screen cues
-- **SRT:** Генерируется in-memory, записывается на диск, импортируется в 02_Transcripts
+- **SRT:** Генерируется in-memory, записывается на диск, импортируется в 01_Transcripts
 
 **4 шага pipeline (+ подготовка бина):**
 0. Create/find `01_ScreenCues` bin → screenCuesBin (PNG imports target)
 1. Scan clips из 00_Source → clipMap
 2. buildScreenCues() → V1 Assembly copy + V2 PNGs (→ 01_ScreenCues) + markers + SRT
 3. Write SRT file to {briefDir}/
-4. Import SRT to 02_Transcripts bin
+4. Import SRT to 01_Transcripts bin
 
 **Pre-flight check:** Pipeline проверяет наличие `screen_cues/` папки через `uxpfs.getEntryWithUrl()` перед Step 2. Если PNGs не найдены → V1 строится, V2 пропускается с actionable warning + команда Python копируется в clipboard.
 
@@ -201,7 +203,7 @@ Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегмен�
 3. **Build** — `buildReviewSequence()` (V1 only, complement approach: Ingest минус Assembly, sorted by sourceFile + tc_in, colored by category)
 4. **Markers** — Chapter маркеры по границам source files + per-segment маркеры с [CUT]/[ALT]/[SKIP] prefix
 5. **Activate** — открытие секвенции + сохранение + валидация
-6. **Captions** — `importCaptionsSrt()` — import `{project}_3_Review_captions.srt` в 02_Transcripts
+6. **Captions** — `importCaptionsSrt()` — import `{project}_3_Review_captions.srt` в 01_Transcripts
 
 ### REVIEW — Ingest минус Assembly (complement approach)
 
@@ -495,7 +497,7 @@ buildAssembly() [index.js]
 └─ Step 6: importCaptionsSrt() [index.js]
    ├─ Ищет {CODE}_2_Assembly_captions.srt в Transcription/captions/ (или рядом с brief как fallback)
    ├─ Если найден → project.importFiles([srtPath], true, transcriptsBin, false)
-   └─ SRT появляется в 02_Transcripts bin → editor перетаскивает на Caption track
+   └─ SRT появляется в 01_Transcripts bin → editor перетаскивает на Caption track
 ```
 
 ### Внутри Step 4: маркеры (порядок критически важен!)
@@ -560,7 +562,7 @@ buildReview() [index.js]
 └─ Step 6: importCaptionsSrt() [index.js]
    ├─ Ищет {CODE}_3_Review_captions.srt в Transcription/captions/ (или рядом с brief как fallback)
    ├─ Если найден → project.importFiles([srtPath], true, transcriptsBin, false)
-   └─ SRT появляется в 02_Transcripts bin → editor перетаскивает на Caption track
+   └─ SRT появляется в 01_Transcripts bin → editor перетаскивает на Caption track
 ```
 
 ### Внутри SCREEN CUES Pipeline
@@ -589,7 +591,7 @@ buildScreenCuesPipeline() [index.js]
 │
 ├─ Step 3: Write SRT to Transcription/captions/{CODE}_4_PreEdit_captions.srt and Transcription/transcripts/{CODE}_4_PreEdit_transcript.srt
 │
-├─ Step 4: importCaptionsSrt() → import SRT to 02_Transcripts bin
+├─ Step 4: importCaptionsSrt() → import SRT to 01_Transcripts bin
 │
 └─ Activate sequence + validate + save logs
    ├─ Status: "V1=X, V2=Y" or "V1 built. V2: no PNGs — run generate_screen_cues_png.py"

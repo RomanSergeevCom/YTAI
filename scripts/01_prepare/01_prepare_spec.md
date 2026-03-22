@@ -80,10 +80,15 @@ python ~/YTAI/scripts/01_prepare/0105_multiwindow_sync_dji/0105_multiwindow_sync
 │       │   ├── {clip}_TX01.wav
 │       │   └── ...
 │       ├── LUT/                         ← .cube из SD-карты
+│       ├── pipeline/                    ← intermediate files (extract_audio / transcribe)
+│       │   ├── full_audio.wav
+│       │   ├── diarization.json
+│       │   ├── meta.json
+│       │   ├── speakers.json
+│       │   ├── clip_offsets.json
+│       │   └── combined_transcript.json
 │       ├── Transcription/
 │       │   ├── {CODE}_FULL_AUDIO.wav    ← конкатенация всех клипов
-│       │   ├── captions/                ← *_captions.srt файлы
-│       │   ├── transcripts/             ← *_transcript.srt файлы
 │       │   └── per_clip/
 │       │       └── {clip}/
 │       │           ├── {clip}_AUDIO.wav ← 48kHz stereo WAV
@@ -91,6 +96,8 @@ python ~/YTAI/scripts/01_prepare/0105_multiwindow_sync_dji/0105_multiwindow_sync
 │       └── Setup/
 │           ├── {CODE}_ingest.json       ← Premiere UXP
 │           ├── {CODE}_pre-edit_brief.json ← бриф для Assembly
+│           ├── {CODE}_Claude4_assembly.json ← assembly JSON
+│           ├── {CODE}_Claude4_assembly_prompt.md ← assembly prompt helper
 │           ├── {CODE}_transcript.json   ← транскрипт
 │           ├── {CODE}_transcript.xlsx   ← Excel транскрипт
 │           ├── screen_cues/             ← PNG оверлеи
@@ -151,7 +158,7 @@ SD-карта / корень проекта
     ├── Source/Video/*.MP4          → 0102 extract → per_clip/{clip}/{clip}_AUDIO.wav
     │                                              → {project}_FULL_AUDIO.wav
     │
-    ├── Source/Video/ + DJI_Audio/  → 0103 sync   → Source/Audio/{clip}_TX{N}.wav
+    ├── Source/Video/ + DJI_Audio/  → 0105 sync   → Source/Audio/{clip}_TX{N}.wav
     │                                              → Source/Audio/{scene}/{clip}_TX{N}.wav (scene-aware)
     │                                              → 99_Pipeline/DJI_Audio/{CODE}_dji_sync_check.xml (1 or N sequences)
     │

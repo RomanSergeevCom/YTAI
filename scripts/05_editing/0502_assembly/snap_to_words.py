@@ -19,8 +19,10 @@ import sys
 from pathlib import Path
 
 
-SNAP_TOLERANCE = 0.5   # Only snap if adjustment < 0.5s
+SNAP_TOLERANCE = 0.5   # tc_in: only snap if adjustment < 0.5s
 ALREADY_OK = 0.05      # Consider already aligned if within 50ms
+# tc_out has NO tolerance cap — we always extend to include the full last word,
+# because clipping a spoken word is worse than adding a few extra seconds.
 
 
 def parse_timecode(tc_str: str) -> float:
@@ -66,7 +68,10 @@ def build_words_lookup(transcript: dict) -> dict:
 
 
 def snap_segment(seg: dict, words: list) -> dict:
-    """Snap tc_in/tc_out to nearest word boundaries.
+    """Snap tc_in/tc_out to word boundaries without clipping spoken words.
+
+    tc_in  → start of the first word that ends AFTER tc_in (never cut intro)
+    tc_out → end   of the last  word that starts BEFORE tc_out (never cut tail)
 
     Returns dict with snapped values and log info, or None if no change.
     """
@@ -76,35 +81,62 @@ def snap_segment(seg: dict, words: list) -> dict:
     if not words or tc_in >= tc_out:
         return None
 
-    # Find word closest to tc_in (snap to word.start)
-    best_in = None
-    best_in_delta = float("inf")
+    # tc_in: find the word being spoken at tc_in (if any) → snap to its start
+    # If tc_in is in silence, find the next word → snap with tolerance
+    word_at_in = None
+    next_word_after_in = None
     for w in words:
-        delta = abs(w["start"] - tc_in)
-        if delta < best_in_delta:
-            best_in_delta = delta
-            best_in = w
+        if w["start"] <= tc_in < w["end"]:
+            word_at_in = w
+            break
+        if w["start"] > tc_in and next_word_after_in is None:
+            next_word_after_in = w
 
-    # Find word closest to tc_out (snap to word.end)
-    best_out = None
-    best_out_delta = float("inf")
+    # tc_out: find the word being spoken at tc_out (if any) → snap to its end
+    # If tc_out is in silence, find the previous word → snap with tolerance
+    word_at_out = None
+    prev_word_before_out = None
     for w in words:
-        delta = abs(w["end"] - tc_out)
-        if delta < best_out_delta:
-            best_out_delta = delta
-            best_out = w
+        if w["start"] < tc_out:
+            prev_word_before_out = w
+        if w["start"] <= tc_out < w["end"]:
+            word_at_out = w
 
     changes = {}
 
-    if best_in and best_in_delta > ALREADY_OK and best_in_delta < SNAP_TOLERANCE:
-        changes["tc_in"] = format_timecode(best_in["start"])
-        changes["tc_in_word"] = best_in["word"]
-        changes["tc_in_delta"] = round(best_in["start"] - tc_in, 3)
+    # tc_in logic: if cutting a word mid-pronunciation, ALWAYS fix (no tolerance cap)
+    # if in silence, snap to next word start within SNAP_TOLERANCE
+    if word_at_in:
+        # Cutting a word — always extend back to include full word
+        delta = abs(word_at_in["start"] - tc_in)
+        if delta > ALREADY_OK:
+            changes["tc_in"] = format_timecode(word_at_in["start"])
+            changes["tc_in_word"] = word_at_in["word"]
+            changes["tc_in_delta"] = round(word_at_in["start"] - tc_in, 3)
+    elif next_word_after_in:
+        # In silence — snap forward to next word start (with tolerance)
+        delta = abs(next_word_after_in["start"] - tc_in)
+        if delta > ALREADY_OK and delta < SNAP_TOLERANCE:
+            changes["tc_in"] = format_timecode(next_word_after_in["start"])
+            changes["tc_in_word"] = next_word_after_in["word"]
+            changes["tc_in_delta"] = round(next_word_after_in["start"] - tc_in, 3)
 
-    if best_out and best_out_delta > ALREADY_OK and best_out_delta < SNAP_TOLERANCE:
-        changes["tc_out"] = format_timecode(best_out["end"])
-        changes["tc_out_word"] = best_out["word"]
-        changes["tc_out_delta"] = round(best_out["end"] - tc_out, 3)
+    # tc_out logic: if cutting a word mid-pronunciation, ALWAYS fix (no tolerance cap)
+    # if in silence, snap to previous word end within SNAP_TOLERANCE
+    if word_at_out:
+        # Cutting a word — always extend forward to include full word
+        delta = abs(word_at_out["end"] - tc_out)
+        if delta > ALREADY_OK:
+            changes["tc_out"] = format_timecode(word_at_out["end"])
+            changes["tc_out_word"] = word_at_out["word"]
+            changes["tc_out_delta"] = round(word_at_out["end"] - tc_out, 3)
+    elif prev_word_before_out:
+        # In silence — snap back to previous word end (with tolerance)
+        delta = abs(prev_word_before_out["end"] - tc_out)
+        if delta > ALREADY_OK and delta < SNAP_TOLERANCE:
+            changes["tc_out"] = format_timecode(prev_word_before_out["end"])
+            changes["tc_out_word"] = prev_word_before_out["word"]
+            changes["tc_out_delta"] = round(prev_word_before_out["end"] - tc_out, 3)
 
     return changes if changes else None
 

@@ -75,160 +75,70 @@ function convertToAdobeFormat(jsonContent) {
  *
  * @param {Object} project - Premiere Pro project
  * @param {Object} ingest - Parsed ingest JSON object
- * @param {Object|null} transcriptsBin - Target bin for SRT (02_Transcripts)
+ * @param {Object|null} transcriptsBin - Target bin for SRT (01_Transcripts)
  * @param {Object} logger - Logger instance
  * @param {Object|null} sequence - Active sequence (unused, kept for API compat)
  * @returns {{ srtImported: boolean, transcriptsImported: number }}
  */
 async function importTranscripts(project, ingest, transcriptsBin, logger, sequence, projectCode) {
+  // Create per-scene transcript sub-bins inside sourceBin (00_Source)
+  const { createTranscriptSceneBins } = require('./binManager');
+  let transcriptSceneBins = {};
+  const scenes = [...new Set(ingest.clips.map(c => c.scene).filter(Boolean))].sort();
+  if (transcriptsBin && scenes.length > 0) {
+    try {
+      transcriptSceneBins = await createTranscriptSceneBins(
+        project, transcriptsBin, scenes, logger, projectCode);
+    } catch (err) {
+      logger.debug(`Transcript scene bins failed: ${err.message}`);
+    }
+  }
   let srtImported = false;
   let transcriptsImported = 0;
 
-  // 1. Import SRT files into project bin
-  // Import word-level captions SRT (preferred for caption track)
+  // 1. Skip general SRT files — only import per-scene SRTs
+  // General captions/transcript SRTs stay on disk but are NOT imported into Premiere
   const captionsSrtPath = ingest.files && ingest.files.captions_srt;
   const srtPath = ingest.files && ingest.files.transcript_srt;
-
   if (captionsSrtPath) {
-    logger.debug(`Captions SRT path: ${captionsSrtPath}`);
-    try {
-      let capContent = null;
-      try {
-        const capEntry = await uxpfs.getEntryWithUrl('file://' + captionsSrtPath);
-        capContent = await capEntry.read();
-        const blockCount = (capContent.match(/^\d+$/gm) || []).length;
-        logger.debug(`Captions SRT: ${capContent.length} chars, ${blockCount} blocks (word-level)`);
-      } catch (sizeErr) {
-        logger.debug(`Cannot read captions SRT for check: ${sizeErr.message}`);
-      }
-
-      // If projectCode available, create short-named copy and import ONLY it (not the original)
-      if (projectCode) {
-        const shortName = projectCode + '_1_Ingest_captions.srt';
-        if (captionsSrtPath.split('/').pop() !== shortName && capContent) {
-          try {
-            const dirPath = captionsSrtPath.replace(/[/\\][^/\\]+$/, '');
-            const dir = await uxpfs.getEntryWithUrl('file://' + dirPath);
-            const shortFile = await dir.createFile(shortName, { overwrite: true });
-            await shortFile.write(capContent);
-            await project.importFiles([dirPath + '/' + shortName], true, transcriptsBin || null, false);
-            srtImported = true;
-            logger.info(`Captions SRT imported: ${shortName} (short-named copy, word-level)`);
-          } catch (copyErr) {
-            // Fallback: import original if short copy fails
-            await project.importFiles([captionsSrtPath], true, transcriptsBin || null, false);
-            srtImported = true;
-            logger.info(`Captions SRT imported: ${captionsSrtPath.split('/').pop()} (original, word-level)`);
-          }
-        } else {
-          // Already has short name
-          await project.importFiles([captionsSrtPath], true, transcriptsBin || null, false);
-          srtImported = true;
-          logger.info(`Captions SRT imported: ${captionsSrtPath.split('/').pop()} (word-level)`);
-        }
-      } else {
-        // No projectCode — import original as-is
-        await project.importFiles([captionsSrtPath], true, transcriptsBin || null, false);
-        srtImported = true;
-        logger.info(`Captions SRT imported: ${captionsSrtPath.split('/').pop()} (word-level)`);
-      }
-    } catch (err) {
-      logger.warn(`Captions SRT import failed: ${err.message}`);
-    }
+    logger.info(`General word-level SRT on disk (not imported): ${captionsSrtPath.split('/').pop()}`);
   }
-
   if (srtPath) {
-    logger.debug(`Transcript SRT path: ${srtPath}`);
-    try {
-      let srtContent = null;
-      try {
-        const srtEntry = await uxpfs.getEntryWithUrl('file://' + srtPath);
-        srtContent = await srtEntry.read();
-        const blockCount = (srtContent.match(/^\d+$/gm) || []).length;
-        logger.debug(`Transcript SRT: ${srtContent.length} chars, ${blockCount} blocks (sentence-level)`);
-      } catch (sizeErr) {
-        logger.debug(`Cannot read SRT for size check: ${sizeErr.message}`);
-      }
-
-      // If projectCode available, create short-named copy and import ONLY it (not the original)
-      if (projectCode) {
-        const shortName = projectCode + '_1_Ingest_transcript.srt';
-        if (srtPath.split('/').pop() !== shortName && srtContent) {
-          try {
-            const dirPath = srtPath.replace(/[/\\][^/\\]+$/, '');
-            const dir = await uxpfs.getEntryWithUrl('file://' + dirPath);
-            const shortFile = await dir.createFile(shortName, { overwrite: true });
-            await shortFile.write(srtContent);
-            await project.importFiles([dirPath + '/' + shortName], true, transcriptsBin || null, false);
-            if (!captionsSrtPath) srtImported = true;
-            logger.info(`Transcript SRT imported: ${shortName} (short-named copy, sentence-level)`);
-          } catch (copyErr) {
-            // Fallback: import original if short copy fails
-            await project.importFiles([srtPath], true, transcriptsBin || null, false);
-            if (!captionsSrtPath) srtImported = true;
-            logger.info(`Transcript SRT imported: ${srtPath.split('/').pop()} (original, sentence-level)`);
-          }
-        } else {
-          // Already has short name
-          await project.importFiles([srtPath], true, transcriptsBin || null, false);
-          if (!captionsSrtPath) srtImported = true;
-          logger.info(`Transcript SRT imported: ${srtPath.split('/').pop()} (sentence-level)`);
-        }
-      } else {
-        // No projectCode — import original as-is
-        await project.importFiles([srtPath], true, transcriptsBin || null, false);
-        if (!captionsSrtPath) srtImported = true;
-        logger.info(`Transcript SRT imported: ${srtPath.split('/').pop()} (sentence-level, reference)`);
-      }
-    } catch (err) {
-      logger.warn(`Transcript SRT import failed: ${err.message}`);
-      if (err.stack) logger.debug(err.stack);
-    }
+    logger.info(`General transcript SRT on disk (not imported): ${srtPath.split('/').pop()}`);
   }
 
-  // 1b. Import per-scene caption SRT files
+  // 1b. Import per-scene SRT files into per-scene transcript bins in 00_Source
   const sceneCaptions = ingest.files && ingest.files.scene_captions_srt;
-  if (sceneCaptions && typeof sceneCaptions === 'object') {
-    const sceneNames = Object.keys(sceneCaptions);
-    logger.info(`Per-scene captions: ${sceneNames.length} scenes (${sceneNames.join(', ')})`);
-    for (const [scene, sceneSrtPath] of Object.entries(sceneCaptions)) {
-      if (!sceneSrtPath) continue;
-      try {
-        // Create short-named copy for the scene
-        const shortName = projectCode
-          ? `${projectCode}_1_${scene}_captions.srt`
-          : sceneSrtPath.split('/').pop();
+  const sceneTranscripts = ingest.files && ingest.files.scene_transcript_srt;
 
-        if (projectCode && sceneSrtPath.split('/').pop() !== shortName) {
-          const dirPath = sceneSrtPath.replace(/[/\\][^/\\]+$/, '');
-          const dir = await uxpfs.getEntryWithUrl('file://' + dirPath);
-          const srtEntry = await uxpfs.getEntryWithUrl('file://' + sceneSrtPath);
-          const srtContent = await srtEntry.read();
-          const shortFile = await dir.createFile(shortName, { overwrite: true });
-          await shortFile.write(srtContent);
-          await project.importFiles([dirPath + '/' + shortName], true, transcriptsBin || null, false);
-        } else {
-          await project.importFiles([sceneSrtPath], true, transcriptsBin || null, false);
-        }
-        srtImported = true;
-        logger.info(`Scene captions imported: ${shortName} (${scene})`);
-      } catch (err) {
-        logger.warn(`Scene captions import failed for ${scene}: ${err.message}`);
-      }
+  // Helper: import one SRT into a scene transcript bin
+  async function importSceneSrt(sceneSrtPath, scene, label) {
+    const targetBin = transcriptSceneBins[scene] || transcriptsBin || null;
+    try {
+      await project.importFiles([sceneSrtPath], true, targetBin, false);
+      srtImported = true;
+      const fname = sceneSrtPath.split('/').pop();
+      logger.info(`${label} → ${targetBin ? targetBin.name : 'root'}: ${fname}`);
+    } catch (err) {
+      logger.warn(`${label} import failed for ${scene}: ${err.message}`);
     }
   }
 
-  if (!captionsSrtPath && !srtPath && !sceneCaptions) {
-    logger.warn('No SRT file paths in ingest JSON (files.captions_srt / files.transcript_srt / files.scene_captions_srt missing)');
+  if (sceneCaptions && typeof sceneCaptions === 'object') {
+    for (const [scene, path] of Object.entries(sceneCaptions)) {
+      if (path) await importSceneSrt(path, scene, 'Captions');
+    }
+  }
+  if (sceneTranscripts && typeof sceneTranscripts === 'object') {
+    for (const [scene, path] of Object.entries(sceneTranscripts)) {
+      if (path) await importSceneSrt(path, scene, 'Transcript');
+    }
   }
 
   if (srtImported) {
-    if (sceneCaptions) {
-      logger.info('To add per-scene captions: drag scene SRT from 02_Transcripts to each timeline caption track');
-    } else {
-      const dragTarget = captionsSrtPath ? captionsSrtPath.split('/').pop() : srtPath.split('/').pop();
-      logger.info(`To add captions: drag "${dragTarget}" from 02_Transcripts to timeline caption track`);
-    }
+    logger.info('Per-scene SRTs imported. Drag from transcript bins to timeline caption track.');
+  } else if (!sceneCaptions && !sceneTranscripts) {
+    logger.warn('No per-scene SRT paths in ingest JSON');
   }
 
   // 2. Bind premiere_transcript.json to each clip via Transcript API

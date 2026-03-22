@@ -109,13 +109,21 @@ These are **different** from Source/Audio/ — per_clip audio is from the camera
 ## Transcription output
 
 ```
+pipeline/                                   intermediate files
+├── full_audio.wav
+├── diarization.json
+├── meta.json
+├── speakers.json
+├── clip_offsets.json
+└── combined_transcript.json
+
 Transcription/
-├── {project}_transcript.json              main transcript (segments + words)
-├── {project}_transcript.srt               subtitles [Speaker] text
-├── {project}_1_Ingest_captions.srt        word-level captions
-├── {project}_transcript.xlsx              spreadsheet
-├── diarization.json                       speaker segments
-├── {project}_FULL_AUDIO.wav               concatenated audio
+├── {CODE}_FULL_AUDIO.wav                  concatenated audio
+├── {scene}/                               per-scene transcripts
+│   ├── {CODE}_{scene}_transcript.json
+│   ├── {CODE}_{scene}_transcript.srt
+│   ├── {CODE}_{scene}_transcript.xlsx
+│   └── {CODE}_{scene}_captions.srt
 ├── per_clip/{clip}/
 │   ├── {clip}_AUDIO.wav                   48kHz stereo (from extract_audio)
 │   ├── {clip}M01.XML                      camera metadata
@@ -126,7 +134,13 @@ Transcription/
 │   └── {clip}_premiere_transcript.json    Premiere format
 
 Setup/
-├── {project}_ingest.json                  Premiere UXP plugin
+├── {CODE}_ingest.json                     Premiere UXP plugin
+├── {CODE}_Claude4_assembly.json           assembly JSON
+├── {CODE}_Claude4_assembly_prompt.md      assembly prompt helper
+├── {CODE}_transcript.json                 main transcript
+├── {CODE}_transcript.srt                  subtitles [Speaker] text
+├── {CODE}_transcript_wordlevel.srt        word-level captions
+├── {CODE}_transcript.xlsx                 spreadsheet
 ```
 
 ---
@@ -176,9 +190,10 @@ python ~/YTAI/scripts/03_speaker_id/00_process_all.py --project "$PROJECT" --no-
 │       ├── {project}_Source.prproj        ← Premiere source project
 │       ├── Video/                         ← camera MP4 (auto-organized)
 │       ├── Audio/                         ← DJI synced WAV (auto-generated)
+│       ├── pipeline/                      ← intermediate files (full_audio, diarization, etc.)
 │       ├── Transcription/                 ← transcripts + per-clip hub
-│       │   ├── {project}_transcript.json
-│       │   ├── {project}_FULL_AUDIO.wav
+│       │   ├── {CODE}_FULL_AUDIO.wav
+│       │   ├── {scene}/                   ← per-scene transcripts
 │       │   └── per_clip/
 │       │       └── {clip}/
 │       │           ├── {clip}_AUDIO.wav   ← extracted audio (48kHz)
@@ -186,7 +201,8 @@ python ~/YTAI/scripts/03_speaker_id/00_process_all.py --project "$PROJECT" --no-
 │       │           ├── {clip}_transcript.json
 │       │           └── ...
 │       ├── Setup/
-│       │   ├── {project}_ingest.json      ← Premiere UXP
+│       │   ├── {CODE}_ingest.json         ← Premiere UXP
+│       │   ├── {CODE}_Claude4_assembly.json ← assembly JSON
 │       │   └── logs/                      ← all pipeline logs
 │       └── LUT/                           ← .cube from SD card (auto-organized)
 ├── 02_Exports/

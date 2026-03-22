@@ -60,8 +60,8 @@ function sortSegments(segments) {
  * @param {Object} logger - Logger instance
  * @returns {{ sequence, segments: useSegs, clipCount, totalDuration }}
  */
-async function buildAssemblySequence(project, clipMap, segments, projectName, logger) {
-  const seqName = projectName + '_2_Assembly';
+async function buildAssemblySequence(project, clipMap, segments, projectName, logger, briefVersion) {
+  const seqName = projectName + '_2_Assembly' + (briefVersion ? '_v' + briefVersion : '');
 
   // Filter: only USE=TRUE and block != 99
   const useSegs = sortSegments(segments.filter(function (s) {

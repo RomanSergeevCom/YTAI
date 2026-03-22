@@ -135,40 +135,91 @@ function clearSourceInOut(project, clipItem, label, logger) {
  * @param {Object} logger - Logger instance
  */
 async function cleanExistingSequence(project, seqName, logger) {
+  var ARCHIVE_BIN = '03_Assembly';
   try {
     const rootItem = await project.getRootItem();
     const allItems = await rootItem.getItems();
 
-    // Find max version number among existing _v{N} sequences
+    // Find or create 03_Assembly archive bin
+    var archiveBin = null;
+    for (var ai = 0; ai < allItems.length; ai++) {
+      if (allItems[ai].name === ARCHIVE_BIN) {
+        archiveBin = ppro.FolderItem.cast(allItems[ai]);
+        break;
+      }
+    }
+    if (!archiveBin) {
+      try {
+        project.lockedAccess(function () {
+          project.executeTransaction(function (ca) {
+            ca.addAction(ppro.FolderItem.createAddItemAction(ARCHIVE_BIN));
+          }, 'Create ' + ARCHIVE_BIN);
+        });
+        // Re-fetch items to find the new bin
+        var updatedItems = await rootItem.getItems();
+        for (var ui = 0; ui < updatedItems.length; ui++) {
+          if (updatedItems[ui].name === ARCHIVE_BIN) {
+            archiveBin = ppro.FolderItem.cast(updatedItems[ui]);
+            break;
+          }
+        }
+        if (logger) logger.info('Created bin: ' + ARCHIVE_BIN);
+      } catch (binErr) {
+        if (logger) logger.debug('Cannot create archive bin: ' + binErr.message);
+      }
+    }
+
+    // Find max version number among existing _v{N} sequences (in root and archive)
     var maxVersion = 0;
     var versionRe = new RegExp('^' + seqName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '_v(\\d+)$');
+
+    // Check root items
     for (var vi = 0; vi < allItems.length; vi++) {
       var vm = allItems[vi].name.match(versionRe);
-      if (vm) {
-        var vn = parseInt(vm[1], 10);
-        if (vn > maxVersion) maxVersion = vn;
-      }
+      if (vm) maxVersion = Math.max(maxVersion, parseInt(vm[1], 10));
+    }
+    // Check archive bin items
+    if (archiveBin) {
+      try {
+        var archiveItems = await archiveBin.getItems();
+        for (var bi = 0; bi < archiveItems.length; bi++) {
+          var bm = archiveItems[bi].name.match(versionRe);
+          if (bm) maxVersion = Math.max(maxVersion, parseInt(bm[1], 10));
+        }
+      } catch (e) { /* empty bin */ }
     }
 
     for (const item of allItems) {
       if (item.name === seqName && item.type !== 2) {
-        // Rename to _v{N+1} instead of deleting
         var newVersion = maxVersion + 1;
         var newName = seqName + '_v' + newVersion;
         try {
           project.lockedAccess(function () {
             project.executeTransaction(function (ca) {
+              // Rename
               ca.addAction(item.createSetNameAction(newName));
-            }, 'Rename ' + seqName + ' to ' + newName);
+              // Move to archive bin
+              if (archiveBin) {
+                ca.addAction(archiveBin.createMoveItemAction(item));
+              }
+            }, 'Archive ' + seqName + ' → ' + ARCHIVE_BIN + '/' + newName);
           });
-          if (logger) logger.info('Renamed "' + seqName + '" → "' + newName + '"');
+          if (logger) logger.info('Archived: "' + seqName + '" → ' + ARCHIVE_BIN + '/' + newName);
         } catch (renameErr) {
-          // Fallback: delete if rename fails
+          // Fallback: just rename without moving
           try {
-            await project.deleteSequence(item);
-            if (logger) logger.info('Deleted old sequence: "' + seqName + '" (rename failed: ' + renameErr.message + ')');
-          } catch (e) {
-            if (logger) logger.debug('Cannot delete sequence "' + seqName + '": ' + e.message);
+            project.lockedAccess(function () {
+              project.executeTransaction(function (ca) {
+                ca.addAction(item.createSetNameAction(newName));
+              }, 'Rename ' + seqName);
+            });
+            if (logger) logger.info('Renamed "' + seqName + '" → "' + newName + '" (move failed: ' + renameErr.message + ')');
+          } catch (e2) {
+            // Last resort: delete
+            try {
+              await project.deleteSequence(item);
+              if (logger) logger.info('Deleted "' + seqName + '" (rename+move failed)');
+            } catch (e3) { }
           }
         }
       }

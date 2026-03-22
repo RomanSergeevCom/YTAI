@@ -148,6 +148,7 @@ cd ~/YTAI/scripts/05_editing/0500_uxp && npm test
 |------|----------|
 | `01_prepare/01_prepare_spec.md` | Фаза подготовки: init, extract, DJI sync |
 | `01_prepare/0102_extract_audio/0102_extract_audio_spec.md` | Извлечение аудио |
-| `01_prepare/0103_sync_dji_audio/0103_sync_dji_audio_spec.md` | Синхронизация DJI |
+| `01_prepare/0103_sync_dji_audio/0103_sync_dji_audio_spec.md` | Синхронизация DJI (legacy — metadata-based) |
+| `01_prepare/0105_multiwindow_sync_dji/0105_multiwindow_sync_dji_spec.md` | Синхронизация DJI (production — multi-window correlation) |
 | `02_transcribe/020101_transcribe/020101_transcribe_spec.md` | Транскрипция + ingest |
 | `05_editing/0500_uxp/0500_uxp_spec.md` | UXP плагин Premiere |

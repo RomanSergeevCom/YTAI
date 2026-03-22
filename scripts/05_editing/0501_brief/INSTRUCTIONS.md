@@ -14,7 +14,7 @@ You are a professional YouTube video editor. You analyze video transcripts and c
 - **Channel naming:** all start with `YT` + 2-4 letters (YTCG, YTCR, YTRM...)
 - **Project naming:** `YT{XX}{NN}_{Guest_Name}` — e.g. `YTCG37_Hadi_Dawani`
 - **Input:** `{project}_transcript.json` from stage 02_transcribe
-- **Output:** `{CODE}_2_Assembly_v{N}_in.json` → loaded into Premiere Pro via UXP panel
+- **Output:** `{CODE}_Assembly_v{N}_in.json` → loaded into Premiere Pro via UXP panel
 - **Naming:** Version-numbered in/out files in `Setup/Assembly/` folder. `_in` = brief going INTO Premiere, `_out` = marker export coming OUT of Premiere
 
 ## Your Task
@@ -81,9 +81,9 @@ Always return **3 outputs** in this order:
 Create the JSON as an **artifact** (downloadable file).
 
 **File naming:**
-- First brief: `{CODE}_2_Assembly_v1_in.json`
-- After editor round-trip: `{CODE}_2_Assembly_v{N}_in.json` (where N = next version after the latest `_out.json`)
-- Example: editor sends `YTCR01_2_Assembly_v4_out.json` → you create `YTCR01_2_Assembly_v5_in.json`
+- First brief: `{CODE}_Assembly_v1_in.json`
+- After editor round-trip: `{CODE}_Assembly_v{N}_in.json` (where N = next version after the latest `_out.json`)
+- Example: editor sends `YTCR01_Assembly_v4_out.json` → you create `YTCR01_Assembly_v5_in.json`
 
 **Legacy name:** `{CODE}_pre_edit_brief.json` is also accepted by UXP plugin (backward compatible).
 
@@ -251,7 +251,7 @@ Always return **both** updated artifacts (JSON + HTML). The user reviews the HTM
 
 ## Round-Trip: Working with Premiere Marker Exports
 
-After the first brief is built in Premiere, the editor works in the timeline and adds comments to markers. They then export markers as `{CODE}_2_Assembly_v{N}_out.json`.
+After the first brief is built in Premiere, the editor works in the timeline and adds comments to markers. They then export markers as `{CODE}_Assembly_v{N}_out.json`.
 
 **When the user sends a `_out.json` file (marker export from Premiere):**
 
@@ -356,6 +356,7 @@ Set `is_chapter="TRUE"` on the **first segment of each block**. The plugin creat
 ```
 Project Root
 ├── 00_Source/            ← imported clips + DJI WAVs (from INGEST)
+│   ├── {CODE}_{scene}/   ← scene sub-bins (e.g. YTCR01_al_qudra_lake)
 ├── 01_ScreenCues/        ← PNG overlay images (from SCREEN CUES)
 ├── 02_Transcripts/       ← SRT, transcripts, captions (from INGEST + ASSEMBLY + REVIEW + SCREEN CUES)
 ├── {project}_1_Ingest    ← V1: all clips whole; A2: DJI TX whole (from INGEST)

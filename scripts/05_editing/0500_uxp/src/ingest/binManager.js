@@ -1,6 +1,6 @@
 /**
  * Bin (folder) management for organizing project items.
- * Simplified for ingest: 2 bins (00_Source, 02_Transcripts).
+ * Single bin: 00_Source (contains scene bins, sequences, and transcript bins).
  */
 
 // In UXP environment, this would be require("premierepro")
@@ -13,12 +13,12 @@ try {
 
 const BIN_NAMES = {
   SOURCE: '00_Source',
-  TRANSCRIPTS: '02_Transcripts'
+  TRANSCRIPTS: '01_Transcripts'
 };
 
 /**
  * Create the standard bin structure in the project root.
- * Casts bins to FolderItem so getItems() works on them.
+ * Only 00_Source — all content lives inside it.
  * @param {Object} project - Premiere Pro project
  * @param {Object} logger - Logger instance
  * @returns {Object} Map of bin name -> FolderItem reference
@@ -27,10 +27,7 @@ async function createBinStructure(project, logger) {
   const rootItem = await project.getRootItem();
   const bins = {};
 
-  const binOrder = [
-    BIN_NAMES.SOURCE,
-    BIN_NAMES.TRANSCRIPTS
-  ];
+  const binOrder = [BIN_NAMES.SOURCE, BIN_NAMES.TRANSCRIPTS];
 
   project.lockedAccess(() => {
     project.executeTransaction((compoundAction) => {
@@ -41,7 +38,6 @@ async function createBinStructure(project, logger) {
     }, 'Create bin structure');
   });
 
-  // Get created bins — cast to FolderItem for proper API access
   const items = await rootItem.getItems();
   logger.debug(`Root items after bin creation: ${items.length} item(s)`);
   for (const item of items) {
@@ -68,41 +64,99 @@ async function createBinStructure(project, logger) {
 
 /**
  * Create scene sub-bins inside 00_Source.
- * E.g. 00_Source/01_Interview, 00_Source/02_Car, 00_Source/03_Coffee
- *
- * @param {Object} project - Premiere Pro project
- * @param {Object} sourceBin - The 00_Source FolderItem
- * @param {string[]} sceneNames - Array of scene names (e.g. ['01_Interview', '02_Car'])
- * @param {Object} logger - Logger instance
- * @returns {Object} Map of scene name -> FolderItem reference
+ * E.g. 00_Source/YTXX01_01_apartment, 00_Source/YTXX01_02_outdoor
  */
-async function createSceneBins(project, sourceBin, sceneNames, logger) {
+async function createSceneBins(project, sourceBin, sceneNames, logger, projectCode) {
   if (!sourceBin || !sceneNames || sceneNames.length === 0) {
     logger.debug('No scene bins to create');
     return {};
   }
 
+  const binNameMap = {};
+  for (const scene of sceneNames) {
+    binNameMap[scene] = projectCode ? `${projectCode}_${scene}` : scene;
+  }
+  const binNames = Object.values(binNameMap);
+
   project.lockedAccess(() => {
     project.executeTransaction((compoundAction) => {
-      for (const scene of sceneNames) {
-        const action = sourceBin.createBinAction(scene, true);
+      for (const binName of binNames) {
+        const action = sourceBin.createBinAction(binName, true);
         compoundAction.addAction(action);
       }
     }, 'Create scene sub-bins');
   });
 
-  // Get created sub-bins and cast to FolderItem
   const sceneBins = {};
   const items = await sourceBin.getItems();
+  const binNameSet = new Set(binNames);
   for (const item of items) {
-    if (sceneNames.includes(item.name)) {
+    if (binNameSet.has(item.name)) {
       const folder = ppro.FolderItem.cast(item);
-      sceneBins[item.name] = folder || item;
+      const scene = sceneNames.find(s => binNameMap[s] === item.name);
+      if (scene) {
+        sceneBins[scene] = folder || item;
+      }
     }
   }
 
-  logger.info(`Scene sub-bins: ${Object.keys(sceneBins).join(', ')}`);
+  logger.info(`Scene sub-bins: ${binNames.join(', ')}`);
   return sceneBins;
 }
 
-module.exports = { createBinStructure, createSceneBins, BIN_NAMES };
+/**
+ * Create per-scene transcript sub-bins inside 00_Source.
+ * E.g. 00_Source/YTXX01_01_apartment_transcripts
+ *
+ * These sit alongside scene bins and sequences for alphabetical grouping:
+ *   YTXX01_01_apartment          (sequence)
+ *   YTXX01_01_apartment/         (scene bin)
+ *   YTXX01_01_apartment_transcripts/  (transcript bin)
+ *
+ * @param {Object} project
+ * @param {Object} sourceBin - The 00_Source FolderItem
+ * @param {string[]} sceneNames
+ * @param {Object} logger
+ * @param {string} [projectCode]
+ * @returns {Object} Map of scene name -> transcript FolderItem
+ */
+async function createTranscriptSceneBins(project, sourceBin, sceneNames, logger, projectCode) {
+  if (!sourceBin || !sceneNames || sceneNames.length === 0) {
+    return {};
+  }
+
+  const binNameMap = {};
+  for (const scene of sceneNames) {
+    binNameMap[scene] = projectCode
+      ? `${projectCode}_${scene}_transcripts`
+      : `${scene}_transcripts`;
+  }
+  const binNames = Object.values(binNameMap);
+
+  project.lockedAccess(() => {
+    project.executeTransaction((compoundAction) => {
+      for (const binName of binNames) {
+        const action = sourceBin.createBinAction(binName, true);
+        compoundAction.addAction(action);
+      }
+    }, 'Create transcript scene sub-bins');
+  });
+
+  const transcriptBins = {};
+  const items = await sourceBin.getItems();
+  const binNameSet = new Set(binNames);
+  for (const item of items) {
+    if (binNameSet.has(item.name)) {
+      const folder = ppro.FolderItem.cast(item);
+      const scene = sceneNames.find(s => binNameMap[s] === item.name);
+      if (scene) {
+        transcriptBins[scene] = folder || item;
+      }
+    }
+  }
+
+  logger.info(`Transcript sub-bins: ${binNames.join(', ')}`);
+  return transcriptBins;
+}
+
+module.exports = { createBinStructure, createSceneBins, createTranscriptSceneBins, BIN_NAMES };

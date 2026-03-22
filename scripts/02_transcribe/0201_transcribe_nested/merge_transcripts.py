@@ -10,8 +10,15 @@ transcribe_project.py, with an added "scene" field on each clip. This makes it
 directly compatible with the brief creation pipeline (0501_brief).
 """
 import json
+import re
 from collections import Counter
 from pathlib import Path
+
+_CODE_RE = re.compile(r'^(YT[A-Z]{2,4}\d+)_')
+
+def _project_code(name: str) -> str:
+    m = _CODE_RE.match(name)
+    return m.group(1) if m else name
 
 
 def merge_transcripts(project: Path, scene_names: list) -> Path:
@@ -107,9 +114,27 @@ def merge_transcripts(project: Path, scene_names: list) -> Path:
         "clips": all_clips,
     }
 
-    out_path = tr_dir / f"{project.name}_transcript.json"
+    code = _project_code(project.name)
+    out_path = tr_dir / f"{code}_transcript.json"
     with open(out_path, "w") as f:
         json.dump(merged, f, indent=2, ensure_ascii=False)
+
+    # Generate compact transcript for Claude Desktop Assembly → Setup/
+    try:
+        setup_dir = project / "01_Media" / "Source" / "Setup"
+        setup_dir.mkdir(parents=True, exist_ok=True)
+        assembly_script = Path(__file__).resolve().parent.parent.parent / "05_editing" / "0502_assembly" / "generate_transcript_assembly.py"
+        if assembly_script.exists():
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("gen_assembly", assembly_script)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            compact = mod.generate_assembly_transcript(merged)
+            assembly_out = setup_dir / f"{code}_Claude4_assembly.json"
+            with open(assembly_out, "w", encoding="utf-8") as af:
+                json.dump(compact, af, indent=2, ensure_ascii=False)
+    except Exception:
+        pass  # Non-critical — can be generated separately
 
     return out_path
 

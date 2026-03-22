@@ -352,10 +352,16 @@ def print_status_table(st, est_times, str_set, current_stage=None, ctx=None):
     # Drift factor: how actual compares to estimates for completed stages
     drift = compute_drift(st, est_times)
 
-    # Remaining time adjusted by drift
+    # Remaining time adjusted by drift — use live whisper data if available
     remaining_keys = [k for k, _ in all_stages if k not in st and k in str_set]
-    est_remaining = sum(est_times.get(k, 0) for k in remaining_keys)
-    eta = est_remaining * drift
+    whisper_live = ctx.get("_whisper_live") if ctx else None
+    if whisper_live and "3" in remaining_keys:
+        # Use actual whisper speed for stage 3, drift for others
+        other_remaining = sum(est_times.get(k, 0) for k in remaining_keys if k != "3")
+        eta = whisper_live["stage_eta"] + other_remaining * drift
+    else:
+        est_remaining = sum(est_times.get(k, 0) for k in remaining_keys)
+        eta = est_remaining * drift
 
     W = 62  # inner visual width
 
@@ -411,9 +417,16 @@ def print_status_table(st, est_times, str_set, current_stage=None, ctx=None):
                        f"   → {fmt_time(t):>6s}"
                        f"   {d_color}{delta_txt}{C.RESET}")
         elif k == current_stage:
-            # Running (about to start)
-            content = (f"  {C.CYAN}▶{C.RESET}  {C.BOLD}{label:<16s}{C.RESET}  {plan_str:>7s}"
-                       f"   {C.CYAN}running...{C.RESET}")
+            # Running — show live ETA if whisper data available
+            if k == "3" and whisper_live:
+                pct = whisper_live["processed"] / whisper_live["total"] * 100 if whisper_live["total"] > 0 else 0
+                live_eta = f"~{fmt_time(whisper_live['stage_eta'])}"
+                content = (f"  {C.CYAN}▶{C.RESET}  {C.BOLD}{label:<16s}{C.RESET}  {plan_str:>7s}"
+                           f"   {C.CYAN}{pct:.0f}%{C.RESET}"
+                           f"           {C.CYAN}{live_eta}{C.RESET}")
+            else:
+                content = (f"  {C.CYAN}▶{C.RESET}  {C.BOLD}{label:<16s}{C.RESET}  {plan_str:>7s}"
+                           f"   {C.CYAN}running...{C.RESET}")
         elif k in str_set:
             # Pending
             base = f"  {C.DIM}·  {label:<16s}  {plan_str:>7s}{C.RESET}"
@@ -827,9 +840,11 @@ def detect_input(args):
     if v3:
         transcription_dir = work_dir / "01_Media" / "Source" / "Transcription"
         source_dir = work_dir / "01_Media" / "Source"
+        pipeline_dir = source_dir / "pipeline"
     else:
         transcription_dir = work_dir / f"{project_name}_transcription"
         source_dir = work_dir  # legacy: final outputs go to project root
+        pipeline_dir = transcription_dir / "pipeline"
 
     code = project_code(work_dir)
 
@@ -842,6 +857,7 @@ def detect_input(args):
         "work_dir": work_dir,
         "transcription_dir": transcription_dir,
         "source_dir": source_dir,
+        "pipeline_dir": pipeline_dir,
         "subfolder_groups": subfolder_groups,
     }
 
@@ -1058,6 +1074,8 @@ def stage1_extract_audio(ctx, args):
 
     t0 = time.time()
     td = ctx["transcription_dir"]
+    pd = ctx["pipeline_dir"]
+    pd.mkdir(parents=True, exist_ok=True)
     per_clip_dir = td / "per_clip"
     clips = ctx["video_files"]
 
@@ -1144,7 +1162,7 @@ def stage1_extract_audio(ctx, args):
     else:
         combined = all_audio[0]
 
-    full_audio_path = td / "full_audio.wav"
+    full_audio_path = pd / "full_audio.wav"
     sf.write(str(full_audio_path), combined, 16000)
 
     total_duration = current_offset
@@ -1156,7 +1174,7 @@ def stage1_extract_audio(ctx, args):
         "clips": clip_offsets_data,
         "total_duration": round(total_duration, 3),
     }
-    with open(td / "clip_offsets.json", "w") as f:
+    with open(pd / "clip_offsets.json", "w") as f:
         json.dump(clip_offsets_json, f, indent=2, ensure_ascii=False)
 
     ctx["clip_offsets"] = clip_offsets_data
@@ -1178,7 +1196,8 @@ def stage2_diarization(ctx, args, resources):
 
     t0 = time.time()
     td = ctx["transcription_dir"]
-    full_audio = td / "full_audio.wav"
+    pd = ctx["pipeline_dir"]
+    full_audio = pd / "full_audio.wav"
 
     set_terminal_title(f"YTAI > Stage 2/5 > Diarization ({fmt_duration(ctx['total_duration'])})")
 
@@ -1260,7 +1279,7 @@ def stage2_diarization(ctx, args, resources):
         "total_duration": round(ctx["total_duration"], 3),
         "segments": segments,
     }
-    with open(td / "diarization.json", "w") as f:
+    with open(pd / "diarization.json", "w") as f:
         json.dump(diar_json, f, indent=2, ensure_ascii=False)
 
     # Save speakers.json
@@ -1269,7 +1288,7 @@ def stage2_diarization(ctx, args, resources):
         "created_at": now_iso(),
         "speakers": speaker_map,
     }
-    with open(td / "speakers.json", "w") as f:
+    with open(pd / "speakers.json", "w") as f:
         json.dump(speakers_json, f, indent=2, ensure_ascii=False)
 
     ctx["diarization_segments"] = segments
@@ -1346,7 +1365,15 @@ def stage3_whisper(ctx, args, resources):
             except (json.JSONDecodeError, KeyError):
                 pass  # Corrupted checkpoint, re-transcribe
 
-        spinner = Spinner(f"[{i+1:2d}/{len(clips)}] {clip_id}  {fmt_duration(dur):>6s}  transcribing")
+        # Estimate clip duration from average speed of completed clips
+        stage_elapsed_so_far = time.time() - t0
+        if processed_audio_dur > 0 and stage_elapsed_so_far > 0:
+            clip_est = dur / (processed_audio_dur / stage_elapsed_so_far)
+        else:
+            clip_est = 0
+
+        spinner = Spinner(f"[{i+1:2d}/{len(clips)}] {clip_id}  {fmt_duration(dur):>6s}  transcribing",
+                          plan_est=clip_est)
         spinner.start()
 
         t1 = time.time()
@@ -1409,18 +1436,44 @@ def stage3_whisper(ctx, args, resources):
             sys.stdout.flush()
 
         status = f"{C.GREEN}done{C.RESET}" if clip_id not in failed_clips else f"{C.RED}FAILED{C.RESET}"
+
+        # Compute stage ETA and pipeline ETA based on actual speed
+        stage_elapsed_total = time.time() - t0
+        avg_speed = processed_audio_dur / stage_elapsed_total if stage_elapsed_total > 0 else 1
+        remaining_dur = total_audio_dur - processed_audio_dur
+        stage_eta = remaining_dur / avg_speed if avg_speed > 0 else 0
+
+        # Pipeline ETA: stage remaining + drift-adjusted remaining stages after 3
+        run_set = ctx.get("_run_stages", {"1","2","3","4","5","6"})
+        drift_val = ctx.get("_current_drift", 1.0)
+        est_t = ctx.get("stage_estimates", {})
+        after_3_eta = sum(est_t.get(k, 0) for k in ["4", "5", "6"] if k in run_set) * drift_val
+        pipe_eta = stage_eta + after_3_eta
+
+        # Per-clip ETA suffix
+        if remaining_dur > 0:
+            eta_part = (f"  {C.DIM}│{C.RESET} stg {C.CYAN}~{fmt_time(stage_eta)}{C.RESET}"
+                        f"  total {C.CYAN}~{fmt_time(pipe_eta)}{C.RESET}")
+        else:
+            eta_part = ""
+
         print(f"  [{i+1:2d}/{len(clips)}] {clip_id}  {fmt_duration(dur):>6s}  "
               f"{clip_words:>5} words  {status}  {fmt_time(elapsed_clip):>7s}  "
-              f"{C.DIM}({speed:>5.2f}x){C.RESET}")
+              f"{C.DIM}({speed:>5.2f}x){C.RESET}{eta_part}")
+
+        # Store live whisper progress in ctx for dashboard access
+        ctx["_whisper_live"] = {
+            "avg_speed": avg_speed,
+            "stage_eta": stage_eta,
+            "pipe_eta": pipe_eta,
+            "processed": processed_audio_dur,
+            "total": total_audio_dur,
+        }
 
         all_clip_results[clip_id] = result
 
         # Continuous progress bar with ETA after every clip
         if len(clips) > 1:
-            elapsed_total = time.time() - t0
-            avg_speed = processed_audio_dur / elapsed_total if elapsed_total > 0 else 1
-            remaining_dur = total_audio_dur - processed_audio_dur
-            eta_sec = remaining_dur / avg_speed if avg_speed > 0 else 0
             pct = processed_audio_dur / total_audio_dur * 100 if total_audio_dur > 0 else 100
 
             plan_adj = ctx.get("_stage_plan_adj", 0)
@@ -1428,21 +1481,23 @@ def stage3_whisper(ctx, args, resources):
             extra_parts = [f"{avg_speed:.2f}x"]
             if plan_part:
                 extra_parts.append(plan_part)
+            extra_parts.append(f"total ~{fmt_time(pipe_eta)}")
             bar_line = progress_bar(
                 processed_audio_dur, total_audio_dur, width=30,
                 label="Stage 3",
-                eta_str=fmt_time(eta_sec) if remaining_dur > 0 else "",
+                eta_str=fmt_time(stage_eta) if remaining_dur > 0 else "",
                 extra=" · ".join(extra_parts)
             )
             sys.stdout.write(C.CLEAR_LINE + bar_line)
             sys.stdout.flush()
 
-            set_terminal_title(f"YTAI > Stage 3/5 > {pct:.0f}% > ~{fmt_time(eta_sec)} left")
+            set_terminal_title(f"YTAI > Stage 3/5 > {pct:.0f}% > ~{fmt_time(pipe_eta)} left")
 
-    # Clear the last progress bar line
+    # Clear the last progress bar line and whisper live data
     if len(clips) > 1:
         sys.stdout.write(C.CLEAR_LINE)
         sys.stdout.flush()
+    ctx.pop("_whisper_live", None)
 
     # Determine main language
     from collections import Counter
@@ -1835,9 +1890,7 @@ def generate_combined_srt(ctx, clip_filter=None, output_path=None):
             lines += [str(idx), f"{fmt_srt_time(gs)} --> {fmt_srt_time(ge)}",
                       f"[{name}] {seg['text']}", ""]
             idx += 1
-    transcripts_dir = ctx["transcription_dir"] / "transcripts"
-    transcripts_dir.mkdir(parents=True, exist_ok=True)
-    srt_path = output_path or (transcripts_dir / f"{ctx['project_code']}_transcript.srt")
+    srt_path = output_path or (ctx["transcription_dir"] / f"{ctx['project_code']}_transcript.srt")
     with open(srt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     return srt_path
@@ -1891,9 +1944,7 @@ def generate_combined_word_level_srt(ctx, clip_filter=None, output_path=None, wo
                     continue
                 lines += [str(idx), f"{fmt_srt_time(start)} --> {fmt_srt_time(end)}", text, ""]
                 idx += 1
-    captions_dir = ctx["transcription_dir"] / "captions"
-    captions_dir.mkdir(parents=True, exist_ok=True)
-    srt_path = output_path or (captions_dir / f"{ctx['project_code']}_1_Ingest_captions.srt")
+    srt_path = output_path or (ctx["transcription_dir"] / f"{ctx['project_code']}_transcript_wordlevel.srt")
     with open(srt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     return srt_path
@@ -2447,9 +2498,9 @@ def generate_project_json(ctx, args, clip_filter=None, output_path=None):
     structure["source_dir"] = str(sd)
     structure["transcription_dir_full"] = str(transcription_dir)
     structure["transcript_json"] = str(project_path)
-    structure["transcript_xlsx"] = str(sd / "Setup" / f"{code}_transcript.xlsx")
-    structure["transcript_srt"] = str(transcription_dir / "transcripts" / f"{code}_transcript.srt")
-    structure["captions_srt"] = str(transcription_dir / "captions" / f"{code}_1_Ingest_captions.srt")
+    structure["transcript_xlsx"] = str(transcription_dir / f"{code}_transcript.xlsx")
+    structure["transcript_srt"] = str(transcription_dir / f"{code}_transcript.srt")
+    structure["captions_srt"] = str(transcription_dir / f"{code}_transcript_wordlevel.srt")
     structure["video_files"] = [str(vf) for vf in video_files]
 
     project = {
@@ -2466,6 +2517,184 @@ def generate_project_json(ctx, args, clip_filter=None, output_path=None):
     with open(project_path, "w") as f:
         json.dump(project, f, indent=2, ensure_ascii=False)
     return project_path
+
+
+def _generate_prompt_helper(setup_dir, code, transcript_data, compact_data):
+    """Generate Claude prompt helper markdown in Setup/."""
+    clips = transcript_data.get("clips", [])
+    scenes = sorted({c.get("scene", "") for c in clips if c.get("scene")})
+    speakers = transcript_data.get("speakers", {})
+    total_dur = sum(c.get("duration", 0) for c in clips)
+    m, s = divmod(int(total_dur), 60)
+
+    clip_lines = []
+    for c in clips:
+        cd = c.get("duration", 0)
+        cm, cs = divmod(int(cd), 60)
+        clip_lines.append(f"  - {c.get('filename', c.get('clip_id', '?'))}"
+                          f" ({cm}:{cs:02d})"
+                          f" scene={c.get('scene', 'unknown')}")
+
+    speaker_lines = []
+    for sid, info in speakers.items():
+        name = info if isinstance(info, str) else info.get("name", sid)
+        speaker_lines.append(f"  - {sid}: {name}")
+
+    n_segments = sum(len(c.get("segments", [])) for c in clips)
+
+    # Build scene → clips mapping for Sequences section
+    scene_clips = {}
+    for c in clips:
+        sc = c.get("scene", "unknown")
+        if sc not in scene_clips:
+            scene_clips[sc] = []
+        cd = c.get("duration", 0)
+        cm, cs = divmod(int(cd), 60)
+        scene_clips[sc].append(f"{c.get('filename', c.get('clip_id', '?'))} ({cm}:{cs:02d})")
+
+    seq_lines = []
+    for sc in sorted(scene_clips.keys()):
+        seq_name = f"{code}_{sc}"
+        clips_str = ", ".join(scene_clips[sc])
+        seq_lines.append(f"  - **{seq_name}** — {clips_str}")
+
+    assembly_path = f"{setup_dir / f'{code}_Claude4_assembly.json'}"
+
+    doc = f"""# {code} — Claude Assembly Prompt Helper
+
+## Assembly JSON (copy path below)
+
+```
+{assembly_path}
+```
+
+## Project
+
+- **Code:** {code}
+- **Clips:** {len(clips)}
+- **Duration:** {m}:{s:02d}
+- **Scenes:** {', '.join(scenes) if scenes else 'single scene'}
+- **Speakers:** {len(speakers)}
+
+### Sequences (Premiere timelines)
+{chr(10).join(seq_lines)}
+
+### Clips
+{chr(10).join(clip_lines)}
+
+### Speakers
+{chr(10).join(speaker_lines) if speaker_lines else '  (not identified)'}
+
+## Assembly JSON
+
+File: `{code}_Claude4_assembly.json`
+- {n_segments} segments with timecodes, speakers, and text
+- Each segment has: `start`, `end`, `speaker`, `text`, `clip_id`, `scene`
+
+## How to use with Claude Desktop
+
+1. Add `{code}_Claude4_assembly.json` to Project Knowledge
+2. Use prompts below to create Assembly brief
+
+## Example prompts
+
+### Full Assembly brief
+```
+Create an Assembly brief for {code}.
+Split the video into 5-15 thematic blocks.
+Mark filler, repetitions, and off-topic as CUT (block 99).
+Return JSON with segments array following the output_format.md schema.
+```
+
+### Scene-specific edit
+```
+Create Assembly brief for scene "{scenes[0] if scenes else 'main'}".
+Focus on the most compelling moments for a YouTube video.
+Keep total duration under 10 minutes.
+```
+
+### Hook selection
+```
+Find the most compelling moment in {code} for the video Hook (first 30 seconds).
+Look for: surprising statistics, provocative questions, emotional statements.
+Return as a segment with block=1, block_name="Hook".
+```
+
+### Cut decisions
+```
+Review all segments in {code}. Mark as CUT (block 99, use="FALSE") anything that is:
+- Filler words or false starts
+- Repetitive explanations
+- Off-topic tangents
+- Technical difficulties or dead air
+Keep the strongest takes of each topic.
+```
+
+## Segment JSON structure
+
+```json
+{{
+  "segment_id": "seg_001",
+  "source_file": "C5402.MP4",
+  "tc_in": "00:15.2",
+  "tc_out": "01:28.8",
+  "block": 1,
+  "block_name": "Hook",
+  "use": "TRUE",
+  "speaker": "Speaker 1",
+  "color": "Cyan",
+  "notes": "Strong opening statement"
+}}
+```
+
+### Color schema
+| Color | Usage |
+|-------|-------|
+| Cyan | Hook, strong moments |
+| Blue | Main content |
+| Green | Supporting content, B-roll |
+| Yellow | Alternative takes |
+| Red | CUT / unused |
+| Magenta | Transitions, intros |
+"""
+    out_path = setup_dir / f"{code}_Claude4_assembly_prompt.md"
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(doc)
+    print(f"  {out_path.name} → Setup/")
+
+
+def _generate_per_scene_transcripts(ctx, args, td, code):
+    """Generate per-scene transcript files in Transcription/{scene}/."""
+    video_dir = ctx["work_dir"] / "01_Media" / "Source" / "Video"
+    if not video_dir.is_dir():
+        return
+    scenes = {}
+    for d in sorted(video_dir.iterdir()):
+        if not d.is_dir():
+            continue
+        clip_ids = [f.stem for f in d.iterdir()
+                    if f.suffix.upper() in (".MP4", ".MOV")]
+        if clip_ids:
+            scenes[d.name] = clip_ids
+    if not scenes:
+        return
+    print(f"  Per-scene transcripts:")
+    for scene_name, clip_ids in scenes.items():
+        scene_dir = td / scene_name
+        scene_dir.mkdir(parents=True, exist_ok=True)
+        prefix = f"{code}_{scene_name}"
+        try:
+            xlsx = generate_xlsx(ctx, args, clip_filter=clip_ids,
+                output_path=scene_dir / f"{prefix}_transcript.xlsx")
+            srt = generate_combined_srt(ctx, clip_filter=clip_ids,
+                output_path=scene_dir / f"{prefix}_transcript.srt")
+            captions = generate_combined_word_level_srt(ctx, clip_filter=clip_ids,
+                output_path=scene_dir / f"{prefix}_captions.srt")
+            proj = generate_project_json(ctx, args, clip_filter=clip_ids,
+                output_path=scene_dir / f"{prefix}_transcript.json")
+            print(f"    {scene_name}/ → {xlsx.name}, {srt.name}, {captions.name}, {proj.name}")
+        except Exception as e:
+            print(f"    {scene_name}/ [warn] {e}")
 
 
 def stage5_generate_outputs(ctx, args):
@@ -2495,24 +2724,51 @@ def stage5_generate_outputs(ctx, args):
     groups = ctx.get("subfolder_groups")
     multicam = ctx.get("multicam", False)
     if not (groups and multicam):
-        # Generate combined/master files → Source/ (v3) or work_dir (legacy)
+        # Generate combined/master files → Transcription/ (v3) or work_dir (legacy)
         sd = ctx.get("source_dir", ctx["work_dir"])
         pn = ctx["project_name"]
+        code = ctx.get("project_code", pn)
+        setup_dir = sd / "Setup"
+        setup_dir.mkdir(parents=True, exist_ok=True)
+        # All transcript outputs go to Transcription/ dir
         xlsx_path = generate_xlsx(ctx, args,
-            output_path=sd / f"{pn}_transcript.xlsx"); print(f"  {xlsx_path.name}")
+            output_path=td / f"{code}_transcript.xlsx"); print(f"  {xlsx_path.name}")
         combined = generate_combined_transcript(ctx)
-        with open(td/"combined_transcript.json","w") as f: json.dump(combined,f,indent=2,ensure_ascii=False)
+        pd = ctx["pipeline_dir"]
+        with open(pd/"combined_transcript.json","w") as f: json.dump(combined,f,indent=2,ensure_ascii=False)
         print(f"  combined_transcript.json"); ctx["combined_stats"] = combined["stats"]
         project_path = generate_project_json(ctx, args,
-            output_path=sd / f"{pn}_transcript.json"); print(f"  {project_path.name}")
+            output_path=td / f"{code}_transcript.json"); print(f"  {project_path.name}")
+        # Generate compact transcript for Claude Desktop Assembly → Setup/
+        try:
+            from pathlib import Path as _Path
+            _assembly_script = _Path(__file__).resolve().parent.parent.parent / "05_editing" / "0502_assembly" / "generate_transcript_assembly.py"
+            if _assembly_script.exists():
+                import importlib.util
+                _spec = importlib.util.spec_from_file_location("gen_assembly", _assembly_script)
+                _mod = importlib.util.module_from_spec(_spec)
+                _spec.loader.exec_module(_mod)
+                _data = json.load(open(project_path))
+                _compact = _mod.generate_assembly_transcript(_data)
+                _out = setup_dir / f"{code}_Claude4_assembly.json"
+                with open(_out, "w", encoding="utf-8") as _f:
+                    json.dump(_compact, _f, indent=2, ensure_ascii=False)
+                print(f"  {_out.name} ({_out.stat().st_size // 1024}KB) → Setup/")
+                # Generate prompt helper
+                _generate_prompt_helper(setup_dir, code, _data, _compact)
+        except Exception as _e:
+            print(f"  [warn] Claude4_assembly.json skipped: {_e}")
         srt_path = generate_combined_srt(ctx,
-            output_path=sd / f"{pn}_transcript.srt"); print(f"  {srt_path.name}")
+            output_path=td / f"{code}_transcript.srt"); print(f"  {srt_path.name}")
         captions_path = generate_combined_word_level_srt(ctx,
-            output_path=sd / f"{pn}_1_Ingest_captions.srt"); print(f"  {captions_path.name}")
+            output_path=td / f"{code}_transcript_wordlevel.srt"); print(f"  {captions_path.name}")
+        # Per-scene transcript outputs
+        _generate_per_scene_transcripts(ctx, args, td, code)
     else:
         # Multicam: combined_transcript for stats only, no master xlsx/json/srt
         combined = generate_combined_transcript(ctx)
-        with open(td/"combined_transcript.json","w") as f: json.dump(combined,f,indent=2,ensure_ascii=False)
+        pd = ctx["pipeline_dir"]
+        with open(pd/"combined_transcript.json","w") as f: json.dump(combined,f,indent=2,ensure_ascii=False)
         ctx["combined_stats"] = combined["stats"]
         print(f"  combined_transcript.json (stats only, --multicam)")
     # Per-camera/per-folder outputs
@@ -2530,7 +2786,7 @@ def stage5_generate_outputs(ctx, args):
                 output_path=grp_td / f"{grp_name}_transcript.srt")
             print(f"  {grp_name}/{grp_name}_transcription/{grp_srt.name}")
             grp_captions = generate_combined_word_level_srt(ctx, clip_filter=grp["clip_ids"],
-                output_path=grp_td / f"{grp_name}_1_Ingest_captions.srt")
+                output_path=grp_td / f"{grp_name}_transcript_wordlevel.srt")
             print(f"  {grp_name}/{grp_name}_transcription/{grp_captions.name}")
     elapsed = time.time() - t0; print_stage_done(ctx, "Stage 5 complete", elapsed, "5"); return elapsed
 
@@ -2542,11 +2798,15 @@ def stage6_generate_ingest_json(ctx, args):
     set_terminal_title("YTAI > Stage 6 > Generating ingest JSON")
     from ingest_json import generate as generate_ingest
     pn = ctx["project_name"]
-    # Look in Source/ first (v3), fallback to Transcription/ (legacy/old runs)
+    code = ctx.get("project_code", pn)
+    td = ctx["transcription_dir"]
     sd = ctx.get("source_dir", ctx["work_dir"])
-    transcript_json_path = sd / f"{pn}_transcript.json"
+    # Look in Transcription/ first (v3 new), then Source/ (v3 old), then Transcription/ by project name
+    transcript_json_path = td / f"{code}_transcript.json"
     if not transcript_json_path.exists():
-        transcript_json_path = ctx["transcription_dir"] / f"{pn}_transcript.json"
+        transcript_json_path = td / f"{pn}_transcript.json"
+    if not transcript_json_path.exists():
+        transcript_json_path = sd / f"{pn}_transcript.json"
     if not transcript_json_path.exists():
         print_warn(f"Transcript JSON not found, skipping ingest JSON")
         return 0.0
@@ -2590,14 +2850,21 @@ def save_meta(ctx, args, resources, st):
             "lut": first_cam.get("lut", ""),
             "sidecars_found": len(cam_meta),
         }
-    with open(td/"meta.json","w") as f:
+    pd = ctx["pipeline_dir"]
+    with open(pd/"meta.json","w") as f:
         json.dump(meta,f,indent=2,ensure_ascii=False)
 
 
 
 def write_log(ctx, args, resources, st):
-    td = ctx["transcription_dir"]
-    lp = td / f"{ctx['project_name']}_transcribe_{now_stamp()}.log"
+    # Write log to Setup/logs/ (v3) or transcription_dir (legacy)
+    sd = ctx.get("source_dir")
+    if sd and (sd / "Setup" / "logs").is_dir():
+        logs_dir = sd / "Setup" / "logs"
+    else:
+        logs_dir = ctx["transcription_dir"]
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    lp = logs_dir / f"{ctx['project_name']}_transcribe_{now_stamp()}.log"
     cs = ctx.get("combined_stats", {})
     total = sum(st.values())
 
@@ -2825,7 +3092,7 @@ def write_log(ctx, args, resources, st):
         f"  {ctx['transcription_dir'].name}/",
     ]
     # List output files
-    for f in sorted(td.iterdir()):
+    for f in sorted(ctx['transcription_dir'].iterdir()):
         if f.is_file() and not f.name.startswith('.'):
             size_kb = f.stat().st_size / 1024
             lines.append(f"    {f.name:<45s}  {size_kb:>8.1f} KB")
@@ -3111,7 +3378,7 @@ def print_project_structure(ctx):
         # Final transcript files — in Source/ (v3) or Transcription/ (legacy)
         out_files = []
         for suffix in ["_transcript.json", "_transcript.srt",
-                       "_1_Ingest_captions.srt",
+                       "_transcript_wordlevel.srt",
                        "_transcript.xlsx"]:
             # Check Source/ first (new), then Transcription/ (old)
             fp = source / f"{project_name}{suffix}"
@@ -3298,7 +3565,11 @@ def print_next_step(ctx, args):
 
 
 def try_resume(ctx, args):
-    td = ctx["transcription_dir"]; mp = td/"meta.json"
+    td = ctx["transcription_dir"]; pd = ctx["pipeline_dir"]
+    mp = pd/"meta.json"
+    if not mp.exists():
+        # Fallback: check old location (Transcription/meta.json)
+        mp = td/"meta.json"
     if not mp.exists(): print_warn("Cannot resume: no meta.json"); sys.exit(1)
     try:
         with open(mp) as f: meta = json.load(f)
@@ -3325,14 +3596,17 @@ def try_resume(ctx, args):
         if s not in completed:
             print(f"  Resuming from stage {s}")
             if "1" in completed:
-                with open(td/"clip_offsets.json") as f: co = json.load(f)
+                co_path = pd/"clip_offsets.json" if (pd/"clip_offsets.json").exists() else td/"clip_offsets.json"
+                with open(co_path) as f: co = json.load(f)
                 ctx["clip_offsets"] = co["clips"]
                 ctx["clip_offsets_flat"] = {c["clip_id"]: c["offset"] for c in co["clips"]}
                 ctx["total_duration"] = co["total_duration"]
                 ctx["clip_durations"] = {c["clip_id"]: c["duration"] for c in co["clips"]}
             if "2" in completed:
-                with open(td/"diarization.json") as f: ctx["diarization_segments"] = json.load(f)["segments"]
-                with open(td/"speakers.json") as f: ctx["speaker_map"] = json.load(f)["speakers"]
+                diar_path = pd/"diarization.json" if (pd/"diarization.json").exists() else td/"diarization.json"
+                spk_path = pd/"speakers.json" if (pd/"speakers.json").exists() else td/"speakers.json"
+                with open(diar_path) as f: ctx["diarization_segments"] = json.load(f)["segments"]
+                with open(spk_path) as f: ctx["speaker_map"] = json.load(f)["speakers"]
             if "4" in completed and s in ("5", "6"):
                 ct = {}
                 for vf in ctx["video_files"]:

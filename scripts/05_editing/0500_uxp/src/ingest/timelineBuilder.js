@@ -468,7 +468,8 @@ async function buildMultiSceneIngest(project, ingest, sourceBin, logger) {
   let sceneBins = {};
   if (sourceBin) {
     try {
-      sceneBins = await createSceneBins(project, sourceBin, sceneNames, logger);
+      const projectCode = ingest.project_code || ingest.project_name;
+      sceneBins = await createSceneBins(project, sourceBin, sceneNames, logger, projectCode);
     } catch (binErr) {
       logger.warn(`Scene sub-bins creation failed: ${binErr.message} — using flat import`);
     }
@@ -645,6 +646,11 @@ async function buildMultiSceneIngest(project, ingest, sourceBin, logger) {
 
     totalClipCount += placedCount;
     totalDjiCount += djiPlaced;
+
+    // Note: sequences stay at project root — Premiere UXP API limitation
+    // createSequence/createSequenceFromMedia always places at root,
+    // moveBin creates duplicates instead of moving for sequence items.
+
     results.push({
       sceneName,
       sequence,

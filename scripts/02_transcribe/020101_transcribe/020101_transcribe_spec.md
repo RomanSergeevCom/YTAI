@@ -93,12 +93,22 @@ Saves Whisper quality fields per segment for confidence assessment and editing d
     |   |   +-- YTCG37_transcript.json         <- main transcript JSON
     |   |   +-- YTCG37_transcript.xlsx         <- Excel transcript
     |   |   +-- YTCG37_ingest.json             <- UXP ingest JSON
+    |   |   +-- YTCG37_Claude4_assembly.json   <- assembly JSON
+    |   |   +-- YTCG37_Claude4_assembly_prompt.md <- assembly prompt helper
+    |   +-- pipeline/                           <- intermediate files
+    |   |   +-- full_audio.wav
+    |   |   +-- diarization.json
+    |   |   +-- meta.json
+    |   |   +-- speakers.json
+    |   |   +-- clip_offsets.json
+    |   |   +-- combined_transcript.json
     |   +-- Transcription/
     |       +-- YTCG37_FULL_AUDIO.wav           <- concat audio
-    |       +-- captions/
-    |       |   +-- YTCG37_1_Ingest_captions.srt
-    |       +-- transcripts/
-    |       |   +-- YTCG37_transcript.srt
+    |       +-- {scene}/                        <- per-scene transcripts
+    |       |   +-- YTCG37_{scene}_transcript.json
+    |       |   +-- YTCG37_{scene}_transcript.srt
+    |       |   +-- YTCG37_{scene}_transcript.xlsx
+    |       |   +-- YTCG37_{scene}_captions.srt
     |       +-- per_clip/
     |           +-- C5090/
     |               +-- C5090_audio.wav
@@ -113,7 +123,7 @@ Saves Whisper quality fields per segment for confidence assessment and editing d
     +-- Interview_transcription/
         +-- Interview_transcript.json
         +-- Interview_transcript.srt
-        +-- Interview_1_Ingest_captions.srt
+        +-- Interview_transcript_wordlevel.srt
         +-- Interview_ingest.json
         +-- full_audio.wav
         +-- clip_offsets.json
@@ -228,7 +238,7 @@ Folders are different parts of the project. Master files ARE needed.
     +-- {folder_name}_transcription/
         +-- {folder_name}_transcript.json
         +-- {folder_name}_transcript.srt
-        +-- {folder_name}_1_Ingest_captions.srt
+        +-- {folder_name}_transcript_wordlevel.srt
         +-- {folder_name}_ingest.json
         +-- per_clip/...
 
@@ -394,7 +404,7 @@ File: `{transcription_dir}/{project}_ingest.json`
         "transcript_json": "/abs/Interview_transcription/Interview_transcript.json",
         "transcript_srt": "/abs/Interview_transcription/Interview_transcript.srt",
         "transcript_xlsx": "/abs/Interview_transcript.xlsx",
-        "captions_srt": "/abs/Interview_transcription/Interview_1_Ingest_captions.srt"
+        "captions_srt": "/abs/Interview_transcription/Interview_transcript_wordlevel.srt"
     },
     "source_folder": "/abs/Interview"
 }
@@ -404,7 +414,7 @@ Fields:
 - `media` — resolution, FPS, sample_rate from first clip
 - `clips[]` — absolute paths to video and premiere transcript JSON
 - `clips[].offset` — clip offset in concatenated audio (for diarization)
-- `clips[].dji_audio` — (optional) DJI microphone sync files from `0103_sync_dji_audio`. Array of `{ tx, path }` objects. Present only when synced DJI WAV files exist in `Source/Audio/`. Uses `rglob` to find files in both flat and scene-subdirectory structures.
+- `clips[].dji_audio` — (optional) DJI microphone sync files from `0105_multiwindow_sync_dji`. Array of `{ tx, path }` objects. Present only when synced DJI WAV files exist in `Source/Audio/`. Uses `rglob` to find files in both flat and scene-subdirectory structures.
 - `clips[].scene` — (optional, v3.2) Scene folder name (e.g. `"03_Coffee"`). Present when video is in a scene subfolder matching `^\d{2}_` pattern. Used by UXP plugin to create per-scene Ingest sequences.
 - `files` — absolute paths to combined transcript JSON, SRT, captions SRT, XLSX
 - `source_folder` — project root folder

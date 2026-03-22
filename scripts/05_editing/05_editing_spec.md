@@ -121,7 +121,7 @@ scripts/05_editing/
 └── Archive/                          # Архивированные версии
     ├── 0501_claude_kb/               # → заменён на 0501_brief
     ├── 050105_assembly_uxp_v1.9.2_20260310/  # v1.9.2 бэкап
-    ├── 050202_claude_kb_20260310/    # brief бэкап
+    ├── 050202_claude_kb_20260310/    # brief бэкап (заменён на 0505_claude_kb)
     ├── 050203_uxp_premiere_brief/    # → заменён на 0500_uxp
     ├── 050204_uxp_assembly/          # → заменён на 0500_uxp
     └── 020201_premiere_ingest/       # → заменён на 0500_uxp (ingest)
@@ -198,9 +198,9 @@ Premiere → Window > Extensions > YTAI Assembly:
 Fallback: ручная загрузка файлов (кнопки Load появляются при отсутствии auto-detect).
 
 #### INGEST (auto-detect или загрузить ingest.json)
-- Импорт клипов → `00_Source/`
+- Импорт клипов + DJI audio → `00_Source/` (scene-проекты: подбины `{CODE}_{scene}`)
 - Создание `{project} — Ingest` секвенции (все клипы целиком на V1)
-- Импорт SRT и premiere_transcript.json → `02_Transcripts/`
+- Импорт per-scene SRTs → `01_Transcripts/{CODE}_{scene}_transcripts/` (per-scene `_transcript.srt` + `_captions.srt`; general SRTs not imported)
 - Копирование LUTs → Adobe Creative + применение Lumetri Color
 
 #### ASSEMBLY (auto-detect или загрузить edit_brief.json)
@@ -226,7 +226,8 @@ Fallback: ручная загрузка файлов (кнопки Load появ
 - **V2:** PNG оверлеи с текстом screen cues (если PNGs сгенерированы)
 - **A2/A3:** DJI TX аудио (тримменное, как в Assembly, опционально)
 - **Markers:** Orange Comment на позициях screen cues
-- **SRT:** генерируется и импортируется в `02_Transcripts/`
+- **SRT:** генерируется и импортируется в `01_Transcripts/`
+- **Sequences at project root** — Premiere UXP API cannot move sequences into bins
 - **Pre-req:** нажать [Generate PNGs] в UXP панели (или `python 0504_screen_cues/generate_screen_cues_png.py --brief ...`) до Build
 
 ---
@@ -247,9 +248,16 @@ Fallback: ручная загрузка файлов (кнопки Load появ
 | HTML ревью | `{project}_edit_brief_review.html` | `YTAI_Edit_edit_brief_review.html` | 05_editing |
 | Assembly SRT | `{project}_assembly_captions.srt` | `YTAI_Edit_assembly_captions.srt` | 05_editing |
 | Screen Cues PNGs | `screen_cues/scr_XXX_{type}.png` | `screen_cues/scr_001_full_overlay.png` | 05_editing |
+| Assembly JSON | `{CODE}_Claude4_assembly.json` | `YTCG37_Claude4_assembly.json` | 05_editing |
+| Assembly Prompt | `{CODE}_Claude4_assembly_prompt.md` | `YTCG37_Claude4_assembly_prompt.md` | 05_editing |
+| Per-scene transcript SRT | `{CODE}_{scene}_transcript.srt` | `YTCG37_01_Interview_transcript.srt` | 02_transcribe |
+| Per-scene captions SRT | `{CODE}_{scene}_captions.srt` | `YTCG37_01_Interview_captions.srt` | 02_transcribe |
 | Screen Cues SRT | `{project}_4_ScreenCues_captions.srt` | `YTAI_Edit_4_ScreenCues_captions.srt` | 05_editing |
 
 `{project}` = поле `project` в transcript.json (напр. `"YTAI_Edit"`).
+`{CODE}` = channel+project code (напр. `"YTCG37"`).
+
+Assembly JSON и Prompt хранятся в `Setup/` папке проекта.
 
 ---
 

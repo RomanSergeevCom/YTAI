@@ -343,32 +343,68 @@ async function autoDetectFiles(folderPath, projectName) {
     showFallback('ingest');
   }
 
-  // --- Brief --- (try CODE-based pre_edit_brief first, then legacy fallbacks)
-  var briefCandidates = [
-    folderPath + '/01_Media/Source/Setup/' + code + '_pre_edit_brief.json',
-    folderPath + '/01_Media/Source/Setup/' + projectName + '_pre_edit_brief.json',  // legacy
-    folderPath + '/01_Media/Source/Setup/' + projectName + '_edit_brief.json',       // legacy
-  ];
+  // --- Brief --- (search order: Assembly/ → Setup/ legacy)
   var briefFound = false;
-  for (var bi = 0; bi < briefCandidates.length; bi++) {
-    try {
-      await uxpfs.getEntryWithUrl('file://' + briefCandidates[bi]);
-      projectState.briefPath = briefCandidates[bi];
+  var inRe = new RegExp('^' + code + '_Assembly_v(\\d+)_in\\.json$');
+
+  // Scan Assembly/ folder for latest _in.json by version number
+  var assemblyDir = folderPath + '/01_Media/Source/Setup/Assembly';
+  try {
+    var assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
+    var assemblyFiles = await assemblyEntry.getEntries();
+    var latestVer = 0;
+    var latestName = null;
+    for (var ai = 0; ai < assemblyFiles.length; ai++) {
+      var m = assemblyFiles[ai].name.match(inRe);
+      if (m) {
+        var ver = parseInt(m[1], 10);
+        if (ver > latestVer) {
+          latestVer = ver;
+          latestName = assemblyFiles[ai].name;
+        }
+      }
+    }
+    if (latestName) {
+      var latestPath = assemblyDir + '/' + latestName;
+      projectState.briefPath = latestPath;
       projectState.briefDetected = true;
       briefFound = true;
-      checklistHtml += checkItem(true, code + '_pre_edit_brief.json');
-      assemblyLogger.info('Auto-detected brief: ' + briefCandidates[bi]);
-      await loadBriefFromPath(briefCandidates[bi]);
-      break;
-    } catch (e) {
-      // Try next candidate
+      checklistHtml += checkItem(true, latestName + ' (v' + latestVer + ')');
+      assemblyLogger.info('Auto-detected brief from Assembly/: ' + latestName);
+      await loadBriefFromPath(latestPath);
+    }
+  } catch (e) {
+    // Assembly/ folder not found — try legacy paths
+  }
+
+  // 3. Fallback: try legacy pre_edit_brief paths in Setup/
+  if (!briefFound) {
+    var briefCandidates = [
+      folderPath + '/01_Media/Source/Setup/' + code + '_pre_edit_brief.json',
+      folderPath + '/01_Media/Source/Setup/' + projectName + '_pre_edit_brief.json',  // legacy
+      folderPath + '/01_Media/Source/Setup/' + projectName + '_edit_brief.json',       // legacy
+    ];
+    for (var bi = 0; bi < briefCandidates.length; bi++) {
+      try {
+        await uxpfs.getEntryWithUrl('file://' + briefCandidates[bi]);
+        projectState.briefPath = briefCandidates[bi];
+        projectState.briefDetected = true;
+        briefFound = true;
+        checklistHtml += checkItem(true, code + '_pre_edit_brief.json');
+        assemblyLogger.info('Auto-detected brief: ' + briefCandidates[bi]);
+        await loadBriefFromPath(briefCandidates[bi]);
+        break;
+      } catch (e) {
+        // Try next candidate
+      }
     }
   }
+
   if (!briefFound) {
     projectState.briefDetected = false;
-    checklistHtml += checkItem(false, code + '_pre_edit_brief.json',
-      'Expected: 01_Media/Source/Setup/' + code + '_pre_edit_brief.json');
-    assemblyLogger.warn('Pre-edit brief not found at: ' + briefCandidates.join(', '));
+    checklistHtml += checkItem(false, code + '_Assembly_v*_in.json',
+      'Not found in Assembly/, ~/Downloads/, or Setup/');
+    assemblyLogger.warn('No brief found in Assembly/, ~/Downloads/, or Setup/');
     setAssemblyStatus('Pre-edit brief not found. Load manually.', 'waiting');
     setReviewStatus('Pre-edit brief not found.', 'waiting');
     setScreensStatus('Pre-edit brief not found.', 'waiting');
@@ -693,13 +729,15 @@ async function validateIngestBuild(sequence, ingest, br) {
   function ok(text) { lines.push('<div class="val-line"><span style="color:var(--success)">\u25CF</span> ' + escapeHtml(text) + '</div>'); }
   function warn(text) { lines.push('<div class="val-line"><span style="color:var(--warning)">\u25CF</span> ' + escapeHtml(text) + '</div>'); allOk = false; }
 
-  const expectedCount = ingest.clips.length;
+  // For multi-scene: br.clipCount = total placed across all sequences
+  const expectedCount = br.clipCount || ingest.clips.length;
 
-  // V1 clip count
+  // V1 clip count — for multi-scene uses totalClipCount
   try {
     const v1 = await sequence.getVideoTrack(0);
     const items = await v1.getTrackItems(ppro.Constants.TrackItemType.CLIP, false);
-    if (items.length >= expectedCount) ok('V1: ' + items.length + ' clips');
+    if (items.length >= expectedCount) ok('V1: ' + expectedCount + '/' + ingest.clips.length + ' clips');
+    else if (br.clipCount && br.clipCount >= ingest.clips.length) ok('V1: ' + br.clipCount + ' clips (multi-scene)');
     else warn('V1: ' + items.length + '/' + expectedCount + ' clips');
   } catch (e) { warn('V1: check failed'); }
 
@@ -810,6 +848,10 @@ function loadBriefFromString(jsonString, filePath) {
   assemblyState.projectCode = result.projectCode || extractProjectCode(result.projectName);
   assemblyState.filePath = filePath;
 
+  // Extract brief version from filename (e.g. YTCR01_Assembly_v17_in.json → 17)
+  var vMatch = filePath && filePath.match(/_v(\d+)_in\.json$/);
+  assemblyState.briefVersion = vMatch ? parseInt(vMatch[1], 10) : null;
+
   // Parse screens[] (Production Cues) — optional, backward compatible
   var rawData = JSON.parse(jsonString);
   if (rawData.screens && Array.isArray(rawData.screens)) {
@@ -904,7 +946,7 @@ async function loadBrief() {
         var code = extractProjectCode(projectState.projectName);
         var existingFiles = await assemblyEntry.getEntries();
         var maxVer = 0;
-        var verRe = new RegExp(code + '.*_v(\\d+)');
+        var verRe = new RegExp(code + '_Assembly_v(\\d+)');
         for (var fi = 0; fi < existingFiles.length; fi++) {
           var vm = existingFiles[fi].name.match(verRe);
           if (vm) {
@@ -913,7 +955,7 @@ async function loadBrief() {
           }
         }
         var version = maxVer + 1;
-        var versionedName = code + '_2_Assembly_v' + version + '_in.json';
+        var versionedName = code + '_Assembly_v' + version + '_in.json';
 
         var outFile = await assemblyEntry.createFile(versionedName, { overwrite: true });
         await outFile.write(contents);
@@ -987,7 +1029,7 @@ async function buildAssembly() {
     stepStart = Date.now();
     setAssemblyProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Building Assembly sequence...');
     assemblyLogger.info('=== Step 3: Building Assembly sequence ===');
-    result = await buildAssemblySequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, assemblyLogger);
+    result = await buildAssemblySequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, assemblyLogger, assemblyState.briefVersion);
     stepTimings.push('build ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 4: Create chapter markers (block boundaries + per-segment)
@@ -1339,83 +1381,63 @@ async function exportMarkers() {
   if (!project) { setAssemblyStatus('No active project', 'error'); return; }
   if (!projectState.folderPath) { setAssemblyStatus('Select project folder first', 'error'); return; }
 
-  assemblyLogger.info('=== Export Markers (UXP native) ===');
-  setAssemblyStatus('Saving project...', 'waiting');
+  assemblyLogger.info('=== Export Markers (from active sequence) ===');
+  setAssemblyStatus('Reading markers...', 'waiting');
   $('btn-export-markers').setAttribute('disabled', 'true');
 
-  // Step 1: Save project so .prproj is current
   try {
-    await project.save();
-    assemblyLogger.info('Project saved');
-  } catch (saveErr) {
-    assemblyLogger.warn('Save failed (continuing): ' + saveErr.message);
-  }
+    // Step 1: Get active sequence
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence — open a sequence first');
+    var seqName = seq.name;
+    assemblyLogger.info('Active sequence: ' + seqName);
 
-  try {
-    // Step 2: Find .prproj file
-    setAssemblyStatus('Reading .prproj...', 'waiting');
-    var mediaDir = projectState.folderPath + '/01_Media';
-    var prprojPath = null;
+    // Step 2: Read markers from active sequence via UXP API
+    setAssemblyStatus('Reading markers from ' + seqName + '...', 'waiting');
+    var markersOwner = await ppro.Markers.getMarkers(seq);
+    if (!markersOwner) throw new Error('Cannot get markers from sequence');
 
-    try {
-      var mediaDirEntry = await uxpfs.getEntryWithUrl('file://' + mediaDir);
-      var mediaEntries = await mediaDirEntry.getEntries();
-      for (var mi = 0; mi < mediaEntries.length; mi++) {
-        if (mediaEntries[mi].name.endsWith('.prproj')) {
-          prprojPath = mediaDir + '/' + mediaEntries[mi].name;
-          break;
-        }
-      }
-    } catch (e) {}
-
-    if (!prprojPath) {
-      throw new Error('No .prproj file found in 01_Media/');
-    }
-    assemblyLogger.info('Found: ' + prprojPath.split('/').pop());
-
-    // Step 3: Read .prproj as binary and decompress gzip
-    var prprojEntry = await uxpfs.getEntryWithUrl('file://' + prprojPath);
-    var rawBytes = await prprojEntry.read({ format: require('uxp').storage.formats.binary });
-    assemblyLogger.info('Read ' + (rawBytes.byteLength / 1024 / 1024).toFixed(1) + ' MB');
-
-    var pako = require('./lib/pako_inflate.min.js');
-    var decompressed = pako.inflate(new Uint8Array(rawBytes), { to: 'string' });
-    var text = decompressed;
-    assemblyLogger.info('Decompressed: ' + (text.length / 1024 / 1024).toFixed(1) + ' MB text');
-
-    // Step 4: Extract DVAMarker blocks
-    setAssemblyStatus('Parsing markers...', 'waiting');
-    var TICKS_PER_SEC = 254016000000;
-    var blockMatches = text.match(/<DVAMarker>(.*?)<\/DVAMarker>/gs) || [];
-    assemblyLogger.info('DVAMarker blocks: ' + blockMatches.length);
+    var rawMarkers = markersOwner.getMarkers();
+    assemblyLogger.info('Raw markers: ' + (rawMarkers ? rawMarkers.length : 0));
 
     var markers = [];
-    for (var bi = 0; bi < blockMatches.length; bi++) {
-      var raw = blockMatches[bi].replace(/<\/?DVAMarker>/g, '').trim();
+    if (rawMarkers && rawMarkers.length > 0) {
+      // Log first marker's API shape for debugging
       try {
-        var obj = JSON.parse(raw);
-        var dva = obj.DVAMarker || {};
-        if (!dva.mName) continue;
+        var m0 = rawMarkers[0];
+        var m0methods = [];
+        for (var k of Object.getOwnPropertyNames(Object.getPrototypeOf(m0))) {
+          if (typeof m0[k] === 'function') m0methods.push(k);
+        }
+        assemblyLogger.debug('Marker[0] methods: [' + m0methods.join(', ') + ']');
+        assemblyLogger.debug('Marker[0] name=' + m0.name + ' type=' + m0.type + ' comments=' + (m0.comments || ''));
+      } catch (e) { assemblyLogger.debug('Marker introspection failed: ' + e.message); }
 
-        var st = dva.mStartTime || {};
-        var startTicks = (typeof st === 'object') ? (st.ticks || 0) : (parseInt(st) || 0);
-        var dur = dva.mDuration || {};
-        var durTicks = (typeof dur === 'object') ? (dur.ticks || 0) : (parseInt(dur) || 0);
+      for (var mi = 0; mi < rawMarkers.length; mi++) {
+        var rm = rawMarkers[mi];
+        // Get start time — try getStart() then startTime property
+        var startTime = null;
+        try { startTime = rm.getStart(); } catch (e) {}
+        if (!startTime) try { startTime = rm.startTime; } catch (e) {}
+        var posSec = startTime ? Math.round(startTime.seconds * 100) / 100 : 0;
 
         var entry = {
-          name: dva.mName || '',
-          position_sec: Math.round(startTicks / TICKS_PER_SEC * 100) / 100,
+          name: rm.name || '',
+          position_sec: posSec,
         };
-        if (durTicks > 0) {
-          entry.duration_sec = Math.round(durTicks / TICKS_PER_SEC * 100) / 100;
+
+        // Get duration — try getDuration() then duration property
+        var dur = null;
+        try { dur = rm.getDuration(); } catch (e) {}
+        if (!dur) try { dur = rm.duration; } catch (e) {}
+        if (dur && dur.seconds > 0) {
+          entry.duration_sec = Math.round(dur.seconds * 100) / 100;
           entry.is_chapter = true;
         }
-        if (dva.mComment) entry.comment = dva.mComment;
-        if (dva.mType) entry.type = dva.mType;
 
+        if (rm.comments) entry.comment = rm.comments;
+        if (rm.type) entry.type = rm.type;
         markers.push(entry);
-      } catch (parseErr) {
-        // Skip unparseable blocks
       }
     }
 
@@ -1423,19 +1445,15 @@ async function exportMarkers() {
     var chapters = markers.filter(function(m) { return m.is_chapter; });
     assemblyLogger.info('Parsed: ' + markers.length + ' markers (' + chapters.length + ' chapters)');
 
-    // Step 5: Find active sequence name
-    var seqName = 'YTCR01_2_Assembly';
-    try {
-      var seq = await project.getActiveSequence();
-      if (seq && seq.name) seqName = seq.name;
-    } catch (e) {}
-
-    // Step 6: Classify markers into Assembly and Review
+    // Step 3: Classify markers
     var assemblyMarkers = [];
     var reviewMarkers = [];
     for (var ci = 0; ci < markers.length; ci++) {
       var mName = markers[ci].name || '';
-      if (mName.indexOf('[CUT]') === 0 || mName.indexOf('[ALT]') === 0 || mName.indexOf('[SKIP]') === 0) {
+      var mCom = markers[ci].comment || '';
+      if (mCom.startsWith('/')) {
+        assemblyMarkers.push(markers[ci]);
+      } else if (mName.indexOf('[CUT]') === 0 || mName.indexOf('[ALT]') === 0 || mName.indexOf('[SKIP]') === 0) {
         reviewMarkers.push(markers[ci]);
       } else if (mName.indexOf('Source:') === 0) {
         assemblyMarkers.push(markers[ci]);
@@ -1449,9 +1467,11 @@ async function exportMarkers() {
     assemblyLogger.info('Assembly: ' + assemblyMarkers.length + ' markers (' + assemblyChapters.length + ' chapters)');
     assemblyLogger.info('Review: ' + reviewMarkers.length + ' markers');
 
+    var slashComments = markers.filter(function(m) { return (m.comment || '').startsWith('/'); });
+    assemblyLogger.info('User / comments: ' + slashComments.length);
+
     var output = {
       sequence: seqName,
-      source: prprojPath.split('/').pop(),
       exported_at: new Date().toISOString(),
       assembly: {
         markers_count: assemblyMarkers.length,
@@ -1463,31 +1483,6 @@ async function exportMarkers() {
         markers: reviewMarkers,
       },
     };
-
-    // Step 6b: Embed relevant transcript clips
-    var sourceClips = {};
-    for (var sci = 0; sci < markers.length; sci++) {
-      if (markers[sci].name && markers[sci].name.indexOf('Source: ') === 0) {
-        sourceClips[markers[sci].name.replace('Source: ', '')] = true;
-      }
-    }
-    try {
-      var trDir = projectState.folderPath + '/01_Media/Source/Transcription';
-      var trFileName = projectState.projectName + '_transcript.json';
-      var trEntry = await uxpfs.getEntryWithUrl('file://' + trDir + '/' + trFileName);
-      var trContent = await trEntry.read();
-      var fullTx = JSON.parse(trContent);
-      output.transcript = {
-        project: fullTx.project || '',
-        language: fullTx.language || '',
-        speakers: fullTx.speakers || {},
-        stats: fullTx.stats || {},
-        clips: fullTx.clips || [],
-      };
-      assemblyLogger.info('Transcript embedded: ' + (fullTx.clips || []).length + ' clips');
-    } catch (trErr) {
-      assemblyLogger.debug('Transcript embed skipped: ' + trErr.message);
-    }
 
     // Step 7: Find next version and write to Setup/Assembly/
     setAssemblyStatus('Writing files...', 'waiting');
@@ -1513,6 +1508,19 @@ async function exportMarkers() {
     var version = maxVer + 1;
     output.version = version;
     output.direction = 'out';
+
+    // Embed current brief so Claude Desktop can read segments + / comments in one file
+    if (projectState.briefPath) {
+      try {
+        var briefEntry = await uxpfs.getEntryWithUrl('file://' + projectState.briefPath);
+        var briefContent = await briefEntry.read({ format: require('uxp').storage.formats.utf8 });
+        output.brief = JSON.parse(briefContent);
+        output.brief_source = projectState.briefPath.split('/').pop();
+        assemblyLogger.info('Embedded brief: ' + output.brief_source);
+      } catch (briefErr) {
+        assemblyLogger.warn('Could not embed brief: ' + briefErr.message);
+      }
+    }
 
     var fileName = seqName + '_v' + version + '_out.json';
     var jsonContent = JSON.stringify(output, null, 2);
@@ -2303,7 +2311,7 @@ async function buildReview() {
       producerSpeaker: (assemblyState.data && assemblyState.data.producerSpeaker) || '',
       assemblyBlocks: assemblyState.blocks || []
     };
-    result = await buildReviewSequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, reviewLogger, clipDurations, reviewOpts);
+    result = await buildReviewSequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, reviewLogger, clipDurations, reviewOpts, assemblyState.briefVersion);
 
     if (!result.sequence) {
       reviewLogger.info('Review sequence not created (no unused segments)');

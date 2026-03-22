@@ -543,8 +543,24 @@ def verify_sync_quality(
 
         from scipy.signal import correlate
         corr = correlate(dji_env, cam_env, mode="full")
-        peak_idx = np.argmax(corr)
-        peak_val = corr[peak_idx]
+
+        # Constrain peak search to ±max_search around expected position
+        # Expected: DJI starts search_margin before camera → peak at
+        # (len(cam_env) - 1 + search_margin * SR)
+        max_search = MAX_DRIFT_SEC + 0.5  # slightly wider than threshold
+        expected_idx = len(cam_env) - 1 + int(search_margin * SR)
+        search_lo = max(0, expected_idx - int(max_search * SR))
+        search_hi = min(len(corr), expected_idx + int(max_search * SR))
+
+        window_corr = corr[search_lo:search_hi]
+        if len(window_corr) == 0:
+            results.append({"time": t, "offset_error": None,
+                            "confidence": 0.0})
+            continue
+
+        local_peak = np.argmax(window_corr)
+        peak_idx = search_lo + local_peak
+        peak_val = window_corr[local_peak]
         mean_val = np.mean(np.abs(corr))
         confidence = peak_val / (mean_val + 1e-10)
 
@@ -553,7 +569,8 @@ def verify_sync_quality(
         # Perfect alignment: DJI starts search_margin before camera
         offset_error = offset_sec - search_margin
 
-        status = ("OK" if abs(offset_error) < 0.05 and confidence > 3.0
+        status = ("OK" if abs(offset_error) < MAX_DRIFT_SEC
+                  and confidence > 3.0
                   else "DRIFT" if confidence > 3.0
                   else "LOW_CONF")
         _log(log_f,
@@ -564,6 +581,267 @@ def verify_sync_quality(
                         "confidence": confidence})
 
     return results
+
+
+# ============================================================================
+# Dense verification + enforcement
+# ============================================================================
+
+# Thresholds for dense verification
+VERIFY_INTERVAL = 5.0       # Check every 5 seconds
+VERIFY_WINDOW = 10.0        # Analysis window per check point
+MAX_DRIFT_SEC = 0.5         # Max acceptable sync error
+SEARCH_MARGIN = 2.0         # Search margin for correlation
+
+
+def extract_full_mono_8k(filepath: Path) -> np.ndarray:
+    """Extract full audio file as mono 8kHz float32 (single ffmpeg call)."""
+    cmd = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error",
+        "-i", str(filepath),
+        "-ac", "1", "-ar", "8000",
+        "-f", "f32le", "-c:a", "pcm_f32le",
+        "pipe:1",
+    ]
+    result = subprocess.run(cmd, capture_output=True)
+    if result.returncode != 0:
+        return np.array([], dtype=np.float32)
+    return np.frombuffer(result.stdout, dtype=np.float32)
+
+
+def _slice_array(arr: np.ndarray, start_sec: float, dur_sec: float,
+                 sr: int = 8000) -> np.ndarray:
+    """Slice numpy array by time (seconds)."""
+    s = max(0, int(start_sec * sr))
+    e = min(len(arr), int((start_sec + dur_sec) * sr))
+    return arr[s:e] if s < e else np.array([], dtype=arr.dtype)
+
+
+def verify_sync_dense(
+    cam_8k: np.ndarray,
+    dji_8k: np.ndarray,
+    clip_duration: float,
+    interval: float = VERIFY_INTERVAL,
+    window: float = VERIFY_WINDOW,
+    log_f=None,
+) -> list:
+    """Dense sync verification using pre-loaded 8kHz arrays.
+
+    Checks every `interval` seconds. Returns list of
+    {time, offset_error, confidence, ok} dicts.
+    """
+    SR = 8000
+    search_margin = SEARCH_MARGIN
+    results = []
+
+    # Generate check points
+    pts = [5.0]
+    t = interval
+    while t + window + 2.0 < clip_duration:
+        pts.append(t)
+        t += interval
+    pts = sorted(set(pts))
+
+    for t in pts:
+        cam_chunk = _slice_array(cam_8k, t, window)
+        if len(cam_chunk) < SR * 2:
+            results.append({"time": t, "offset_error": None,
+                            "confidence": 0.0, "ok": True})
+            continue
+
+        dji_chunk = _slice_array(dji_8k,
+                                 max(0, t - search_margin),
+                                 window + 2 * search_margin)
+        if len(dji_chunk) < SR * 2:
+            results.append({"time": t, "offset_error": None,
+                            "confidence": 0.0, "ok": True})
+            continue
+
+        cam_env = compute_envelope(cam_chunk, SR)
+        dji_env = compute_envelope(dji_chunk, SR)
+
+        if cam_env.std() < 1e-6 or dji_env.std() < 1e-6:
+            # Silence — can't verify, assume ok
+            results.append({"time": t, "offset_error": None,
+                            "confidence": 0.0, "ok": True})
+            continue
+
+        cam_env = (cam_env - cam_env.mean()) / cam_env.std()
+        dji_env = (dji_env - dji_env.mean()) / dji_env.std()
+
+        from scipy.signal import correlate
+        corr = correlate(dji_env, cam_env, mode="full")
+        peak_idx = np.argmax(corr)
+        peak_val = corr[peak_idx]
+        mean_val = np.mean(np.abs(corr))
+        confidence = peak_val / (mean_val + 1e-10)
+
+        offset_samples = peak_idx - len(cam_env) + 1
+        offset_sec = offset_samples / SR
+        offset_error = offset_sec - search_margin
+
+        ok = abs(offset_error) < MAX_DRIFT_SEC or confidence < 3.0
+        results.append({"time": t, "offset_error": offset_error,
+                        "confidence": confidence, "ok": ok})
+
+    return results
+
+
+def find_bad_regions(results: list, interval: float = VERIFY_INTERVAL
+                     ) -> list:
+    """Find contiguous bad regions from dense verify results.
+
+    Returns list of (start_sec, end_sec) tuples where sync is bad.
+    """
+    bad = [r for r in results
+           if not r["ok"] and r["offset_error"] is not None]
+    if not bad:
+        return []
+
+    regions = []
+    for r in bad:
+        start = max(0, r["time"] - interval / 2)
+        end = r["time"] + interval / 2
+        if regions and start <= regions[-1][1] + interval:
+            # Merge with previous
+            regions[-1] = (regions[-1][0], end)
+        else:
+            regions.append((start, end))
+
+    return regions
+
+
+def silence_bad_regions(
+    wav_path: Path,
+    bad_regions: list,
+    log_f=None,
+) -> bool:
+    """Replace bad regions in WAV file with silence using ffmpeg.
+
+    Args:
+        wav_path: Path to the synced WAV file to patch.
+        bad_regions: List of (start_sec, end_sec) tuples.
+
+    Returns True if successful.
+    """
+    if not bad_regions or not wav_path.exists():
+        return True
+
+    # Build ffmpeg volume filter: mute bad regions
+    # volume=enable='between(t,S1,E1)+between(t,S2,E2)':volume=0
+    conditions = "+".join(
+        f"between(t\\,{s:.3f}\\,{e:.3f})" for s, e in bad_regions)
+    af = f"volume=enable='{conditions}':volume=0"
+
+    tmp_path = wav_path.with_suffix(".tmp.wav")
+    cmd = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+        "-i", str(wav_path),
+        "-af", af,
+        "-c:a", "pcm_s24le",
+        str(tmp_path),
+    ]
+
+    rc = subprocess.run(cmd, capture_output=True).returncode
+    if rc != 0:
+        tmp_path.unlink(missing_ok=True)
+        _log(log_f, f"    [ENFORCE] ✗ Failed to silence bad regions")
+        return False
+
+    # Replace original
+    tmp_path.replace(wav_path)
+    total_silenced = sum(e - s for s, e in bad_regions)
+    _log(log_f,
+        f"    [ENFORCE] ✓ Silenced {len(bad_regions)} region(s) "
+        f"({total_silenced:.1f}s) in {wav_path.name}")
+    return True
+
+
+def resync_clip(
+    clip: dict,
+    tx: str,
+    dji_wavs: list,
+    cam_wav: Path,
+    output_path: Path,
+    global_correction: float,
+    log_f=None,
+) -> bool:
+    """Try per-clip fine-sync when global correction produces drift.
+
+    1. Find DJI WAV overlapping this clip (using metadata only, no correction)
+    2. Correlate camera audio vs DJI audio for THIS clip
+    3. If confident, re-trim with per-clip correction
+    4. Return True if re-synced successfully.
+    """
+    from copy import deepcopy
+
+    # Find overlapping DJI WAV for this clip (uncorrected first)
+    segments = find_overlapping_wavs(clip, dji_wavs)
+    if not segments:
+        return False
+
+    first_dji = segments[0]["wav"]["path"]
+    rough = segments[0]["trim_start"]
+
+    _log(log_f, f"    [RESYNC] Per-clip fine-sync: {clip['clip_id']} × {tx}")
+    _log(log_f, f"    [RESYNC] DJI: {first_dji.name}, rough={rough:.3f}s")
+
+    refined, conf = find_fine_offset(
+        cam_wav, first_dji, rough,
+        analysis_dur=min(60.0, clip["duration"]),
+        search_window=20.0,
+        log_f=log_f)
+
+    if conf < 3.0:
+        _log(log_f,
+            f"    [RESYNC] ✗ Low confidence ({conf:.1f}) — cannot re-sync")
+        return False
+
+    per_clip_correction = refined - rough
+    _log(log_f,
+        f"    [RESYNC] Per-clip correction: {per_clip_correction:+.3f}s "
+        f"(was global: {global_correction:+.3f}s)")
+
+    # Apply per-clip correction to DJI timestamps
+    corrected_wavs = []
+    for w in dji_wavs:
+        wc = deepcopy(w)
+        wc["creation_utc"] = (w["creation_utc"]
+                              - timedelta(seconds=per_clip_correction))
+        corrected_wavs.append(wc)
+
+    # Re-find overlapping segments with per-clip correction
+    new_segments = find_overlapping_wavs(clip, corrected_wavs)
+    if not new_segments:
+        _log(log_f, f"    [RESYNC] ✗ No overlap after per-clip correction")
+        return False
+
+    # Calculate gaps
+    seg_gaps = []
+    for si in range(1, len(new_segments)):
+        prev_end = (new_segments[si-1]["wav"]["creation_utc"]
+                    + timedelta(seconds=new_segments[si-1]["trim_start"]
+                                + new_segments[si-1]["trim_duration"]))
+        curr_start = (new_segments[si]["wav"]["creation_utc"]
+                      + timedelta(seconds=new_segments[si]["trim_start"]))
+        gap = (curr_start - prev_end).total_seconds()
+        seg_gaps.append(max(0, gap))
+
+    # Re-trim
+    cmd = build_ffmpeg_cmd(
+        new_segments, output_path,
+        gaps=seg_gaps if seg_gaps else None,
+        target_duration=clip["duration"])
+
+    rc = subprocess.run(cmd, capture_output=True).returncode
+    if rc != 0 or not output_path.exists():
+        _log(log_f, f"    [RESYNC] ✗ ffmpeg failed")
+        return False
+
+    _log(log_f,
+        f"    [RESYNC] ✓ Re-synced {output_path.name} "
+        f"(correction: {per_clip_correction:+.3f}s)")
+    return True
 
 
 # ============================================================================
@@ -1094,7 +1372,7 @@ Examples:
                 tee_print(log_f, "")
 
         # ============================================================
-        # PHASE 2: Sync and trim
+        # PHASE 2: Sync and trim (per-clip fine-sync)
         # ============================================================
         tee_print(log_f,
             f"{BOLD}{MAGENTA}PHASE 2: Sync and trim{RST}")
@@ -1109,6 +1387,15 @@ Examples:
         output_durations = {}  # {(clip_id, tx): duration_sec}
 
         for clip in clips_ok:
+            # --- Per-clip camera audio ---
+            clip_cam_wav = (per_clip_dir / clip["clip_id"]
+                            / f"{clip['clip_id']}_AUDIO.wav")
+            if not clip_cam_wav.exists():
+                clip_cam_wav = _find_video_path(
+                    clip['clip_id'], video_path_map, clips_dir)
+                if clip_cam_wav is None:
+                    clip_cam_wav = clips_dir / f"{clip['clip_id']}.MP4"
+
             for tx in tx_ids:
                 output_name = f"{clip['clip_id']}_{tx}.wav"
                 clip_out_dir = _scene_out_dir(
@@ -1125,9 +1412,64 @@ Examples:
                         total_size += size
                         continue
 
-                # Find overlapping WAV files (using corrected timestamps)
+                # --- Per-clip fine-sync ---
+                # Start from global-corrected timestamps, then refine
+                # per-clip if camera audio is available
+                clip_dji_wavs = dji_by_tx_corrected[tx]
+                global_corr = sync_correction.get(tx, 0.0)
+
+                if (clip_cam_wav.exists() and not args.dry_run
+                        and clip["clip_id"] != longest_clip["clip_id"]):
+                    # Find overlapping DJI for this clip (global correction)
+                    ref_segs = find_overlapping_wavs(
+                        clip, clip_dji_wavs)
+                    if ref_segs:
+                        rough = ref_segs[0]["trim_start"]
+                        refined, conf = find_fine_offset(
+                            clip_cam_wav,
+                            ref_segs[0]["wav"]["path"],
+                            rough,
+                            analysis_dur=min(60.0, clip["duration"]),
+                            search_window=20.0,
+                            log_f=log_f)
+                        if conf >= 3.0:
+                            per_clip_corr = refined - rough
+                            delta = per_clip_corr - global_corr
+                            if abs(delta) > 0.1:
+                                tee_print(log_f,
+                                    f"  [PER-CLIP] {clip['clip_id']} × {tx}: "
+                                    f"correction={per_clip_corr:+.3f}s "
+                                    f"(global was {global_corr:+.3f}s, "
+                                    f"Δ={delta:+.3f}s)")
+                                # Re-correct DJI timestamps for this clip
+                                from copy import deepcopy
+                                clip_dji_wavs = []
+                                for w in dji_by_tx[tx]:
+                                    wc = deepcopy(w)
+                                    wc["creation_utc"] = (
+                                        w["creation_utc"]
+                                        - timedelta(seconds=per_clip_corr))
+                                    clip_dji_wavs.append(wc)
+                                # Re-apply auto-split snap
+                                clip_dji_wavs.sort(
+                                    key=lambda w: w["creation_utc"])
+                                for i in range(1, len(clip_dji_wavs)):
+                                    prev = clip_dji_wavs[i - 1]
+                                    cur = clip_dji_wavs[i]
+                                    prev_end = (
+                                        prev["creation_utc"]
+                                        + timedelta(
+                                            seconds=prev["duration"]))
+                                    gap = (cur["creation_utc"]
+                                           - prev_end).total_seconds()
+                                    if (prev["duration"] >= AUTO_SPLIT_DUR
+                                            and 0 < gap
+                                            < AUTO_SPLIT_GAP_MAX):
+                                        cur["creation_utc"] = prev_end
+
+                # Find overlapping WAV files
                 segments = find_overlapping_wavs(
-                    clip, dji_by_tx_corrected[tx])
+                    clip, clip_dji_wavs)
 
                 if not segments:
                     tee_print(log_f,
@@ -1265,9 +1607,11 @@ Examples:
                     success_count += 1
 
         # ============================================================
-        # PHASE 3: Sync verification (multi-point cross-correlation)
+        # PHASE 3: Sync verification (30s windows, reliable)
         # ============================================================
         phase3_summary = {}  # {tx: max_error_sec}
+        removed_count = 0
+
         if (success_count > 0 and not args.dry_run
                 and per_clip_dir.exists()):
             tee_print(log_f, "")
@@ -1276,7 +1620,6 @@ Examples:
             tee_print(log_f, f"{DIM}{'-' * 60}{RST}")
 
             for clip in clips_ok:
-                # Camera audio source
                 cam_wav = (per_clip_dir / clip["clip_id"]
                            / f"{clip['clip_id']}_AUDIO.wav")
                 if not cam_wav.exists():
@@ -1292,30 +1635,21 @@ Examples:
                     if not out_path.exists():
                         continue
 
-                    # Use DJI output duration (may be shorter than video)
-                    try:
-                        p = subprocess.run(
-                            ["ffprobe", "-v", "error",
-                             "-show_entries", "format=duration",
-                             "-of", "csv=p=0", str(out_path)],
-                            capture_output=True, text=True)
-                        dji_dur = float(p.stdout.strip())
-                    except Exception:
-                        dji_dur = clip["duration"]
-
-                    dur = min(clip["duration"], dji_dur)
-                    # Skip very short clips
+                    dur = clip["duration"]
                     if dur < 30:
                         tee_print(log_f,
                             f"  {clip['clip_id']} × {tx}: "
                             f"skip (too short {dur:.0f}s)")
                         continue
 
-                    # Check points: 1%, 25%, 50%, 75%, 90%
-                    pts = [5.0, dur * 0.25, dur * 0.5,
-                           dur * 0.75, dur * 0.9]
-                    pts = sorted(set(
-                        t for t in pts if t + 12.0 < dur))
+                    # Check every 60s with 30s analysis windows
+                    verify_window = 30.0
+                    pts = [5.0]
+                    t = 60.0
+                    while t + verify_window + 5.0 < dur:
+                        pts.append(t)
+                        t += 60.0
+                    pts = sorted(set(pts))
 
                     tee_print(log_f,
                         f"  {clip['clip_id']} × {tx}: "
@@ -1323,7 +1657,7 @@ Examples:
 
                     results = verify_sync_quality(
                         cam_wav, out_path, pts,
-                        analysis_dur=10.0, log_f=log_f)
+                        analysis_dur=verify_window, log_f=log_f)
 
                     valid = [r for r in results
                              if r["offset_error"] is not None]
@@ -1331,27 +1665,41 @@ Examples:
                         max_err = max(
                             abs(r["offset_error"]) for r in valid)
                         avg_err = (sum(abs(r["offset_error"])
-                                       for r in valid)
-                                   / len(valid))
+                                       for r in valid) / len(valid))
                         min_conf = min(
                             r["confidence"] for r in valid)
-                        if max_err < 0.1:
+
+                        if max_err < MAX_DRIFT_SEC:
                             status = f"{GREEN}SYNC OK{RST}"
                         else:
                             status = f"{RED}⚠ DRIFT DETECTED{RST}"
+
                         tee_print(log_f,
                             f"    Summary: max_error={max_err:.3f}s  "
                             f"avg_error={avg_err:.3f}s  "
-                            f"min_conf={min_conf:.1f}  "
-                            f"[{status}]")
-                        # Store for TRACK COMPARISON table
+                            f"min_conf={min_conf:.1f}  [{status}]")
+
+                        # Report drift details (informational only)
+                        if max_err > MAX_DRIFT_SEC:
+                            confident = [r for r in valid
+                                         if r["confidence"] >= 3.0]
+                            bad = [r for r in confident
+                                   if abs(r["offset_error"])
+                                   > MAX_DRIFT_SEC]
+                            n_conf = len(confident)
+                            tee_print(log_f,
+                                f"    ⚠ {len(bad)}/{n_conf} "
+                                f"confident points exceed "
+                                f"{MAX_DRIFT_SEC}s (keeping file)")
+
                         prev = phase3_summary.get(tx, 0.0)
                         phase3_summary[tx] = max(prev, max_err)
                     tee_print(log_f, "")
 
-        # ============================================================
-        # Per-clip inline checks (kept brief during processing)
-        # ============================================================
+            if removed_count:
+                tee_print(log_f,
+                    f"  Phase 3: {removed_count} file(s) removed "
+                    f"due to drift")
 
         # ============================================================
         # PHASE 4: Generate Premiere Pro project for verification
