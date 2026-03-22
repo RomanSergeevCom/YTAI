@@ -1540,9 +1540,13 @@ async function exportMarkers() {
       assemblyEntry = await ensureSubfolder(setupEntry, 'Assembly', assemblyLogger);
     }
 
+    // Strip _v{N} suffix from seqName to avoid double versioning
+    // e.g. YTXX01_2_Assembly_v1 → YTXX01_2_Assembly
+    var baseSeqName = seqName.replace(/_v\d+$/, '');
+
     var existingFiles = await assemblyEntry.getEntries();
     var maxVer = 0;
-    var verRe = new RegExp(seqName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '_v(\\d+)');
+    var verRe = new RegExp(baseSeqName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '_v(\\d+)');
     for (var fi = 0; fi < existingFiles.length; fi++) {
       var vm = existingFiles[fi].name.match(verRe);
       if (vm) {
@@ -1567,7 +1571,7 @@ async function exportMarkers() {
       }
     }
 
-    var fileName = seqName + '_v' + version + '_out.json';
+    var fileName = baseSeqName + '_v' + version + '_out.json';
     var jsonContent = JSON.stringify(output, null, 2);
 
     // Write to Setup/Assembly/
