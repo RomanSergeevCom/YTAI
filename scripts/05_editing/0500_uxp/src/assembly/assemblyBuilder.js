@@ -151,7 +151,27 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
   }
 
   // === Remaining clips: sequential insert with pre-trim ===
-  var cumulativePosition = firstSeg.duration; // first clip already placed at 0
+  // Read-back cumulative: after each insert, read ACTUAL clip end from Premiere.
+  // This is the ONLY way to guarantee 0-gap — any calculation drifts due to float precision.
+  var v1Track = await seq.getVideoTrack(0);
+  var cumulativePosition = 0;
+  try {
+    var firstItems = null;
+    try { firstItems = v1Track.getTrackItems(1, false); } catch (ex) {}
+    if (!firstItems) try { firstItems = v1Track.getTrackItems(); } catch (ex) {}
+    if (firstItems && firstItems.length > 0) {
+      var fi = firstItems[firstItems.length - 1];
+      var fiStart = await fi.getStartTime();
+      var fiDur = await fi.getDuration();
+      var fiStartSec = fiStart.seconds !== undefined ? fiStart.seconds : 0;
+      var fiDurSec = fiDur.seconds !== undefined ? fiDur.seconds : (fiDur.ticks ? fiDur.ticks / 254016000000 : 0);
+      cumulativePosition = fiStartSec + fiDurSec;
+      if (logger) logger.debug('  Read-back: first clip ends at ' + cumulativePosition.toFixed(3) + 's');
+    }
+  } catch (rbErr) {
+    cumulativePosition = firstSeg.duration;
+    if (logger) logger.warn('  Read-back failed, using brief duration: ' + rbErr.message);
+  }
   var totalDjiCount = firstDjiCount;
   var clipCount = 1;
 
@@ -160,7 +180,7 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
     var rawItem = clipMap[seg.sourceFile] || clipMap[seg.sourceFile.replace(/\.[^.]+$/, '')];
     if (!rawItem) {
       if (logger) logger.warn('  Skip ' + seg.id + ': no clip for ' + seg.sourceFile);
-      cumulativePosition += seg.duration;
+      cumulativePosition += seg.duration; // fallback for missing clips
       continue;
     }
 
@@ -243,11 +263,26 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
         ' → dur=' + seg.duration.toFixed(3) + 's');
     }
 
-    cumulativePosition += seg.duration;
+    // Read-back: get ACTUAL timeline end from Premiere (guaranteed 0-gap)
+    try {
+      var rbItems = null;
+      try { rbItems = v1Track.getTrackItems(1, false); } catch (ex) {}
+      if (!rbItems) try { rbItems = v1Track.getTrackItems(); } catch (ex) {}
+      if (rbItems && rbItems.length > 0) {
+        var lastItem = rbItems[rbItems.length - 1];
+        var lStart = await lastItem.getStartTime();
+        var lDur = await lastItem.getDuration();
+        var lStartSec = lStart.seconds !== undefined ? lStart.seconds : 0;
+        var lDurSec = lDur.seconds !== undefined ? lDur.seconds : (lDur.ticks ? lDur.ticks / 254016000000 : 0);
+        cumulativePosition = lStartSec + lDurSec;
+      }
+    } catch (rbErr) {
+      cumulativePosition += seg.duration; // fallback
+    }
   }
 
   if (logger) {
-    logger.info('Assembly: ' + clipCount + '/' + useSegs.length + ' clips inserted, total=' + cumulativePosition.toFixed(1) + 's (fps=' + fps + ')');
+    logger.info('Assembly: ' + clipCount + '/' + useSegs.length + ' clips inserted, total=' + cumulativePosition.toFixed(3) + 's (fps=' + fps + ', frame-aligned cumulative)');
 
     // Color summary
     var colorCounts = {};

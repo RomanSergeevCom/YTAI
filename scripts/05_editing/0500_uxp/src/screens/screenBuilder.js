@@ -64,12 +64,18 @@ function sortSegments(segments) {
  * @returns {Object} Map of { seg_001: 0.0, seg_002: 10.0, ... }
  */
 function buildSegmentPositionMap(assemblySegments, fps) {
+  if (!fps) fps = 25;
+  var frameDur = (fps > 29 && fps < 30) ? 1001.0 / 30000 :
+                 (fps > 23 && fps < 24) ? 1001.0 / 24000 :
+                 1.0 / fps;
   var positions = {};
   var cumTime = 0;
   for (var i = 0; i < assemblySegments.length; i++) {
     var seg = assemblySegments[i];
     positions[seg.id] = cumTime;
-    cumTime += seg.duration;
+    var pIn = Math.floor(seg.inSec / frameDur) * frameDur;
+    var pOut = Math.floor(seg.outSec / frameDur) * frameDur;
+    cumTime += (pOut - pIn);
   }
   return positions;
 }
@@ -411,7 +417,12 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
 
   result.sequence = seq;
   result.clips++;
-  var cumulativePosition = firstSeg.duration;
+  var frameDur = (fps > 29 && fps < 30) ? 1001.0 / 30000 :
+                 (fps > 23 && fps < 24) ? 1001.0 / 24000 :
+                 1.0 / fps;
+  var firstPremIn = Math.floor(firstSeg.inSec / frameDur) * frameDur;
+  var firstPremOut = Math.floor(firstSeg.outSec / frameDur) * frameDur;
+  var cumulativePosition = firstPremOut - firstPremIn;
 
   // Get SequenceEditor early — needed for DJI audio insert on first clip too
   var seqEditor = ppro.SequenceEditor.getEditor(seq);
@@ -433,7 +444,9 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
     var rawItem = clipMap[seg.sourceFile] || clipMap[seg.sourceFile.replace(/\.[^.]+$/, '')];
     if (!rawItem) {
       if (logger) logger.warn('  Skip ' + seg.id + ': no clip for ' + seg.sourceFile);
-      cumulativePosition += seg.duration;
+      var sPremIn = Math.floor(seg.inSec / frameDur) * frameDur;
+    var sPremOut = Math.floor(seg.outSec / frameDur) * frameDur;
+    cumulativePosition += (sPremOut - sPremIn);
       continue;
     }
 
@@ -489,7 +502,9 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
         ', dur=' + seg.duration.toFixed(1) + 's');
     }
 
-    cumulativePosition += seg.duration;
+    var sPremIn = Math.floor(seg.inSec / frameDur) * frameDur;
+    var sPremOut = Math.floor(seg.outSec / frameDur) * frameDur;
+    cumulativePosition += (sPremOut - sPremIn);
   }
 
   result.totalDuration = cumulativePosition;
