@@ -220,6 +220,7 @@ function resetAllPipelineStates() {
   $('btn-build-screens').setAttribute('disabled', 'true');
   $('btn-export-screens').setAttribute('disabled', 'true');
   $('btn-import-screens').setAttribute('disabled', 'true');
+  $('btn-export-pre-edit-doc').setAttribute('disabled', 'true');
   $('screens-validation').style.display = 'none';
   hideScreensProgress();
 
@@ -518,6 +519,7 @@ async function autoDetectFiles(folderPath, projectName) {
   $('btn-import-srts').removeAttribute('disabled');
   $('btn-export-markers').removeAttribute('disabled');
   $('btn-debug-export').removeAttribute('disabled');
+  $('btn-export-pre-edit-doc').removeAttribute('disabled');
   ingestLogger.info('Auto-detection complete: ingest=' + projectState.ingestDetected + ', brief=' + projectState.briefDetected);
 }
 
@@ -2091,8 +2093,28 @@ async function debugExport() {
       if (d) {
         if (Math.abs(d['in']) > maxDeltaIn) maxDeltaIn = Math.abs(d['in']);
         if (Math.abs(d.out) > maxDeltaOut) maxDeltaOut = Math.abs(d.out);
-        if (Math.abs(d['in']) > 10 || Math.abs(d.out) > 10) problemClips++;
+        if (Math.abs(d['in']) > 5 || Math.abs(d.out) > 35) problemClips++; // tc_in >5ms or tc_out >1frame = problem
       }
+    }
+
+    // Get available audio effects (for research/auto-apply)
+    var audioEffectNames = [];
+    try {
+      audioEffectNames = await ppro.AudioFilterFactory.getDisplayNames();
+      assemblyLogger.info('Audio effects available: ' + audioEffectNames.length);
+      // Log effects that match channel fill / normalize patterns
+      var relevant = audioEffectNames.filter(function(n) {
+        var nl = n.toLowerCase();
+        return nl.indexOf('fill') >= 0 || nl.indexOf('channel') >= 0 ||
+               nl.indexOf('loud') >= 0 || nl.indexOf('normal') >= 0 ||
+               nl.indexOf('gain') >= 0 || nl.indexOf('vocal') >= 0 ||
+               nl.indexOf('compressor') >= 0 || nl.indexOf('limit') >= 0 ||
+               nl.indexOf('mono') >= 0 || nl.indexOf('stereo') >= 0 ||
+               nl.indexOf('denoise') >= 0 || nl.indexOf('noise') >= 0;
+      });
+      assemblyLogger.info('Relevant audio effects: ' + relevant.join(', '));
+    } catch (aeErr) {
+      assemblyLogger.warn('Cannot get audio effect names: ' + aeErr.message);
     }
 
     var output = {
@@ -2107,6 +2129,18 @@ async function debugExport() {
         max_delta_in_ms: maxDeltaIn,
         max_delta_out_ms: maxDeltaOut,
         clips_with_delta_gt_10ms: problemClips
+      },
+      audio_effects: {
+        total: audioEffectNames.length,
+        all: audioEffectNames,
+        relevant: audioEffectNames.filter(function(n) {
+          var nl = n.toLowerCase();
+          return nl.indexOf('fill') >= 0 || nl.indexOf('channel') >= 0 ||
+                 nl.indexOf('loud') >= 0 || nl.indexOf('normal') >= 0 ||
+                 nl.indexOf('gain') >= 0 || nl.indexOf('vocal') >= 0 ||
+                 nl.indexOf('mono') >= 0 || nl.indexOf('stereo') >= 0 ||
+                 nl.indexOf('noise') >= 0 || nl.indexOf('compressor') >= 0;
+        })
       }
     };
 
@@ -2144,6 +2178,73 @@ async function debugExport() {
   }
 
   $('btn-debug-export').removeAttribute('disabled');
+}
+
+/**
+ * Apply audio channel fill effect to ALL audio clips on A1 of the active sequence.
+ * "Fill Right with Left" → L channel copied to R (for mono_L sources)
+ * "Fill Left with Right" → R channel copied to L (for mono_R sources)
+ *
+ * @param {string} effectName - "Fill Right with Left" or "Fill Left with Right"
+ */
+async function applyAudioFill(effectName) {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setAssemblyStatus('No active project', 'error'); return; }
+
+  var seq = await project.getActiveSequence();
+  if (!seq) { setAssemblyStatus('No active sequence', 'error'); return; }
+
+  assemblyLogger.info('=== Apply Audio Fill: ' + effectName + ' ===');
+  setAssemblyStatus('Applying ' + effectName + '...', 'waiting');
+
+  try {
+    // Get A1 audio track (camera audio)
+    var a1Track = await seq.getAudioTrack(0);
+    if (!a1Track) throw new Error('No audio track A1');
+
+    var trackItems = null;
+    try { trackItems = a1Track.getTrackItems(1, false); } catch (ex) {}
+    if (!trackItems) try { trackItems = a1Track.getTrackItems(); } catch (ex) {}
+
+    if (!trackItems || trackItems.length === 0) {
+      throw new Error('No audio clips on A1');
+    }
+
+    assemblyLogger.info('A1 clips: ' + trackItems.length);
+    var applied = 0;
+
+    for (var i = 0; i < trackItems.length; i++) {
+      var audioItem = trackItems[i];
+      try {
+        // Create the fill effect for this clip
+        var effect = await ppro.AudioFilterFactory.createComponentByDisplayName(effectName, audioItem);
+        if (!effect) {
+          assemblyLogger.warn('  clip[' + i + ']: effect not created');
+          continue;
+        }
+
+        // Get the audio component chain and append the effect
+        var chain = await audioItem.getComponentChain();
+        project.lockedAccess(function () {
+          project.executeTransaction(function (ca) {
+            ca.addAction(chain.createAppendComponentAction(effect));
+          }, 'Audio fill clip[' + i + ']');
+        });
+
+        applied++;
+        assemblyLogger.info('  clip[' + i + ']: ' + effectName + ' applied ✓');
+      } catch (clipErr) {
+        assemblyLogger.warn('  clip[' + i + ']: failed — ' + clipErr.message);
+      }
+    }
+
+    setAssemblyStatus(effectName + ': ' + applied + '/' + trackItems.length + ' clips', 'ready');
+    assemblyLogger.info('Applied ' + effectName + ' to ' + applied + '/' + trackItems.length + ' clips');
+
+  } catch (err) {
+    assemblyLogger.error('Audio fill failed: ' + err.message);
+    setAssemblyStatus('Audio fill failed: ' + err.message, 'error');
+  }
 }
 
 /**
@@ -4156,6 +4257,282 @@ async function createScreenCuesMarkers(project, screenResult) {
 }
 
 /**
+ * Export Pre-Edit Doc — reads active Premiere sequence (V1 clips + markers + transcript)
+ * and writes a structured JSON to Setup/Pre-Edit/ for conversion to Google Docs .docx.
+ *
+ * Flow: UXP → _pre_edit_export.json → python export_to_gdoc.py → .docx → Google Docs
+ *
+ * Reuses the same timeline-reading pattern as exportMarkers().
+ */
+async function exportPreEditDoc() {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setScreensStatus('No active project', 'error'); return; }
+  if (!projectState.folderPath) { setScreensStatus('Select project folder first', 'error'); return; }
+
+  screensLogger.info('=== Export Pre-Edit Doc ===');
+  setScreensStatus('Reading timeline...', 'waiting');
+  $('btn-export-pre-edit-doc').setAttribute('disabled', 'true');
+
+  try {
+    // Step 1: Get active sequence
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence — open a sequence first');
+    var seqName = seq.name;
+    screensLogger.info('Active sequence: ' + seqName);
+
+    // Step 2: Read V1 TrackItems (real timeline clips)
+    setScreensStatus('Reading V1 clips from ' + seqName + '...', 'waiting');
+    var timelineClips = [];
+    var v1Track = await seq.getVideoTrack(0);
+    var trackItems = null;
+    try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) {}
+    if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) {}
+    if (!trackItems || trackItems.length === 0) throw new Error('No clips on V1 track');
+
+    for (var ti = 0; ti < trackItems.length; ti++) {
+      var item = trackItems[ti];
+      var projItem = await item.getProjectItem();
+      var clipName = projItem ? projItem.name : '';
+      var clipStart = await item.getStartTime();
+      var clipDur = await item.getDuration();
+      var clipIn = await item.getInPoint();
+      var clipOut = await item.getOutPoint();
+      timelineClips.push({
+        index: ti,
+        source_file: clipName,
+        tc_in_sec: Math.round(tickSec(clipIn) * 100) / 100,
+        tc_out_sec: Math.round(tickSec(clipOut) * 100) / 100,
+        timeline_start_sec: Math.round(tickSec(clipStart) * 100) / 100,
+        duration_sec: Math.round(tickSec(clipDur) * 100) / 100,
+      });
+    }
+    screensLogger.info('V1 clips: ' + timelineClips.length);
+
+    // Step 3: Read markers (for block/chapter structure + editor notes)
+    setScreensStatus('Reading markers...', 'waiting');
+    var markersOwner = await ppro.Markers.getMarkers(seq);
+    var rawMarkers = markersOwner ? markersOwner.getMarkers() : [];
+    var chapters = [];
+    var editorNotes = {};
+
+    if (rawMarkers && rawMarkers.length > 0) {
+      for (var mi = 0; mi < rawMarkers.length; mi++) {
+        var rm = rawMarkers[mi];
+        var startTime = null;
+        try { startTime = rm.getStart(); } catch (e) {}
+        if (!startTime) try { startTime = rm.startTime; } catch (e) {}
+        var posSec = startTime ? Math.round(startTime.seconds * 100) / 100 : 0;
+
+        var dur = null;
+        try { dur = rm.getDuration(); } catch (e) {}
+        if (!dur) try { dur = rm.duration; } catch (e) {}
+
+        if (dur && dur.seconds > 0) {
+          // Chapter marker
+          chapters.push({
+            name: rm.name || '',
+            position_sec: posSec,
+            duration_sec: Math.round(dur.seconds * 100) / 100,
+          });
+        } else {
+          // Point marker — collect editor notes
+          var commentText = rm.comments || '';
+          if (!commentText) try { commentText = rm.getComments ? rm.getComments() : ''; } catch (e) {}
+          if (!commentText) commentText = rm.comment || '';
+          if (commentText) {
+            if (!editorNotes[posSec]) editorNotes[posSec] = [];
+            editorNotes[posSec].push(commentText);
+          }
+        }
+      }
+      chapters.sort(function(a, b) { return a.position_sec - b.position_sec; });
+    }
+    screensLogger.info('Chapters: ' + chapters.length + ', editor notes: ' + Object.keys(editorNotes).length);
+
+    // Step 4: Match with transcript for full text
+    setScreensStatus('Matching transcript...', 'waiting');
+    var txLookup = {};
+    try {
+      var setupDir = projectState.folderPath + '/01_Media/Source/Setup';
+      var projectCode = projectState.projectName.match(/^(YT[A-Z]{2,4}\d+)/);
+      projectCode = projectCode ? projectCode[1] : projectState.projectName;
+      var txPath = setupDir + '/' + projectCode + '_Claude4_assembly.json';
+      var txEntry = await uxpfs.getEntryWithUrl('file://' + txPath);
+      var txRaw = await txEntry.read({ format: require('uxp').storage.formats.utf8 });
+      var txData = JSON.parse(txRaw);
+      var txClips = txData.clips || [];
+      for (var tci = 0; tci < txClips.length; tci++) {
+        txLookup[txClips[tci].filename] = txClips[tci].segments || [];
+      }
+      screensLogger.info('Loaded transcript: ' + txClips.length + ' clips');
+    } catch (txErr) {
+      screensLogger.debug('Transcript not available: ' + txErr.message);
+    }
+
+    // Match transcript text + speaker to each timeline clip
+    for (var ci = 0; ci < timelineClips.length; ci++) {
+      var clip = timelineClips[ci];
+      var segs = txLookup[clip.source_file] || [];
+      var texts = [];
+      var speakerName = '';
+      for (var si = 0; si < segs.length; si++) {
+        var sg = segs[si];
+        var sgStart = 0, sgEnd = 0;
+        try {
+          var sp = (sg.start || '0:0').split(':');
+          sgStart = parseInt(sp[0]) * 60 + parseFloat(sp[1] || 0);
+          var ep = (sg.end || '0:0').split(':');
+          sgEnd = parseInt(ep[0]) * 60 + parseFloat(ep[1] || 0);
+        } catch (pe) {}
+        if (sgStart < clip.tc_out_sec && sgEnd > clip.tc_in_sec) {
+          texts.push(sg.text || '');
+          if (!speakerName && sg.speaker) speakerName = sg.speaker;
+        }
+      }
+      clip.transcript = texts.join(' ');
+      clip.speaker = speakerName;
+    }
+
+    // Step 5: Build block structure from chapters
+    function fmtTC(sec) {
+      var mm = Math.floor(sec / 60);
+      var ss = (sec % 60).toFixed(1);
+      return (mm < 10 ? '0' : '') + mm + ':' + (parseFloat(ss) < 10 ? '0' : '') + ss;
+    }
+
+    // Enrich from old brief if available (block names, colors, broll_note)
+    var oldBrief = null;
+    var oldSegLookup = {};
+    if (projectState.briefPath) {
+      try {
+        var briefEntry = await uxpfs.getEntryWithUrl('file://' + projectState.briefPath);
+        var briefContent = await briefEntry.read({ format: require('uxp').storage.formats.utf8 });
+        oldBrief = JSON.parse(briefContent);
+        if (oldBrief && oldBrief.segments) {
+          for (var osi = 0; osi < oldBrief.segments.length; osi++) {
+            var os = oldBrief.segments[osi];
+            oldSegLookup[os.source_file + '|' + os.tc_in] = os;
+          }
+        }
+        screensLogger.info('Enrichment from brief: ' + (oldBrief.segments || []).length + ' segments');
+      } catch (bErr) {
+        screensLogger.debug('Brief enrichment skipped: ' + bErr.message);
+      }
+    }
+
+    // Build block defs from chapters + old brief
+    var blockDefs = [];
+    for (var chi = 0; chi < chapters.length; chi++) {
+      var ch = chapters[chi];
+      var bColor = 'Green';
+      if (oldBrief && oldBrief.segments) {
+        for (var obi = 0; obi < oldBrief.segments.length; obi++) {
+          if (oldBrief.segments[obi].block_name === ch.name && oldBrief.segments[obi].color) {
+            bColor = oldBrief.segments[obi].color;
+            break;
+          }
+        }
+      }
+      blockDefs.push({
+        num: chi + 1, start: ch.position_sec,
+        end: ch.position_sec + ch.duration_sec, name: ch.name, color: bColor,
+      });
+    }
+
+    // Step 6: Build output segments
+    setScreensStatus('Building segments...', 'waiting');
+    var outputSegments = [];
+    for (var oi = 0; oi < timelineClips.length; oi++) {
+      var tc = timelineClips[oi];
+      var tcInStr = fmtTC(tc.tc_in_sec);
+      var tcOutStr = fmtTC(tc.tc_out_sec);
+
+      // Find block
+      var segBlock = 1, segBlockName = '', segColor = 'Green';
+      for (var bd = 0; bd < blockDefs.length; bd++) {
+        if (tc.timeline_start_sec >= blockDefs[bd].start && tc.timeline_start_sec < blockDefs[bd].end) {
+          segBlock = blockDefs[bd].num;
+          segBlockName = blockDefs[bd].name;
+          segColor = blockDefs[bd].color;
+          break;
+        }
+      }
+
+      // Enrich from old brief
+      var oldSeg = oldSegLookup[tc.source_file + '|' + tcInStr];
+      var brollNote = (oldSeg && oldSeg.broll_note) ? oldSeg.broll_note : '';
+      var segNotes = (oldSeg && oldSeg.notes) ? oldSeg.notes : '';
+
+      // Append editor notes from markers
+      var clipEnd = tc.timeline_start_sec + tc.duration_sec;
+      for (var np in editorNotes) {
+        var nPos = parseFloat(np);
+        if (nPos >= tc.timeline_start_sec && nPos < clipEnd) {
+          segNotes = (segNotes ? segNotes + ' | ' : '') + editorNotes[np].join(' | ');
+        }
+      }
+
+      outputSegments.push({
+        index: oi,
+        segment_id: 'seg_' + String(oi + 1).padStart(3, '0'),
+        source_file: tc.source_file,
+        tc_in: tcInStr, tc_out: tcOutStr,
+        timeline_start_sec: tc.timeline_start_sec,
+        duration_sec: tc.duration_sec,
+        block: segBlock, block_name: segBlockName,
+        speaker: tc.speaker || '', color: segColor,
+        transcript: tc.transcript || '',
+        broll_note: brollNote, notes: segNotes, visual: '',
+      });
+    }
+
+    // Step 7: Write JSON to Setup/Pre-Edit/
+    setScreensStatus('Writing Pre-Edit export...', 'waiting');
+    var setupPath = projectState.folderPath + '/01_Media/Source/Setup';
+    var setupEntry;
+    try {
+      setupEntry = await uxpfs.getEntryWithUrl('file://' + setupPath);
+    } catch (e) {
+      throw new Error('Setup folder not found: ' + setupPath);
+    }
+    var preEditFolder = await ensureSubfolder(setupEntry, 'Pre-Edit', screensLogger);
+
+    var baseSeqName = seqName.replace(/_v\d+$/, '');
+    var exportData = {
+      sequence: seqName,
+      exported_at: new Date().toISOString(),
+      project_name: projectState.projectName || seqName,
+      segments: outputSegments,
+      blocks: blockDefs,
+      timeline: {
+        totalDuration: timelineClips.length > 0 ?
+          Math.round((timelineClips[timelineClips.length - 1].timeline_start_sec + timelineClips[timelineClips.length - 1].duration_sec) * 10) / 10 : 0,
+        clipCount: timelineClips.length,
+        blockCount: blockDefs.length,
+      },
+    };
+
+    var jsonFileName = baseSeqName + '_pre_edit_export.json';
+    var jsonFile = await preEditFolder.createFile(jsonFileName, { overwrite: true });
+    await jsonFile.write(JSON.stringify(exportData, null, 2));
+    screensLogger.info('Written: Setup/Pre-Edit/' + jsonFileName);
+
+    var exportPath = setupPath + '/Pre-Edit/' + jsonFileName;
+    screensLogger.info('Path: ' + exportPath);
+    screensLogger.info('Next: python export_to_gdoc.py --input "' + exportPath + '"');
+
+    setScreensStatus('Exported ' + outputSegments.length + ' segments → Pre-Edit/' + jsonFileName, 'ready');
+
+  } catch (err) {
+    screensLogger.error('Pre-Edit Doc export failed: ' + err.message);
+    if (err.stack) screensLogger.debug(err.stack);
+    setScreensStatus('Export failed: ' + err.message, 'error');
+  }
+
+  $('btn-export-pre-edit-doc').removeAttribute('disabled');
+}
+
+/**
  * Export Pre-Edit — full timeline data (JSON + HTML review table) to project exports folder.
  * Creates Setup/exports/{code}_PreEdit_{timestamp}/ with timeline_data.json + timeline_review.html.
  * Opens folder in Finder after export.
@@ -4757,11 +5134,16 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-build-assembly').addEventListener('click', buildAssembly);
   $('btn-export-markers').addEventListener('click', exportMarkers);
   $('btn-debug-export').addEventListener('click', debugExport);
+  $('btn-fill-left').addEventListener('click', function() { applyAudioFill('Fill Right with Left'); }); // L→R
+  $('btn-fill-right').addEventListener('click', function() { applyAudioFill('Fill Left with Right'); }); // R→L
 
   // REVIEW buttons
   $('btn-build-review').addEventListener('click', buildReview);
 
   // PRE-EDIT buttons (wrap async to catch unhandled rejections)
+  $('btn-export-pre-edit-doc').addEventListener('click', function() {
+    exportPreEditDoc().catch(function(e) { screensLogger.error('Doc export error: ' + e.message); setScreensStatus('Doc export error: ' + e.message, 'error'); });
+  });
   $('btn-export-screens').addEventListener('click', function() {
     exportPreEdit().catch(function(e) { screensLogger.error('Export error: ' + e.message); setScreensStatus('Export error: ' + e.message, 'error'); });
   });
