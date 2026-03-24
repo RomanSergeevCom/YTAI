@@ -31,6 +31,7 @@ try {
 
 const { REVIEW_COLOR_MAP, REVIEW_PRODUCER_COLOR, REVIEW_EXPERT_COLOR, LABEL_COLOR_INDEX } = require('../shared/constants');
 const { applyColorByIndex, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
+const { snapToFrame, getFps } = require('../shared/frameSnap');
 
 // Minimum gap duration (seconds) — gaps shorter than this are skipped
 var MIN_GAP_DURATION = 0.3;
@@ -296,6 +297,8 @@ async function buildSingleReviewSequence(project, clipMap, reviewSegs, clipOffse
   var firstColorIdx = getReviewColorIdx(firstSeg, opts);
   applyColorByIndex(project, firstRawItem, firstColorIdx, firstSeg.id, logger);
 
+  // Source in/out: EXACT (no frame-snap). Frame-snap only for timeline positions.
+  var fps = (opts && opts.fps) ? opts.fps : 25;
   var firstInTime = ppro.TickTime.createWithSeconds(firstSeg.inSec);
   var firstOutTime = ppro.TickTime.createWithSeconds(firstSeg.outSec);
   setSourceInOut(project, firstClip, firstInTime, firstOutTime, firstSeg.id, logger);
@@ -346,7 +349,7 @@ async function buildSingleReviewSequence(project, clipMap, reviewSegs, clipOffse
     var outTime = ppro.TickTime.createWithSeconds(seg.outSec);
     setSourceInOut(project, clipForTrim, inTime, outTime, seg.id, logger);
 
-    var overwriteTime = ppro.TickTime.createWithSeconds(seg._timelinePosition);
+    var overwriteTime = ppro.TickTime.createWithSeconds(snapToFrame(seg._timelinePosition, fps, 'round'));
     var insertOk = false;
     try {
       project.lockedAccess(function () {

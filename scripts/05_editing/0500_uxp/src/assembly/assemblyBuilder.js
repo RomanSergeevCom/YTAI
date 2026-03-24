@@ -23,6 +23,9 @@ try {
 
 const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
 const { LABEL_COLOR_INDEX } = require('../shared/constants');
+const { snapToFrame, getFps } = require('../shared/frameSnap');
+
+var ASSEMBLY_BUILDER_VERSION = '2.1.0'; // v2.1.0: exact source in/out, exact cumulative, logging
 
 /**
  * Sort segments by block (99 last), preserving brief order within each block.
@@ -60,15 +63,19 @@ function sortSegments(segments) {
  * @param {Object} logger - Logger instance
  * @returns {{ sequence, segments: useSegs, clipCount, totalDuration }}
  */
-async function buildAssemblySequence(project, clipMap, segments, projectName, logger, briefVersion) {
+async function buildAssemblySequence(project, clipMap, segments, projectName, logger, briefVersion, projectSettings) {
   const seqName = projectName + '_2_Assembly' + (briefVersion ? '_v' + briefVersion : '');
+  var fps = getFps(projectSettings);
 
   // Filter: only USE=TRUE and block != 99
   const useSegs = sortSegments(segments.filter(function (s) {
     return s.use && s.block !== 99;
   }));
 
-  if (logger) logger.info('Building Assembly sequence: ' + useSegs.length + ' segments');
+  if (logger) {
+    logger.info('assemblyBuilder v' + ASSEMBLY_BUILDER_VERSION + ', fps=' + fps + ', source=exact, timeline=exact');
+    logger.info('Building Assembly sequence: ' + useSegs.length + ' segments');
+  }
 
   if (useSegs.length === 0) {
     throw new Error('No USE=TRUE segments — cannot build Assembly sequence');
@@ -104,7 +111,7 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
   // Set color BEFORE creating sequence — TrackItem inherits color at insertion time
   applyColorToItem(project, firstRawItem, firstSeg.color, firstSeg.id, logger);
 
-  // Set source in/out BEFORE creating sequence
+  // Set source in/out BEFORE creating sequence (EXACT — no frame-snap for source points)
   var firstInTime = ppro.TickTime.createWithSeconds(firstSeg.inSec);
   var firstOutTime = ppro.TickTime.createWithSeconds(firstSeg.outSec);
   var trimOk = setSourceInOut(project, firstClipForTrim, firstInTime, firstOutTime, firstSeg.id, logger);
@@ -153,7 +160,7 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
     var rawItem = clipMap[seg.sourceFile] || clipMap[seg.sourceFile.replace(/\.[^.]+$/, '')];
     if (!rawItem) {
       if (logger) logger.warn('  Skip ' + seg.id + ': no clip for ' + seg.sourceFile);
-      cumulativePosition = Math.round((cumulativePosition + seg.duration) * 10) / 10;
+      cumulativePosition += seg.duration;
       continue;
     }
 
@@ -169,7 +176,7 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
     // This allows the same source file to have different colors in different blocks.
     applyColorToItem(project, rawItem, seg.color, seg.id, logger);
 
-    // Set source in/out points BEFORE insert (using CAST item)
+    // Set source in/out points BEFORE insert (EXACT — no frame-snap for source points)
     var inTime = ppro.TickTime.createWithSeconds(seg.inSec);
     var outTime = ppro.TickTime.createWithSeconds(seg.outSec);
     var segTrimOk = setSourceInOut(project, clipForTrim, inTime, outTime, seg.id, logger);
@@ -230,17 +237,17 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
       logger.info('[' + (i + 1) + '/' + useSegs.length + '] ' + seg.id + ': ' + seg.sourceFile +
         ' → cast=' + (segCastOk ? 'OK' : 'raw') +
         colorInfo +
-        ', in/out=' + seg.inSec.toFixed(1) + '-' + seg.outSec.toFixed(1) + 's' +
-        ' → ' + (insertOk ? 'insert@' + cumulativePosition.toFixed(1) + 's' : 'FAILED') +
+        ', src_in=' + seg.inSec.toFixed(3) + ', src_out=' + seg.outSec.toFixed(3) +
+        ' → ' + (insertOk ? 'tl@' + cumulativePosition.toFixed(3) + 's' : 'FAILED') +
         (segDjiCount > 0 ? ' +A2' : '') +
-        ' → dur=' + seg.duration.toFixed(1) + 's');
+        ' → dur=' + seg.duration.toFixed(3) + 's');
     }
 
-    cumulativePosition = Math.round((cumulativePosition + seg.duration) * 10) / 10;
+    cumulativePosition += seg.duration;
   }
 
   if (logger) {
-    logger.info('Assembly: ' + clipCount + '/' + useSegs.length + ' clips inserted, total=' + cumulativePosition.toFixed(1) + 's');
+    logger.info('Assembly: ' + clipCount + '/' + useSegs.length + ' clips inserted, total=' + cumulativePosition.toFixed(1) + 's (fps=' + fps + ')');
 
     // Color summary
     var colorCounts = {};
@@ -257,29 +264,47 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
     }
   }
 
-  // === Post-build verification: read back V1 track items ===
+  // === Post-build: verify + remove ghost clips (< 2 frames) ===
+  var ghostsRemoved = 0;
   try {
     var v0 = await seq.getVideoTrack(0);
     var finalItems = null;
     try { finalItems = v0.getTrackItems(1, false); } catch (ex) { }
     if (!finalItems) try { finalItems = v0.getTrackItems(); } catch (ex) { }
 
-    if (finalItems && logger) {
-      logger.info('V1 verification: ' + finalItems.length + ' items (expected ' + useSegs.length + ')');
-      for (var fi = 0; fi < finalItems.length; fi++) {
+    if (finalItems) {
+      var minDuration = 2.0 / fps; // 2 frames minimum
+      // Scan backwards to safely remove by index
+      for (var fi = finalItems.length - 1; fi >= 0; fi--) {
         try {
           var ti = finalItems[fi];
-          var tiStart = await ti.getStartTime();
           var tiDur = await ti.getDuration();
-          var tiName = '';
-          try { tiName = await ti.getName(); } catch (e) { }
-          var startSec = tiStart.seconds !== undefined ? tiStart.seconds : 0;
-          var durSec = tiDur.seconds !== undefined ? tiDur.seconds : 0;
-          logger.debug('  [' + fi + '] start=' + startSec.toFixed(1) + 's dur=' + durSec.toFixed(1) + 's' +
-            (tiName ? ' name="' + tiName + '"' : ''));
-        } catch (e) {
-          logger.debug('  [' + fi + '] (cannot read item: ' + e.message + ')');
-        }
+          var durSec = tiDur.seconds !== undefined ? tiDur.seconds : (tiDur.ticks ? tiDur.ticks / 254016000000 : 0);
+          if (durSec < minDuration) {
+            // Ghost clip — remove it
+            try {
+              project.lockedAccess(function () {
+                project.executeTransaction(function (ca) {
+                  ca.addAction(ti.createRemoveAction());
+                }, 'Remove ghost clip [' + fi + ']');
+              });
+              ghostsRemoved++;
+              if (logger) logger.warn('  Removed ghost clip [' + fi + '] dur=' + durSec.toFixed(3) + 's');
+            } catch (rmErr) {
+              if (logger) logger.warn('  Cannot remove ghost [' + fi + ']: ' + rmErr.message);
+            }
+          }
+        } catch (e) { }
+      }
+
+      // Re-read for verification log
+      try { finalItems = v0.getTrackItems(1, false); } catch (ex) { }
+      if (!finalItems) try { finalItems = v0.getTrackItems(); } catch (ex) { }
+
+      if (logger) {
+        logger.info('V1 verification: ' + (finalItems ? finalItems.length : '?') +
+          ' items (expected ' + useSegs.length + ')' +
+          (ghostsRemoved > 0 ? ', removed ' + ghostsRemoved + ' ghost(s)' : ''));
       }
     }
   } catch (verifyErr) {
@@ -291,5 +316,6 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
 
 module.exports = {
   buildAssemblySequence,
-  sortSegments
+  sortSegments,
+  ASSEMBLY_BUILDER_VERSION
 };

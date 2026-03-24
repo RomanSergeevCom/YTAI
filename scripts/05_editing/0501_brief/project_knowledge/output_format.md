@@ -12,8 +12,8 @@ Each element is one video segment. Numbering is sequential across all clips.
 |-------|------|--------|-------------|
 | `segment_id` | string | `seg_001`, `seg_002`... | Sequential numbering |
 | `source_file` | string | `C5402.MP4` | Filename from transcript.json (clip's `filename` field) |
-| `tc_in` | string | `MM:SS.s` | Start time (local, within clip). From segment's `start` field |
-| `tc_out` | string | `MM:SS.s` | End time (local, within clip). From segment's `end` field |
+| `tc_in` | string | `MM:SS.sss` | Start time (local, within clip). From segment's `start` field |
+| `tc_out` | string | `MM:SS.sss` | End time (local, within clip). From segment's `end` field |
 | `block` | int | 1-99 | Block number. Block 99 = Cut/Unused |
 | `block_name` | string | max 50 chars | Block name ("Hook", "Government Vision", etc.) |
 | `use` | string | `"TRUE"` / `"FALSE"` | Include in ASSEMBLY sequence? String, not boolean |
@@ -32,16 +32,39 @@ Each element is one video segment. Numbering is sequential across all clips.
 | `broll_note` | string | — | 200 chars | B-roll suggestion for the editor |
 | `notes` | string | — | 500 chars | Notes for the editor (rationale, cut reason, context) |
 
-### Timecode Conversion (seconds -> MM:SS.s)
+### Timecode Conversion (seconds -> MM:SS.sss)
 
 ```
-start: 1.46   -> tc_in: "00:01.5"
-end:   88.76  -> tc_out: "01:28.8"
-start: 119.42 -> tc_in: "01:59.4"
-end:   151.88 -> tc_out: "02:31.9"
+start: 1.46   -> tc_in: "00:01.46"
+end:   88.76  -> tc_out: "01:28.76"
+start: 119.42 -> tc_in: "01:59.42"
+end:   151.88 -> tc_out: "02:31.88"
 ```
 
-Formula: `MM = floor(seconds / 60)`, `SS.s = seconds % 60` (one decimal place)
+Formula: `MM = floor(seconds / 60)`, `SS.sss = seconds % 60` (two decimal places, 10ms precision — required for frame-level accuracy at 29.97fps where 1 frame = 33ms)
+
+### Segment Boundary Rules
+
+When creating segments (especially Hook excerpts or sub-segments extracted from longer transcript segments):
+
+1. **tc_in/tc_out must land on word boundaries** — never split a word. If estimated timecode lands mid-word, round to the nearest word boundary
+2. **Prefer sentence/clause boundaries** — tc_in should start at the beginning of a sentence or clause; tc_out should end at a period, comma, or natural pause
+3. **"Hanging words" check** — after setting tc_out, verify the last word in the segment is complete and makes sense. Examples:
+   - BAD: "...это обычный симп" (cut mid-word "симптом")
+   - BAD: "...сталкиваемся. Может" (includes start of next speaker's sentence)
+   - GOOD: "...это обычный симптом."
+   - GOOD: "...сталкиваемся." (clean sentence end)
+4. **Sub-segment extraction with word timestamps**: Claude4_assembly.json includes `words[]` array per segment with per-word timing `{w, s, e}`. When extracting a sub-segment:
+   a) Find the first target word in `words[]` → `tc_in = word.s` (exact)
+   b) Find the last target word → apply **smart padding**:
+      `tc_out = last_word.e + min(gap_to_next_word, 0.3)`
+      where `gap = next_word.s - last_word.e`
+      If gap = 0 (words contiguous) → tc_out = last_word.e (exact cut)
+      If gap > 0 → add up to 0.3s of natural air after the word
+   c) `transcript` = concatenation of `words[first..last].w` (exact words, nothing more)
+   d) **Verify**: last word in `transcript` field must match the target last word
+5. **Fallback (no words[] available)**: Estimate by word-count ratio: `segment_start + (word_index / total_words) * segment_duration`. Add ±1s margin. Mark segment with note "estimated timecodes — no word-level data"
+6. **Smart padding**: Whisper marks word.e at phoneme end, but audio has 0.1-0.3s of natural decay. Add air ONLY when there's a gap to the next word. Never add padding when words are contiguous (gap=0) — even +0.01s captures the next word.
 
 ### Important Rules
 
@@ -104,7 +127,7 @@ Production Cues for the editor/motion designer. Each screen describes a visual o
 | `screen_id` | string | — | yes | `scr_001`, `scr_002`... sequential numbering |
 | `type` | string | — | yes | Screen type (see table below) |
 | `segment_id` | string | — | yes | Reference to segment (`seg_003`) where this cue appears |
-| `tc_in` | string | — | no | `MM:SS.s` — time within the clip (defaults to segment's tc_in) |
+| `tc_in` | string | — | no | `MM:SS.sss` — time within the clip (defaults to segment's tc_in) |
 | `title` | string | 100 | yes | Main text (headline, name, etc.) |
 | `subtitle` | string | 100 | no | Secondary text (job title, subheading) |
 | `body` | string | 500 | no | List items, data, descriptions. Use `\n` for line breaks |

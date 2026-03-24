@@ -17,7 +17,7 @@
  *   3. Insert clip (createInsertProjectItemAction / createSequenceFromMedia)
  *   4. Clear source in/out points (createClearInOutPointsAction)
  *
- * Depends on: constants.js, clipActions.js, screenParser.js
+ * Depends on: constants.js, clipActions.js, screenParser.js, frameSnap.js
  * Does NOT import assemblyBuilder.js or reviewBuilder.js.
  */
 
@@ -31,6 +31,7 @@ try {
 const { SCREEN_CUE_COLOR, MARKER_TYPE_CHAPTER, MARKER_TYPE_SEGMENTATION, BLOCK_VALID_COLORS, MARKER_COLOR_INDEX } = require('../shared/constants');
 const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
 const { formatMarkerComment, formatSrtContent } = require('./screenParser');
+const { snapToFrame, getFps } = require('../shared/frameSnap');
 
 // Default duration for PNG overlay on V2 (seconds)
 var OVERLAY_DURATION = 5.0;
@@ -62,13 +63,13 @@ function sortSegments(segments) {
  * @param {Array} assemblySegments - Sorted USE=TRUE segments
  * @returns {Object} Map of { seg_001: 0.0, seg_002: 10.0, ... }
  */
-function buildSegmentPositionMap(assemblySegments) {
+function buildSegmentPositionMap(assemblySegments, fps) {
   var positions = {};
   var cumTime = 0;
   for (var i = 0; i < assemblySegments.length; i++) {
     var seg = assemblySegments[i];
     positions[seg.id] = cumTime;
-    cumTime = Math.round((cumTime + seg.duration) * 10) / 10;
+    cumTime += seg.duration;
   }
   return positions;
 }
@@ -339,7 +340,8 @@ function generateCaptionsSrt(segments, wordsPerBlock, clipOffsets, positionTag) 
  * @param {Object|null} [screenCuesBin] - Target bin for PNG imports (01_ScreenCues), or null for project root
  * @returns {{ sequence, clips, markers, overlays, skipped, warnings, totalDuration, assemblySegments, srtContent, markerList }}
  */
-async function buildScreenCues(project, screens, segments, clipMap, projectName, logger, briefPath, pngFiles, screenCuesBin) {
+async function buildScreenCues(project, screens, segments, clipMap, projectName, logger, briefPath, pngFiles, screenCuesBin, projectSettings) {
+  var fps = getFps(projectSettings);
   var result = {
     sequence: null, clips: 0, markers: 0, overlays: 0, skipped: 0,
     warnings: [], totalDuration: 0, assemblySegments: [], srtContent: '',
@@ -431,7 +433,7 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
     var rawItem = clipMap[seg.sourceFile] || clipMap[seg.sourceFile.replace(/\.[^.]+$/, '')];
     if (!rawItem) {
       if (logger) logger.warn('  Skip ' + seg.id + ': no clip for ' + seg.sourceFile);
-      cumulativePosition = Math.round((cumulativePosition + seg.duration) * 10) / 10;
+      cumulativePosition += seg.duration;
       continue;
     }
 
@@ -487,7 +489,7 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
         ', dur=' + seg.duration.toFixed(1) + 's');
     }
 
-    cumulativePosition = Math.round((cumulativePosition + seg.duration) * 10) / 10;
+    cumulativePosition += seg.duration;
   }
 
   result.totalDuration = cumulativePosition;
@@ -500,7 +502,7 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
   }
 
   // === Phase D: Import + place PNG overlays on V2 ===
-  var segPositions = buildSegmentPositionMap(useSegs);
+  var segPositions = buildSegmentPositionMap(useSegs, fps);
   var pngDir = null;
 
   if (briefPath) {

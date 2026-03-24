@@ -30,7 +30,7 @@ const { copyLutsToCreativeFolder, applyLumetriToClips } = require('./src/ingest/
 // --- Module imports: ASSEMBLY ---
 const { parseBrief } = require('./src/assembly/briefParser');
 const { validateIngestState } = require('./src/assembly/projectScanner');
-const { buildAssemblySequence } = require('./src/assembly/assemblyBuilder');
+const { buildAssemblySequence, ASSEMBLY_BUILDER_VERSION } = require('./src/assembly/assemblyBuilder');
 
 // --- Module imports: REVIEW ---
 const { buildReviewSequence, getReviewCategory } = require('./src/review/reviewBuilder');
@@ -196,6 +196,7 @@ function resetAllPipelineStates() {
   $('btn-build-ingest').setAttribute('disabled', 'true');
   $('btn-import-srts').setAttribute('disabled', 'true');
   $('btn-export-markers').setAttribute('disabled', 'true');
+  $('btn-debug-export').setAttribute('disabled', 'true');
   $('ingest-validation').style.display = 'none';
   hideIngestProgress();
 
@@ -231,6 +232,94 @@ function resetAllPipelineStates() {
 function updateLogPath(pipeline, path) {
   var el = $(pipeline + '-log-path');
   if (el) { el.textContent = path || ''; el.title = path || ''; }
+}
+
+async function copyProjectPrompt() {
+  if (!projectState.folderPath || !projectState.projectName) return;
+  var code = extractProjectCode(projectState.projectName);
+  var channel = code.replace(/\d+$/, '');  // YTRF02 → YTRF
+  var path = projectState.folderPath;
+
+  // Determine next version: scan Assembly/ for latest _in.json version
+  var nextVer = 1;
+  try {
+    var assemblyDir = path + '/01_Media/Source/Setup/Assembly';
+    var assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
+    var files = await assemblyEntry.getEntries();
+    var inRe = new RegExp('^' + code + '_Assembly_v(\\d+)_in\\.json$');
+    for (var i = 0; i < files.length; i++) {
+      var m = files[i].name.match(inRe);
+      if (m) {
+        var v = parseInt(m[1], 10);
+        if (v >= nextVer) nextVer = v + 1;
+      }
+    }
+  } catch (e) { /* Assembly/ not found, v1 */ }
+
+  var prompt = 'Create Assembly brief:\n'
+    + '- Channel: ' + channel + '\n'
+    + '- Project: ' + path + '\n'
+    + '\n'
+    + 'Resolve from project structure:\n'
+    + '- Knowledge base: ~/YTAI/scripts/05_editing/0501_brief/ (INSTRUCTIONS.md, editing_rules.md, output_format.md)\n'
+    + '- Channel profile: ~/YTAI/YTs/' + channel + '.md\n'
+    + '- Transcript: ' + path + '/01_Media/Source/Setup/' + code + '_Claude4_assembly.json\n'
+    + '- Output JSON: ' + path + '/01_Media/Source/Setup/Assembly/' + code + '_Assembly_v' + nextVer + '_in.json\n'
+    + '- Output HTML: ' + path + '/01_Media/Source/Setup/Assembly/' + code + '_review_v' + nextVer + '.html';
+
+  try { await navigator.clipboard.writeText(prompt); } catch (err) { /* ignore */ }
+}
+
+async function copyMarkersPrompt() {
+  if (!projectState.folderPath || !projectState.projectName) return;
+  var code = extractProjectCode(projectState.projectName);
+  var channel = code.replace(/\d+$/, '');
+  var path = projectState.folderPath;
+  var assemblyDir = path + '/01_Media/Source/Setup/Assembly';
+
+  // Scan Assembly/ for latest _out.json and latest _in.json
+  var latestOut = 0, latestIn = 0, latestOutName = null;
+  var outRe = new RegExp('^' + code + '_.*v(\\d+)_out\\.json$');
+  var inRe = new RegExp('^' + code + '_Assembly_v(\\d+)_in\\.json$');
+  try {
+    var assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
+    var files = await assemblyEntry.getEntries();
+    for (var i = 0; i < files.length; i++) {
+      var mo = files[i].name.match(outRe);
+      if (mo) { var vo = parseInt(mo[1], 10); if (vo > latestOut) { latestOut = vo; latestOutName = files[i].name; } }
+      var mi = files[i].name.match(inRe);
+      if (mi) { var vi = parseInt(mi[1], 10); if (vi > latestIn) latestIn = vi; }
+    }
+  } catch (e) { /* Assembly/ not found */ }
+
+  var nextVer = Math.max(latestOut, latestIn) + 1;
+  var markersFile = latestOutName
+    ? assemblyDir + '/' + latestOutName
+    : assemblyDir + '/' + code + '_Assembly_v1_out.json';
+  var outJson = assemblyDir + '/' + code + '_Assembly_v' + nextVer + '_in.json';
+  var outHtml = assemblyDir + '/' + code + '_review_v' + nextVer + '.html';
+
+  var prompt = 'Update Assembly brief from editor markers:\n'
+    + '- Markers: ' + markersFile + '\n'
+    + '\n'
+    + 'Step 1 — Analyze: Read the markers file. Parse editor comments from markers. Compare with the previous brief. Present a table of all planned changes (segment ID, change type, what was requested, what you will do). Wait for my confirmation before proceeding.\n'
+    + '\n'
+    + 'Step 2 — Execute: Apply the changes. Write two files:\n'
+    + '- Output JSON: ' + outJson + '\n'
+    + '- Output HTML (diff view): ' + outHtml + '\n'
+    + '\n'
+    + 'HTML must be a two-column diff grouped by chapter:\n'
+    + '- LEFT column ("Before"): segment text + editor comments (highlighted yellow)\n'
+    + '- RIGHT column ("After"): corrected text + change tags (CHANGED / REMOVED / MOVED / NEW)\n'
+    + '- Row highlighting: white=unchanged, yellow+green=modified, red+strikethrough=removed, blue=moved, green=new\n'
+    + '- Semantic blocks must be preserved\n'
+    + '\n'
+    + 'Resolve from project structure:\n'
+    + '- Knowledge base: ~/YTAI/scripts/05_editing/0501_brief/ (INSTRUCTIONS.md, editing_rules.md, output_format.md)\n'
+    + '- Channel profile: ~/YTAI/YTs/' + channel + '.md\n'
+    + '- Previous brief: auto-detect latest _in.json in Assembly/';
+
+  try { await navigator.clipboard.writeText(prompt); } catch (err) { /* ignore */ }
 }
 
 async function copyLogPath(pipeline) {
@@ -282,6 +371,7 @@ async function selectProjectFolder() {
 
     // Update UI
     setProjectStatus('Project: ' + projectName, 'ready');
+    $('btn-copy-project-prompt').removeAttribute('disabled');
     $('project-path-info').textContent = folderPath;
     $('project-checklist').innerHTML = '';
     $('project-actions-row').style.display = 'none';
@@ -427,6 +517,7 @@ async function autoDetectFiles(folderPath, projectName) {
   $('project-actions-row').style.display = 'flex';
   $('btn-import-srts').removeAttribute('disabled');
   $('btn-export-markers').removeAttribute('disabled');
+  $('btn-debug-export').removeAttribute('disabled');
   ingestLogger.info('Auto-detection complete: ingest=' + projectState.ingestDetected + ', brief=' + projectState.briefDetected);
 }
 
@@ -1029,7 +1120,7 @@ async function buildAssembly() {
     stepStart = Date.now();
     setAssemblyProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Building Assembly sequence...');
     assemblyLogger.info('=== Step 3: Building Assembly sequence ===');
-    result = await buildAssemblySequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, assemblyLogger, assemblyState.briefVersion);
+    result = await buildAssemblySequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, assemblyLogger, assemblyState.briefVersion, assemblyState.projectSettings);
     stepTimings.push('build ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 4: Create chapter markers (block boundaries + per-segment)
@@ -1227,10 +1318,10 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
     logger.debug('Cannot find 01_Transcripts bin: ' + e.message);
   }
 
-  // Create sub-bin for this timeline stage (e.g. YTXX01_2_Assembly_v1_transcripts)
+  // Create sub-bin for this timeline stage, named after the timeline (e.g. YTXX01_2_Assembly)
   var targetBin = transcriptsBin;
   if (transcriptsBin && suffix) {
-    var subBinName = projectName + '_' + suffix + '_transcripts';
+    var subBinName = projectName + '_' + suffix;
     try {
       // Check if sub-bin already exists
       var existingItems = await transcriptsBin.getItems();
@@ -1266,7 +1357,7 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
   // Import SRT
   try {
     await project.importFiles([foundSrtPath], true, targetBin || null, false);
-    logger.info(label + ' ' + typeLabel + ' imported: ' + srtFileName + ' → 01_Transcripts/' + (suffix ? projectName + '_' + suffix + '_transcripts' : ''));
+    logger.info(label + ' ' + typeLabel + ' imported: ' + srtFileName + ' → 01_Transcripts/' + (suffix ? projectName + '_' + suffix : ''));
   } catch (err) {
     logger.warn(label + ' ' + typeLabel + ' import failed (non-fatal): ' + err.message);
   }
@@ -1420,6 +1511,7 @@ async function exportMarkers() {
   assemblyLogger.info('=== Export Markers (from active sequence) ===');
   setAssemblyStatus('Reading markers...', 'waiting');
   $('btn-export-markers').setAttribute('disabled', 'true');
+  $('btn-debug-export').setAttribute('disabled', 'true');
 
   try {
     // Step 1: Get active sequence
@@ -1529,7 +1621,91 @@ async function exportMarkers() {
       },
     };
 
-    // Step 7: Find next version and write to Setup/Assembly/
+    // Step 7: Read V1 TrackItems — real timeline clips
+    setAssemblyStatus('Reading timeline clips...', 'waiting');
+    var timelineClips = [];
+    try {
+      var v1Track = await seq.getVideoTrack(0);
+      var trackItems = null;
+      try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) {}
+      if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) {}
+      if (trackItems && trackItems.length > 0) {
+        for (var ti = 0; ti < trackItems.length; ti++) {
+          var item = trackItems[ti];
+          var projItem = await item.getProjectItem();
+          var clipName = projItem ? projItem.name : '';
+          var clipStart = await item.getStartTime();
+          var clipDur = await item.getDuration();
+          var clipIn = await item.getInPoint();
+          var clipOut = await item.getOutPoint();
+          timelineClips.push({
+            index: ti,
+            source_file: clipName,
+            tc_in_sec: Math.round(tickSec(clipIn) * 100) / 100,
+            tc_out_sec: Math.round(tickSec(clipOut) * 100) / 100,
+            timeline_start_sec: Math.round(tickSec(clipStart) * 100) / 100,
+            duration_sec: Math.round(tickSec(clipDur) * 100) / 100,
+          });
+        }
+        assemblyLogger.info('Timeline V1 clips: ' + timelineClips.length);
+      }
+    } catch (tlErr) {
+      assemblyLogger.warn('Could not read V1 TrackItems: ' + tlErr.message);
+    }
+
+    // Step 7b: Match timeline clips with transcript_assembly.json for text
+    try {
+      var txPath = projectState.folderPath + '/01_Media/Source/Transcription/' + projectState.projectName + '_transcript_assembly.json';
+      var txEntry = await uxpfs.getEntryWithUrl('file://' + txPath);
+      var txRaw = await txEntry.read({ format: require('uxp').storage.formats.utf8 });
+      var txData = JSON.parse(txRaw);
+      var txClips = txData.clips || [];
+
+      // Build lookup: filename → segments
+      var txLookup = {};
+      for (var tci = 0; tci < txClips.length; tci++) {
+        var tc = txClips[tci];
+        txLookup[tc.filename] = tc.segments || [];
+      }
+
+      // Match each timeline clip with transcript segments
+      for (var mi2 = 0; mi2 < timelineClips.length; mi2++) {
+        var clip = timelineClips[mi2];
+        var segs = txLookup[clip.source_file] || [];
+        var texts = [];
+        for (var si2 = 0; si2 < segs.length; si2++) {
+          var sg = segs[si2];
+          // Parse start/end from M:SS.s format
+          var sgStart = 0; var sgEnd = 0;
+          try {
+            var sp = (sg.start || '0:0').split(':');
+            sgStart = parseInt(sp[0]) * 60 + parseFloat(sp[1] || 0);
+            var ep = (sg.end || '0:0').split(':');
+            sgEnd = parseInt(ep[0]) * 60 + parseFloat(ep[1] || 0);
+          } catch (pe) {}
+          // Check overlap
+          if (sgStart < clip.tc_out_sec && sgEnd > clip.tc_in_sec) {
+            texts.push(sg.text || '');
+          }
+        }
+        clip.transcript_text = texts.join(' ').substring(0, 500);
+        if (segs.length > 0 && texts.length > 0) {
+          clip.speaker = segs.find(function(s2) {
+            var s2p = (s2.start || '0:0').split(':');
+            var s2s = parseInt(s2p[0]) * 60 + parseFloat(s2p[1] || 0);
+            return s2s >= clip.tc_in_sec;
+          });
+          if (clip.speaker) clip.speaker = clip.speaker.speaker || '';
+        }
+      }
+      assemblyLogger.info('Matched transcript text for ' + timelineClips.filter(function(c){return c.transcript_text;}).length + ' clips');
+    } catch (txErr) {
+      assemblyLogger.debug('Transcript matching skipped: ' + txErr.message);
+    }
+
+    output.timeline_clips = timelineClips;
+
+    // Step 8: Find next version and write to Setup/Assembly/
     setAssemblyStatus('Writing files...', 'waiting');
     var assemblyDir = projectState.folderPath + '/01_Media/Source/Setup/Assembly';
     var assemblyEntry;
@@ -1558,18 +1734,155 @@ async function exportMarkers() {
     output.version = version;
     output.direction = 'out';
 
-    // Embed current brief so Claude Desktop can read segments + / comments in one file
+    // Generate brief from real timeline clips + chapter markers + transcript
+    // This is the single source of truth — built from what's actually on the timeline
+
+    // Read old brief for metadata enrichment (broll_note, notes, project settings)
+    var oldBrief = null;
     if (projectState.briefPath) {
       try {
         var briefEntry = await uxpfs.getEntryWithUrl('file://' + projectState.briefPath);
         var briefContent = await briefEntry.read({ format: require('uxp').storage.formats.utf8 });
-        output.brief = JSON.parse(briefContent);
-        output.brief_source = projectState.briefPath.split('/').pop();
-        assemblyLogger.info('Embedded brief: ' + output.brief_source);
+        oldBrief = JSON.parse(briefContent);
+        assemblyLogger.info('Read old brief for enrichment: ' + projectState.briefPath.split('/').pop());
       } catch (briefErr) {
-        assemblyLogger.warn('Could not embed brief: ' + briefErr.message);
+        assemblyLogger.debug('Old brief not available: ' + briefErr.message);
       }
     }
+
+    // Build block lookup from chapter markers
+    var chMarkers = markers.filter(function(m) { return m.is_chapter && m.duration_sec > 0; });
+    chMarkers.sort(function(a, b) { return a.position_sec - b.position_sec; });
+
+    // Match chapter positions with old brief block names/colors
+    var oldBlockLookup = {};
+    if (oldBrief && oldBrief.segments) {
+      var cumT = 0;
+      var seenB = {};
+      for (var obi = 0; obi < oldBrief.segments.length; obi++) {
+        var obs = oldBrief.segments[obi];
+        if (obs.use !== 'TRUE' || obs.block === 99) continue;
+        if (!seenB[obs.block]) {
+          seenB[obs.block] = { name: obs.block_name || '', color: obs.color || '', start: cumT };
+        }
+        var opIn = (obs.tc_in || '0:0').split(':'); var opOut = (obs.tc_out || '0:0').split(':');
+        cumT += (parseInt(opOut[0]) * 60 + parseFloat(opOut[1] || 0)) - (parseInt(opIn[0]) * 60 + parseFloat(opIn[1] || 0));
+      }
+      for (var bk in seenB) oldBlockLookup[bk] = seenB[bk];
+    }
+
+    // Assign block info to each chapter marker
+    var blockDefs = [];
+    for (var chi2 = 0; chi2 < chMarkers.length; chi2++) {
+      var chm = chMarkers[chi2];
+      var bName2 = chm.name || '';
+      var bColor2 = '';
+      // Find closest old brief block by position
+      var bestDist2 = Infinity;
+      for (var obk in oldBlockLookup) {
+        var d2 = Math.abs(oldBlockLookup[obk].start - chm.position_sec);
+        if (d2 < bestDist2) { bestDist2 = d2; bName2 = oldBlockLookup[obk].name || bName2; bColor2 = oldBlockLookup[obk].color; }
+      }
+      blockDefs.push({ num: chi2 + 1, start: chm.position_sec, end: chm.position_sec + chm.duration_sec, name: bName2, color: bColor2 });
+    }
+
+    // Build old brief lookup for enrichment (by source_file + tc_in)
+    var oldSegLookup = {};
+    if (oldBrief && oldBrief.segments) {
+      for (var osi = 0; osi < oldBrief.segments.length; osi++) {
+        var os = oldBrief.segments[osi];
+        oldSegLookup[os.source_file + '|' + os.tc_in] = os;
+      }
+    }
+
+    // Collect user comment markers (non-auto-generated) keyed by position
+    var userNotes = {};
+    for (var uni = 0; uni < markers.length; uni++) {
+      var um = markers[uni];
+      if (um.is_chapter || !um.comment) continue;
+      // Skip auto-generated (Speaker: X | transcript | B-roll | Notes pattern)
+      if ((um.comment || '').indexOf('Speaker:') === 0 && (um.comment || '').indexOf('|') > 0) continue;
+      if ((um.comment || '').indexOf('/') === 0) continue; // / markers are separate
+      var upos = um.position_sec;
+      if (!userNotes[upos]) userNotes[upos] = [];
+      userNotes[upos].push(um.comment);
+    }
+
+    function fmtMMSS(sec) {
+      var mm = Math.floor(sec / 60);
+      var ss = (sec % 60).toFixed(1);
+      return (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
+    }
+
+    // Generate brief segments from timeline clips
+    var briefSegments = [];
+    for (var bsi3 = 0; bsi3 < timelineClips.length; bsi3++) {
+      var tc = timelineClips[bsi3];
+      // Find block for this clip
+      var clipBlock = 1;
+      var clipBlockName = '';
+      var clipColor = 'Green';
+      var isFirst = false;
+      for (var bd = 0; bd < blockDefs.length; bd++) {
+        if (tc.timeline_start_sec >= blockDefs[bd].start && tc.timeline_start_sec < blockDefs[bd].end) {
+          clipBlock = blockDefs[bd].num;
+          clipBlockName = blockDefs[bd].name;
+          clipColor = blockDefs[bd].color || 'Green';
+          // Check if first clip in this block
+          if (bsi3 === 0 || (bsi3 > 0 && !(timelineClips[bsi3 - 1].timeline_start_sec >= blockDefs[bd].start && timelineClips[bsi3 - 1].timeline_start_sec < blockDefs[bd].end))) {
+            isFirst = true;
+          }
+          break;
+        }
+      }
+
+      // Enrichment from old brief
+      var tcInStr = fmtMMSS(tc.tc_in_sec);
+      var oldSeg = oldSegLookup[tc.source_file + '|' + tcInStr];
+      var brollNote = (oldSeg && oldSeg.broll_note) ? oldSeg.broll_note : '';
+      var segNotes = (oldSeg && oldSeg.notes) ? oldSeg.notes : '';
+      var segName = (oldSeg && oldSeg.segment_name) ? oldSeg.segment_name : '';
+
+      // Append user notes from markers
+      var clipEnd2 = tc.timeline_start_sec + tc.duration_sec;
+      for (var unp in userNotes) {
+        var unPos = parseFloat(unp);
+        if (unPos >= tc.timeline_start_sec && unPos < clipEnd2) {
+          segNotes = (segNotes ? segNotes + ' | ' : '') + userNotes[unp].join(' | ');
+        }
+      }
+
+      briefSegments.push({
+        segment_id: 'seg_' + String(bsi3 + 1).padStart(3, '0'),
+        source_file: tc.source_file,
+        tc_in: tcInStr,
+        tc_out: fmtMMSS(tc.tc_out_sec),
+        block: clipBlock,
+        block_name: clipBlockName,
+        segment_name: segName,
+        speaker: tc.speaker || '',
+        transcript: (tc.transcript_text || '').substring(0, 500),
+        track: 'V1',
+        color: clipColor,
+        use: 'TRUE',
+        priority: 1,
+        is_chapter: isFirst ? 'TRUE' : 'FALSE',
+        broll_note: brollNote,
+        notes: segNotes,
+      });
+    }
+
+    output.brief = {
+      segments: briefSegments,
+      project: (oldBrief && oldBrief.project) ? oldBrief.project : {
+        project_name: projectState.projectName || seqName,
+        fps: 25, width: 3840, height: 2160, sample_rate: 48000,
+        create_assembly_sequence: true, cut_color: 'Red'
+      },
+      changelog: [{ version: 'v' + version, date: new Date().toISOString().split('T')[0], source: 'premiere_export', summary: 'Generated from timeline ' + seqName }]
+    };
+    output.brief_source = 'generated_from_timeline';
+    assemblyLogger.info('Generated brief from timeline: ' + briefSegments.length + ' segments, ' + blockDefs.length + ' blocks');
 
     var fileName = baseSeqName + '_v' + version + '_out.json';
     var jsonContent = JSON.stringify(output, null, 2);
@@ -1590,7 +1903,28 @@ async function exportMarkers() {
       assemblyLogger.debug('Downloads copy failed: ' + dlErr.message);
     }
 
+    // Generate HTML review alongside _out.json
+    try {
+      var htmlName = baseSeqName + '_v' + version + '_review.html';
+      var htmlContent = generateExportReviewHtml(output, version, seqName);
+      var htmlFile = await assemblyEntry.createFile(htmlName, { overwrite: true });
+      await htmlFile.write(htmlContent);
+      assemblyLogger.info('Written: Setup/Assembly/' + htmlName);
+
+      // Open in browser
+      try {
+        var shell = require('uxp').shell;
+        var htmlEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir + '/' + htmlName);
+        await shell.openPath(htmlEntry.nativePath || (assemblyDir + '/' + htmlName));
+      } catch (openErr) {
+        assemblyLogger.debug('Could not auto-open HTML: ' + openErr.message);
+      }
+    } catch (htmlErr) {
+      assemblyLogger.warn('HTML review generation failed: ' + htmlErr.message);
+    }
+
     setAssemblyStatus('Exported v' + version + ': ' + markers.length + ' markers → ' + fileName, 'ready');
+    $('btn-copy-markers-prompt').removeAttribute('disabled');
 
   } catch (err) {
     assemblyLogger.error('Marker export failed: ' + err.message);
@@ -1599,6 +1933,419 @@ async function exportMarkers() {
   }
 
   $('btn-export-markers').removeAttribute('disabled');
+  $('btn-debug-export').removeAttribute('disabled');
+}
+
+/**
+ * Debug Export — separate button for comparing Premiere actual vs brief.
+ * Reads V1 clips from active sequence, matches with brief segments,
+ * reads Claude4_assembly.json for word-level comparison.
+ * Writes {CODE}_debug.json to Assembly/ folder.
+ */
+async function debugExport() {
+  var DEBUG_VERSION = '1.0.0';
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setAssemblyStatus('No active project', 'error'); return; }
+  if (!projectState.folderPath) { setAssemblyStatus('Select project folder first', 'error'); return; }
+
+  assemblyLogger.info('=== Debug Export v' + DEBUG_VERSION + ' ===');
+  setAssemblyStatus('Debug export...', 'waiting');
+  $('btn-debug-export').setAttribute('disabled', 'true');
+
+  try {
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence');
+    var seqName = seq.name;
+    var seqSettings = seq.getSettings ? seq.getSettings() : {};
+    var fps = assemblyState.projectSettings ? (assemblyState.projectSettings.fps || 29.97) : 29.97;
+
+    assemblyLogger.info('Sequence: ' + seqName + ', fps=' + fps);
+
+    // Read V1 clips
+    var v1Track = await seq.getVideoTrack(0);
+    var trackItems = null;
+    try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) {}
+    if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) {}
+
+    var clips = [];
+    if (trackItems) {
+      for (var ti = 0; ti < trackItems.length; ti++) {
+        var item = trackItems[ti];
+        var projItem = await item.getProjectItem();
+        var clipStart = await item.getStartTime();
+        var clipDur = await item.getDuration();
+        var clipIn = await item.getInPoint();
+        var clipOut = await item.getOutPoint();
+        clips.push({
+          index: ti,
+          source_file: projItem ? projItem.name : '',
+          premiere: {
+            tc_in: Math.round(tickSec(clipIn) * 1000) / 1000,
+            tc_out: Math.round(tickSec(clipOut) * 1000) / 1000,
+            timeline_start: Math.round(tickSec(clipStart) * 1000) / 1000,
+            duration: Math.round(tickSec(clipDur) * 1000) / 1000
+          }
+        });
+      }
+    }
+    assemblyLogger.info('V1 clips: ' + clips.length);
+
+    // Match with brief segments
+    var briefSegs = assemblyState.segments || [];
+    var useSegs = briefSegs.filter(function(s) { return s.use && s.block !== 99; });
+
+    for (var ci = 0; ci < clips.length; ci++) {
+      var clip = clips[ci];
+      // Match by source tc overlap (not index — ghost clips break index matching)
+      var bs = null;
+      var bestOverlap = 0;
+      for (var bsi = 0; bsi < useSegs.length; bsi++) {
+        var candidate = useSegs[bsi];
+        if (candidate.sourceFile !== clip.source_file) continue;
+        var overlap = Math.min(clip.premiere.tc_out, candidate.outSec) -
+                      Math.max(clip.premiere.tc_in, candidate.inSec);
+        if (overlap > bestOverlap) { bestOverlap = overlap; bs = candidate; }
+      }
+      if (clip.premiere.duration < 0.05) {
+        clip.ghost = true;
+        assemblyLogger.warn('  clip[' + ci + '] GHOST (1 frame, ' + clip.premiere.duration.toFixed(3) + 's)');
+      }
+      if (bs) {
+        clip.brief = {
+          seg_id: bs.id,
+          tc_in: bs.tcIn,
+          tc_out: bs.tcOut,
+          tc_in_sec: bs.inSec,
+          tc_out_sec: bs.outSec
+        };
+        clip.delta_ms = {
+          'in': Math.round((clip.premiere.tc_in - bs.inSec) * 1000),
+          out: Math.round((clip.premiere.tc_out - bs.outSec) * 1000)
+        };
+        assemblyLogger.info('  clip[' + ci + '] ' + (bs.id || '') +
+          ': prem_in=' + clip.premiere.tc_in.toFixed(3) +
+          ' brief_in=' + bs.inSec.toFixed(3) +
+          ' Δ=' + clip.delta_ms['in'] + 'ms' +
+          ' | prem_out=' + clip.premiere.tc_out.toFixed(3) +
+          ' brief_out=' + bs.outSec.toFixed(3) +
+          ' Δ=' + clip.delta_ms.out + 'ms');
+      }
+    }
+
+    // Read Claude4_assembly.json for word data
+    try {
+      var c4Path = projectState.folderPath + '/01_Media/Source/Setup/' +
+        (projectState.projectCode || 'UNKNOWN') + '_Claude4_assembly.json';
+      var c4Entry = await uxpfs.getEntryWithUrl('file://' + c4Path);
+      var c4Raw = await c4Entry.read({ format: require('uxp').storage.formats.utf8 });
+      var c4Data = JSON.parse(c4Raw);
+      var c4Clips = c4Data.clips || [];
+
+      // Build word lookup by filename
+      var wordLookup = {};
+      for (var wci = 0; wci < c4Clips.length; wci++) {
+        var wc = c4Clips[wci];
+        var allWords = [];
+        var wcSegs = wc.segments || [];
+        for (var wsi = 0; wsi < wcSegs.length; wsi++) {
+          var ws = wcSegs[wsi].words || [];
+          for (var wi = 0; wi < ws.length; wi++) {
+            allWords.push(ws[wi]);
+          }
+        }
+        wordLookup[wc.filename] = allWords;
+      }
+
+      // For each clip, find words in range
+      for (var ci2 = 0; ci2 < clips.length; ci2++) {
+        var clip2 = clips[ci2];
+        var words = wordLookup[clip2.source_file] || [];
+        var wordsInRange = [];
+        for (var wi2 = 0; wi2 < words.length; wi2++) {
+          var w = words[wi2];
+          var wsParts = (w.s || '0:0').split(':');
+          var wsVal = parseInt(wsParts[0]) * 60 + parseFloat(wsParts[1] || 0);
+          var weParts = (w.e || '0:0').split(':');
+          var weVal = parseInt(weParts[0]) * 60 + parseFloat(weParts[1] || 0);
+          if (weVal > clip2.premiere.tc_in && wsVal < clip2.premiere.tc_out) {
+            wordsInRange.push(w);
+          }
+        }
+        clip2.words_in_range = wordsInRange.length;
+        clip2.first_word = wordsInRange.length > 0 ? wordsInRange[0].w : '';
+        clip2.last_word = wordsInRange.length > 0 ? wordsInRange[wordsInRange.length - 1].w : '';
+
+        if (clip2.brief) {
+          assemblyLogger.info('    words: ' + wordsInRange.length +
+            ', first="' + clip2.first_word + '", last="' + clip2.last_word + '"');
+        }
+      }
+    } catch (c4Err) {
+      assemblyLogger.warn('Claude4_assembly.json not found: ' + c4Err.message);
+    }
+
+    // Summary
+    var maxDeltaIn = 0, maxDeltaOut = 0, problemClips = 0;
+    for (var si = 0; si < clips.length; si++) {
+      var d = clips[si].delta_ms;
+      if (d) {
+        if (Math.abs(d['in']) > maxDeltaIn) maxDeltaIn = Math.abs(d['in']);
+        if (Math.abs(d.out) > maxDeltaOut) maxDeltaOut = Math.abs(d.out);
+        if (Math.abs(d['in']) > 10 || Math.abs(d.out) > 10) problemClips++;
+      }
+    }
+
+    var output = {
+      debug_version: DEBUG_VERSION,
+      uxp_version: typeof ASSEMBLY_BUILDER_VERSION !== 'undefined' ? ASSEMBLY_BUILDER_VERSION : '?',
+      exported_at: new Date().toISOString(),
+      sequence: seqName,
+      fps: fps,
+      clips: clips,
+      summary: {
+        total_clips: clips.length,
+        max_delta_in_ms: maxDeltaIn,
+        max_delta_out_ms: maxDeltaOut,
+        clips_with_delta_gt_10ms: problemClips
+      }
+    };
+
+    // Write to Assembly/
+    var assemblyDir = projectState.folderPath + '/01_Media/Source/Setup/Assembly';
+    var assemblyEntry;
+    try {
+      assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
+    } catch (e) {
+      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/01_Media/Source/Setup');
+      assemblyEntry = await ensureSubfolder(setupEntry, 'Assembly', assemblyLogger);
+    }
+
+    var debugFileName = seqName.replace(/[^a-zA-Z0-9_-]/g, '_') + '_debug.json';
+    var debugFile = await assemblyEntry.createFile(debugFileName, { overwrite: true });
+    await debugFile.write(JSON.stringify(output, null, 2), { format: require('uxp').storage.formats.utf8 });
+    assemblyLogger.info('Debug export → ' + debugFileName);
+
+    // Also copy to Downloads
+    try {
+      var dl = await uxpfs.getEntryWithUrl('file://' + require('os').homedir() + '/Downloads');
+      var dlFile = await dl.createFile(debugFileName, { overwrite: true });
+      await dlFile.write(JSON.stringify(output, null, 2), { format: require('uxp').storage.formats.utf8 });
+    } catch (dlErr) {}
+
+    var status = problemClips > 0
+      ? problemClips + ' clips with Δ>10ms! Check ' + debugFileName
+      : 'All clips Δ<10ms ✅ → ' + debugFileName;
+    setAssemblyStatus('Debug: ' + status, problemClips > 0 ? 'error' : 'ready');
+
+  } catch (err) {
+    assemblyLogger.error('Debug export failed: ' + err.message);
+    if (err.stack) assemblyLogger.debug(err.stack);
+    setAssemblyStatus('Debug failed: ' + err.message, 'error');
+  }
+
+  $('btn-debug-export').removeAttribute('disabled');
+}
+
+/**
+ * Generate HTML review page from export data.
+ * Primary source: timeline_clips[] (real V1 track items + transcript text).
+ * Secondary: brief (if available) for block/color context.
+ * / markers highlighted with yellow.
+ */
+function generateExportReviewHtml(output, version, seqName) {
+  var clips = output.timeline_clips || [];
+  var markers = (output.assembly || {}).markers || [];
+  var brief = output.brief || {};
+  var briefSegments = brief.segments || [];
+
+  function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fmtTC(sec) {
+    if (!sec && sec !== 0) return '—';
+    var m = Math.floor(sec / 60);
+    var s = (sec % 60).toFixed(1);
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  // Total duration from timeline clips
+  var totalDur = 0;
+  for (var i = 0; i < clips.length; i++) totalDur += (clips[i].duration_sec || 0);
+
+  // Find / markers
+  var slashMarkers = [];
+  for (var mi = 0; mi < markers.length; mi++) {
+    if ((markers[mi].comment || '').indexOf('/') === 0) slashMarkers.push(markers[mi]);
+  }
+
+  var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + esc(seqName) + ' v' + version + ' — Export Review</title>';
+  html += '<style>';
+  html += 'body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;color:#e0e0e0;margin:20px;line-height:1.5}';
+  html += 'h1{color:#fff;margin-bottom:5px} .subtitle{color:#888;margin-bottom:20px}';
+  html += 'table{border-collapse:collapse;width:100%;margin-bottom:30px}';
+  html += 'th{background:#16213e;color:#fff;padding:8px 12px;text-align:left;font-weight:600;position:sticky;top:0}';
+  html += 'td{padding:6px 12px;border-bottom:1px solid #2a2a4a;vertical-align:top}';
+  html += 'tr:hover{background:#16213e}';
+  html += '.slash-marker{background:#3a3000;border-left:3px solid #E6C619;padding:10px 15px;margin:8px 0;border-radius:4px}';
+  html += '.slash-marker .pos{color:#E6C619;font-weight:600} .slash-marker .comment{color:#fff}';
+  html += '.stats{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px} .stat{background:#16213e;padding:12px 18px;border-radius:8px}';
+  html += '.stat-value{font-size:22px;font-weight:700;color:#fff} .stat-label{color:#888;font-size:12px}';
+  html += '.section{margin-bottom:30px} .section h2{color:#ccc;border-bottom:1px solid #2a2a4a;padding-bottom:8px}';
+  html += '.tx{color:#bbb;font-size:12px;max-width:500px;line-height:1.4}';
+  html += '.speaker{color:#4A90D9;font-size:11px;font-weight:600}';
+  html += '.clip-num{color:#666;font-size:11px}';
+  html += '.marker-inline{background:#3a3000;color:#E6C619;padding:2px 6px;border-radius:3px;font-size:11px;display:inline-block;margin:2px 0}';
+  html += '</style></head><body>';
+
+  // Header
+  html += '<h1>' + esc(seqName) + ' — v' + version + '</h1>';
+  html += '<div class="subtitle">Exported: ' + (output.exported_at || new Date().toISOString());
+  if (output.brief_source) html += ' | Brief: ' + esc(output.brief_source);
+  html += '</div>';
+
+  // Stats
+  html += '<div class="stats">';
+  html += '<div class="stat"><div class="stat-value">' + clips.length + '</div><div class="stat-label">V1 Clips</div></div>';
+  html += '<div class="stat"><div class="stat-value">' + fmtTC(totalDur) + '</div><div class="stat-label">Duration</div></div>';
+  html += '<div class="stat"><div class="stat-value">' + markers.length + '</div><div class="stat-label">Markers</div></div>';
+  html += '<div class="stat"><div class="stat-value">' + slashMarkers.length + '</div><div class="stat-label">/ Edits</div></div>';
+  if (briefSegments.length > 0) {
+    html += '<div class="stat"><div class="stat-value">' + briefSegments.length + '</div><div class="stat-label">Brief Segments</div></div>';
+  }
+  html += '</div>';
+
+  // / Markers section
+  if (slashMarkers.length > 0) {
+    html += '<div class="section"><h2>/ Edit Markers (' + slashMarkers.length + ')</h2>';
+    for (var sm = 0; sm < slashMarkers.length; sm++) {
+      var mk = slashMarkers[sm];
+      html += '<div class="slash-marker"><span class="pos">' + fmtTC(mk.position_sec) + '</span> ';
+      if (mk.name) html += '<strong>' + esc(mk.name) + '</strong> — ';
+      html += '<span class="comment">' + esc(mk.comment) + '</span></div>';
+    }
+    html += '</div>';
+  }
+
+  // Build block boundaries from chapter markers + brief block names
+  var chapterMarkers = markers.filter(function(m) { return m.is_chapter && m.duration_sec > 0; });
+  chapterMarkers.sort(function(a, b) { return a.position_sec - b.position_sec; });
+
+  // Match chapter positions with brief blocks (by closest start time)
+  var blockInfo = []; // { start, end, name, color }
+  for (var chi = 0; chi < chapterMarkers.length; chi++) {
+    var ch = chapterMarkers[chi];
+    var bName = ch.name || '';
+    var bColor = '';
+    // Try to match with brief block by position
+    if (briefSegments.length > 0) {
+      var cumTime = 0;
+      var bestBlock = null;
+      var bestDist = Infinity;
+      var seenBlocks = {};
+      for (var bsi2 = 0; bsi2 < briefSegments.length; bsi2++) {
+        var bs2 = briefSegments[bsi2];
+        if (bs2.use !== 'TRUE' || bs2.block === 99) continue;
+        if (!seenBlocks[bs2.block]) {
+          seenBlocks[bs2.block] = { name: bs2.block_name || '', color: bs2.color || '', start: cumTime };
+        }
+        var bpIn = (bs2.tc_in || '0:0').split(':'); var bpOut = (bs2.tc_out || '0:0').split(':');
+        cumTime += (parseInt(bpOut[0]) * 60 + parseFloat(bpOut[1] || 0)) - (parseInt(bpIn[0]) * 60 + parseFloat(bpIn[1] || 0));
+      }
+      for (var bk in seenBlocks) {
+        var dist = Math.abs(seenBlocks[bk].start - ch.position_sec);
+        if (dist < bestDist) { bestDist = dist; bestBlock = seenBlocks[bk]; }
+      }
+      if (bestBlock && bestDist < 30) { // within 30s tolerance
+        bName = bestBlock.name;
+        bColor = bestBlock.color;
+      }
+    }
+    blockInfo.push({
+      start: ch.position_sec,
+      end: ch.position_sec + (ch.duration_sec || 0),
+      name: bName,
+      color: bColor,
+    });
+  }
+
+  // Collect all comment markers (non-chapter) keyed by position
+  var commentsByPos = {};
+  for (var cmi2 = 0; cmi2 < markers.length; cmi2++) {
+    var cm = markers[cmi2];
+    if (cm.is_chapter || !cm.comment) continue;
+    var pos = cm.position_sec;
+    if (!commentsByPos[pos]) commentsByPos[pos] = [];
+    commentsByPos[pos].push(cm);
+  }
+
+  var COLOR_HEX = {
+    Cyan: '#00CED1', Blue: '#4A90D9', Green: '#4CAF50', Yellow: '#E6C619',
+    Red: '#E34850', Magenta: '#E732E7', Orange: '#EDA63B', Purple: '#9B59B6'
+  };
+
+  // Timeline clips grouped by blocks
+  html += '<div class="section"><h2>Timeline (' + clips.length + ' clips)</h2>';
+
+  var currentBlock = -1;
+  for (var ci = 0; ci < clips.length; ci++) {
+    var c = clips[ci];
+    // Check if we entered a new block
+    for (var bi2 = 0; bi2 < blockInfo.length; bi2++) {
+      if (c.timeline_start_sec >= blockInfo[bi2].start && c.timeline_start_sec < blockInfo[bi2].end && bi2 !== currentBlock) {
+        currentBlock = bi2;
+        var blk = blockInfo[bi2];
+        var blkColor = COLOR_HEX[blk.color] || '#888';
+        html += '<div style="margin:20px 0 8px;padding:8px 15px;background:' + blkColor + '22;border-left:4px solid ' + blkColor + ';border-radius:4px">';
+        html += '<strong style="color:' + blkColor + '">' + esc(blk.name || 'Block ' + (bi2 + 1)) + '</strong>';
+        html += '<span style="color:#888;margin-left:10px">' + fmtTC(blk.start) + ' — ' + fmtTC(blk.end) + '</span>';
+        html += '</div>';
+        break;
+      }
+    }
+
+    // Find markers near this clip
+    var clipEnd = c.timeline_start_sec + c.duration_sec;
+    var clipNotes = [];
+    var clipSlash = [];
+    for (var pos in commentsByPos) {
+      var p = parseFloat(pos);
+      if (p >= c.timeline_start_sec && p < clipEnd) {
+        var mks = commentsByPos[pos];
+        for (var mki = 0; mki < mks.length; mki++) {
+          var mkComment = mks[mki].comment || '';
+          if (mkComment.indexOf('/') === 0) {
+            clipSlash.push(mkComment);
+          } else {
+            clipNotes.push(mkComment);
+          }
+        }
+      }
+    }
+
+    html += '<table style="width:100%;margin-bottom:2px"><tr>';
+    html += '<td style="width:30px;color:#666;font-size:11px;padding:4px 8px">' + (ci + 1) + '</td>';
+    html += '<td style="width:120px;padding:4px 8px">' + esc(c.source_file) + '</td>';
+    html += '<td style="width:80px;padding:4px 8px;color:#888">' + fmtTC(c.tc_in_sec) + '–' + fmtTC(c.tc_out_sec) + '</td>';
+    html += '<td style="width:50px;padding:4px 8px;color:#666">' + fmtTC(c.duration_sec) + '</td>';
+    html += '<td style="padding:4px 8px">';
+    if (c.speaker) html += '<span class="speaker">' + esc(c.speaker) + '</span> ';
+    html += '<span class="tx">' + esc(c.transcript_text || '') + '</span>';
+    // Marker notes (parsed: Speaker/B-roll/Notes)
+    for (var ni = 0; ni < clipNotes.length; ni++) {
+      var note = clipNotes[ni];
+      // Skip auto-generated segment markers (Speaker: X | transcript...)
+      if (note.indexOf('Speaker:') === 0 && note.indexOf('|') > 0) continue;
+      html += '<br><span style="color:#E6C619;font-size:11px">📝 ' + esc(note) + '</span>';
+    }
+    // / edit markers
+    for (var si2 = 0; si2 < clipSlash.length; si2++) {
+      html += '<br><span class="marker-inline">/ ' + esc(clipSlash[si2].substring(1).trim()) + '</span>';
+    }
+    html += '</td>';
+    html += '</tr></table>';
+  }
+  html += '</div>';
+
+  html += '</body></html>';
+  return html;
 }
 
 /**
@@ -2358,7 +3105,8 @@ async function buildReview() {
     reviewLogger.info('=== Step 3: Building Review sequence ===');
     var reviewOpts = {
       producerSpeaker: (assemblyState.data && assemblyState.data.producerSpeaker) || '',
-      assemblyBlocks: assemblyState.blocks || []
+      assemblyBlocks: assemblyState.blocks || [],
+      fps: (assemblyState.projectSettings && assemblyState.projectSettings.fps) || 25
     };
     // Build scene map from ingest data (clip → scene)
     var sceneMap = null;
@@ -3007,7 +3755,7 @@ async function buildScreenCuesPipeline() {
     screensLogger.info('=== Step 2: Building Screen Cues sequence (v1.9.3) ===');
     var screenResult = await buildScreenCues(
       project, assemblyState.screens, assemblyState.segments, clipMap,
-      assemblyState.projectCode || assemblyState.projectName, screensLogger, assemblyState.filePath, pngFiles, screenCuesBin
+      assemblyState.projectCode || assemblyState.projectName, screensLogger, assemblyState.filePath, pngFiles, screenCuesBin, assemblyState.projectSettings
     );
     screensLogger.info('Result: V1=' + screenResult.clips + ' clips, V2=' + screenResult.overlays + ' overlays, ' +
       screenResult.markers + ' markers, ' + screenResult.skipped + ' skipped, ' +
@@ -3995,6 +4743,8 @@ async function validateScreensBuild(sequence, screenResult, markerInfo) {
 document.addEventListener('DOMContentLoaded', () => {
   // PROJECT buttons
   $('btn-select-project').addEventListener('click', selectProjectFolder);
+  $('btn-copy-project-prompt').addEventListener('click', copyProjectPrompt);
+  $('btn-copy-markers-prompt').addEventListener('click', copyMarkersPrompt);
   $('btn-refresh-project').addEventListener('click', refreshProject);
 
   // INGEST buttons (btn-load-ingest is fallback — hidden by default)
@@ -4006,6 +4756,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-load-brief').addEventListener('click', loadBrief);
   $('btn-build-assembly').addEventListener('click', buildAssembly);
   $('btn-export-markers').addEventListener('click', exportMarkers);
+  $('btn-debug-export').addEventListener('click', debugExport);
 
   // REVIEW buttons
   $('btn-build-review').addEventListener('click', buildReview);

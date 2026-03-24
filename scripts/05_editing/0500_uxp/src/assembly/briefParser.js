@@ -25,10 +25,10 @@ function parseTimecode(tc) {
 
 // Seconds → "MM:SS.s" format
 function formatTimecode(sec) {
-  if (!sec || sec < 0) return '00:00.0';
+  if (!sec || sec < 0) return '00:00.000';
   var m = Math.floor(sec / 60);
   var s = sec % 60;
-  var sStr = s < 10 ? '0' + s.toFixed(1) : s.toFixed(1);
+  var sStr = s < 10 ? '0' + s.toFixed(3) : s.toFixed(3);
   return String(m).padStart(2, '0') + ':' + sStr;
 }
 

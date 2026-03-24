@@ -55,6 +55,29 @@ When the user sends a `transcript.json` (video transcript with timecodes and spe
 - Segments with very low `avg_logprob` (< -1.0) combined with other quality flags — likely unreliable transcription
 - Place cut segments in **Block 99** ("Cut") with color **Red** and priority **9**
 
+### Semantic Relevance Filter
+
+Beyond speaker performance issues (fillers, repetitions), also cut:
+- **Production meta-talk**: speaker addressing crew, not audience. "Забирайте", "Давай ещё раз", equipment/setup discussion
+- **Between-take transitions**: brief phrases connecting failed takes that have no content value
+- **Crew coordination**: any segment where the speaker discusses production logistics rather than the video's topic
+
+**Test**: "Would a viewer understand and benefit from hearing this?" If NO → cut.
+
+### Step 4b: Sub-Segment Extraction (Hook, excerpts)
+
+When creating a segment from a PORTION of a transcript segment (e.g. Hook from a 90s segment):
+
+1. **Identify target phrase** in the transcript text
+2. **Look up word timestamps** in the `words[]` array of that transcript segment:
+   - Find the first word of the target phrase → `tc_in = word.s` (exact)
+   - Find the last word → `tc_out = word.e + smart_padding`
+     Smart padding = `min(gap_to_next_word, 0.3)`. If next word starts immediately (gap=0) → exact cut.
+3. **Set transcript field** = concatenation of `words[first..last].w` — these are the EXACT words that will play on the timeline. Nothing more, nothing less.
+4. **Validate**: last word in transcript must be the target word. If transcript ends with an unexpected word (e.g. "и" or "наши" that starts the next sentence), tc_out is wrong — move it back to the previous word's `.e`
+5. **Validate meaning**: the text must form a complete thought — ends at sentence/clause boundary
+6. **Create CUT segment** for the remaining portion not used (completeness rule)
+
 ### Step 5: Enrich Segments
 - Assign a color to each block by its content
 - Suggest B-roll where appropriate
@@ -150,14 +173,18 @@ This HTML lets the user visually review the brief and ask for changes in the cha
 Each review segment: seg_id, clip, speaker, timecode, transcript (3 lines max), reason/notes
 
 **Transcript text lookup (critical):**
-The brief's `transcript` field is a short editor summary — NOT the full text. When generating the HTML, look up the **full text** from the original `transcript.json`:
+The brief's `transcript` field contains the full spoken text for the segment's tc_in→tc_out range (per CLAUDE.md override). When generating the HTML, display this text directly — it IS the full text.
+
+Additionally, for verification and confidence scoring, look up from `transcript.json`:
 1. For each segment, find the clip in transcript.json where `filename == source_file`
 2. Find all transcript segments whose `start..end` overlaps with `tc_in..tc_out` (overlap > 0.5s)
-3. Concatenate their `text` fields — this is the full text to display
+3. Concatenate their `text` fields — use for cross-check and confidence scoring
 4. Average their `confidence` fields for the confidence indicator
 5. If any has `low_confidence: true`, show ⚠️ CHECK AUDIO badge
 
-If transcript.json is not available in context, fall back to displaying the brief's `transcript` field.
+**Sub-segments (Hook excerpts):** When a segment covers only a portion of a transcript.json segment, the `transcript` field contains only the text for that portion. In HTML, display the brief's text and optionally note "[excerpt from full segment]".
+
+**Completeness rule:** Every word spoken in the source video must appear in exactly one segment's `transcript` field (USE=TRUE or USE=FALSE). No gaps — if text exists in transcript.json but isn't covered by any segment, create a CUT segment for it.
 
 **Color hex values for block backgrounds (dark variants for readability):**
 ```
@@ -201,7 +228,7 @@ The overview must be **compact** — block table, chapters, 1-3 notes. No per-se
 
 - `segment_id`: sequential `seg_001`, `seg_002`, ... across all clips
 - `source_file`: exact filename from transcript.json (`filename` field of the clip)
-- `tc_in` / `tc_out`: format `MM:SS.s` — local time within the clip
+- `tc_in` / `tc_out`: format `MM:SS.sss` — local time within the clip
   - Taken from `start` / `end` fields of the segment in transcript.json
   - Example: 88.76 sec → `"01:28.8"`
 - `color`: strictly one of: Cyan, Blue, Green, Yellow, Red, Magenta, Orange, Purple
@@ -218,11 +245,11 @@ The overview must be **compact** — block table, chapters, 1-3 notes. No per-se
 
 ## Timecode Conversion
 
-From seconds to MM:SS.s format:
-- 1.46 → `"00:01.5"`
-- 88.76 → `"01:28.8"`
-- 156.0 → `"02:36.0"`
-- 394.5 → `"06:34.5"`
+From seconds to MM:SS.sss format (2 decimal places, 10ms precision):
+- 1.46 → `"00:01.46"`
+- 88.76 → `"01:28.76"`
+- 156.0 → `"02:36.00"`
+- 394.5 → `"06:34.50"`
 
 ## User Parameters
 
@@ -405,7 +432,7 @@ Additionally, `generate_review.py` generates a color-coded HTML for browser prev
 Therefore it is critical:
 - JSON must be **valid** (parseable without errors)
 - `source_file` must **exactly match** filenames from transcript.json
-- `tc_in` / `tc_out` must be in **correct format** MM:SS.s
+- `tc_in` / `tc_out` must be in **correct format** MM:SS.sss
 - Colors — **strictly from the list**: `Green`, `Blue`, `Cyan`, `Yellow`, `Orange`, `Red`, `Magenta`, `Purple` (case-sensitive)
 - `block` numbers define segment order in the ASSEMBLY sequence (block 99 = Cut, excluded from ASSEMBLY)
 - `use` must be `"TRUE"` or `"FALSE"` (strings, not booleans)
