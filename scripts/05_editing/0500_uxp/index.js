@@ -194,7 +194,7 @@ function resetAllPipelineStates() {
   $('ingest-summary').style.display = 'none';
   $('ingest-file-info').textContent = '';
   $('btn-build-ingest').setAttribute('disabled', 'true');
-  $('btn-import-srts').setAttribute('disabled', 'true');
+  $('btn-audio-debug').setAttribute('disabled', 'true');
   $('btn-export-markers').setAttribute('disabled', 'true');
   $('btn-debug-export').setAttribute('disabled', 'true');
   $('ingest-validation').style.display = 'none';
@@ -219,8 +219,10 @@ function resetAllPipelineStates() {
   $('btn-generate-pngs').setAttribute('disabled', 'true');
   $('btn-build-screens').setAttribute('disabled', 'true');
   $('btn-export-screens').setAttribute('disabled', 'true');
-  $('btn-import-screens').setAttribute('disabled', 'true');
+  $('btn-import-pre-edit').setAttribute('disabled', 'true');
   $('btn-export-pre-edit-doc').setAttribute('disabled', 'true');
+  $('btn-copy-pre-edit-prompt').setAttribute('disabled', 'true');
+  $('btn-import-pre-edit').setAttribute('disabled', 'true');
   $('screens-validation').style.display = 'none';
   hideScreensProgress();
 
@@ -516,10 +518,12 @@ async function autoDetectFiles(folderPath, projectName) {
 
   $('project-checklist').innerHTML = checklistHtml;
   $('project-actions-row').style.display = 'flex';
-  $('btn-import-srts').removeAttribute('disabled');
+  $('btn-audio-debug').removeAttribute('disabled');
   $('btn-export-markers').removeAttribute('disabled');
   $('btn-debug-export').removeAttribute('disabled');
   $('btn-export-pre-edit-doc').removeAttribute('disabled');
+  $('btn-copy-pre-edit-prompt').removeAttribute('disabled');
+  $('btn-import-pre-edit').removeAttribute('disabled');
   ingestLogger.info('Auto-detection complete: ingest=' + projectState.ingestDetected + ', brief=' + projectState.briefDetected);
 }
 
@@ -755,6 +759,48 @@ async function buildIngest() {
     setIngestProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Importing transcripts...');
     ingestLogger.info('=== Step 4: Importing transcripts ===');
     const trResult = await importTranscripts(project, ingest, bins[BIN_NAMES.TRANSCRIPTS] || null, ingestLogger, result.sequence || null, ingest.project_code);
+
+    // Step 4b: Copy + import general SRTs into 01_Transcripts/{CODE}_1_Ingest/
+    try {
+      var txSrtPath = ingest.files && ingest.files.transcript_srt;
+      var capSrtPath = ingest.files && ingest.files.captions_srt;
+      var ingestProjectCode = ingest.project_code || '';
+
+      if ((txSrtPath || capSrtPath) && ingestProjectCode && projectState.folderPath) {
+        var ingestSourceDir = projectState.folderPath + '/01_Media/Source';
+        var ingestTxEntry = await uxpfs.getEntryWithUrl('file://' + ingestSourceDir + '/Transcription');
+        var ingestTxFolder = await ensureSubfolder(ingestTxEntry, 'transcripts', ingestLogger);
+        var ingestCapFolder = await ensureSubfolder(ingestTxEntry, 'captions', ingestLogger);
+
+        // Copy with standard naming: {CODE}_1_Ingest_{type}.srt
+        if (txSrtPath) {
+          try {
+            var ingestTxSrc = await uxpfs.getEntryWithUrl('file://' + txSrtPath);
+            var ingestTxContent = await ingestTxSrc.read({ format: require('uxp').storage.formats.utf8 });
+            var ingestTxTarget = await ingestTxFolder.createFile(ingestProjectCode + '_1_Ingest_transcript.srt', { overwrite: true });
+            await ingestTxTarget.write(ingestTxContent);
+            ingestLogger.info('Ingest transcript SRT → Transcription/transcripts/' + ingestProjectCode + '_1_Ingest_transcript.srt');
+          } catch (txCopyErr) { ingestLogger.debug('Ingest transcript SRT copy: ' + txCopyErr.message); }
+        }
+        if (capSrtPath) {
+          try {
+            var ingestCapSrc = await uxpfs.getEntryWithUrl('file://' + capSrtPath);
+            var ingestCapContent = await ingestCapSrc.read({ format: require('uxp').storage.formats.utf8 });
+            var ingestCapTarget = await ingestCapFolder.createFile(ingestProjectCode + '_1_Ingest_captions.srt', { overwrite: true });
+            await ingestCapTarget.write(ingestCapContent);
+            ingestLogger.info('Ingest captions SRT → Transcription/captions/' + ingestProjectCode + '_1_Ingest_captions.srt');
+          } catch (capCopyErr) { ingestLogger.debug('Ingest captions SRT copy: ' + capCopyErr.message); }
+        }
+
+        // Import into 01_Transcripts/{CODE}_1_Ingest/ bin
+        var ingestSetupPath = ingestSourceDir + '/Setup';
+        await importCaptionsSrt(project, ingestSetupPath, ingestProjectCode, '1_Ingest', 'Ingest Captions', ingestLogger);
+        await importCaptionsSrt(project, ingestSetupPath, ingestProjectCode, '1_Ingest', 'Ingest Transcript', ingestLogger, 'transcript');
+        ingestLogger.info('Ingest SRTs copied + imported → 01_Transcripts/' + ingestProjectCode + '_1_Ingest');
+      }
+    } catch (ingestSrtErr) {
+      ingestLogger.warn('Ingest SRT import (non-fatal): ' + ingestSrtErr.message);
+    }
     stepTimings.push('transcripts ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 5: LUTs
@@ -985,13 +1031,13 @@ function loadBriefFromString(jsonString, filePath) {
     $('btn-generate-pngs').removeAttribute('disabled');
     $('btn-build-screens').removeAttribute('disabled');
     $('btn-export-screens').removeAttribute('disabled');
-    $('btn-import-screens').removeAttribute('disabled');
+    $('btn-import-pre-edit').removeAttribute('disabled');
   } else {
     setScreensStatus('No screens in brief', 'waiting');
     $('btn-generate-pngs').setAttribute('disabled', 'true');
     $('btn-build-screens').setAttribute('disabled', 'true');
     $('btn-export-screens').setAttribute('disabled', 'true');
-    $('btn-import-screens').setAttribute('disabled', 'true');
+    $('btn-import-pre-edit').setAttribute('disabled', 'true');
   }
 
   setAssemblyStatus('Brief loaded. Ready to build.', 'ready');
@@ -1163,28 +1209,40 @@ async function buildAssembly() {
     var projectCode = assemblyState.projectCode || assemblyState.projectName;
     var useSegsForSrt = assemblyState.segments.filter(function (s) { return s.use && s.block !== 99; });
 
-    if (useSegsForSrt.length > 0 && assemblyState.filePath) {
-      var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
-      var sourceDir = briefDir.replace(/[/\\]Setup$/, '');
+    // Derive sourceDir: strip /Setup/... from filePath, fallback to projectState.folderPath
+    var asmSourceDir = null;
+    if (assemblyState.filePath) {
+      // Brief can be in Setup/, Setup/Assembly/, or Setup/Pre-Edit/ — strip from /Setup/ onwards
+      asmSourceDir = assemblyState.filePath.replace(/[/\\]Setup[/\\].*$/, '');
+    } else if (projectState.folderPath) {
+      asmSourceDir = projectState.folderPath + '/01_Media/Source';
+    }
+    if (asmSourceDir) {
+      assemblyLogger.info('SRT sourceDir: ' + asmSourceDir);
+    }
+
+    var asmSuffix = '2_Assembly' + (assemblyState.briefVersion ? '_v' + assemblyState.briefVersion : '');
+
+    if (useSegsForSrt.length > 0 && asmSourceDir) {
       try {
         // Ensure Transcription subdirs exist
-        var transcriptionEntry = await uxpfs.getEntryWithUrl('file://' + sourceDir + '/Transcription');
+        var transcriptionEntry = await uxpfs.getEntryWithUrl('file://' + asmSourceDir + '/Transcription');
         var transcriptsFolderEntry = await ensureSubfolder(transcriptionEntry, 'transcripts', assemblyLogger);
         var captionsFolderEntry = await ensureSubfolder(transcriptionEntry, 'captions', assemblyLogger);
 
         // 1. Transcript SRT (full text per segment, for word-based editing)
         var transcriptSrtContent = generateTranscriptSrt(useSegsForSrt);
         if (transcriptSrtContent) {
-          var trFileName = projectCode + '_2_Assembly_transcript.srt';
+          var trFileName = projectCode + '_' + asmSuffix + '_transcript.srt';
           var trFile = await transcriptsFolderEntry.createFile(trFileName, { overwrite: true });
-          await trFile.write(transcriptSrtContent);
+          await trFile.write("\uFEFF" + transcriptSrtContent);
           assemblyLogger.info('Transcript SRT written: Transcription/transcripts/' + trFileName);
         }
 
         // 2. Captions SRT (word-grouped, 2-line blocks for on-screen reading)
         // Only generate if Python pipeline hasn't already created one (Python has better word-level timing)
-        var captionsFileName = projectCode + '_2_Assembly_captions.srt';
-        var captionsDirPath = sourceDir + '/Transcription/captions';
+        var captionsFileName = projectCode + '_' + asmSuffix + '_captions.srt';
+        var captionsDirPath = asmSourceDir + '/Transcription/captions';
         var pythonCaptionsExist = false;
         try {
           await uxpfs.getEntryWithUrl('file://' + captionsDirPath + '/' + captionsFileName);
@@ -1196,7 +1254,7 @@ async function buildAssembly() {
           var captionsSrtContent = generateCaptionsSrt(useSegsForSrt);
           if (captionsSrtContent) {
             var capFile = await captionsFolderEntry.createFile(captionsFileName, { overwrite: true });
-            await capFile.write(captionsSrtContent);
+            await capFile.write("\uFEFF" + captionsSrtContent);
             assemblyLogger.info('Captions SRT generated: Transcription/captions/' + captionsFileName);
           }
         }
@@ -1204,12 +1262,13 @@ async function buildAssembly() {
         assemblyLogger.warn('SRT write failed (non-fatal): ' + srtWriteErr.message);
       }
     } else {
-      assemblyLogger.info('No transcript data for SRT generation');
+      assemblyLogger.warn('SRT skipped: segs=' + useSegsForSrt.length + ' filePath=' + !!assemblyState.filePath + ' folderPath=' + !!projectState.folderPath);
     }
 
     // Import both SRTs to 02_Transcripts bin
-    await importCaptionsSrt(project, assemblyState.filePath, projectCode, '2_Assembly', 'Assembly Captions', assemblyLogger);
-    await importCaptionsSrt(project, assemblyState.filePath, projectCode, '2_Assembly', 'Assembly Transcript', assemblyLogger, 'transcript');
+    var asmImportPath = assemblyState.filePath || (asmSourceDir ? asmSourceDir + '/Setup' : null);
+    await importCaptionsSrt(project, asmImportPath, projectCode, asmSuffix, 'Assembly Captions', assemblyLogger);
+    await importCaptionsSrt(project, asmImportPath, projectCode, asmSuffix, 'Assembly Transcript', assemblyLogger, 'transcript');
     stepTimings.push('captions ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -1272,7 +1331,7 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
 
   // briefPath is in Setup/ — derive Source/ from it
   const briefDir = briefPath.replace(/[/\\][^/\\]+$/, '');
-  const sourceDir = briefDir.replace(/[/\\]Setup$/, '');
+  const sourceDir = briefDir.replace(/[/\\]Setup([/\\].*)?$/, '');
   const srtFileName = projectName + '_' + suffix + '_' + (srtType || 'captions') + '.srt';
   // SRTs are in Transcription/captions/ (for captions) or Transcription/transcripts/ (for transcripts)
   var typeLabel = (srtType || 'captions');
@@ -2159,13 +2218,6 @@ async function debugExport() {
     await debugFile.write(JSON.stringify(output, null, 2), { format: require('uxp').storage.formats.utf8 });
     assemblyLogger.info('Debug export → ' + debugFileName);
 
-    // Also copy to Downloads
-    try {
-      var dl = await uxpfs.getEntryWithUrl('file://' + require('os').homedir() + '/Downloads');
-      var dlFile = await dl.createFile(debugFileName, { overwrite: true });
-      await dlFile.write(JSON.stringify(output, null, 2), { format: require('uxp').storage.formats.utf8 });
-    } catch (dlErr) {}
-
     var status = problemClips > 0
       ? problemClips + ' clips with Δ>10ms! Check ' + debugFileName
       : 'All clips Δ<10ms ✅ → ' + debugFileName;
@@ -2178,6 +2230,258 @@ async function debugExport() {
   }
 
   $('btn-debug-export').removeAttribute('disabled');
+}
+
+/**
+ * Audio Debug — export JSON with full track info for each marker issue.
+ * User marks problems with Premiere markers (comment starts with "/"),
+ * button reads V1/A1/A2/A3 tracks and writes detailed JSON for Claude to analyze.
+ */
+async function audioDebug() {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+  if (!projectState.folderPath) { setIngestStatus('Select project folder first', 'error'); return; }
+
+  ingestLogger.info('=== Audio Debug ===');
+  setIngestStatus('Audio Debug...', 'waiting');
+  $('btn-audio-debug').setAttribute('disabled', 'true');
+
+  function secToMSS(s) {
+    if (s == null || s < 0) return '0:00.000';
+    var m = Math.floor(s / 60);
+    var sec = s % 60;
+    return m + ':' + (sec < 10 ? '0' : '') + sec.toFixed(3);
+  }
+
+  function parseTxMic(filename) {
+    var txm = filename.match(/_TX(\d+)/);
+    var micm = filename.match(/_(MIC\d+)/);
+    return { tx: txm ? 'TX' + txm[1] : null, mic: micm ? micm[1] : null };
+  }
+
+  async function readTrackItems(seq, trackType, trackIndex) {
+    var items = [];
+    try {
+      var track = trackType === 'video'
+        ? await seq.getVideoTrack(trackIndex)
+        : await seq.getAudioTrack(trackIndex);
+      if (!track) return items;
+      var tis = null;
+      try { tis = track.getTrackItems(1, false); } catch (ex) {}
+      if (!tis) try { tis = track.getTrackItems(); } catch (ex) {}
+      if (!tis) return items;
+      for (var i = 0; i < tis.length; i++) {
+        var ti = tis[i];
+        var pi = await ti.getProjectItem();
+        var name = pi ? pi.name : '';
+        var path = '';
+        try { path = pi ? pi.getMediaPath() : ''; } catch (e) {}
+        items.push({
+          filename: name,
+          path: path || '',
+          timeline_start_sec: Math.round(tickSec(await ti.getStartTime()) * 1000) / 1000,
+          source_in_sec: Math.round(tickSec(await ti.getInPoint()) * 1000) / 1000,
+          source_out_sec: Math.round(tickSec(await ti.getOutPoint()) * 1000) / 1000,
+          duration_sec: Math.round(tickSec(await ti.getDuration()) * 1000) / 1000
+        });
+      }
+    } catch (e) {
+      ingestLogger.warn('Track ' + trackType + '[' + trackIndex + ']: ' + e.message);
+    }
+    return items;
+  }
+
+  function findClipAtPos(trackItems, posSec) {
+    for (var i = 0; i < trackItems.length; i++) {
+      var c = trackItems[i];
+      var end = c.timeline_start_sec + c.duration_sec;
+      if (posSec >= c.timeline_start_sec && posSec < end) return c;
+    }
+    return null;
+  }
+
+  try {
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence — open a timeline first');
+    var seqName = seq.name;
+    var fps = projectState.projectSettings ? (projectState.projectSettings.fps || 29.97) : 29.97;
+    ingestLogger.info('Sequence: ' + seqName + ', fps=' + fps);
+
+    // Read markers
+    var markersOwner = await ppro.Markers.getMarkers(seq);
+    var rawMarkers = markersOwner ? markersOwner.getMarkers() : [];
+    var issueMarkers = [];
+    if (rawMarkers && rawMarkers.length > 0) {
+      for (var mi = 0; mi < rawMarkers.length; mi++) {
+        var rm = rawMarkers[mi];
+        var commentText = rm.comments || '';
+        if (!commentText) try { commentText = rm.getComments ? rm.getComments() : ''; } catch (e) {}
+        if (!commentText) commentText = rm.comment || '';
+        if (commentText && commentText.startsWith('/')) {
+          var startTime = null;
+          try { startTime = rm.getStart(); } catch (e) {}
+          if (!startTime) try { startTime = rm.startTime; } catch (e) {}
+          var posSec = startTime ? Math.round(startTime.seconds * 1000) / 1000 : 0;
+          issueMarkers.push({ position_sec: posSec, comment: commentText.substring(1).trim() });
+        }
+      }
+    }
+    issueMarkers.sort(function(a, b) { return a.position_sec - b.position_sec; });
+    ingestLogger.info('Issue markers (/ prefix): ' + issueMarkers.length);
+
+    // Read all tracks
+    ingestLogger.info('Reading tracks...');
+    var v1Items = await readTrackItems(seq, 'video', 0);
+    var a1Items = await readTrackItems(seq, 'audio', 0);
+    var a2Items = await readTrackItems(seq, 'audio', 1);
+    var a3Items = await readTrackItems(seq, 'audio', 2);
+    ingestLogger.info('V1=' + v1Items.length + ' A1=' + a1Items.length +
+      ' A2=' + a2Items.length + ' A3=' + a3Items.length);
+
+    // Build issues
+    var issues = [];
+    for (var ii = 0; ii < issueMarkers.length; ii++) {
+      var im = issueMarkers[ii];
+      var v = findClipAtPos(v1Items, im.position_sec);
+      var a1 = findClipAtPos(a1Items, im.position_sec);
+      var a2 = findClipAtPos(a2Items, im.position_sec);
+      var a3 = findClipAtPos(a3Items, im.position_sec);
+
+      var issue = {
+        marker_tc: secToMSS(im.position_sec),
+        marker_sec: im.position_sec,
+        comment: im.comment,
+        video: null,
+        audio_A1: null,
+        audio_A2: null,
+        audio_A3: null
+      };
+
+      if (v) {
+        var offsetInClip = im.position_sec - v.timeline_start_sec;
+        issue.video = {
+          filename: v.filename,
+          path: v.path,
+          timeline_start_tc: secToMSS(v.timeline_start_sec),
+          timeline_start_sec: v.timeline_start_sec,
+          source_in_tc: secToMSS(v.source_in_sec),
+          source_in_sec: v.source_in_sec,
+          source_out_tc: secToMSS(v.source_out_sec),
+          source_out_sec: v.source_out_sec,
+          duration_sec: v.duration_sec,
+          marker_offset_in_clip_tc: secToMSS(offsetInClip),
+          marker_offset_in_clip_sec: Math.round(offsetInClip * 1000) / 1000
+        };
+      }
+      if (a1) {
+        issue.audio_A1 = {
+          filename: a1.filename,
+          timeline_start_sec: a1.timeline_start_sec,
+          source_in_sec: a1.source_in_sec,
+          source_out_sec: a1.source_out_sec
+        };
+      }
+      function buildAudioInfo(clip) {
+        if (!clip) return null;
+        var txm = parseTxMic(clip.filename);
+        return {
+          filename: clip.filename,
+          path: clip.path,
+          tx: txm.tx,
+          mic: txm.mic,
+          timeline_start_tc: secToMSS(clip.timeline_start_sec),
+          timeline_start_sec: clip.timeline_start_sec,
+          source_in_tc: secToMSS(clip.source_in_sec),
+          source_in_sec: clip.source_in_sec,
+          source_out_tc: secToMSS(clip.source_out_sec),
+          source_out_sec: clip.source_out_sec,
+          duration_sec: clip.duration_sec
+        };
+      }
+      issue.audio_A2 = buildAudioInfo(a2);
+      issue.audio_A3 = buildAudioInfo(a3);
+      issues.push(issue);
+    }
+
+    // Build all_clips
+    var allClips = [];
+    for (var ci = 0; ci < v1Items.length; ci++) {
+      var vc = v1Items[ci];
+      if (vc.duration_sec < 0.05) continue; // skip ghost clips
+      var matchA1 = findClipAtPos(a1Items, vc.timeline_start_sec + 0.01);
+      var matchA2 = findClipAtPos(a2Items, vc.timeline_start_sec + 0.01);
+      var matchA3 = findClipAtPos(a3Items, vc.timeline_start_sec + 0.01);
+      var prevEnd = ci > 0 ? (v1Items[ci - 1].timeline_start_sec + v1Items[ci - 1].duration_sec) : 0;
+      var txm2 = matchA2 ? parseTxMic(matchA2.filename) : {};
+      var txm3 = matchA3 ? parseTxMic(matchA3.filename) : {};
+      allClips.push({
+        index: ci,
+        video: vc.filename,
+        video_path: vc.path,
+        timeline_start_tc: secToMSS(vc.timeline_start_sec),
+        timeline_start_sec: vc.timeline_start_sec,
+        source_in_sec: vc.source_in_sec,
+        source_out_sec: vc.source_out_sec,
+        duration_sec: vc.duration_sec,
+        audio_A1: matchA1 ? matchA1.filename : null,
+        audio_A2: matchA2 ? matchA2.filename : null,
+        audio_A2_path: matchA2 ? matchA2.path : null,
+        audio_A2_tx: txm2.tx || null,
+        audio_A2_mic: txm2.mic || null,
+        audio_A2_source_in_sec: matchA2 ? matchA2.source_in_sec : null,
+        audio_A2_source_out_sec: matchA2 ? matchA2.source_out_sec : null,
+        audio_A3: matchA3 ? matchA3.filename : null,
+        audio_A3_path: matchA3 ? matchA3.path : null,
+        audio_A3_tx: txm3.tx || null,
+        audio_A3_mic: txm3.mic || null,
+        audio_A3_source_in_sec: matchA3 ? matchA3.source_in_sec : null,
+        audio_A3_source_out_sec: matchA3 ? matchA3.source_out_sec : null,
+        gap_before_sec: Math.round(Math.max(0, vc.timeline_start_sec - prevEnd) * 1000) / 1000,
+        has_issue: issues.some(function(iss) { return iss.video && iss.video.filename === vc.filename; })
+      });
+    }
+
+    var output = {
+      version: '1.0',
+      type: 'audio_debug',
+      sequence: seqName,
+      exported_at: new Date().toISOString(),
+      fps: fps,
+      project_folder: projectState.folderPath,
+      issues: issues,
+      all_clips: allClips
+    };
+
+    // Write to Setup/Assembly/
+    var assemblyDir = projectState.folderPath + '/01_Media/Source/Setup/Assembly';
+    var assemblyEntry;
+    try {
+      assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
+    } catch (e) {
+      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/01_Media/Source/Setup');
+      assemblyEntry = await ensureSubfolder(setupEntry, 'Assembly', ingestLogger);
+    }
+    var outFileName = seqName.replace(/[^a-zA-Z0-9_-]/g, '_') + '_audio_debug.json';
+    var outFile = await assemblyEntry.createFile(outFileName, { overwrite: true });
+    await outFile.write(JSON.stringify(output, null, 2), { format: require('uxp').storage.formats.utf8 });
+
+    var fullPath = assemblyDir + '/' + outFileName;
+    try { await navigator.clipboard.writeText(fullPath); } catch (e) {}
+    ingestLogger.info('Path copied: ' + fullPath);
+
+    var summary = issues.length > 0
+      ? issues.length + ' issue(s) from ' + seqName + ' → ' + outFileName
+      : 'No / markers found. ' + allClips.length + ' clips mapped → ' + outFileName;
+    ingestLogger.info('Audio Debug: ' + summary);
+    setIngestStatus('Audio Debug: ' + summary + ' (path copied)', issues.length > 0 ? 'warning' : 'ready');
+
+  } catch (err) {
+    ingestLogger.error('Audio Debug failed: ' + err.message);
+    if (err.stack) ingestLogger.debug(err.stack);
+    setIngestStatus('Audio Debug failed: ' + err.message, 'error');
+  }
+
+  $('btn-audio-debug').removeAttribute('disabled');
 }
 
 /**
@@ -2244,6 +2548,132 @@ async function applyAudioFill(effectName) {
   } catch (err) {
     assemblyLogger.error('Audio fill failed: ' + err.message);
     setAssemblyStatus('Audio fill failed: ' + err.message, 'error');
+  }
+}
+
+/**
+ * Apply speech-optimized audio effects chain to all A1 clips.
+ * Order: Noise Reduction → DeHummer → Vocal Enhancer → Hard Limiter
+ */
+async function applyVoiceEnhance() {
+  var VOICE_EFFECTS = [
+    'Vocal Enhancer',
+    'Hard Limiter'
+  ];
+
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setAssemblyStatus('No active project', 'error'); return; }
+
+  var seq = await project.getActiveSequence();
+  if (!seq) { setAssemblyStatus('No active sequence', 'error'); return; }
+
+  assemblyLogger.info('=== Voice Enhance: ' + VOICE_EFFECTS.join(' → ') + ' ===');
+  setAssemblyStatus('Applying Voice Enhance...', 'waiting');
+
+  try {
+    var a1Track = await seq.getAudioTrack(0);
+    if (!a1Track) throw new Error('No audio track A1');
+
+    var trackItems = null;
+    try { trackItems = a1Track.getTrackItems(1, false); } catch (ex) {}
+    if (!trackItems) try { trackItems = a1Track.getTrackItems(); } catch (ex) {}
+    if (!trackItems || trackItems.length === 0) throw new Error('No audio clips on A1');
+
+    assemblyLogger.info('A1 clips: ' + trackItems.length + ', effects: ' + VOICE_EFFECTS.length);
+    var applied = 0;
+
+    for (var i = 0; i < trackItems.length; i++) {
+      var audioItem = trackItems[i];
+      var chain = await audioItem.getComponentChain();
+      var clipEffects = 0;
+
+      for (var ei = 0; ei < VOICE_EFFECTS.length; ei++) {
+        try {
+          var effect = await ppro.AudioFilterFactory.createComponentByDisplayName(VOICE_EFFECTS[ei], audioItem);
+          if (!effect) continue;
+
+          project.lockedAccess(function () {
+            project.executeTransaction(function (ca) {
+              ca.addAction(chain.createAppendComponentAction(effect));
+            }, 'Voice ' + VOICE_EFFECTS[ei] + ' clip[' + i + ']');
+          });
+          clipEffects++;
+        } catch (efErr) {
+          assemblyLogger.warn('  clip[' + i + '] ' + VOICE_EFFECTS[ei] + ': ' + efErr.message);
+        }
+      }
+
+      if (clipEffects > 0) {
+        applied++;
+        assemblyLogger.info('  clip[' + i + ']: ' + clipEffects + '/' + VOICE_EFFECTS.length + ' effects applied');
+      }
+    }
+
+    setAssemblyStatus('Voice Enhance: ' + applied + '/' + trackItems.length + ' clips (' + VOICE_EFFECTS.length + ' effects)', 'ready');
+  } catch (err) {
+    assemblyLogger.error('Voice Enhance failed: ' + err.message);
+    setAssemblyStatus('Voice Enhance failed: ' + err.message, 'error');
+  }
+}
+
+/**
+ * Remove ALL added audio effects from A1 clips.
+ * Keeps only the default components (Volume, Channel Volume, Panner).
+ * Premiere clips always have 3 built-in components at indices 0-2.
+ */
+async function removeAudioEffects() {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setAssemblyStatus('No active project', 'error'); return; }
+
+  var seq = await project.getActiveSequence();
+  if (!seq) { setAssemblyStatus('No active sequence', 'error'); return; }
+
+  assemblyLogger.info('=== Remove Audio Effects from A1 ===');
+  setAssemblyStatus('Removing audio effects...', 'waiting');
+
+  try {
+    var a1Track = await seq.getAudioTrack(0);
+    if (!a1Track) throw new Error('No audio track A1');
+
+    var trackItems = null;
+    try { trackItems = a1Track.getTrackItems(1, false); } catch (ex) {}
+    if (!trackItems) try { trackItems = a1Track.getTrackItems(); } catch (ex) {}
+    if (!trackItems || trackItems.length === 0) throw new Error('No audio clips on A1');
+
+    var totalRemoved = 0;
+
+    for (var i = 0; i < trackItems.length; i++) {
+      var audioItem = trackItems[i];
+      var chain = await audioItem.getComponentChain();
+      var count = chain.getComponentCount();
+
+      // Built-in components are at indices 0-2 (Volume, Channel Volume, Panner)
+      // Remove everything from index 3 onwards (added effects), backwards
+      var removed = 0;
+      for (var ci = count - 1; ci >= 3; ci--) {
+        try {
+          var comp = chain.getComponentAtIndex(ci);
+          project.lockedAccess(function () {
+            project.executeTransaction(function (ca) {
+              ca.addAction(chain.createRemoveComponentAction(comp));
+            }, 'Remove FX clip[' + i + '] idx=' + ci);
+          });
+          removed++;
+        } catch (rmErr) {
+          assemblyLogger.warn('  clip[' + i + '] idx=' + ci + ': ' + rmErr.message);
+        }
+      }
+
+      if (removed > 0) {
+        totalRemoved += removed;
+        assemblyLogger.info('  clip[' + i + ']: removed ' + removed + ' effects');
+      }
+    }
+
+    setAssemblyStatus('Removed ' + totalRemoved + ' effects from ' + trackItems.length + ' clips', 'ready');
+  } catch (err) {
+    assemblyLogger.error('Remove FX failed: ' + err.message);
+    setAssemblyStatus('Remove FX failed: ' + err.message, 'error');
   }
 }
 
@@ -3268,40 +3698,55 @@ async function buildReview() {
     reviewLogger.info('=== Step 6: Review Captions ===');
 
     var reviewProjectCode = assemblyState.projectCode || assemblyState.projectName;
-    if (result.segments && result.segments.length > 0 && assemblyState.filePath) {
-      var reviewBriefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
-      var reviewSourceDir = reviewBriefDir.replace(/[/\\]Setup$/, '');
+
+    // Derive sourceDir: strip /Setup/... from filePath, fallback to projectState.folderPath
+    var revSourceDir = null;
+    if (assemblyState.filePath) {
+      revSourceDir = assemblyState.filePath.replace(/[/\\]Setup[/\\].*$/, '');
+    } else if (projectState.folderPath) {
+      revSourceDir = projectState.folderPath + '/01_Media/Source';
+    }
+    if (revSourceDir) {
+      reviewLogger.info('Review SRT sourceDir: ' + revSourceDir);
+    }
+
+    var revSuffix = '3_Review' + (assemblyState.briefVersion ? '_v' + assemblyState.briefVersion : '');
+
+    if (result.segments && result.segments.length > 0 && revSourceDir) {
       try {
         // Ensure Transcription subdirs exist
-        var reviewTranscriptionEntry = await uxpfs.getEntryWithUrl('file://' + reviewSourceDir + '/Transcription');
+        var reviewTranscriptionEntry = await uxpfs.getEntryWithUrl('file://' + revSourceDir + '/Transcription');
         var reviewTranscriptsFolderEntry = await ensureSubfolder(reviewTranscriptionEntry, 'transcripts', reviewLogger);
         var reviewCaptionsFolderEntry = await ensureSubfolder(reviewTranscriptionEntry, 'captions', reviewLogger);
 
         // 1. Transcript SRT (absolute positioning matching Ingest layout)
         var reviewTranscriptSrt = generateTranscriptSrt(result.segments, result.clipOffsets);
         if (reviewTranscriptSrt) {
-          var reviewTrFileName = reviewProjectCode + '_3_Review_transcript.srt';
+          var reviewTrFileName = reviewProjectCode + '_' + revSuffix + '_transcript.srt';
           var reviewTrFile = await reviewTranscriptsFolderEntry.createFile(reviewTrFileName, { overwrite: true });
-          await reviewTrFile.write(reviewTranscriptSrt);
+          await reviewTrFile.write("\uFEFF" + reviewTranscriptSrt);
           reviewLogger.info('Transcript SRT written: Transcription/transcripts/' + reviewTrFileName);
         }
 
         // 2. Captions SRT (word-grouped, absolute positioning)
         var reviewCaptionsSrt = generateCaptionsSrt(result.segments, 6, result.clipOffsets);
         if (reviewCaptionsSrt) {
-          var reviewCapFileName = reviewProjectCode + '_3_Review_captions.srt';
+          var reviewCapFileName = reviewProjectCode + '_' + revSuffix + '_captions.srt';
           var reviewCapFile = await reviewCaptionsFolderEntry.createFile(reviewCapFileName, { overwrite: true });
-          await reviewCapFile.write(reviewCaptionsSrt);
+          await reviewCapFile.write("\uFEFF" + reviewCaptionsSrt);
           reviewLogger.info('Captions SRT written: Transcription/captions/' + reviewCapFileName);
         }
       } catch (reviewSrtErr) {
         reviewLogger.warn('Review SRT write failed (non-fatal): ' + reviewSrtErr.message);
       }
+    } else {
+      reviewLogger.warn('Review SRT skipped: segs=' + (result.segments ? result.segments.length : 0) + ' filePath=' + !!assemblyState.filePath + ' folderPath=' + !!projectState.folderPath);
     }
 
     // Import both SRTs to 02_Transcripts bin
-    await importCaptionsSrt(project, assemblyState.filePath, reviewProjectCode, '3_Review', 'Review Captions', reviewLogger);
-    await importCaptionsSrt(project, assemblyState.filePath, reviewProjectCode, '3_Review', 'Review Transcript', reviewLogger, 'transcript');
+    var revImportPath = assemblyState.filePath || (revSourceDir ? revSourceDir + '/Setup' : null);
+    await importCaptionsSrt(project, revImportPath, reviewProjectCode, revSuffix, 'Review Captions', reviewLogger);
+    await importCaptionsSrt(project, revImportPath, reviewProjectCode, revSuffix, 'Review Transcript', reviewLogger, 'transcript');
     stepTimings.push('captions ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -3905,7 +4350,7 @@ async function buildScreenCuesPipeline() {
           if (screensTranscriptSrt) {
             var screensTrFileName = screensProjectCode + '_4_PreEdit_transcript.srt';
             var screensTrFile = await screensTranscriptsFolderEntry.createFile(screensTrFileName, { overwrite: true });
-            await screensTrFile.write(screensTranscriptSrt);
+            await screensTrFile.write("\uFEFF" + screensTranscriptSrt);
             screensLogger.info('Transcript SRT written: Transcription/transcripts/' + screensTrFileName);
           }
 
@@ -3914,7 +4359,7 @@ async function buildScreenCuesPipeline() {
           if (screensCaptionsSrt) {
             var screensCapFileName = screensProjectCode + '_4_PreEdit_captions.srt';
             var screensCapFile = await screensCaptionsFolderEntry.createFile(screensCapFileName, { overwrite: true });
-            await screensCapFile.write(screensCaptionsSrt);
+            await screensCapFile.write("\uFEFF" + screensCaptionsSrt);
             screensLogger.info('Captions SRT written: Transcription/captions/' + screensCapFileName);
           }
         }
@@ -4349,6 +4794,12 @@ async function exportPreEditDoc() {
     }
     screensLogger.info('Chapters: ' + chapters.length + ', editor notes: ' + Object.keys(editorNotes).length);
 
+    // Warn about empty chapter names
+    var emptyNames = chapters.filter(function(c) { return !c.name || !c.name.trim(); }).length;
+    if (emptyNames > 0) {
+      screensLogger.warn('⚠ ' + emptyNames + '/' + chapters.length + ' chapters have empty names — name them in Premiere first');
+    }
+
     // Step 4: Match with transcript for full text
     setScreensStatus('Matching transcript...', 'waiting');
     var txLookup = {};
@@ -4439,51 +4890,207 @@ async function exportPreEditDoc() {
       });
     }
 
-    // Step 6: Build output segments
+    // Step 5b: Load previous Pre-Edit visual annotations if v2+
+    var prevVisuals = {};
+    var prevVersion = 0;
+    try {
+      var peSetupPath = projectState.folderPath + '/01_Media/Source/Setup';
+      var peEntry = await uxpfs.getEntryWithUrl('file://' + peSetupPath + '/Pre-Edit');
+      var peEntries = await peEntry.getEntries();
+      // Find latest version folder (v1, v2, ...)
+      for (var pei = 0; pei < peEntries.length; pei++) {
+        var pvMatch = peEntries[pei].name.match(/^v(\d+)$/);
+        if (pvMatch) {
+          var pvNum = parseInt(pvMatch[1], 10);
+          if (pvNum > prevVersion) prevVersion = pvNum;
+        }
+      }
+      if (prevVersion > 0) {
+        // Read the latest pre_edit JSON
+        var pvFolder = await uxpfs.getEntryWithUrl('file://' + peSetupPath + '/Pre-Edit/v' + prevVersion);
+        var pvFiles = await pvFolder.getEntries();
+        for (var pvfi = 0; pvfi < pvFiles.length; pvfi++) {
+          if (pvFiles[pvfi].name.endsWith('.json')) {
+            var pvContent = await pvFiles[pvfi].read({ format: require('uxp').storage.formats.utf8 });
+            var pvData = JSON.parse(pvContent);
+            if (pvData.segments) {
+              for (var pvsi = 0; pvsi < pvData.segments.length; pvsi++) {
+                var pvs = pvData.segments[pvsi];
+                if (pvs.visual_type && pvs.visual_type !== 'talking_head') {
+                  prevVisuals[pvs.segment_id] = {
+                    visual_type: pvs.visual_type,
+                    visual_content: pvs.visual_content || '',
+                    visual_file: pvs.visual_file || '',
+                  };
+                }
+              }
+            }
+            break;
+          }
+        }
+        screensLogger.info('Previous Pre-Edit v' + prevVersion + ': ' + Object.keys(prevVisuals).length + ' visuals found');
+      }
+    } catch (pvErr) {
+      screensLogger.debug('Previous Pre-Edit not found: ' + pvErr.message);
+    }
+
+    // Collect /comments from markers (start with /)
+    var slashComments = {};
+    for (var enk in editorNotes) {
+      var enArr = editorNotes[enk];
+      for (var eni = 0; eni < enArr.length; eni++) {
+        if (enArr[eni].startsWith('/')) {
+          var enPos = parseFloat(enk);
+          if (!slashComments[enPos]) slashComments[enPos] = [];
+          slashComments[enPos].push(enArr[eni]);
+        }
+      }
+    }
+    var slashCount = Object.keys(slashComments).length;
+    if (slashCount > 0) {
+      screensLogger.info('/comments from markers: ' + slashCount + ' positions');
+    }
+
+    // Step 6: Build output segments FROM BRIEF (not timeline clips)
+    // Brief has fine-grained segments with correct transcripts; timeline clips are coarse.
     setScreensStatus('Building segments...', 'waiting');
     var outputSegments = [];
-    for (var oi = 0; oi < timelineClips.length; oi++) {
-      var tc = timelineClips[oi];
-      var tcInStr = fmtTC(tc.tc_in_sec);
-      var tcOutStr = fmtTC(tc.tc_out_sec);
 
-      // Find block
-      var segBlock = 1, segBlockName = '', segColor = 'Green';
-      for (var bd = 0; bd < blockDefs.length; bd++) {
-        if (tc.timeline_start_sec >= blockDefs[bd].start && tc.timeline_start_sec < blockDefs[bd].end) {
-          segBlock = blockDefs[bd].num;
-          segBlockName = blockDefs[bd].name;
-          segColor = blockDefs[bd].color;
-          break;
+    // Helper: parse MM:SS.s or M:SS.sss timecode to seconds
+    function parseTcSec(tc) {
+      if (!tc) return 0;
+      var parts = String(tc).split(':');
+      if (parts.length === 2) return parseInt(parts[0]) * 60 + parseFloat(parts[1] || 0);
+      if (parts.length === 3) return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2] || 0);
+      return parseFloat(tc) || 0;
+    }
+
+    if (oldBrief && oldBrief.segments && oldBrief.segments.length > 0) {
+      // Filter use=TRUE, block!=99 and sort by block ASC + brief order (mirrors assemblyBuilder)
+      var briefSegs = [];
+      for (var bsi = 0; bsi < oldBrief.segments.length; bsi++) {
+        var bs = oldBrief.segments[bsi];
+        var bsUse = String(bs.use || 'TRUE').toUpperCase();
+        if (bsUse === 'TRUE' && bs.block !== 99) {
+          bs._briefIdx = bsi;
+          briefSegs.push(bs);
         }
       }
-
-      // Enrich from old brief
-      var oldSeg = oldSegLookup[tc.source_file + '|' + tcInStr];
-      var brollNote = (oldSeg && oldSeg.broll_note) ? oldSeg.broll_note : '';
-      var segNotes = (oldSeg && oldSeg.notes) ? oldSeg.notes : '';
-
-      // Append editor notes from markers
-      var clipEnd = tc.timeline_start_sec + tc.duration_sec;
-      for (var np in editorNotes) {
-        var nPos = parseFloat(np);
-        if (nPos >= tc.timeline_start_sec && nPos < clipEnd) {
-          segNotes = (segNotes ? segNotes + ' | ' : '') + editorNotes[np].join(' | ');
-        }
-      }
-
-      outputSegments.push({
-        index: oi,
-        segment_id: 'seg_' + String(oi + 1).padStart(3, '0'),
-        source_file: tc.source_file,
-        tc_in: tcInStr, tc_out: tcOutStr,
-        timeline_start_sec: tc.timeline_start_sec,
-        duration_sec: tc.duration_sec,
-        block: segBlock, block_name: segBlockName,
-        speaker: tc.speaker || '', color: segColor,
-        transcript: tc.transcript || '',
-        broll_note: brollNote, notes: segNotes, visual: '',
+      briefSegs.sort(function(a, b) {
+        if (a.block !== b.block) return a.block - b.block;
+        return a._briefIdx - b._briefIdx;
       });
+
+      var cumTimeline = 0;
+      for (var oi = 0; oi < briefSegs.length; oi++) {
+        var seg = briefSegs[oi];
+        var tcInSec = parseTcSec(seg.tc_in);
+        var tcOutSec = parseTcSec(seg.tc_out);
+        var durSec = Math.round((tcOutSec - tcInSec) * 100) / 100;
+        if (durSec <= 0) durSec = seg.duration || 0;
+
+        var segId = seg.segment_id || ('seg_' + String(oi + 1).padStart(3, '0'));
+        var prevVis = prevVisuals[segId];
+
+        // Match editor notes by cumulative timeline position
+        var segNotes = seg.notes || '';
+        var clipEnd = cumTimeline + durSec;
+        for (var np in editorNotes) {
+          var nPos = parseFloat(np);
+          if (nPos >= cumTimeline && nPos < clipEnd) {
+            var nonSlash = editorNotes[np].filter(function(n) { return !n.startsWith('/'); });
+            if (nonSlash.length > 0) {
+              segNotes = (segNotes ? segNotes + ' | ' : '') + nonSlash.join(' | ');
+            }
+          }
+        }
+
+        // Collect /comments for this segment
+        var segSlashComments = [];
+        for (var scp in slashComments) {
+          var scPos = parseFloat(scp);
+          if (scPos >= cumTimeline && scPos < clipEnd) {
+            segSlashComments = segSlashComments.concat(slashComments[scp]);
+          }
+        }
+
+        outputSegments.push({
+          index: oi,
+          segment_id: segId,
+          source_file: seg.source_file || '',
+          tc_in: seg.tc_in || '', tc_out: seg.tc_out || '',
+          timeline_start_sec: Math.round(cumTimeline * 100) / 100,
+          duration_sec: durSec,
+          block: seg.block || 1, block_name: seg.block_name || '',
+          speaker: seg.speaker || '', color: seg.color || 'Green',
+          transcript: seg.transcript || '',
+          broll_note: seg.broll_note || '', notes: segNotes,
+          visual: prevVis ? prevVis.visual_content : '',
+          visual_type: prevVis ? prevVis.visual_type : '',
+          visual_file: prevVis ? prevVis.visual_file : '',
+          marker_comments: segSlashComments.length > 0 ? segSlashComments : undefined,
+        });
+        cumTimeline += durSec;
+      }
+      screensLogger.info('Built ' + outputSegments.length + ' segments from Assembly brief (' + briefSegs.length + ' use=TRUE)');
+    } else {
+      // Fallback: no brief available — use timeline clips (legacy behavior)
+      screensLogger.warn('No Assembly brief loaded — falling back to timeline clips (coarse segments)');
+      for (var oi2 = 0; oi2 < timelineClips.length; oi2++) {
+        var tc = timelineClips[oi2];
+        var tcInStr = fmtTC(tc.tc_in_sec);
+        var tcOutStr = fmtTC(tc.tc_out_sec);
+
+        var segBlock = 1, segBlockName = '', segColor = 'Green';
+        for (var bd = 0; bd < blockDefs.length; bd++) {
+          if (tc.timeline_start_sec >= blockDefs[bd].start && tc.timeline_start_sec < blockDefs[bd].end) {
+            segBlock = blockDefs[bd].num;
+            segBlockName = blockDefs[bd].name;
+            segColor = blockDefs[bd].color;
+            break;
+          }
+        }
+
+        var fallbackNotes = '';
+        var fallbackEnd = tc.timeline_start_sec + tc.duration_sec;
+        for (var fnp in editorNotes) {
+          var fnPos = parseFloat(fnp);
+          if (fnPos >= tc.timeline_start_sec && fnPos < fallbackEnd) {
+            var fnNonSlash = editorNotes[fnp].filter(function(n) { return !n.startsWith('/'); });
+            if (fnNonSlash.length > 0) {
+              fallbackNotes = (fallbackNotes ? fallbackNotes + ' | ' : '') + fnNonSlash.join(' | ');
+            }
+          }
+        }
+
+        var fallbackSlash = [];
+        for (var fscp in slashComments) {
+          var fscPos = parseFloat(fscp);
+          if (fscPos >= tc.timeline_start_sec && fscPos < fallbackEnd) {
+            fallbackSlash = fallbackSlash.concat(slashComments[fscp]);
+          }
+        }
+
+        var fallbackId = 'seg_' + String(oi2 + 1).padStart(3, '0');
+        var fallbackVis = prevVisuals[fallbackId];
+
+        outputSegments.push({
+          index: oi2,
+          segment_id: fallbackId,
+          source_file: tc.source_file,
+          tc_in: tcInStr, tc_out: tcOutStr,
+          timeline_start_sec: tc.timeline_start_sec,
+          duration_sec: tc.duration_sec,
+          block: segBlock, block_name: segBlockName,
+          speaker: tc.speaker || '', color: segColor,
+          transcript: tc.transcript || '',
+          broll_note: '', notes: fallbackNotes,
+          visual: fallbackVis ? fallbackVis.visual_content : '',
+          visual_type: fallbackVis ? fallbackVis.visual_type : '',
+          visual_file: fallbackVis ? fallbackVis.visual_file : '',
+          marker_comments: fallbackSlash.length > 0 ? fallbackSlash : undefined,
+        });
+      }
     }
 
     // Step 7: Write JSON to Setup/Pre-Edit/
@@ -4497,7 +5104,10 @@ async function exportPreEditDoc() {
     }
     var preEditFolder = await ensureSubfolder(setupEntry, 'Pre-Edit', screensLogger);
 
-    var baseSeqName = seqName.replace(/_v\d+$/, '');
+    // Filename = full sequence name + _pre_edit_out (like Assembly _out.json)
+    var jsonFileName = seqName + '_pre_edit_out.json';
+    var docxFileName = seqName + '_pre_edit_out.docx';
+
     var exportData = {
       sequence: seqName,
       exported_at: new Date().toISOString(),
@@ -4512,16 +5122,44 @@ async function exportPreEditDoc() {
       },
     };
 
-    var jsonFileName = baseSeqName + '_pre_edit_export.json';
+    // Write JSON
     var jsonFile = await preEditFolder.createFile(jsonFileName, { overwrite: true });
     await jsonFile.write(JSON.stringify(exportData, null, 2));
+    var jsonPath = setupPath + '/Pre-Edit/' + jsonFileName;
+    var docxPath = setupPath + '/Pre-Edit/' + docxFileName;
     screensLogger.info('Written: Setup/Pre-Edit/' + jsonFileName);
 
-    var exportPath = setupPath + '/Pre-Edit/' + jsonFileName;
-    screensLogger.info('Path: ' + exportPath);
-    screensLogger.info('Next: python export_to_gdoc.py --input "' + exportPath + '"');
+    // Generate .docx via pre-existing .command script (same pattern as 0504_screen_cues)
+    setScreensStatus('Generating .docx...', 'waiting');
 
-    setScreensStatus('Exported ' + outputSegments.length + ' segments → Pre-Edit/' + jsonFileName, 'ready');
+    // Write params to /tmp/ for the .command to read
+    var paramsContent = jsonPath + '\n' + docxPath;
+    try {
+      var tmpEntry = await uxpfs.getEntryWithUrl('file:///tmp');
+      var paramsFile = await tmpEntry.createFile('ytai_pre_edit_params.txt', { overwrite: true });
+      await paramsFile.write(paramsContent);
+      screensLogger.info('Params written to /tmp/ytai_pre_edit_params.txt');
+    } catch (tmpErr) {
+      screensLogger.warn('Could not write /tmp params: ' + tmpErr.message);
+    }
+
+    // Open the permanent .command script (already has +x)
+    var homePath = require('os').homedir();
+    var cmdPath = homePath + '/YTAI/scripts/05_editing/0507_pre_edit/run_export_docx.command';
+    try {
+      var uxpShell = require('uxp').shell;
+      await uxpShell.openPath(cmdPath);
+      screensLogger.info('Launched run_export_docx.command → generating .docx');
+    } catch (cmdErr) {
+      screensLogger.warn('Auto-run failed: ' + cmdErr.message);
+      screensLogger.info('Manual: python3 ~/YTAI/scripts/05_editing/0507_pre_edit/export_to_gdoc.py --input "' + jsonPath + '" --output "' + docxPath + '"');
+    }
+
+    // Store paths for Copy Prompt
+    projectState.preEditJsonPath = jsonPath;
+    projectState.preEditDocxPath = docxPath;
+
+    setScreensStatus('Exported ' + outputSegments.length + ' segments → ' + jsonFileName, 'ready');
 
   } catch (err) {
     screensLogger.error('Pre-Edit Doc export failed: ' + err.message);
@@ -4530,6 +5168,168 @@ async function exportPreEditDoc() {
   }
 
   $('btn-export-pre-edit-doc').removeAttribute('disabled');
+  $('btn-copy-pre-edit-prompt').removeAttribute('disabled');
+}
+
+/**
+ * Copy Pre-Edit Prompt — generates a ready-made prompt for Claude Code chat
+ * with paths to all relevant files, and copies it to clipboard.
+ *
+ * For v1: "Process this doc, recognize /commands, generate visuals"
+ * For v2+: "Apply marker /comments, update visuals"
+ */
+async function copyPreEditPrompt() {
+  if (!projectState.folderPath) {
+    setScreensStatus('Select project folder first', 'error');
+    return;
+  }
+
+  screensLogger.info('=== Copy Pre-Edit Prompt ===');
+
+  try {
+    var setupPath = projectState.folderPath + '/01_Media/Source/Setup';
+    var preEditPath = setupPath + '/Pre-Edit';
+    var projectCode = projectState.projectName.match(/^(YT[A-Z]{2,4}\d+)/);
+    var channelCode = projectCode ? projectCode[1].replace(/\d+$/, '') : '';
+    projectCode = projectCode ? projectCode[1] : projectState.projectName;
+
+    // Find latest export JSON
+    var preEditEntry;
+    try {
+      preEditEntry = await uxpfs.getEntryWithUrl('file://' + preEditPath);
+    } catch (e) {
+      throw new Error('No Pre-Edit folder found. Run Export Doc first.');
+    }
+
+    var entries = await preEditEntry.getEntries();
+    var exportJsonName = '';
+    var docxName = '';
+    var latestVersion = 0;
+
+    for (var i = 0; i < entries.length; i++) {
+      var name = entries[i].name;
+      if (name.endsWith('_pre_edit_out.json') || name.endsWith('_pre_edit_export.json')) {
+        exportJsonName = name;
+      }
+      if (name.endsWith('_pre_edit_out.docx') || name.endsWith('.docx')) {
+        docxName = name;
+      }
+      // Check for existing version folders (v1, v2, ...)
+      var vMatch = name.match(/^v(\d+)$/);
+      if (vMatch) {
+        var vNum = parseInt(vMatch[1], 10);
+        if (vNum > latestVersion) latestVersion = vNum;
+      }
+    }
+
+    if (!exportJsonName) {
+      throw new Error('No _pre_edit_out.json found. Run Export Doc first.');
+    }
+
+    var nextVersion = latestVersion + 1;
+    var isUpdate = latestVersion > 0;
+
+    // Read marker /comments if this is v2+
+    var markerComments = [];
+    if (isUpdate) {
+      try {
+        var project = await ppro.Project.getActiveProject();
+        var seq = await project.getActiveSequence();
+        if (seq) {
+          var markersOwner = await ppro.Markers.getMarkers(seq);
+          var rawMarkers = markersOwner ? markersOwner.getMarkers() : [];
+          for (var mi = 0; mi < rawMarkers.length; mi++) {
+            var rm = rawMarkers[mi];
+            var comment = rm.comments || '';
+            if (!comment) try { comment = rm.getComments ? rm.getComments() : ''; } catch (e) {}
+            if (!comment) comment = rm.comment || '';
+            if (comment && comment.startsWith('/')) {
+              var startTime = null;
+              try { startTime = rm.getStart(); } catch (e) {}
+              if (!startTime) try { startTime = rm.startTime; } catch (e) {}
+              var posSec = startTime ? Math.round(startTime.seconds * 100) / 100 : 0;
+              markerComments.push({ position_sec: posSec, comment: comment });
+            }
+          }
+        }
+      } catch (mErr) {
+        screensLogger.debug('Marker scan skipped: ' + mErr.message);
+      }
+    }
+
+    // Build prompt
+    var prompt = '';
+    if (!isUpdate) {
+      // V1 prompt
+      prompt = 'Pre-Edit обработка:\n';
+      prompt += '- Channel: ' + channelCode + '\n';
+      prompt += '- Project: ' + projectState.folderPath + '\n';
+      if (docxName) {
+        prompt += '- Doc: ' + preEditPath + '/' + docxName + '\n';
+      }
+      prompt += '- Export JSON: ' + preEditPath + '/' + exportJsonName + '\n';
+      prompt += '- Style: ~/YTAI/scripts/05_editing/0507_pre_edit/style_config.json\n';
+      prompt += '- Rules: ~/YTAI/scripts/05_editing/0501_brief/project_knowledge/editing_rules.md\n';
+      prompt += '- Instructions: ~/YTAI/scripts/05_editing/0507_pre_edit/INSTRUCTIONS.md\n';
+      prompt += '\n';
+      prompt += 'Обработай документ, распознай /команды как задания для тебя.\n';
+      prompt += 'Сгенерируй визуалы в Setup/Pre-Edit/v' + nextVersion + '/\n';
+    } else {
+      // V2+ prompt (update)
+      prompt = 'Pre-Edit обновление (v' + nextVersion + '):\n';
+      prompt += '- Channel: ' + channelCode + '\n';
+      prompt += '- Project: ' + projectState.folderPath + '\n';
+      prompt += '- Предыдущая версия: ' + preEditPath + '/v' + latestVersion + '/\n';
+      prompt += '- Новый экспорт: ' + preEditPath + '/' + exportJsonName + '\n';
+      prompt += '- Instructions: ~/YTAI/scripts/05_editing/0507_pre_edit/INSTRUCTIONS.md\n';
+      if (markerComments.length > 0) {
+        prompt += '\n/comments из маркеров Premiere (' + markerComments.length + '):\n';
+        for (var mc = 0; mc < markerComments.length; mc++) {
+          var cm = markerComments[mc];
+          prompt += '  @' + cm.position_sec + 's: ' + cm.comment + '\n';
+        }
+      }
+      prompt += '\nПримени /comments, обнови визуалы → Pre-Edit/v' + nextVersion + '/\n';
+    }
+
+    // Copy to clipboard via UXP
+    var copied = false;
+    try {
+      // UXP clipboard API
+      var clipboard = require('uxp').clipboard;
+      if (clipboard && clipboard.setContent) {
+        await clipboard.setContent({ text: prompt });
+        copied = true;
+      }
+    } catch (clipErr) {
+      screensLogger.debug('Clipboard API: ' + clipErr.message);
+    }
+
+    // Fallback: write to temp file
+    if (!copied) {
+      try {
+        var promptFile = await preEditEntry.createFile('_claude_prompt.txt', { overwrite: true });
+        await promptFile.write(prompt);
+        screensLogger.info('Prompt saved to: Pre-Edit/_claude_prompt.txt');
+      } catch (writeErr) {
+        screensLogger.debug('File write fallback failed: ' + writeErr.message);
+      }
+    }
+
+    // Log the prompt
+    screensLogger.info('--- Prompt (v' + nextVersion + ') ---');
+    prompt.split('\n').forEach(function(line) { screensLogger.info(line); });
+    screensLogger.info('--- End Prompt ---');
+
+    var statusMsg = copied
+      ? 'Prompt v' + nextVersion + ' copied to clipboard → paste in Claude Code'
+      : 'Prompt v' + nextVersion + ' saved to Pre-Edit/_claude_prompt.txt';
+    setScreensStatus(statusMsg, 'ready');
+
+  } catch (err) {
+    screensLogger.error('Copy Prompt failed: ' + err.message);
+    setScreensStatus('Copy Prompt failed: ' + err.message, 'error');
+  }
 }
 
 /**
@@ -5127,7 +5927,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // INGEST buttons (btn-load-ingest is fallback — hidden by default)
   $('btn-load-ingest').addEventListener('click', loadIngest);
   $('btn-build-ingest').addEventListener('click', buildIngest);
-  $('btn-import-srts').addEventListener('click', importAllSrts);
+  $('btn-audio-debug').addEventListener('click', audioDebug);
 
   // ASSEMBLY buttons (btn-load-brief is fallback — hidden by default)
   $('btn-load-brief').addEventListener('click', loadBrief);
@@ -5136,6 +5936,8 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-debug-export').addEventListener('click', debugExport);
   $('btn-fill-left').addEventListener('click', function() { applyAudioFill('Fill Right with Left'); }); // L→R
   $('btn-fill-right').addEventListener('click', function() { applyAudioFill('Fill Left with Right'); }); // R→L
+  $('btn-voice-enhance').addEventListener('click', applyVoiceEnhance);
+  $('btn-remove-audio-fx').addEventListener('click', removeAudioEffects);
 
   // REVIEW buttons
   $('btn-build-review').addEventListener('click', buildReview);
@@ -5144,10 +5946,13 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-export-pre-edit-doc').addEventListener('click', function() {
     exportPreEditDoc().catch(function(e) { screensLogger.error('Doc export error: ' + e.message); setScreensStatus('Doc export error: ' + e.message, 'error'); });
   });
+  $('btn-copy-pre-edit-prompt').addEventListener('click', function() {
+    copyPreEditPrompt().catch(function(e) { screensLogger.error('Copy Prompt error: ' + e.message); setScreensStatus('Copy Prompt error: ' + e.message, 'error'); });
+  });
   $('btn-export-screens').addEventListener('click', function() {
     exportPreEdit().catch(function(e) { screensLogger.error('Export error: ' + e.message); setScreensStatus('Export error: ' + e.message, 'error'); });
   });
-  $('btn-import-screens').addEventListener('click', function() {
+  $('btn-import-pre-edit').addEventListener('click', function() {
     screensLogger.info('Import Pre-Edit button clicked');
     setScreensStatus('Importing...', 'waiting');
     importPreEdit().catch(function(e) { screensLogger.error('Import error: ' + e.message); setScreensStatus('Import error: ' + e.message, 'error'); });

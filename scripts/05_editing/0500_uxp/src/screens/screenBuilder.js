@@ -160,6 +160,23 @@ function generateScreenCuesSrt(screens, assemblySegments) {
 }
 
 /**
+ * Clean caption text for better readability.
+ * - Fixes Whisper hyphen artifacts: "во -первых" → "во-первых"
+ * - Capitalizes first letter of text
+ *
+ * @param {string} text - Raw transcript text
+ * @returns {string} Cleaned text
+ */
+function cleanCaptionText(text) {
+  if (!text) return '';
+  // Fix Whisper hyphen artifacts: "слово -продолжение" → "слово-продолжение"
+  text = text.replace(/(\S) -(\S)/g, '$1-$2');
+  // Capitalize first letter
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+  return text;
+}
+
+/**
  * Generate transcript SRT content from segments for word-based editing.
  * Uses cumulative timeline positions by default (Assembly/ScreenCues).
  * With clipOffsets, uses absolute positioning (Review = Ingest layout).
@@ -194,7 +211,7 @@ function generateTranscriptSrt(assemblySegments, clipOffsets) {
 
     var text = '';
     if (seg.speaker) text += seg.speaker + ': ';
-    text += seg.transcript;
+    text += cleanCaptionText(seg.transcript);
 
     blocks.push(
       blockNum + '\n' +
@@ -272,7 +289,7 @@ function generateCaptionsSrt(segments, wordsPerBlock, clipOffsets, positionTag) 
 
   for (var i = 0; i < segments.length; i++) {
     var seg = segments[i];
-    var text = (seg.transcript || '').trim();
+    var text = cleanCaptionText((seg.transcript || '').trim());
 
     // Compute start position: absolute (Review) or cumulative (Assembly/ScreenCues)
     var segStart;
@@ -307,8 +324,13 @@ function generateCaptionsSrt(segments, wordsPerBlock, clipOffsets, positionTag) 
       var startSec = segStart + c * chunkDuration;
       var endSec = segStart + (c + 1) * chunkDuration;
 
-      // Split chunk into 2 lines (half/half)
+      // Split chunk into 2 lines — keep hyphenated continuations together
       var mid = Math.ceil(chunkWords.length / 2);
+      // Don't start line2 with a hyphen-continuation (e.g. "-то", "-18")
+      while (mid < chunkWords.length && chunkWords[mid].charAt(0) === '-') {
+        mid++;
+      }
+      if (mid >= chunkWords.length) mid = Math.ceil(chunkWords.length / 2); // fallback
       var line1 = chunkWords.slice(0, mid).join(' ');
       var line2 = chunkWords.slice(mid).join(' ');
       var srtText = line2 ? line1 + '\n' + line2 : line1;
