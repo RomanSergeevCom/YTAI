@@ -1,0 +1,24 @@
+{
+  "channel": "YTCR",
+  "figma_ref": "https://www.figma.com/design/zIENUgwzr7EKbvdU2qGWkG/YTCR",
+  "width": 3840,
+  "height": 2160,
+  "bg_dark": [10, 22, 40, 240],
+  "bg_accent": [200, 230, 74, 220],
+  "bg_panel": [55, 94, 157, 230],
+  "text_white": [255, 255, 255, 255],
+  "text_light": [220, 220, 220, 255],
+  "text_subtle": [180, 180, 180, 230],
+  "gradient_start": [10, 22, 40, 240],
+  "gradient_end": [10, 22, 40, 0],
+  "fonts": {
+    "title": "Orbitron-Bold.ttf",
+    "body": "Montserrat-Light.ttf",
+    "source": "0504_screen_cues/fonts/"
+  },
+  "gradients": {
+    "full": "0504_screen_cues/full screen gradient.png",
+    "half": "0504_screen_cues/1-2 screen gradient.png",
+    "three_fifths": "0504_screen_cues/3-5 screen gradient.png"
+  }
+}
