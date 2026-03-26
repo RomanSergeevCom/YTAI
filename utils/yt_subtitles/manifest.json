@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "RYA.AE — YT Subtitles",
+  "version": "1.2",
+  "description": "Download YouTube subtitles as JSON with timecodes",
+  "permissions": ["activeTab", "downloads", "scripting"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

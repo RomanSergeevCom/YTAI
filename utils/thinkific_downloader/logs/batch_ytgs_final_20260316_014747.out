@@ -1,0 +1,305 @@
+[01:47:47] Loading lessons from manifest: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_batch_manifest.json
+[01:47:47] Loaded 59 lessons from manifest
+Source          : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_batch_manifest.json (manifest)
+Lessons in DOCX : 59
+Processing      : 59
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Pipeline mode   : parallel (download + transcribe)
+Dry run         : False
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260316_014747.log
+
+[01:47:47] Starting pipeline: download + transcribe in parallel
+
+[01:47:47] 📥 [01/59] Phase_1_-_1._Intro_Video.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [02/59] Phase_1_-_3._Expectations.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [03/59] Phase_1_-_4._How_YouTube_Works.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [04/59] Phase_1_-_6._Position_Intro.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [05/59] Phase_1_-_7._How_To_Position.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 4/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 4  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [06/59] Phase_1_-_9._Audit_V2.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892283-task-auditing-your-foundations?wvideo=uca14sgz0s
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [07/59] Phase_1_-_10._Doing_Your_Tasks.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892288-task-minor-adjustments?wvideo=yg65ujy4qv
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [08/59] Phase_1_-_Simple_Nurture.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921638-side-mission-building-a-simple-email-system?wvideo=9xdr515qzr
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [09/59] Phase_2_-_1._Intro.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892293-phase-2-intro?wvideo=obyeqz0swb
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [10/59] Phase_2_-_2._Demo_Video.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892694-task-making-your-demo-video?wvideo=sgjg69vbud
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 9/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 9  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [11/59] Phase_2_-_3._Teleprompter.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892310-using-a-teleprompter-don-t-skip?wvideo=v2pqjjgk5f
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [12/59] Phase_2_-_4._Presenting.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892695-presenting-101?wvideo=6vswm3tsmw
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [13/59] Phase_2_-_5._Edit_Demo.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892314-task-editing-your-demo?wvideo=er9icb0lxo
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [14/59] Phase_2_-_6._Uploading.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892318-task-posting-your-demo?wvideo=jpfc799wfj
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [15/59] Phase_3_-_1._Intro.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=iwd27pwhi6
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 14/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 14  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [16/59] Phase_3_-_2._Secret_To_Great_Videos.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=ajhwpllaaq
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [17/59] Phase_3_-_3._Titles.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892345-the-secret-to-amazing-titles?wvideo=7pzo6ty60l
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [18/59] Phase_3_-_4._Thumbnail_Basics.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892359-the-secrets-to-amazing-thumbnails?wvideo=d2zp80a6mg
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [19/59] Phase_3_-_4._Thumbnail_Strategy.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892473-thumbnail-strategies-that-get-clicks?wvideo=2glf2ywtod
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [20/59] Phase_3_-_5._Design_Basics.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892480-thumbnail-design-basics?wvideo=ydqieh7lyk
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 19/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 19  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [21/59] Phase_3_-_6._What_Option.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892484-task-pick-your-thumbnail-creation-process?wvideo=s81gw1gu3n
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [22/59] Phase_3_-_7._Formats.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892489-formats-the-secret-to-packaging-information?wvideo=7gt97axhb7
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [23/59] Phase_4_-_1._Intro.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892495-phase-4-intro?wvideo=49ezwwuh2i
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [24/59] Phase_4_-_2._The_Strategy.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892499-the-1-000-000-youtube-strategy?wvideo=jr3427xt8v
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [25/59] Phase_4_-_3._Research_Basics.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892508-the-basics-of-research-strategy?wvideo=uszpj80y14
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 24/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 24  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [26/59] Phase_4_-_4._Patterns.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892525-task-how-to-find-patterns?wvideo=ibgzddhxhy
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [27/59] Phase_4_-_Update_Synthia.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892556-task-update-synthia-s-ai-brain?wvideo=rpzbz338js
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [28/59] Phase_4_-_5._Ideation.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892522-task-how-to-ideate-your-next-3-4-videos?wvideo=kllyj6isvb
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [29/59] AI_UPDATE_AI_Feedback_For_Ideas.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921147-task-play-with-the-ai?wvideo=bm5b2mkwpc
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [30/59] Phase_5_-_1._Intro.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921173-phase-5-intro?wvideo=j69dwc9lei
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 29/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 29  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [31/59] Phase_5_-_2._What_Makes_a_Great_Script.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921180-the-secret-to-making-amazing-videos?wvideo=d1b1p9hnp9
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [32/59] Phase_5_-_3._Intros.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921186-video-intros-101?wvideo=2zwmkut8es
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [33/59] Phase_5_-_Update_Synthia.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921236-task-update-synthia-s-ai-brain?wvideo=jjcbpvg1m6
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [34/59] Phase_5_-_4._How_To_Write_Your_Intro.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921206-how-to-write-an-intro?wvideo=vqec3ghwtv
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [35/59] Phase_5_-_5._Making_Points.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921202-how-to-make-a-point?wvideo=vuhp1q8wi1
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 34/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 34  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [36/59] Phase_5_-_6._Visual_Demos.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921210-emotion-brick-visual-demos?wvideo=nt057v09sk
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [37/59] Phase_5_-_7._Story.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921214-emotion-brick-storytelling?wvideo=5twxs6tmyx
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [38/59] Phase_5_-_8._Metaphor.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921216-emotion-brick-metaphor?wvideo=a5993o8b2d
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [39/59] Phase_5_-_9._Logic.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921216-emotion-brick-metaphor?wvideo=z0o0lkunj6
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [40/59] Phase_5_-_10._End_Screen.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921224-ending-your-video?wvideo=z40xvhcy1z
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 39/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 39  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [41/59] AI_UPDATE__Intro_Feedback.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921193-task-getting-feedback-on-intros-points?wvideo=vbsyi5u8wg
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [42/59] Phase_5_-_11._Conversion_Optimisation.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921226-optimising-videos-for-sales-views-leads?wvideo=0gvivli29q
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [43/59] Phase_5_-_12._Planning.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921227-how-to-plan-a-video-basics?wvideo=mbt3psf79g
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [44/59] Phase_5_-_13._Writing_v2.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921230-how-to-write-a-script-basics?wvideo=zhn92cte0m
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [45/59] Set_ups_and_pay_offs.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921491-set-up-and-payoffs-reviewing-my-own-scripts?wvideo=x15np5d5w8
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 44/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 44  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [46/59] Short_Process.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921521-short-process-videos?wvideo=fjlr60e15b
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [47/59] Case_Study.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921522-case-studies?wvideo=12f9bjm06s
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [48/59] Roasts.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921524-roasts-reviews?wvideo=hzvddp3mcs
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [49/59] Deep_Dive.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921525-deep-dives?wvideo=iyxjkapitj
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [50/59] Interviews.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921527-interviews?wvideo=4mbhij28hy
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 49/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 49  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [51/59] News.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921528-news?wvideo=q9y0q06rbo
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [52/59] Listicles.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921529-listicles?wvideo=i5bsp1pacv
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [53/59] Phase_6_-_1._Intro.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921533-intro-to-measurement?wvideo=cp668r8ewi
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [54/59] Phase_6_-_2._Measurement_Myths.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921533-intro-to-measurement?wvideo=gbke1rgg4p
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [55/59] Phase_6_-_3._Measurement_Basics.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921537-measurement-basics?wvideo=qjkhj4ks3m
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 
+──────────────────────────────────────────────────
+[01:47:47]   Progress: 54/59
+[01:47:47]   Downloaded: 0  |  Transcribed: 0
+[01:47:47]   ✓ OK: 0  |  ⏭ Skip: 54  |  ✗ Fail: 0
+[01:47:47]   Elapsed: 0s  |  Disk: 14.7 GB
+[01:47:47]   ETA: ~0s
+[01:47:47] ──────────────────────────────────────────────────
+
+[01:47:47] 📥 [56/59] Phase_6_-_4._Measurement_System.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921541-measurement-system?wvideo=ibuoeaif87
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [57/59] Learn_a_Lesson.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921543-how-to-learn-a-lesson?wvideo=2w1intfy72
+[01:47:47]   ⏭  Skipped (already completed)
+[01:47:47] 📥 [58/59] Measurement_30_Day.mp4
+[01:47:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67953961-channel-health-measurement?wvideo=6r79ikar23
+[01:47:48]   ↳ Video exists and valid (225 MB, 6:35), skipping download
+[01:47:48] 📥 [59/59] RevTrack_Measurment_.mp4
+[01:47:48]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921554-how-to-use-revtracks-data?wvideo=e9v5gu9k3h
+[01:47:48]   🔊 [58/59] Transcribing Measurement_30_Day.mp4...
+[01:47:48]   ⏭  Skipped (already completed)
+[01:50:33]   🔊 [58/59] Transcribed (165s)
+
+═══════════════════════════════════════════════════════
+  Batch complete: 59 lessons
+  ✓ OK: 1  |  ⏭ Skipped: 58  |  ✗ Failed: 0
+  Downloaded: 1  |  Transcribed: 1
+  Total time: 2m 45s  |  Disk: 14.7 GB
+  Log: /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260316_014747.log
+  Summary JSON : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/YTCG_batch_manifest_summary.json
+  Summary Table: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/YTCG_batch_manifest_summary_table.txt
+═══════════════════════════════════════════════════════

@@ -1,0 +1,10 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T16:05:55Z",
+  "speakers": {
+    "SPEAKER_00": {
+      "id": "e4e8f3db-c9f4-4f98-a972-77b2ee44d0fe",
+      "name": "Speaker 1"
+    }
+  }
+}

@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 21:35:34
+============================================================
+
+=== Configuration ===
+Project:    Phase_5_-_3._Intros
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_3._Intros/Phase_5_-_3._Intros.mp4
+Clips:      1
+Duration:   16:23 (983.8s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_5_-_3._Intros    16:23  3840×2160 25.0fps H264  4.0Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.48 GB
+    offset 0.000s  Phase_5_-_3._Intros.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   16:17  99.4%  9 segments
+  Gaps                       0:05  0.6%
+
+=== Transcription ===
+Total words:     3,528
+Total segments:  4
+Avg confidence:  0.9630
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_5_-_3._Intros:
+    Words: 3528  Segments: 4  Confidence: 0.9571  Low: 0
+    Speaker 1: 3528 words, 4 segs, 16:18
+
+=== Whisper Per-Clip ===
+  Phase_5_-_3._Intros    16:23   3528 words   215 wpm    5m 58s  (2.75x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         2s        2s  -    0s    0.5%
+  Diarization          34s       32s  -    3s    8.1%
+  Whisper           9m 01s    5m 58s  -3m 03s   91.4%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              2s        0s  -    2s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             9m 41s    6m 31s  -3m 09s  100.0%
+  Speed:          2.5x realtime
+  Wall clock:     6m 31s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_5_-_3._Intros_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           19.4 KB
+    diarization.json                                    0.9 KB
+    full_audio.wav                                  30744.7 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_5_-_3._Intros/Phase_5_-_3._Intros_audio.wav    30744.7 KB
+    per_clip/Phase_5_-_3._Intros/Phase_5_-_3._Intros_captions.srt      32.9 KB
+    per_clip/Phase_5_-_3._Intros/Phase_5_-_3._Intros_premiere_transcript.json     788.8 KB
+    per_clip/Phase_5_-_3._Intros/Phase_5_-_3._Intros_transcript.json     465.3 KB
+    per_clip/Phase_5_-_3._Intros/Phase_5_-_3._Intros_transcript.srt      18.0 KB
+    per_clip/Phase_5_-_3._Intros/Phase_5_-_3._Intros_transcript.txt      18.0 KB
+    per_clip/Phase_5_-_3._Intros/Phase_5_-_3._Intros_whisper_raw.json     428.5 KB
+  Phase_5_-_3._Intros_transcript.xlsx  (14.4 KB)
+
+============================================================

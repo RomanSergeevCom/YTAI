@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 17:32:59
+============================================================
+
+=== Configuration ===
+Project:    Phase_1_-_1._Intro_Video
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video.mp4
+Clips:      1
+Duration:   7:17 (437.4s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_1_-_1._Intro_Video    7:17  3840×2160 25.0fps H264  4.0Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.21 GB
+    offset 0.000s  Phase_1_-_1._Intro_Video.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    7:17  100.0%  1 segments
+  Gaps                       0:00  0.0%
+
+=== Transcription ===
+Total words:     1,578
+Total segments:  2
+Avg confidence:  0.9010
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_1_-_1._Intro_Video:
+    Words: 1578  Segments: 2  Confidence: 0.9521  Low: 2
+    Speaker 1: 1578 words, 2 segs, 7:15
+
+=== Whisper Per-Clip ===
+  Phase_1_-_1._Intro_Video    7:17   1578 words   216 wpm    4m 36s  (1.58x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    0s    0.2%
+  Diarization          15s       18s  +    3s    6.1%
+  Whisper           4m 00s    4m 36s  +   36s   93.7%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             4m 18s    4m 55s  +   37s  100.0%
+  Speed:          1.5x realtime
+  Wall clock:     4m 55s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_1_-_1._Intro_Video_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                            9.1 KB
+    diarization.json                                    0.2 KB
+    full_audio.wav                                  13667.9 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video_audio.wav   13667.9 KB
+    per_clip/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video_captions.srt      14.8 KB
+    per_clip/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video_premiere_transcript.json     348.5 KB
+    per_clip/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video_transcript.json     208.2 KB
+    per_clip/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video_transcript.srt       8.2 KB
+    per_clip/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video_transcript.txt       8.2 KB
+    per_clip/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video_whisper_raw.json     178.0 KB
+  Phase_1_-_1._Intro_Video_transcript.xlsx  (10.7 KB)
+
+============================================================

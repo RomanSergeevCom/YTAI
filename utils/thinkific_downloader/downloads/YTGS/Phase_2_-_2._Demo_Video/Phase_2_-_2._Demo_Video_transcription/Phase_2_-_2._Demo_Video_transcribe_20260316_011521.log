@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-16 01:15:21
+============================================================
+
+=== Configuration ===
+Project:    Phase_2_-_2._Demo_Video
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video.mp4
+Clips:      1
+Duration:   18:11 (1091.8s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_2_-_2._Demo_Video   18:11  3840×2160 25.0fps H264  4.2Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.55 GB
+    offset 0.000s  Phase_2_-_2._Demo_Video.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   18:10  99.9%  4 segments
+  Gaps                       0:01  0.1%
+
+=== Transcription ===
+Total words:     4,027
+Total segments:  3
+Avg confidence:  0.9570
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_2_-_2._Demo_Video:
+    Words: 4027  Segments: 3  Confidence: 0.9593  Low: 1
+    Speaker 1: 4027 words, 3 segs, 18:09
+
+=== Whisper Per-Clip ===
+  Phase_2_-_2._Demo_Video   18:11   4027 words   221 wpm    6m 50s  (2.66x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         2s        1s  -    1s    0.3%
+  Diarization          38s       35s  -    3s    7.9%
+  Whisper           10m 00s    6m 50s  -3m 10s   91.8%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              2s        0s  -    2s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             10m 45s    7m 26s  -3m 18s  100.0%
+  Speed:          2.4x realtime
+  Wall clock:     7m 26s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_2_-_2._Demo_Video_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           21.4 KB
+    diarization.json                                    0.5 KB
+    full_audio.wav                                  34119.6 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_audio.wav   34119.6 KB
+    per_clip/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_captions.srt      37.3 KB
+    per_clip/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_premiere_transcript.json     902.6 KB
+    per_clip/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_transcript.json     530.9 KB
+    per_clip/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_transcript.srt      20.3 KB
+    per_clip/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_transcript.txt      20.2 KB
+    per_clip/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_whisper_raw.json     481.7 KB
+  Phase_2_-_2._Demo_Video_transcript.xlsx  (15.2 KB)
+
+============================================================

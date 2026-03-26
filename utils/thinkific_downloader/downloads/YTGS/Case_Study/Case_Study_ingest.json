@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "Case_Study",
+  "created_at": "2026-03-15T18:32:51Z",
+  "media": {
+    "width": 3840,
+    "height": 2160,
+    "fps": 25.0,
+    "sample_rate": 44100
+  },
+  "clips": [
+    {
+      "clip_id": "Case_Study",
+      "filename": "Case_Study.mp4",
+      "path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Case_Study/Case_Study.mp4",
+      "duration": 597.76,
+      "offset": 0.0,
+      "premiere_transcript": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Case_Study/Case_Study_transcription/per_clip/Case_Study/Case_Study_premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Case_Study/Case_Study_transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Case_Study/Case_Study_transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Case_Study/Case_Study_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Case_Study/Case_Study_1_Ingest_captions.srt"
+  },
+  "source_folder": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Case_Study"
+}

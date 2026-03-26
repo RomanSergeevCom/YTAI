@@ -1,0 +1,68 @@
+{
+  "created_at": "2026-03-15T14:40:32Z",
+  "source": {
+    "page_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921638-side-mission-building-a-simple-email-system?wvideo=9xdr515qzr",
+    "media_url": "https://embed-ssl.wistia.com/deliveries/f2739cd8de716b59d6a965bcdcd9d8e1d3727729.bin",
+    "title": "Phase_1_-_Simple_Nurture.mp4"
+  },
+  "project": {
+    "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture",
+    "video_file": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/Phase_1_-_Simple_Nurture.mp4",
+    "video_info_file": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/Phase_1_-_Simple_Nurture.info.json"
+  },
+  "download": {
+    "engine": "ffmpeg",
+    "completed": true
+  },
+  "transcription": {
+    "enabled": true,
+    "completed": true,
+    "command": [
+      "/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3",
+      "/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py",
+      "--project",
+      "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/Phase_1_-_Simple_Nurture.mp4",
+      "-y",
+      "-m",
+      "large-v3",
+      "-n",
+      "1",
+      "--language",
+      "en"
+    ],
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/Phase_1_-_Simple_Nurture_transcript.xlsx",
+    "transcription_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/Phase_1_-_Simple_Nurture_transcription",
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/Phase_1_-_Simple_Nurture_transcription/Phase_1_-_Simple_Nurture_transcript.json",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/Phase_1_-_Simple_Nurture_transcription/Phase_1_-_Simple_Nurture_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/Phase_1_-_Simple_Nurture_transcription/Phase_1_-_Simple_Nurture_1_Ingest_captions.srt"
+  },
+  "screenshots": {
+    "enabled": false,
+    "dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/screenshots",
+    "manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/screenshots_manifest.json",
+    "count": 0
+  },
+  "screenshot_descriptions": {
+    "enabled": false,
+    "completed": false,
+    "manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/screenshots_descriptions.json"
+  },
+  "settings": {
+    "screenshot_mode": "interval",
+    "screenshot_interval": 2.0,
+    "scene_threshold": 0.18,
+    "scene_max_width": 1600,
+    "whisper_model": "large-v3",
+    "speakers": 1,
+    "language": "en"
+  },
+  "errors": [],
+  "document": {
+    "notes_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/document_notes.md",
+    "document_manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/document_manifest.json",
+    "doc_images_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/doc_images",
+    "extra_links_manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/extra_links_manifest.json",
+    "extra_links_count": 0
+  },
+  "extra_links": []
+}

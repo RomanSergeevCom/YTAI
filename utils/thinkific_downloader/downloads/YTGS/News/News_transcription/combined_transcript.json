@@ -1,0 +1,49 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T18:59:11Z",
+  "project": "News",
+  "total_duration": 277.478,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "News"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "News",
+      "local_start": 0.0,
+      "local_end": 174.28,
+      "global_start": 0.0,
+      "global_end": 174.28,
+      "speaker": "SPEAKER_00",
+      "text": "All right, now I'm going to show you how to plan a news video. And news is views, baby. So what is a news video? Well, it's basically just reporting news in your niche and giving your take on it. So here we have a client, Tom, 300 ,000 views on his Trump video. And then here we have another client, Peter, who very smartly wrapped up something as news. So Apple's awesome Apple Note features that help you remember anything. So it kind of sounds new. It's not necessarily new, but he's kind of harnessing news there because it's new information. All right, so the pros of news can be very fast to produce. In fact, we're going to find out why they have to be fast to produce in a minute. Massive upside if a big story explodes. You can get a lot of views very fast. It's great for kind of like widening your audience. And it's very easy to rank and get suggested next to similar content. If a news story breaks, YouTube's just going to push that news story that people are interested in. Cons, views die off fast. News is never really evergreen. Views are unpopular. Not only as big as your story. So if it's a small story, you get small views. If you're jumping on a news story like Tom did, you've got about 24 hours to get it turned around. So that's why you have to produce them quick. So who should make these? All creator levels, if you can harness news. Don't go looking for it, going, oh, where's there a news story? A good news story is one where you're like, holy crap, this is a big deal because it will have a lot of interest. If you're in a fast moving niche, if you're in like tech, AI, finance, health, politics, harness that bad boy. If you're an expert. You can add insights and give clarity on the breaking story. This is for you. Types of viewers that love them. Trend seekers who want to stay ahead of the curve. Curious minds who are a bit overwhelmed by the noise. Look at some clarity. Decision makers who want to understand how the news affects them. So I think investors create as professionals. Best used to piggyback on trending headlines for fast traffic to build topical authority in your niche. Basically, if you do news, link back to a video optimized for email signups or sales or one that's a really strong performer for your channel. Or one that's a really strong performer for your channel. So we can take all these new people who came for the news and turn them into a use fan instead. News versus use. Oh God. The secret sauce, speed, get out fast and adding a unique point of view. Mistakes, waiting too long to publish. If you publish a news video too late, it's not the news anymore. It's the olds. If you overload the view of too much information or jargon. If you're forgetting to link the story back to your viewers world. So you need to relate it back to like, here's why it matters to you. So the strategy is pretty simple. You say what happened. You tell the viewers why it matters. To them. And then you give us your insights on what to do next. So if we break it down like this, we have our intro. Here's what happened. That's storytelling. Here's why it matters to you. This is the emotion brick. Here's what you should do about it. Given the logical steps. That's it. It's pretty easy. I've been in titles void. Like tight was like big changes in tech this week. They're really vague. You need to be specific. So open AI just did something that means the whole world's going to die.",
+      "avg_confidence": 0.9622
+    },
+    {
+      "id": 1,
+      "clip_id": "News",
+      "local_start": 175.78,
+      "local_end": 277.02,
+      "global_start": 175.78,
+      "global_end": 277.02,
+      "speaker": "SPEAKER_00",
+      "text": "Apple just killed X. Are you ready? You can see these titles here. Don't go using them. They're just examples. And then for thumbnails stick to results, curiosity or cognitive dissonance best here. And make sure you show the thing that is relevant to the news story in the thumbnail production. Keep it simple. Don't over edit. Just get the content out fast. Not perfect. And the intro, you just hook them. You set up the problem that the news might have caused or the result it could give the viewer. And you set up what you're going to cover in the video. You give your credibility statement. So people go, this person's qualified. I'm qualified to tell me this information and make sure you match those viewers expectation. And that's it. If you optimizing, if your goal is views, push to another video that isn't news based, that perform well, that you think would be a great second video for someone new to your channel to discover. If you're optimizing for sales, push to high converting sales. If you're optimizing for email, push to high converting video for email. All right. So here's my little template to help you plan a news story. Set your goal. It's unlikely you're going to make sales from news. So I'd always optimize for emails or views here. Complete your thumbnail and title fast. Keep it simple. Work out your viewers. Top three questions. Do your messy brain dump. So what happened? Why it matters. What viewers should do about it. If other videos are already out there, use skyscraper bot to do the research. Then define that messy plan into points. Then think of your conversion strategy. Make sure you've got your call to action to email in there. If that's what you want. And then move on to writing that bad boy. If you have no time to write, I give you permission to present from bullets from your refined plan. Speed really does matter here. Upload and track. And then go. Did it hit my goal? Repeat the lesson. If not, avoid. Just be careful you don't become a news channel. You lose the evergreen nature and people come to you for the news, not you. And that's it.",
+      "avg_confidence": 0.9545
+    }
+  ],
+  "stats": {
+    "total_words": 1028,
+    "total_segments": 2,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 2,
+        "words": 1028,
+        "duration": 275.52,
+        "avg_confidence": 0.9584
+      }
+    },
+    "avg_confidence": 0.9584,
+    "low_confidence_segments": 0
+  }
+}

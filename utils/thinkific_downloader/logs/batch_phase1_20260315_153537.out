@@ -1,0 +1,68 @@
+DOCX            : /Users/romansergeev/Downloads/YTCG.docx
+Lessons in DOCX : 59
+Processing      : 59
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Dry run         : False
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_153537.log
+Lessons                                                                                      | 0/59 [00:00<?, ?lesson/s][01/59] Phase_1_-_1._Intro_Video.mp4:                                                        | 0/59 [00:00<?, ?lesson/s][02/59] Phase_1_-_3._Expectations.mp4:                                                       | 0/59 [00:00<?, ?lesson/s][03/59] Phase_1_-_4._How_YouTube_Works.mp4:                                                  | 0/59 [00:00<?, ?lesson/s][04/59] Phase_1_-_6._Position_Intro.mp4:                                                     | 0/59 [00:00<?, ?lesson/s][05/59] Phase_1_-_7._How_To_Position.mp4:                                                    | 0/59 [00:00<?, ?lesson/s][06/59] Phase_1_-_9._Audit_V2.mp4:                                                           | 0/59 [00:00<?, ?lesson/s]
+════════════════════════════════════════════════════════════
+  [44m[97m[1m Preflight Checks [0m
+  [92m✓[0m ffmpeg
+  [92m✓[0m Python packages
+  [2mLoading Whisper large-v3...[0m  [92m✓[0m Whisper model: large-v3          
+  [92m✓[0m HuggingFace token
+  [92m✓[0m Device: mps
+
+  [2m╭──────────────────────────────────────────────────────────────╮[0m
+  [2m│[0m  [1mEnvironment[0m                                                 [2m│[0m
+  [2m│[0m  [2m──────────────────────────────────────────────────────────[0m  [2m│[0m
+  [2m│[0m  Python:     3.11.14                                         [2m│[0m
+  [2m│[0m  Torch:      2.8.0 · MPS (Apple Silicon)                     [2m│[0m
+  [2m│[0m  Whisper:    large-v3                                        [2m│[0m
+  [2m│[0m  Pyannote:   4.0.3                                           [2m│[0m
+  [2m│[0m  Platform:   macOS 26.2 · arm64                              [2m│[0m
+  [2m│[0m  venv:       .venv_transcribe                                [2m│[0m
+  [2m╰──────────────────────────────────────────────────────────────╯[0m
+  [92m✓[0m Input: file — 1 file
+  [92m✓[0m Total duration: 0:00 (0.0s)
+  [92m✓[0m Media: 0×0 0.0fps 
+  [92m✓[0m Disk space: 15.3GB free
+  [92m✓[0m No previous run
+
+════════════════════════════════════════════════════════════
+  [46m[97m[1m YTAI Transcribe v3.0 [0m
+────────────────────────────────────────────────────────────
+  Project:    [1mPhase_1_-_9._Audit_V2[0m
+  Files:      1 | 0:00 | 1 speakers
+  Model:      large-v3 | MPS
+  Estimated:  [93m~0-0 min[0m
+════════════════════════════════════════════════════════════
+
+  [2m┌──────────────────────────────────────────────────────────────┐[0m
+  [2m│[0m  [1mPhase_1_-_9._Audit_V2[0m                                       [2m│[0m
+  [2m│[0m  1 clips · 0:00                    0/6 done · 0s · [96m~0s left[0m  [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [2m   Stage                Plan    Actual     Delta[0m            [2m│[0m
+  [2m│[0m  ──────────────────────────────────────────────────────────  [2m│[0m
+  [2m│[0m  [96m▶[0m  [1mExtract audio   [0m       0s   [96mrunning...[0m                   [2m│[0m
+  [2m│[0m  [2m·  Diarization            0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Whisper                0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Speaker map            0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Generate               0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Ingest JSON            0s[0m                                [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [96m[0m[2m░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░[0m  [1m  0%[0m   0s / ~0s left        [2m│[0m
+  [2m└──────────────────────────────────────────────────────────────┘[0m
+
+  [46m[97m[1m Stage 1/6 [0m [1mExtracting audio[0m
+  [2m╸ Plan —  ·  Elapsed 0s  ·  Left —[0m
+]0;YTAI > Stage 1/5 > Phase_1_-_9._Audit_V2 (1/1)/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+  [91m✗[0m Phase_1_-_9._Audit_V2: ffmpeg failed — [mov,mp4,m4a,3gp,3g2,mj2 @ 0x905400000] moov atom not found
+[in#0 @ 0x904800000] Error opening input: Invalid data found when processing input
+Error opening input file /Users/romansergeev/YTAI/utils/t

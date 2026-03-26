@@ -1,0 +1,84 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 21:52:02
+============================================================
+
+=== Configuration ===
+Project:    Phase_5_-_7._Story
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_7._Story/Phase_5_-_7._Story.mp4
+Clips:      1
+Duration:   16:52 (1012.5s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_5_-_7._Story     16:52  3840×2160 25.0fps H264  5.7Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.68 GB
+    offset 0.000s  Phase_5_-_7._Story.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   16:51  99.9%  3 segments
+  Gaps                       0:01  0.1%
+
+=== Transcription ===
+Total words:     3,846
+Total segments:  7
+Avg confidence:  0.6824
+Low confidence:  2 segments
+  Low confidence details:
+    [Phase_5_-_7._Story] seg 4: "thinking," (conf=0.00)
+    [Phase_5_-_7._Story] seg 5: "when I was writing the books or thinking I was briefing, hav..." (conf=0.13)
+    [Phase_5_-_7._Story] seg 6: "But before you start writing more points, here, try me all t..." (conf=0.92)
+
+=== Per-Clip Details ===
+  Phase_5_-_7._Story:
+    Words: 3846  Segments: 7  Confidence: 0.9186  Low: 3
+    Speaker 1: 3846 words, 7 segs, 16:34
+
+=== Whisper Per-Clip ===
+  Phase_5_-_7._Story     16:52   3846 words   228 wpm    7m 39s  (2.20x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         2s        1s  -    1s    0.3%
+  Diarization          35s       34s  -    2s    6.8%
+  Whisper           9m 16s    7m 39s  -1m 37s   92.9%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              2s        0s  -    2s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             9m 58s    8m 14s  -1m 44s  100.0%
+  Speed:          2.0x realtime
+  Wall clock:     8m 14s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_5_-_7._Story_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           22.0 KB
+    diarization.json                                    0.4 KB
+    full_audio.wav                                  31639.4 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_5_-_7._Story/Phase_5_-_7._Story_audio.wav     31639.4 KB
+    per_clip/Phase_5_-_7._Story/Phase_5_-_7._Story_captions.srt      36.2 KB
+    per_clip/Phase_5_-_7._Story/Phase_5_-_7._Story_premiere_transcript.json     859.0 KB
+    per_clip/Phase_5_-_7._Story/Phase_5_-_7._Story_transcript.json     508.0 KB
+    per_clip/Phase_5_-_7._Story/Phase_5_-_7._Story_transcript.srt      20.1 KB
+    per_clip/Phase_5_-_7._Story/Phase_5_-_7._Story_transcript.txt      19.9 KB
+    per_clip/Phase_5_-_7._Story/Phase_5_-_7._Story_whisper_raw.json     437.6 KB
+  Phase_5_-_7._Story_transcript.xlsx  (15.5 KB)
+
+============================================================

@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 22:48:39
+============================================================
+
+=== Configuration ===
+Project:    Deep_Dive
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Deep_Dive/Deep_Dive.mp4
+Clips:      1
+Duration:   16:54 (1014.7s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Deep_Dive              16:54  3840×2160 25.0fps H264  2.0Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.25 GB
+    offset 0.000s  Deep_Dive.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   16:49  99.4%  18 segments
+  Gaps                       0:05  0.6%
+
+=== Transcription ===
+Total words:     4,139
+Total segments:  4
+Avg confidence:  0.9177
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Deep_Dive:
+    Words: 4139  Segments: 4  Confidence: 0.9367  Low: 3
+    Speaker 1: 4139 words, 4 segs, 16:50
+
+=== Whisper Per-Clip ===
+  Deep_Dive              16:54   4139 words   245 wpm    9m 01s  (1.87x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         2s        1s  -    1s    0.1%
+  Diarization          36s       32s  -    3s    5.6%
+  Whisper           9m 18s    9m 01s  -   16s   94.2%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              2s        0s  -    2s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             9m 59s    9m 35s  -   24s  100.0%
+  Speed:          1.8x realtime
+  Wall clock:     9m 35s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Deep_Dive_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           22.0 KB
+    diarization.json                                    1.7 KB
+    full_audio.wav                                  31710.5 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Deep_Dive/Deep_Dive_audio.wav              31710.6 KB
+    per_clip/Deep_Dive/Deep_Dive_captions.srt              38.2 KB
+    per_clip/Deep_Dive/Deep_Dive_premiere_transcript.json     920.0 KB
+    per_clip/Deep_Dive/Deep_Dive_transcript.json          544.8 KB
+    per_clip/Deep_Dive/Deep_Dive_transcript.srt            20.7 KB
+    per_clip/Deep_Dive/Deep_Dive_transcript.txt            20.6 KB
+    per_clip/Deep_Dive/Deep_Dive_whisper_raw.json         466.2 KB
+  Deep_Dive_transcript.xlsx  (15.3 KB)
+
+============================================================

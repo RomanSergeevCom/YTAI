@@ -1,0 +1,457 @@
+1
+00:00:00,000 --> 00:00:01,760
+Okay, so let's get
+into the system for
+
+2
+00:00:01,760 --> 00:00:03,439
+writing intros. And you've
+got two options here.
+
+3
+00:00:03,500 --> 00:00:05,459
+Option one, you just
+write yourself using the
+
+4
+00:00:05,459 --> 00:00:07,620
+framework I've given you
+in the video planner
+
+5
+00:00:07,620 --> 00:00:10,000
+section and the checklist.
+And you start by
+
+6
+00:00:10,000 --> 00:00:12,619
+following the intro structure
+that you've learned. So
+
+7
+00:00:12,619 --> 00:00:15,080
+the hook, the problem
+or result, the setup,
+
+8
+00:00:15,240 --> 00:00:17,239
+and the transition. And
+then what you do
+
+9
+00:00:17,239 --> 00:00:18,820
+is you just run
+your script through this
+
+10
+00:00:18,820 --> 00:00:20,660
+checklist. Does it match
+what the thumbnail and
+
+11
+00:00:20,660 --> 00:00:23,320
+title promised? Does the
+hook create curiosity in
+
+12
+00:00:23,320 --> 00:00:25,519
+under five seconds? Have
+you poked a relatable
+
+13
+00:00:25,519 --> 00:00:28,140
+problem or result? Did
+you clearly tell the
+
+14
+00:00:28,140 --> 00:00:29,679
+viewer what they'll get?
+Did you show why
+
+15
+00:00:29,679 --> 00:00:31,940
+you're credible? Did you
+smoothly transition into the
+
+16
+00:00:31,940 --> 00:00:34,280
+first point? Is the
+intro under 30 seconds?
+
+17
+00:00:34,380 --> 00:00:36,740
+Under 15 is ideal.
+And then once you've
+
+18
+00:00:36,740 --> 00:00:37,859
+written it, what you
+want to do is
+
+19
+00:00:37,859 --> 00:00:39,659
+head over to intro
+bot in the custom
+
+20
+00:00:39,659 --> 00:00:42,359
+AI and say, this
+is my title. And
+
+21
+00:00:42,359 --> 00:00:43,920
+you write your title.
+And then you say,
+
+22
+00:00:43,960 --> 00:00:45,399
+can you give me
+feedback on this intro?
+
+23
+00:00:45,560 --> 00:00:47,079
+And what intro bot
+is going to do
+
+24
+00:00:47,079 --> 00:00:49,939
+is it's going to
+predict your viewers' expectations.
+
+25
+00:00:50,320 --> 00:00:51,659
+Like you can see
+here, based on the
+
+26
+00:00:51,659 --> 00:00:53,439
+title, it's going to
+check if your intro
+
+27
+00:00:53,439 --> 00:00:55,759
+hit those expectations. It's
+going to give you
+
+28
+00:00:55,759 --> 00:00:57,939
+feedback based on the
+checklist. And it's going
+
+29
+00:00:57,939 --> 00:01:00,259
+to offer a, rewritten
+version of your intro.
+
+30
+00:01:00,479 --> 00:01:02,359
+Now, the next step
+after this is you
+
+31
+00:01:02,359 --> 00:01:04,180
+take that intro and
+you put it into
+
+32
+00:01:04,180 --> 00:01:05,920
+guardrails and you say,
+can you give me
+
+33
+00:01:05,920 --> 00:01:07,840
+feedback on this intro?
+And I know this
+
+34
+00:01:07,840 --> 00:01:10,180
+feels like another step,
+but check this out.
+
+35
+00:01:10,280 --> 00:01:12,519
+Guardrails is going to
+make sure the intro
+
+36
+00:01:12,519 --> 00:01:16,420
+is positioned towards those
+three key problems that
+
+37
+00:01:16,420 --> 00:01:19,019
+we are building our
+entire channel around that
+
+38
+00:01:19,019 --> 00:01:20,900
+your viewers care about.
+It's also going to
+
+39
+00:01:20,900 --> 00:01:24,579
+suggest credibility lines based
+on the backstory you've
+
+40
+00:01:24,579 --> 00:01:27,060
+written about yourself in
+your brain. And it's
+
+41
+00:01:27,060 --> 00:01:29,019
+going to help tweak
+the tone. And alignment
+
+42
+00:01:29,019 --> 00:01:31,700
+to fit your niche.
+Again, don't blindly accept
+
+43
+00:01:31,700 --> 00:01:33,900
+what it gives you.
+Think, edit it, make
+
+44
+00:01:33,900 --> 00:01:36,859
+it sound human. And
+if your version hits
+
+45
+00:01:36,859 --> 00:01:38,739
+the key problems and
+avoids the mistakes, you
+
+46
+00:01:38,739 --> 00:01:40,140
+don't have to use
+the AI as you
+
+47
+00:01:40,140 --> 00:01:42,420
+can stick with it.
+Now, please do not
+
+48
+00:01:42,420 --> 00:01:43,599
+monkey brain this.
+
+49
+00:01:44,659 --> 00:01:47,879
+If the AI version
+is better, that's absolutely
+
+50
+00:01:47,879 --> 00:01:51,819
+great, but present it
+out loud. I mean,
+
+51
+00:01:51,819 --> 00:01:54,239
+it doesn't sound like
+you. Edit so it
+
+52
+00:01:54,239 --> 00:01:56,799
+sounds like you. Don't
+just copy and paste
+
+53
+00:01:56,799 --> 00:01:58,180
+it and be lazy
+and be like, that'll
+
+54
+00:01:58,180 --> 00:02:01,159
+do. Option two, you
+just let the AI
+
+55
+00:02:01,159 --> 00:02:03,459
+draft for you. So
+if you want to
+
+56
+00:02:03,459 --> 00:02:05,859
+go fast, do this.
+Open intro bot and
+
+57
+00:02:05,859 --> 00:02:08,460
+say, here's my title.
+Write the title. Can
+
+58
+00:02:08,460 --> 00:02:10,099
+you write me an
+intro? It'll give you
+
+59
+00:02:10,099 --> 00:02:11,979
+three versions. Then just
+pick the one you
+
+60
+00:02:11,979 --> 00:02:14,639
+like. Run it through
+guardrails for more feedback.
+
+61
+00:02:14,919 --> 00:02:18,000
+And then make small
+edits to personalize it.
+
+62
+00:02:18,199 --> 00:02:20,319
+And that's it. Now,
+I still write my
+
+63
+00:02:20,319 --> 00:02:23,479
+intros manually, but this
+is a really fast
+
+64
+00:02:23,479 --> 00:02:26,000
+way to get you
+over that initial kind
+
+65
+00:02:26,000 --> 00:02:27,900
+of like thinking hurdle.
+You're like, how do
+
+66
+00:02:27,900 --> 00:02:29,560
+I start this thing?
+And it's going to
+
+67
+00:02:29,560 --> 00:02:31,340
+help you stay short
+and very clear and
+
+68
+00:02:31,340 --> 00:02:34,520
+focused. And some final
+notes on writing intros
+
+69
+00:02:34,520 --> 00:02:37,020
+for members. If you
+want feedback from us,
+
+70
+00:02:37,080 --> 00:02:37,919
+what you want to
+do is you want
+
+71
+00:02:37,919 --> 00:02:39,460
+to put your intro
+in a Google doc
+
+72
+00:02:39,460 --> 00:02:41,580
+and then make sure
+the link is set
+
+73
+00:02:41,580 --> 00:02:43,639
+to anyone with the
+link and comment. If
+
+74
+00:02:43,639 --> 00:02:45,840
+you forget, you're going
+to get a message
+
+75
+00:02:45,840 --> 00:02:48,580
+from us saying, please
+make this doc open
+
+76
+00:02:48,580 --> 00:02:50,360
+for access. And that's
+going to waste a
+
+77
+00:02:50,360 --> 00:02:52,319
+lot of your time.
+But also, please don't
+
+78
+00:02:52,319 --> 00:02:56,080
+paste five AI generated
+intros that you just
+
+79
+00:02:56,080 --> 00:02:57,539
+slapped up as quick
+and go, which one
+
+80
+00:02:57,539 --> 00:02:58,500
+is it? Which one
+is your best? Expecting
+
+81
+00:02:58,500 --> 00:02:59,759
+us to do all
+the work, pick your
+
+82
+00:02:59,759 --> 00:03:02,319
+favorite, edit it and
+submit one. If you
+
+83
+00:03:02,319 --> 00:03:03,960
+send too many, I'm
+just going to say
+
+84
+00:03:03,960 --> 00:03:05,699
+pick one and we're
+going to lose all
+
+85
+00:03:05,699 --> 00:03:07,060
+that time and go
+through the process again.
+
+86
+00:03:07,280 --> 00:03:08,979
+The process is here
+to make you better,
+
+87
+00:03:09,120 --> 00:03:12,099
+not just faster. And
+it's not here to
+
+88
+00:03:12,099 --> 00:03:14,039
+enable you to be
+lazy. So use the
+
+89
+00:03:14,039 --> 00:03:15,960
+tools, but do the
+work and you will
+
+90
+00:03:15,960 --> 00:03:18,460
+be able to write
+great intros without needing
+
+91
+00:03:18,460 --> 00:03:20,340
+much help from any
+of us pretty flippant
+
+92
+00:03:20,340 --> 00:03:20,640
+soon.

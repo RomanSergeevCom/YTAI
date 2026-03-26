@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 22:32:51
+============================================================
+
+=== Configuration ===
+Project:    Case_Study
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Case_Study/Case_Study.mp4
+Clips:      1
+Duration:   9:57 (597.8s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Case_Study              9:57  3840×2160 25.0fps H264  2.5Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.18 GB
+    offset 0.000s  Case_Study.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    9:50  98.8%  13 segments
+  Gaps                       0:07  1.2%
+
+=== Transcription ===
+Total words:     2,132
+Total segments:  3
+Avg confidence:  0.9564
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Case_Study:
+    Words: 2132  Segments: 3  Confidence: 0.9573  Low: 3
+    Speaker 1: 2132 words, 3 segs, 9:54
+
+=== Whisper Per-Clip ===
+  Case_Study              9:57   2132 words   214 wpm    5m 16s  (1.89x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    1s    0.2%
+  Diarization          21s       20s  -    1s    6.0%
+  Whisper           5m 28s    5m 16s  -   12s   93.8%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             5m 53s    5m 37s  -   16s  100.0%
+  Speed:          1.8x realtime
+  Wall clock:     5m 37s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Case_Study_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           12.3 KB
+    diarization.json                                    1.2 KB
+    full_audio.wav                                  18680.5 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Case_Study/Case_Study_audio.wav             18680.5 KB
+    per_clip/Case_Study/Case_Study_captions.srt             20.1 KB
+    per_clip/Case_Study/Case_Study_premiere_transcript.json     483.9 KB
+    per_clip/Case_Study/Case_Study_transcript.json         281.5 KB
+    per_clip/Case_Study/Case_Study_transcript.srt           11.2 KB
+    per_clip/Case_Study/Case_Study_transcript.txt           11.2 KB
+    per_clip/Case_Study/Case_Study_whisper_raw.json        274.7 KB
+  Case_Study_transcript.xlsx  (12.2 KB)
+
+============================================================

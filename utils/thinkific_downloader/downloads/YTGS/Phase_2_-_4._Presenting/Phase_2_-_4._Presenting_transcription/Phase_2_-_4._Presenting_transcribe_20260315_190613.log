@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 19:06:13
+============================================================
+
+=== Configuration ===
+Project:    Phase_2_-_4._Presenting
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_4._Presenting/Phase_2_-_4._Presenting.mp4
+Clips:      1
+Duration:   21:31 (1291.1s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_2_-_4._Presenting   21:31  3840×2160 25.0fps H264  5.3Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.82 GB
+    offset 0.000s  Phase_2_-_4._Presenting.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   21:23  99.4%  15 segments
+  Gaps                       0:07  0.6%
+
+=== Transcription ===
+Total words:     5,226
+Total segments:  4
+Avg confidence:  0.9447
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_2_-_4._Presenting:
+    Words: 5226  Segments: 4  Confidence: 0.9335  Low: 2
+    Speaker 1: 5226 words, 4 segs, 21:22
+
+=== Whisper Per-Clip ===
+  Phase_2_-_4._Presenting   21:31   5226 words   243 wpm   14m 28s  (1.49x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         3s        1s  -    1s    0.2%
+  Diarization          45s       42s  -    3s    4.6%
+  Whisper           11m 50s   14m 28s  +2m 38s   95.2%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              3s        0s  -    2s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             12m 43s   15m 12s  +2m 29s  100.0%
+  Speed:          1.4x realtime
+  Wall clock:     15m 12s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_2_-_4._Presenting_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           28.1 KB
+    diarization.json                                    1.4 KB
+    full_audio.wav                                  40346.9 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_2_-_4._Presenting/Phase_2_-_4._Presenting_audio.wav   40346.9 KB
+    per_clip/Phase_2_-_4._Presenting/Phase_2_-_4._Presenting_captions.srt      48.9 KB
+    per_clip/Phase_2_-_4._Presenting/Phase_2_-_4._Presenting_premiere_transcript.json    1149.3 KB
+    per_clip/Phase_2_-_4._Presenting/Phase_2_-_4._Presenting_transcript.json     691.4 KB
+    per_clip/Phase_2_-_4._Presenting/Phase_2_-_4._Presenting_transcript.srt      26.7 KB
+    per_clip/Phase_2_-_4._Presenting/Phase_2_-_4._Presenting_transcript.txt      26.6 KB
+    per_clip/Phase_2_-_4._Presenting/Phase_2_-_4._Presenting_whisper_raw.json     640.1 KB
+  Phase_2_-_4._Presenting_transcript.xlsx  (17.8 KB)
+
+============================================================

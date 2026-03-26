@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 23:16:03
+============================================================
+
+=== Configuration ===
+Project:    Phase_6_-_3._Measurement_Basics
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics.mp4
+Clips:      1
+Duration:   14:05 (845.0s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_6_-_3._Measurement_Basics   14:05  3840×2160 25.0fps H264  3.1Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.32 GB
+    offset 0.000s  Phase_6_-_3._Measurement_Basics.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   14:04  99.9%  2 segments
+  Gaps                       0:00  0.1%
+
+=== Transcription ===
+Total words:     3,112
+Total segments:  1
+Avg confidence:  0.9592
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_6_-_3._Measurement_Basics:
+    Words: 3112  Segments: 1  Confidence: 0.9592  Low: 0
+    Speaker 1: 3112 words, 1 segs, 14:04
+
+=== Whisper Per-Clip ===
+  Phase_6_-_3._Measurement_Basics   14:05   3112 words   221 wpm    5m 25s  (2.60x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         2s        1s  -    1s    0.2%
+  Diarization          30s       27s  -    2s    7.8%
+  Whisper           7m 44s    5m 25s  -2m 19s   92.0%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              2s        0s  -    2s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             8m 19s    5m 54s  -2m 25s  100.0%
+  Speed:          2.4x realtime
+  Wall clock:     5m 54s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_6_-_3._Measurement_Basics_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           16.9 KB
+    diarization.json                                    0.3 KB
+    full_audio.wav                                  26407.7 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_audio.wav   26407.7 KB
+    per_clip/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_captions.srt      29.2 KB
+    per_clip/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_premiere_transcript.json     692.0 KB
+    per_clip/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_transcript.json     410.2 KB
+    per_clip/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_transcript.srt      16.1 KB
+    per_clip/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_transcript.txt      16.1 KB
+    per_clip/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_whisper_raw.json     406.7 KB
+  Phase_6_-_3._Measurement_Basics_transcript.xlsx  (13.5 KB)
+
+============================================================

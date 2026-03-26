@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 20:15:32
+============================================================
+
+=== Configuration ===
+Project:    Phase_3_-_4._Thumbnail_Strategy
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy.mp4
+Clips:      1
+Duration:   11:08 (668.7s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_3_-_4._Thumbnail_Strategy   11:08  3840×2160 25.0fps H264  2.1Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.17 GB
+    offset 0.000s  Phase_3_-_4._Thumbnail_Strategy.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   11:06  99.6%  7 segments
+  Gaps                       0:02  0.4%
+
+=== Transcription ===
+Total words:     2,421
+Total segments:  2
+Avg confidence:  0.9464
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_3_-_4._Thumbnail_Strategy:
+    Words: 2421  Segments: 2  Confidence: 0.9483  Low: 1
+    Speaker 1: 2421 words, 2 segs, 11:07
+
+=== Whisper Per-Clip ===
+  Phase_3_-_4._Thumbnail_Strategy   11:08   2421 words   217 wpm    5m 38s  (1.97x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    1s    0.2%
+  Diarization          23s       24s  +    1s    6.6%
+  Whisper           6m 07s    5m 38s  -   29s   93.2%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             6m 35s    6m 03s  -   32s  100.0%
+  Speed:          1.8x realtime
+  Wall clock:     6m 03s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_3_-_4._Thumbnail_Strategy_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           13.6 KB
+    diarization.json                                    0.7 KB
+    full_audio.wav                                  20898.0 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_audio.wav   20898.0 KB
+    per_clip/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_captions.srt      22.8 KB
+    per_clip/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_premiere_transcript.json     548.7 KB
+    per_clip/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_transcript.json     319.5 KB
+    per_clip/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_transcript.srt      12.6 KB
+    per_clip/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_transcript.txt      12.6 KB
+    per_clip/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_whisper_raw.json     286.0 KB
+  Phase_3_-_4._Thumbnail_Strategy_transcript.xlsx  (12.3 KB)
+
+============================================================

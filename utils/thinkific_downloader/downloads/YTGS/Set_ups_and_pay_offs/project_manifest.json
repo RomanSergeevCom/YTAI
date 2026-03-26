@@ -1,0 +1,68 @@
+{
+  "created_at": "2026-03-15T18:27:01Z",
+  "source": {
+    "page_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921491-set-up-and-payoffs-reviewing-my-own-scripts?wvideo=x15np5d5w8",
+    "media_url": "https://embed-ssl.wistia.com/deliveries/cbd56fea7f9029892f949e11e50a401ba0afc45c.bin",
+    "title": "Set_ups_and_pay_offs.mp4"
+  },
+  "project": {
+    "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs",
+    "video_file": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/Set_ups_and_pay_offs.mp4",
+    "video_info_file": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/Set_ups_and_pay_offs.info.json"
+  },
+  "download": {
+    "engine": "ffmpeg",
+    "completed": true
+  },
+  "transcription": {
+    "enabled": true,
+    "completed": true,
+    "command": [
+      "/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3",
+      "/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py",
+      "--project",
+      "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/Set_ups_and_pay_offs.mp4",
+      "-y",
+      "-m",
+      "large-v3",
+      "-n",
+      "1",
+      "--language",
+      "en"
+    ],
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/Set_ups_and_pay_offs_transcript.xlsx",
+    "transcription_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/Set_ups_and_pay_offs_transcription",
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/Set_ups_and_pay_offs_transcription/Set_ups_and_pay_offs_transcript.json",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/Set_ups_and_pay_offs_transcription/Set_ups_and_pay_offs_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/Set_ups_and_pay_offs_transcription/Set_ups_and_pay_offs_1_Ingest_captions.srt"
+  },
+  "screenshots": {
+    "enabled": false,
+    "dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/screenshots",
+    "manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/screenshots_manifest.json",
+    "count": 0
+  },
+  "screenshot_descriptions": {
+    "enabled": false,
+    "completed": false,
+    "manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/screenshots_descriptions.json"
+  },
+  "settings": {
+    "screenshot_mode": "interval",
+    "screenshot_interval": 2.0,
+    "scene_threshold": 0.18,
+    "scene_max_width": 1600,
+    "whisper_model": "large-v3",
+    "speakers": 1,
+    "language": "en"
+  },
+  "errors": [],
+  "document": {
+    "notes_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/document_notes.md",
+    "document_manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/document_manifest.json",
+    "doc_images_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/doc_images",
+    "extra_links_manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/extra_links_manifest.json",
+    "extra_links_count": 0
+  },
+  "extra_links": []
+}

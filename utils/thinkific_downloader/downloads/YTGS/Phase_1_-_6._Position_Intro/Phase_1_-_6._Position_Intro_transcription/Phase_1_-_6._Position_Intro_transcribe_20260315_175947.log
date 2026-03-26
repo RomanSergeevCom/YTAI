@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 17:59:47
+============================================================
+
+=== Configuration ===
+Project:    Phase_1_-_6._Position_Intro
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_6._Position_Intro/Phase_1_-_6._Position_Intro.mp4
+Clips:      1
+Duration:   9:19 (559.6s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_1_-_6._Position_Intro    9:19  3840×2160 25.0fps H264  3.5Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.24 GB
+    offset 0.000s  Phase_1_-_6._Position_Intro.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    9:16  99.5%  5 segments
+  Gaps                       0:02  0.5%
+
+=== Transcription ===
+Total words:     1,939
+Total segments:  4
+Avg confidence:  0.9531
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_1_-_6._Position_Intro:
+    Words: 1939  Segments: 4  Confidence: 0.9636  Low: 1
+    Speaker 1: 1939 words, 4 segs, 9:12
+
+=== Whisper Per-Clip ===
+  Phase_1_-_6._Position_Intro    9:19   1939 words   208 wpm    4m 16s  (2.18x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    0s    0.3%
+  Diarization          20s       20s  +    0s    7.2%
+  Whisper           5m 07s    4m 16s  -   52s   92.5%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             5m 30s    4m 36s  -   54s  100.0%
+  Speed:          2.0x realtime
+  Wall clock:     4m 36s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_1_-_6._Position_Intro_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           11.5 KB
+    diarization.json                                    0.6 KB
+    full_audio.wav                                  17487.6 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_1_-_6._Position_Intro/Phase_1_-_6._Position_Intro_audio.wav   17487.6 KB
+    per_clip/Phase_1_-_6._Position_Intro/Phase_1_-_6._Position_Intro_captions.srt      18.2 KB
+    per_clip/Phase_1_-_6._Position_Intro/Phase_1_-_6._Position_Intro_premiere_transcript.json     430.2 KB
+    per_clip/Phase_1_-_6._Position_Intro/Phase_1_-_6._Position_Intro_transcript.json     256.1 KB
+    per_clip/Phase_1_-_6._Position_Intro/Phase_1_-_6._Position_Intro_transcript.srt      10.1 KB
+    per_clip/Phase_1_-_6._Position_Intro/Phase_1_-_6._Position_Intro_transcript.txt      10.1 KB
+    per_clip/Phase_1_-_6._Position_Intro/Phase_1_-_6._Position_Intro_whisper_raw.json     226.1 KB
+  Phase_1_-_6._Position_Intro_transcript.xlsx  (11.7 KB)
+
+============================================================

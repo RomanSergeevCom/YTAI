@@ -1,0 +1,36 @@
+{
+  "version": "3.0",
+  "status": "completed",
+  "created_at": "2026-03-15T13:38:34Z",
+  "updated_at": "2026-03-15T13:45:45Z",
+  "project_name": "Phase_1_-_3._Expectations",
+  "input_type": "file",
+  "input_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_3._Expectations/Phase_1_-_3._Expectations.mp4",
+  "params": {
+    "num_speakers": 1,
+    "whisper_model": "large-v3",
+    "language": "en",
+    "device": "mps"
+  },
+  "clips": [
+    "Phase_1_-_3._Expectations"
+  ],
+  "total_duration_sec": 535.081,
+  "stages_completed": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "stages_timing": {
+    "1_extract_audio": 0.6,
+    "2_diarization": 21.7,
+    "3_whisper": 396.9,
+    "4_speaker_mapping": 0.0,
+    "5_generate_outputs": 0.1,
+    "6_ingest_json": 0.0
+  },
+  "total_time": 419.3
+}

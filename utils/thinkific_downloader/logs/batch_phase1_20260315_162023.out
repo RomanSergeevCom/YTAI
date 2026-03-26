@@ -1,0 +1,260 @@
+DOCX            : /Users/romansergeev/Downloads/YTCG.docx
+Lessons in DOCX : 59
+Processing      : 59
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Dry run         : False
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_162023.log
+
+[01/59] Phase_1_-_1._Intro_Video.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+  ⏭  Skipped (already completed)
+
+[02/59] Phase_1_-_3._Expectations.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+  ⏭  Skipped (already completed)
+
+[03/59] Phase_1_-_4._How_YouTube_Works.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef
+  ⏭  Skipped (already completed)
+
+[04/59] Phase_1_-_6._Position_Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1
+  ⏭  Skipped (already completed)
+
+[05/59] Phase_1_-_7._How_To_Position.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4
+  ⏭  Skipped (already completed)
+
+[06/59] Phase_1_-_9._Audit_V2.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892283-task-auditing-your-foundations?wvideo=uca14sgz0s
+  ⏭  Skipped (already completed)
+
+[07/59] Phase_1_-_10._Doing_Your_Tasks.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892288-task-minor-adjustments?wvideo=yg65ujy4qv
+  ⏭  Skipped (already completed)
+
+[08/59] Phase_1_-_Simple_Nurture.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921638-side-mission-building-a-simple-email-system?wvideo=9xdr515qzr
+  ⏭  Skipped (already completed)
+
+[09/59] Phase_2_-_1._Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892293-phase-2-intro?wvideo=obyeqz0swb
+  ⏭  Skipped (already completed)
+
+[10/59] Phase_2_-_2._Demo_Video.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892694-task-making-your-demo-video?wvideo=sgjg69vbud
+  ⏭  Skipped (already completed)
+
+[11/59] Phase_2_-_3._Teleprompter.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892310-using-a-teleprompter-don-t-skip?wvideo=v2pqjjgk5f
+  ↳ Video exists (135 MB), skipping download
+  ✗ Transcription error: Command '['/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3', '/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py', '--project', '/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter.mp4', '-y', '-m', 'large-v3', '-n', '1', '--language', 'en']' returned non-zero exit status 1.
+  ✗ Error: Transcription failed: Command '['/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3', '/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py', '--project', '/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter.mp4', '-y', '-m', 'large-v3', '-n', '1', '--language', 'en']' returned non-zero exit status 1.
+
+[12/59] Phase_2_-_4._Presenting.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892695-presenting-101?wvideo=6vswm3tsmw
+  ↳ Downloaded (879 MB, 75s)
+  ↳ Transcribed (771s)
+  ✓  OK (14m 05s)
+
+[13/59] Phase_2_-_5._Edit_Demo.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892314-task-editing-your-demo?wvideo=er9icb0lxo
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[14/59] Phase_2_-_6._Uploading.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892318-task-posting-your-demo?wvideo=jpfc799wfj
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[15/59] Phase_3_-_1._Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=iwd27pwhi6
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[16/59] Phase_3_-_2._Secret_To_Great_Videos.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=ajhwpllaaq
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[17/59] Phase_3_-_3._Titles.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892345-the-secret-to-amazing-titles?wvideo=7pzo6ty60l
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[18/59] Phase_3_-_4._Thumbnail_Basics.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892359-the-secrets-to-amazing-thumbnails?wvideo=d2zp80a6mg
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[19/59] Phase_3_-_4._Thumbnail_Strategy.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892473-thumbnail-strategies-that-get-clicks?wvideo=2glf2ywtod
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[20/59] Phase_3_-_5._Design_Basics.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892480-thumbnail-design-basics?wvideo=ydqieh7lyk
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[21/59] Phase_3_-_6._What_Option.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892484-task-pick-your-thumbnail-creation-process?wvideo=s81gw1gu3n
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[22/59] Phase_3_-_7._Formats.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892489-formats-the-secret-to-packaging-information?wvideo=7gt97axhb7
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[23/59] Phase_4_-_1._Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892495-phase-4-intro?wvideo=49ezwwuh2i
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[24/59] Phase_4_-_2._The_Strategy.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892499-the-1-000-000-youtube-strategy?wvideo=jr3427xt8v
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[25/59] Phase_4_-_3._Research_Basics.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892508-the-basics-of-research-strategy?wvideo=uszpj80y14
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[26/59] Phase_4_-_4._Patterns.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892525-task-how-to-find-patterns?wvideo=ibgzddhxhy
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[27/59] Phase_4_-_Update_Synthia.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892556-task-update-synthia-s-ai-brain?wvideo=rpzbz338js
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[28/59] Phase_4_-_5._Ideation.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892522-task-how-to-ideate-your-next-3-4-videos?wvideo=kllyj6isvb
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[29/59] AI_UPDATE_AI_Feedback_For_Ideas.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921147-task-play-with-the-ai?wvideo=bm5b2mkwpc
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[30/59] Phase_5_-_1._Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921173-phase-5-intro?wvideo=j69dwc9lei
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[31/59] Phase_5_-_2._What_Makes_a_Great_Script.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921180-the-secret-to-making-amazing-videos?wvideo=d1b1p9hnp9
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[32/59] Phase_5_-_3._Intros.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921186-video-intros-101?wvideo=2zwmkut8es
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[33/59] Phase_5_-_Update_Synthia.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921236-task-update-synthia-s-ai-brain?wvideo=jjcbpvg1m6
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[34/59] Phase_5_-_4._How_To_Write_Your_Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921206-how-to-write-an-intro?wvideo=vqec3ghwtv
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[35/59] Phase_5_-_5._Making_Points.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921202-how-to-make-a-point?wvideo=vuhp1q8wi1
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[36/59] Phase_5_-_6._Visual_Demos.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921210-emotion-brick-visual-demos?wvideo=nt057v09sk
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[37/59] Phase_5_-_7._Story.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921214-emotion-brick-storytelling?wvideo=5twxs6tmyx
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[38/59] Phase_5_-_8._Metaphor.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921216-emotion-brick-metaphor?wvideo=a5993o8b2d
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[39/59] Phase_5_-_9._Logic.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921216-emotion-brick-metaphor?wvideo=z0o0lkunj6
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[40/59] Phase_5_-_10._End_Screen.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921224-ending-your-video?wvideo=z40xvhcy1z
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[41/59] AI_UPDATE__Intro_Feedback.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921193-task-getting-feedback-on-intros-points?wvideo=vbsyi5u8wg
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[42/59] Phase_5_-_11._Conversion_Optimisation.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921226-optimising-videos-for-sales-views-leads?wvideo=0gvivli29q
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[43/59] Phase_5_-_12._Planning.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921227-how-to-plan-a-video-basics?wvideo=mbt3psf79g
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[44/59] Phase_5_-_13._Writing_v2.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921230-how-to-write-a-script-basics?wvideo=zhn92cte0m
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[45/59] Set_ups_and_pay_offs.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921491-set-up-and-payoffs-reviewing-my-own-scripts?wvideo=x15np5d5w8
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[46/59] Short_Process.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921521-short-process-videos?wvideo=fjlr60e15b
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[47/59] Case_Study.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921522-case-studies?wvideo=12f9bjm06s
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[48/59] Roasts.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921524-roasts-reviews?wvideo=hzvddp3mcs
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[49/59] Deep_Dive.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921525-deep-dives?wvideo=iyxjkapitj
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[50/59] Interviews.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921527-interviews?wvideo=4mbhij28hy
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[51/59] News.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921528-news?wvideo=q9y0q06rbo
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[52/59] Listicles.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921529-listicles?wvideo=i5bsp1pacv
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[53/59] Phase_6_-_1._Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921533-intro-to-measurement?wvideo=cp668r8ewi
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[54/59] Phase_6_-_2._Measurement_Myths.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921533-intro-to-measurement?wvideo=gbke1rgg4p
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[55/59] Phase_6_-_3._Measurement_Basics.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921537-measurement-basics?wvideo=qjkhj4ks3m
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[56/59] Phase_6_-_4._Measurement_System.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921541-measurement-system?wvideo=ibuoeaif87
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[57/59] Learn_a_Lesson.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921543-how-to-learn-a-lesson?wvideo=2w1intfy72
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[58/59] Measurement_30_Day.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67953961-channel-health-measurement?wvideo=6r79ikar23
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+[59/59] RevTrack_Measurment_.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921554-how-to-use-revtracks-data?wvideo=e9v5gu9k3h
+  ✗ FATAL: [Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx' (0s)
+
+═══════════════════════════════════════════════════════
+  Batch complete: 59 lessons
+  ✓ OK: 1  |  ⏭ Skipped: 10  |  ✗ Failed: 48
+  Total time: 14m 22s  |  Disk: 3.7 GB
+  Log: /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_162023.log
+  Summary JSON : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_summary.json
+  Summary Table: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_summary_table.txt
+═══════════════════════════════════════════════════════

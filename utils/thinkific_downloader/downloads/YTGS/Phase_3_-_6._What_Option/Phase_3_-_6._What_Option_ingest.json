@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "Phase_3_-_6._What_Option",
+  "created_at": "2026-03-15T16:27:23Z",
+  "media": {
+    "width": 3840,
+    "height": 2160,
+    "fps": 25.0,
+    "sample_rate": 44100
+  },
+  "clips": [
+    {
+      "clip_id": "Phase_3_-_6._What_Option",
+      "filename": "Phase_3_-_6._What_Option.mp4",
+      "path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option.mp4",
+      "duration": 224.47,
+      "offset": 0.0,
+      "premiere_transcript": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_transcription/per_clip/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_1_Ingest_captions.srt"
+  },
+  "source_folder": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_6._What_Option"
+}

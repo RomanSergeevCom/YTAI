@@ -1,0 +1,38 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T18:11:32Z",
+  "project": "Phase_5_-_12._Planning",
+  "total_duration": 168.809,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "Phase_5_-_12._Planning"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "Phase_5_-_12._Planning",
+      "local_start": 0.0,
+      "local_end": 168.44,
+      "global_start": 0.0,
+      "global_end": 168.44,
+      "speaker": "SPEAKER_00",
+      "text": "Okay, so when most people plan a video, they open a document and they just try and write a script. But that is just going to be an absolute nightmare because it's like sitting in front of a blank canvas and trying to paint a masterpiece with no sketch or guide or any idea as to where to start. What we need to do is turn our video into like a paint by numbers outline that takes all the chaos and guessing out of creativity and gives you shape and structure and clarity very easily. So when you do come to write this into a script, it's just a game of filling in the blanks and it's easy. So here's exactly how I want you to plan every video and how I do it too. So the first thing is you want to just brain dump all the points you think you want to make on a doc. Don't worry about order. Don't worry about structure. Just get the raw thoughts out of your head. And you're going to need to give yourself an hour or so at least to do this because this is one of the most important parts of the video. Then the next thing you do is you want to find outliers on the topic that have performed above average. And you are going to take their transcript by using a Google Chrome plugin, which I'll link to below, and you do it like this and you just copy it. And then you go to Skyscraper Bot, which I'll link to below. It's not in the custom AI platform. And then what you do is you highlight up to 200 of the comments and you paste them in. Skyscraper Bot is now going to tell you everything that made this video a hit. It's going to tell you what the comments loved, what's missing, what confused people, what the creator spoke about. It's then going to tell you what made this unique, feel new and inspiring. And it's also going to tell you what it would include in a video about it. What you want to do is take some of that information and add it to your blog. And then you're going to list the kind of messy chaos list. Then once you've done that, we move on to the next step, which is basically taking this information and going, right, what's the key things I need? What can I delete? And what do I definitely need to include? So we've gone from mess to a little bit more structured. Then after that, we want to start looking at how do we bring emotion and logic into each of these points. So this is where it's going to get hard. This is when you're going to get overwhelmed. You need to start asking yourself, do I just give them a bit of emotion at the start? Then give them all the steps or do I give them emotion, logic, emotion, logic. Now the format planners I'm giving you are going to help a lot with this, but this is the part where you're most likely to get incredibly overwhelmed. And then once you have that, you want something that looks like this, where we have point one, a little note on the emotion side, and then a little note on the logic point to a little note on the emotion point three, a little and so on. Right. So you can see that doesn't look messy anymore. So you can see that it's really kind of simplified down. Once you've got that, you are basically then in a position where you are ready to write this up. And that is kind of it. Go and watch the next video about writing them. And then after that, you're going to have a task and you have to do some work and expect that pain to shoot up a bit. But we do need to get some reps in and fail as fast as we can until this is going to feel easier.",
+      "avg_confidence": 0.9691
+    }
+  ],
+  "stats": {
+    "total_words": 686,
+    "total_segments": 1,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 1,
+        "words": 686,
+        "duration": 168.44,
+        "avg_confidence": 0.9691
+      }
+    },
+    "avg_confidence": 0.9691,
+    "low_confidence_segments": 0
+  }
+}

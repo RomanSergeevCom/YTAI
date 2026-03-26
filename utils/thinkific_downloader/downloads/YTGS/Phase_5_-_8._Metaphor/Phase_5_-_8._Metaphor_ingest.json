@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "Phase_5_-_8._Metaphor",
+  "created_at": "2026-03-15T17:55:28Z",
+  "media": {
+    "width": 3840,
+    "height": 2160,
+    "fps": 25.0,
+    "sample_rate": 44100
+  },
+  "clips": [
+    {
+      "clip_id": "Phase_5_-_8._Metaphor",
+      "filename": "Phase_5_-_8._Metaphor.mp4",
+      "path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor.mp4",
+      "duration": 451.52,
+      "offset": 0.0,
+      "premiere_transcript": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_transcription/per_clip/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_1_Ingest_captions.srt"
+  },
+  "source_folder": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_8._Metaphor"
+}

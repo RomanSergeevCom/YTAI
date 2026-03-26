@@ -1,0 +1,71 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T19:30:08Z",
+  "project": "RevTrack_Measurment_",
+  "total_duration": 580.243,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "RevTrack_Measurment_"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "RevTrack_Measurment_",
+      "local_start": 0.0,
+      "local_end": 204.46,
+      "global_start": 0.0,
+      "global_end": 204.46,
+      "speaker": "SPEAKER_00",
+      "text": "Okay so in this video I'm going to go deeper into how to interpret your RevTrack data so you can actually make decisions that lead to more sales and more emails. But first there's one thing you need to understand. So your sales pipeline isn't just made up of views, it's made up of different types of viewers. So cold viewers are people who are discovering you for the first time, warm viewers are people who have seen a few of your videos, they're kind of curious but they're maybe not quite ready to buy, then hot viewers are people who feel like you're talking directly to them and they're ready to buy. And here's the thing, the topics you choose, the problems you solve, the stories you tell, the frameworks you give, all of those massively impact how many of your viewers are cold, warm or hot when they hit your sales page or come to your call. So let me give you an example. So you might post a broad video that gets tons of traffic but because the audience is so cold, conversion drops because those people aren't ready to buy. But you could post a video that got a fraction of the views, drove less traffic but the conversion rate increased so you got more sales because the type of viewer that went there was warm and hot. So you might post a broad video that gets tons of traffic but because the type of viewer that went there was warmer. So the best thing about RevTrack is really trying to establish what did we do in our videos that drove higher conversion rates because once we can establish that we can make every video optimized to do the things that get viewers warming up and buying rather than just getting views. Okay so to give you an example of how this works, what I've done is I've put in these metrics. So on the customized column we've got clicks, call booking, sales, the revenue generated clicks from views, sales from clicks, sales from views, and sales from calls. And I'm going to show you how different traffic temperatures impact these numbers. So let's look at a video that's got a ton of views. Let's pick this one here. So we've got 348 ,000 views but it generated $19 ,000. And if we click on this one here we can see that this video got 35 ,000 views but generated $100 ,000. Why? Well it is because of audience temperature, the topic description, and the number of views. So if I click on this one here, I can see that the problem discussed and those things that I just told you. So it is not a case that views just generate more. It has everything to do with what you do in the video and the temperature of audience you drive to your offer. So let's go back and look at this one here. 300 ,000 views, 180 people clicked on my link for my product, only two calls were booked, but those two calls converted. So what does that tell us? Well we can look at these percentages here. So our benchmark, if we are optimizing a video for a video, we're going to have a percentage of people who are optimizing a video for sales. We want to see a 1 -3 % click from views. Optimizing a video for sales basically means doing a strong call to action for your product in that video and you can do it by stealth selling or promotional selling. That's a bit more obvious. So if I was making this video specifically to get more sales, this would be a flop. I didn't do a very good call to action. So the traffic, came in, it blew up to a new audience, it brought in cold people and I didn't promote my offer. So as a result we got very few clicks. But of the people that did come in, 1 % converted. So if we look at conversion rate of traffic to a sales page, especially for a high ticket offer, that's not the worst. And it's not the worst for a low ticket either. I certainly wouldn't say it's a massive fire.",
+      "avg_confidence": 0.9249
+    },
+    {
+      "id": 1,
+      "clip_id": "RevTrack_Measurment_",
+      "local_start": 205.48,
+      "local_end": 209.8,
+      "global_start": 205.48,
+      "global_end": 209.8,
+      "speaker": "SPEAKER_00",
+      "text": "So you can say, oh, well of the people who did came in, two people really valued it and bought.",
+      "avg_confidence": 0.9695
+    },
+    {
+      "id": 2,
+      "clip_id": "RevTrack_Measurment_",
+      "local_start": 211.02,
+      "local_end": 547.02,
+      "global_start": 211.02,
+      "global_end": 547.02,
+      "speaker": "SPEAKER_00",
+      "text": "So the sales from views is too low. So we haven't got any data there. And then we can see that my call conversion on these were high. So what that can tell us is whatever I said in this video resonated so much with two people, they were easier to convert. And that really the bottleneck here was just that I didn't do a strong enough call to action and get enough clicks in the video. If I'd increased that click -through rate, 0 .05 to 1%, could have potentially generated 20 % of the traffic. So we can see that the sales from those views are 20 times the sales from those views. So can you see how important this data is, right? So there, can you see the problem? You can fix it. So let's have a look on the other hand. So I'm going to click on this metric now, dollar per view, which for high ticket is really handy because it shows you how much dollars you made per view. So this video here, let's have a look at it in terms of views. It's a flop, but it made $3 .20 per view. What that is telling me is the temperature of the buyer was very hot by the time they reached our sales call, and something I did in this video could have very much likely warmed them up so that they were just ready to hand over their credit card details. So we look, we got views 38 clicks again. 0 .3 % click -through rate is bad. I was making that video with the aim of optimizing getting as many people to my sales page as possible, I did a very bad job of doing that which means I need to look at this and go right you know because if I if I got that to 0 .9 this call booking could be 3x because it's three times more the clicks if I got three times more the clicks I could have maybe made three times more the sales so now we look at is this next one sales from clicks so we can see that 10 % of the people who actually clicked bought which is very high so this is telling me that whatever I did in this video warmed them up a ton with the topic and the content and then it's saying 200 % sales from calls now the reason this might have happened is because we had people book calls after watching another video then watch this video and then convert in between so sometimes these numbers for call bookings can be a little bit off but what you will find is often the videos with the strongest conversions so let's just go by sales numbers are the ones that impress the viewers and the ones that impress the viewers and the ones that impress the viewers and the covered a very specific problem that they have so this video here is a roast where I showed people how to fix a problem it's likely the viewers watching that well that's the problem I have I want them to help me this one was about turning viewers into buyers which is a very big specific problem my clients have and then if we look at the ones that did rubbish for sales in comparison you can see that 92 ,000 you know one sale what was it I did wrong so the game of the game isn't what got the most views it's coming in and going what did I say and do to get the most clicks what did I say and do to get the most sales from those clicks what did I say and do to convert more sale calls now if you have a low ticket let's just remove call booking it's the same thing so we can look here and go right let's look at sales this video was alive it got a very strong conversion rate from the people who clicked so what did I say and do to get the most sales from those clicks I say I'm doing that that warmed up the traffic this one here five percent conversion rate that's great what did I say and do in that video to get this number that high same here so that the most important metrics really are these two clicks from views and sales from the clicks because these two are telling us how hot your audience was when they entered your funnel if that's really high and your views are low we really need to do is start getting more views if your views are high and these are low you have to fix your offer or work on your positioning and it's the same for email and email marketing and it's the same for email marketing and it's the same for email marketing so if we go to a lead magnet I have let's change our columns let's get rid of the cells let's get rid of anything other than email right so we can now look at let's have a look at 12 percent click from views that's insanely high look how bad those views are that's one of the worst performing videos I've made in a long time on my channel but this is the best for email conversion in terms of metrics right so if we go to a lead magnet I have let's change our columns let's get rid of all the views I've made in a long time on my channel but this is the best for email conversion in terms of what we do is we don't cry about this not doing that well we learn the lesson and go what was it I did in that video but got me this so that I can then apply it to others and the thing that worked in this video was this video was kind of weird because I didn't actually do a call to action for my email at all I simply showed off the AI systems I had built my clients and there was a link below my video that said click to get my free AI bot and people just found it so there was no call to action in that so this could have been even higher This one, same. It's a very high 8 % click from views, 1000 emails, very strong performance for the views. What did I do? Well, I used my AI tool in this video and said, you can get it below. Guess what? Same thing in this one. So we want to be using these metrics for email to test different calls to action, test different lead magnets and test different ways of asking. And if we can just focus on the clicks from views and then the email signups from views, and then repeat what these things, good metrics in more videos, you'll just grow your business. So these columns will tell you different things. I don't think I would have them all on all of the time. And other things you can do is have this like this. So you click.",
+      "avg_confidence": 0.9254
+    },
+    {
+      "id": 3,
+      "clip_id": "RevTrack_Measurment_",
+      "local_start": 550.06,
+      "local_end": 579.58,
+      "global_start": 550.06,
+      "global_end": 579.58,
+      "speaker": "SPEAKER_00",
+      "text": "Now we can have all offers on and let's say you click on a video here and then you can see all of this data. But I think that's too hard. To interpret, I prefer doing by video, by email, by website. And if I were you, I would check this data at least once a month. And I would not necessarily look at the month for videos. I just, you can keep looking at all time because these older videos will still convert. But what you'll find is once you've got six months of data, you're going to start playing a completely different game to everyone else.",
+      "avg_confidence": 0.9595
+    }
+  ],
+  "stats": {
+    "total_words": 2059,
+    "total_segments": 4,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 4,
+        "words": 2059,
+        "duration": 574.3,
+        "avg_confidence": 0.9448
+      }
+    },
+    "avg_confidence": 0.9448,
+    "low_confidence_segments": 0
+  }
+}

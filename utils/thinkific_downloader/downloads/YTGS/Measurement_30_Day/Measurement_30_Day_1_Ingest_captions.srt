@@ -1,0 +1,796 @@
+1
+00:00:00,000 --> 00:00:01,700
+Okay, so you know
+the measurement system for
+
+2
+00:00:01,700 --> 00:00:04,459
+individual videos. The thing
+is, it doesn't really
+
+3
+00:00:04,459 --> 00:00:06,360
+make sense does it?
+Because the 1 of
+
+4
+00:00:06,360 --> 00:00:09,619
+10 only ranks your
+last 10 uploads. But
+
+5
+00:00:09,619 --> 00:00:11,460
+if you zoom now
+to your last 20,
+
+6
+00:00:11,779 --> 00:00:14,500
+that 1 of 10
+might actually be a
+
+7
+00:00:14,500 --> 00:00:17,579
+10 of 20. In
+other words, you're not
+
+8
+00:00:17,579 --> 00:00:20,480
+really growing, you've plateaued,
+even though it kind
+
+9
+00:00:20,480 --> 00:00:22,859
+of looks like you've
+made some progress. So
+
+10
+00:00:22,859 --> 00:00:26,879
+measuring individual videos by
+this board is kind
+
+11
+00:00:26,879 --> 00:00:29,739
+of useless over the
+long term. And really,
+
+12
+00:00:30,000 --> 00:00:32,060
+it's just there to
+help us learn lessons
+
+13
+00:00:32,060 --> 00:00:35,079
+every time we post,
+based on the closest
+
+14
+00:00:35,079 --> 00:00:37,840
+videos around it. So
+that is why in
+
+15
+00:00:37,840 --> 00:00:39,420
+this video, I'm going
+to show you how
+
+16
+00:00:39,420 --> 00:00:42,079
+to track and measure
+the health of your
+
+17
+00:00:42,079 --> 00:00:45,060
+channel and your system
+with the only metric
+
+18
+00:00:45,060 --> 00:00:48,179
+that I think really
+matters for business on
+
+19
+00:00:48,179 --> 00:00:50,899
+YouTube. And it's called
+return viewers. So your
+
+20
+00:00:50,899 --> 00:00:52,520
+return viewers can be
+found here, come into
+
+21
+00:00:52,520 --> 00:00:55,859
+your analytics, go to
+advanced mode, keep it
+
+22
+00:00:55,859 --> 00:00:58,119
+on the last 28
+days, then come down
+
+23
+00:00:58,119 --> 00:01:01,179
+here to metric, and
+we want to click
+
+24
+00:01:01,179 --> 00:01:04,659
+on returning viewers here,
+press apply. And then
+
+25
+00:01:04,659 --> 00:01:06,379
+what you can see
+is the amount of
+
+26
+00:01:06,379 --> 00:01:08,680
+return viewers you had
+in a 28 day
+
+27
+00:01:08,680 --> 00:01:10,519
+period, you can set
+it to the 90
+
+28
+00:01:10,519 --> 00:01:12,340
+day too. You can
+also look at it
+
+29
+00:01:12,340 --> 00:01:15,019
+based on new and
+return viewers like this.
+
+30
+00:01:15,280 --> 00:01:17,799
+And we can see
+we've got
+
+31
+00:01:19,219 --> 00:01:21,280
+impressions and click through
+rate, but it's not
+
+32
+00:01:21,280 --> 00:01:23,420
+showing the actual new
+and return viewers. So
+
+33
+00:01:23,420 --> 00:01:26,719
+come to here and
+here, press apply. And
+
+34
+00:01:26,719 --> 00:01:29,159
+we can see new
+and return viewers. This
+
+35
+00:01:29,159 --> 00:01:31,879
+basically tells you how
+many people are coming
+
+36
+00:01:31,879 --> 00:01:35,079
+back to your channel
+within that timeframe. And
+
+37
+00:01:35,079 --> 00:01:37,500
+that's powerful because remember
+earlier in the program,
+
+38
+00:01:37,620 --> 00:01:38,920
+when I said the
+whole point of this
+
+39
+00:01:38,920 --> 00:01:41,019
+system was to warm
+people up in the
+
+40
+00:01:41,019 --> 00:01:43,400
+first 30 days they
+discover you. Well, this
+
+41
+00:01:43,400 --> 00:01:45,819
+number is the closest
+thing we have to
+
+42
+00:01:45,819 --> 00:01:48,560
+establish how many people
+are actually doing that.
+
+43
+00:01:48,680 --> 00:01:50,939
+So if it says
+5 ,000 return viewers,
+
+44
+00:01:51,079 --> 00:01:54,180
+to me, that is
+your current potential pipeline
+
+45
+00:01:54,180 --> 00:01:57,400
+flow that you could
+drive to your marketing
+
+46
+00:01:57,400 --> 00:02:00,579
+and offer. Now, some
+people, think this needs
+
+47
+00:02:00,579 --> 00:02:02,900
+to be like a
+crazy high number, but
+
+48
+00:02:02,900 --> 00:02:04,359
+it doesn't necessarily because
+even if it's a
+
+49
+00:02:04,359 --> 00:02:06,719
+thousand people with the
+same problem, watching your
+
+50
+00:02:06,719 --> 00:02:08,560
+content, getting driven to
+an offer that solves
+
+51
+00:02:08,560 --> 00:02:11,560
+that problem, quite a
+large pool of potential
+
+52
+00:02:11,560 --> 00:02:14,560
+buyers. And if you
+have 10 ,000 return
+
+53
+00:02:14,560 --> 00:02:17,020
+viewers, that's a small
+stadium. And if you
+
+54
+00:02:17,020 --> 00:02:19,620
+have a hundred thousand
+viewers, that's a massive
+
+55
+00:02:19,620 --> 00:02:22,319
+stadium. Now, of course,
+not every return viewer
+
+56
+00:02:22,319 --> 00:02:25,139
+will buy and that's
+absolutely fine. But what
+
+57
+00:02:25,139 --> 00:02:26,439
+matters to you is
+that you understand that
+
+58
+00:02:26,439 --> 00:02:29,159
+return viewers are your
+warm audience. The pool
+
+59
+00:02:29,159 --> 00:02:31,400
+that you can actually
+convert. But Ed, I
+
+60
+00:02:31,400 --> 00:02:33,800
+need more new viewers
+to grow. And you're
+
+61
+00:02:33,800 --> 00:02:36,979
+right. New viewers matter
+too, but return viewers
+
+62
+00:02:36,979 --> 00:02:40,860
+are the proof your
+content and system is
+
+63
+00:02:40,860 --> 00:02:43,199
+working. New viewers, all
+they do is expand
+
+64
+00:02:43,199 --> 00:02:45,319
+the top of your
+funnel. Return viewers show
+
+65
+00:02:45,319 --> 00:02:48,360
+that your system is
+warming people up. So
+
+66
+00:02:48,360 --> 00:02:51,599
+results come from combining
+the two. So instead
+
+67
+00:02:51,599 --> 00:02:54,360
+of obsessing over video
+by video performance, every
+
+68
+00:02:54,360 --> 00:02:56,400
+month, we just have
+to zoom out a
+
+69
+00:02:56,400 --> 00:02:57,919
+bit and look at
+your 30 -day return
+
+70
+00:02:57,919 --> 00:03:00,060
+viewers and ask, are
+they going up? Are
+
+71
+00:03:00,060 --> 00:03:03,039
+they staying the same?
+Are they falling? Now,
+
+72
+00:03:03,120 --> 00:03:06,740
+if they are growing,
+that's amazing. Your system's
+
+73
+00:03:06,740 --> 00:03:09,680
+bringing in new viewers
+and turning them into
+
+74
+00:03:09,680 --> 00:03:13,060
+fans. If they're steady,
+that's actually still good.
+
+75
+00:03:13,319 --> 00:03:16,919
+Because remember, people flake,
+they churn. So a
+
+76
+00:03:16,919 --> 00:03:18,439
+steady line means new
+people are still coming
+
+77
+00:03:18,439 --> 00:03:20,919
+in to replace the
+drop -offs. It's only
+
+78
+00:03:20,919 --> 00:03:23,400
+really a problem if
+this number keeps going
+
+79
+00:03:23,400 --> 00:03:26,219
+backwards month after month
+after month. But if
+
+80
+00:03:26,219 --> 00:03:28,400
+you look at mine,
+at a certain point,
+
+81
+00:03:28,539 --> 00:03:29,719
+you would be able
+to see, you will
+
+82
+00:03:29,719 --> 00:03:31,599
+just get faster growth
+and then it will
+
+83
+00:03:31,599 --> 00:03:33,460
+drop month after month
+after month, but it
+
+84
+00:03:33,460 --> 00:03:35,000
+won't drop to a
+point where it becomes
+
+85
+00:03:35,000 --> 00:03:36,939
+a problem. And this
+happens because when you
+
+86
+00:03:36,939 --> 00:03:39,300
+do go through these
+faster growth periods, they
+
+87
+00:03:39,300 --> 00:03:41,319
+won't all naturally come
+back, even if your
+
+88
+00:03:41,319 --> 00:03:43,979
+videos are perfect, because
+they just quit the
+
+89
+00:03:43,979 --> 00:03:46,219
+topic. We just want
+to make sure that
+
+90
+00:03:46,219 --> 00:03:47,740
+anyone who doesn't quit,
+we're warming up as
+
+91
+00:03:47,740 --> 00:03:51,060
+fast as possible. And
+here's where measuring this
+
+92
+00:03:51,060 --> 00:03:53,759
+way gets kind of
+fun. So sometimes you're
+
+93
+00:03:53,759 --> 00:03:54,979
+going to post a
+video and it's going
+
+94
+00:03:54,979 --> 00:03:56,219
+to look like a
+flop. It's going to
+
+95
+00:03:56,219 --> 00:03:57,599
+be ranked 9 out
+of 10. It's going
+
+96
+00:03:57,599 --> 00:03:57,900
+to have
+
+97
+00:03:59,000 --> 00:04:00,099
+a lot of clicks,
+but it will pull
+
+98
+00:04:00,099 --> 00:04:02,900
+in the right people.
+They then binge five
+
+99
+00:04:02,900 --> 00:04:06,479
+more of your videos.
+So your return viewer
+
+100
+00:04:06,479 --> 00:04:09,439
+metric can stay strong
+or go up, even
+
+101
+00:04:09,439 --> 00:04:11,379
+if you just put
+flop after flop after
+
+102
+00:04:11,379 --> 00:04:14,919
+flop out, consistently posting.
+And actually that's better
+
+103
+00:04:14,919 --> 00:04:18,000
+than having one big
+hit video that doesn't
+
+104
+00:04:18,000 --> 00:04:20,560
+cause viewers to come
+back. Now I'm going
+
+105
+00:04:20,560 --> 00:04:21,920
+to show you the
+real power of this
+
+106
+00:04:21,920 --> 00:04:25,060
+financially. So let's say
+you've got 10 ,000
+
+107
+00:04:25,060 --> 00:04:26,980
+return viewers every month
+and you sell a
+
+108
+00:04:26,980 --> 00:04:27,939
+$5 ,000 program.
+
+109
+00:04:29,000 --> 00:04:31,199
+0 .5 % of
+them book a call.
+
+110
+00:04:31,240 --> 00:04:33,500
+That's 50 calls in
+that month. If half
+
+111
+00:04:33,500 --> 00:04:37,519
+of them convert, that's
+25 clients. $125 ,000
+
+112
+00:04:37,519 --> 00:04:40,259
+in a month. Now,
+if the return viewers
+
+113
+00:04:40,259 --> 00:04:43,100
+stay flat at $10
+,000 in a 30
+
+114
+00:04:43,100 --> 00:04:46,220
+-day period, but you
+increase your conversion from
+
+115
+00:04:46,220 --> 00:04:49,500
+0 .5 to 0
+.8, that's 40 clients.
+
+116
+00:04:49,720 --> 00:04:54,839
+$200 ,000. An extra
+75k from just improving
+
+117
+00:04:54,839 --> 00:04:58,180
+that little conversion metric.
+But also, let's say
+
+118
+00:04:58,180 --> 00:05:00,519
+you're getting 10 ,000
+return viewers a month.
+
+119
+00:05:00,740 --> 00:05:04,560
+Your 10x move isn't
+more views. Your 10x
+
+120
+00:05:04,560 --> 00:05:07,699
+move is increasing your
+conversion metrics so more
+
+121
+00:05:07,699 --> 00:05:10,379
+people turn into buyers
+on auto. That's why
+
+122
+00:05:10,379 --> 00:05:12,480
+if I could only
+track one metric in
+
+123
+00:05:12,480 --> 00:05:15,079
+YouTube, it would just
+be return viewers. Because
+
+124
+00:05:15,079 --> 00:05:18,500
+that number represents your
+current customer base, the
+
+125
+00:05:18,500 --> 00:05:21,939
+start of your pipeline,
+and also tells us
+
+126
+00:05:21,939 --> 00:05:24,160
+how hot they might
+be and hot viewers
+
+127
+00:05:24,160 --> 00:05:26,560
+become buyers faster. And
+it's also why positioning
+
+128
+00:05:26,560 --> 00:05:29,199
+every video the way
+I've taught you so
+
+129
+00:05:29,199 --> 00:05:30,759
+you're not trying to
+solve multiple problems for
+
+130
+00:05:30,759 --> 00:05:32,699
+multiple people is so
+important. Because if they
+
+131
+00:05:32,699 --> 00:05:34,060
+all solve the same
+problem for the same
+
+132
+00:05:34,060 --> 00:05:36,279
+person, that's how viewers
+return and the whole
+
+133
+00:05:36,279 --> 00:05:38,500
+system works. So use
+the measure by the
+
+134
+00:05:38,500 --> 00:05:41,160
+middle system to get
+a quick sense of
+
+135
+00:05:41,160 --> 00:05:44,279
+individual video performance without
+kind of drowning in
+
+136
+00:05:44,279 --> 00:05:46,259
+all of the metrics
+that are inside YouTube
+
+137
+00:05:46,259 --> 00:05:48,160
+that are almost impossible
+to determine half the
+
+138
+00:05:48,160 --> 00:05:49,759
+time. But when it
+comes to what actually
+
+139
+00:05:49,759 --> 00:05:52,139
+matters, once a month,
+zoom out and just
+
+140
+00:05:52,139 --> 00:05:54,120
+look at your 30
+-day viewers. I'd also
+
+141
+00:05:54,120 --> 00:05:55,980
+recommend looking at your
+90 -day too, because
+
+142
+00:05:55,980 --> 00:05:58,920
+you'll start to see
+increases in views. Now,
+
+143
+00:05:58,959 --> 00:05:59,259
+if you're looking at
+your 30 -day viewers,
+
+144
+00:05:59,000 --> 00:06:00,319
+you're building a following,
+you do need these
+
+145
+00:06:00,319 --> 00:06:01,959
+return viewers to stick
+up and up and
+
+146
+00:06:01,959 --> 00:06:02,980
+up and up, because
+you've got to build
+
+147
+00:06:02,980 --> 00:06:05,939
+that viewer pool, right?
+But if you're at
+
+148
+00:06:05,939 --> 00:06:08,560
+a certain stage where
+you have a good
+
+149
+00:06:08,560 --> 00:06:12,160
+return viewer base, really
+your main goal should
+
+150
+00:06:12,160 --> 00:06:14,779
+be optimizing for sales.
+And that number just
+
+151
+00:06:14,779 --> 00:06:16,620
+needs to hold very
+steady. So to do
+
+152
+00:06:16,620 --> 00:06:18,980
+that, move on to
+phase seven, where I'm
+
+153
+00:06:18,980 --> 00:06:20,139
+going to show you
+how to work out
+
+154
+00:06:20,139 --> 00:06:22,540
+your next 10x move,
+which could mean getting
+
+155
+00:06:22,540 --> 00:06:25,759
+more return viewers, or
+it could mean working
+
+156
+00:06:25,759 --> 00:06:29,220
+on converting those viewers
+and making you a
+
+157
+00:06:29,220 --> 00:06:31,060
+lot of money, or
+it could mean working
+
+158
+00:06:31,060 --> 00:06:33,879
+on converting those viewers
+to enable you to
+
+159
+00:06:33,879 --> 00:06:35,379
+turn more of them
+into buyers. So, let's
+
+160
+00:06:35,379 --> 00:06:35,680
+get started.

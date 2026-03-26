@@ -1,0 +1,36 @@
+{
+  "version": "3.0",
+  "status": "completed",
+  "created_at": "2026-03-15T17:43:36Z",
+  "updated_at": "2026-03-15T17:52:02Z",
+  "project_name": "Phase_5_-_7._Story",
+  "input_type": "file",
+  "input_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_7._Story/Phase_5_-_7._Story.mp4",
+  "params": {
+    "num_speakers": 1,
+    "whisper_model": "large-v3",
+    "language": "en",
+    "device": "mps"
+  },
+  "clips": [
+    "Phase_5_-_7._Story"
+  ],
+  "total_duration_sec": 1012.46,
+  "stages_completed": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "stages_timing": {
+    "1_extract_audio": 1.4,
+    "2_diarization": 33.6,
+    "3_whisper": 459.2,
+    "4_speaker_mapping": 0.0,
+    "5_generate_outputs": 0.1,
+    "6_ingest_json": 0.0
+  },
+  "total_time": 494.3
+}

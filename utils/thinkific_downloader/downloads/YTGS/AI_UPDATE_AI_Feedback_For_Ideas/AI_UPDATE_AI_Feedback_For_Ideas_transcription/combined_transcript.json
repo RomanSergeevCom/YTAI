@@ -1,0 +1,38 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T17:25:18Z",
+  "project": "AI_UPDATE_AI_Feedback_For_Ideas",
+  "total_duration": 66.897,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "AI_UPDATE_AI_Feedback_For_Ideas"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "AI_UPDATE_AI_Feedback_For_Ideas",
+      "local_start": 0.0,
+      "local_end": 66.54,
+      "global_start": 0.0,
+      "global_end": 66.54,
+      "speaker": "SPEAKER_00",
+      "text": "If you want really fast feedback on a title or an idea when you're ideating, all you need to do is go over to the AI, click on guardrails and ask, is this a good idea? What it's going to do, it's going to check out your idea based on the information you've loaded into the brain and compare it against that. Then it's going to come back with information about how in line it might be with the data you fed it. And it's going to score it like this. It's going to look at if it might relate to the three problems, and it's going to make sure it's in line with the top of your umbrella, which is how you're going to position your channel business and offer. And then it's going to give you some rough title ideas. But wait, please, for the love of cute puppies, I am begging you, don't use these titles just because AI suggested them. These are examples to inspire you. Sometimes they might be good, but most of the time they're going to use weird words. This is not God. This is an AI I built that is very good, but it's not there to replace your brain or what you're doing. It's going to give you some rough title ideas. But wait, please, what you learn in the pattern bank. You can also just give it a rough kind of idea about a sort of video you want to make, and it's going to help you work out if you should even make it. All right, cool. That's it. Move on to the next video.",
+      "avg_confidence": 0.9554
+    }
+  ],
+  "stats": {
+    "total_words": 276,
+    "total_segments": 1,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 1,
+        "words": 276,
+        "duration": 66.54,
+        "avg_confidence": 0.9554
+      }
+    },
+    "avg_confidence": 0.9554,
+    "low_confidence_segments": 0
+  }
+}

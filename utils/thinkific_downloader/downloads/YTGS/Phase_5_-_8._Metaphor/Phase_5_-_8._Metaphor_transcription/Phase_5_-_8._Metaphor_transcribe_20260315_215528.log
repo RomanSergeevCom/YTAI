@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 21:55:28
+============================================================
+
+=== Configuration ===
+Project:    Phase_5_-_8._Metaphor
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor.mp4
+Clips:      1
+Duration:   7:31 (451.5s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_5_-_8._Metaphor    7:31  3840×2160 25.0fps H264  3.6Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.2 GB
+    offset 0.000s  Phase_5_-_8._Metaphor.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    7:30  99.8%  3 segments
+  Gaps                       0:00  0.2%
+
+=== Transcription ===
+Total words:     1,634
+Total segments:  3
+Avg confidence:  0.9581
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_5_-_8._Metaphor:
+    Words: 1634  Segments: 3  Confidence: 0.9659  Low: 0
+    Speaker 1: 1634 words, 3 segs, 7:27
+
+=== Whisper Per-Clip ===
+  Phase_5_-_8._Metaphor    7:31   1634 words   217 wpm    2m 56s  (2.56x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        0s  -    0s    0.3%
+  Diarization          16s       16s  +    0s    8.3%
+  Whisper           4m 08s    2m 56s  -1m 12s   91.4%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             4m 26s    3m 12s  -1m 14s  100.0%
+  Speed:          2.3x realtime
+  Wall clock:     3m 12s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_5_-_8._Metaphor_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                            9.8 KB
+    diarization.json                                    0.4 KB
+    full_audio.wav                                  14110.5 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_audio.wav   14110.6 KB
+    per_clip/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_captions.srt      15.5 KB
+    per_clip/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_premiere_transcript.json     369.5 KB
+    per_clip/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_transcript.json     216.3 KB
+    per_clip/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_transcript.srt       8.7 KB
+    per_clip/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_transcript.txt       8.6 KB
+    per_clip/Phase_5_-_8._Metaphor/Phase_5_-_8._Metaphor_whisper_raw.json     216.9 KB
+  Phase_5_-_8._Metaphor_transcript.xlsx  (11.2 KB)
+
+============================================================

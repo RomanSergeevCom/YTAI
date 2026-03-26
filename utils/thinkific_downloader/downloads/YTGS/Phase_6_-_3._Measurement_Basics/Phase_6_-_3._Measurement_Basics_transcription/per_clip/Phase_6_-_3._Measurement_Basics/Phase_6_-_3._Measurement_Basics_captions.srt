@@ -1,0 +1,1944 @@
+1
+00:00:00,000 --> 00:00:02,020
+How often should your
+videos perform above average?
+
+2
+00:00:02,240 --> 00:00:04,639
+Well, a while back,
+I analyzed 40 world
+
+3
+00:00:04,639 --> 00:00:06,660
+-class channels over the
+course of a two
+
+4
+00:00:06,660 --> 00:00:09,480
+-year period. And these
+were channels with massive
+
+5
+00:00:09,480 --> 00:00:13,859
+credibility, full -time editors,
+researchers, analysts, strategists, big
+
+6
+00:00:13,859 --> 00:00:17,199
+production budgets. And what
+I found is seven
+
+7
+00:00:17,199 --> 00:00:19,899
+out of 10 of
+their videos performed average
+
+8
+00:00:19,899 --> 00:00:22,899
+or below, and only
+three broke out past
+
+9
+00:00:22,899 --> 00:00:25,140
+their average and noticeably
+grew the channel. So
+
+10
+00:00:25,140 --> 00:00:27,960
+let that sink in.
+These are world -class
+
+11
+00:00:27,960 --> 00:00:32,259
+creators with potentially decades
+of experience. So why
+
+12
+00:00:32,259 --> 00:00:34,960
+is it that everyone
+freaks out when they
+
+13
+00:00:34,960 --> 00:00:37,700
+post a video and
+it's ranked a six
+
+14
+00:00:37,700 --> 00:00:39,799
+out of 10? Like
+that's a failure. Well,
+
+15
+00:00:39,859 --> 00:00:41,920
+it's not your fault
+because that one out
+
+16
+00:00:41,920 --> 00:00:43,659
+of 10 ranking system
+YouTube gives you when
+
+17
+00:00:43,659 --> 00:00:45,759
+you post a video
+designed to gamify the
+
+18
+00:00:45,759 --> 00:00:47,560
+system so that you
+get addicted to trying
+
+19
+00:00:47,560 --> 00:00:49,640
+to get YouTube more
+views because that's how
+
+20
+00:00:49,640 --> 00:00:51,479
+they make their money.
+But it's one of
+
+21
+00:00:51,479 --> 00:00:54,079
+the least useful metrics
+for anyone trying to
+
+22
+00:00:54,079 --> 00:00:55,579
+build a business. In
+fact, it could cause
+
+23
+00:00:55,579 --> 00:00:57,560
+you to waste time
+on content that never
+
+24
+00:00:57,560 --> 00:00:59,359
+grows your business. But
+not only is that
+
+25
+00:00:59,359 --> 00:01:01,820
+an awful part of
+the YouTube studio, I
+
+26
+00:01:01,820 --> 00:01:03,740
+also get people going,
+Ed, why is my
+
+27
+00:01:03,740 --> 00:01:05,560
+click -through rate so
+low? Help me. I
+
+28
+00:01:05,560 --> 00:01:08,099
+don't look at click
+rates or any data
+
+29
+00:01:08,099 --> 00:01:10,219
+in the YouTube studio
+pretty much at all.
+
+30
+00:01:10,359 --> 00:01:12,319
+And I still have
+multiple simple play buttons
+
+31
+00:01:12,319 --> 00:01:15,219
+and millions of views.
+So in this video,
+
+32
+00:01:15,319 --> 00:01:17,079
+I'm gonna show you
+the basics of measurement.
+
+33
+00:01:17,280 --> 00:01:19,180
+You're gonna learn what
+to care about, the
+
+34
+00:01:19,180 --> 00:01:21,140
+mistakes to avoid, and
+I'm gonna show you
+
+35
+00:01:21,140 --> 00:01:23,540
+how to actually measure
+if a video is
+
+36
+00:01:23,540 --> 00:01:25,359
+a flop or a
+hit for you. And
+
+37
+00:01:25,359 --> 00:01:26,700
+this is gonna do
+three things. It's gonna
+
+38
+00:01:26,700 --> 00:01:28,599
+improve your mindset because
+you're probably doing it
+
+39
+00:01:28,599 --> 00:01:28,899
+for a reason. It's
+gonna help you do
+
+40
+00:01:28,620 --> 00:01:30,500
+way better than you
+think with your channel.
+
+41
+00:01:30,680 --> 00:01:32,519
+It's gonna give you
+a repeatable system to
+
+42
+00:01:32,519 --> 00:01:34,439
+find what's working and
+build on it fast.
+
+43
+00:01:34,700 --> 00:01:36,620
+It's gonna help you
+learn lessons that matter.
+
+44
+00:01:36,780 --> 00:01:37,840
+And then after that,
+I'm gonna give you
+
+45
+00:01:37,840 --> 00:01:40,739
+a more detailed measurement
+system for every video
+
+46
+00:01:40,739 --> 00:01:42,659
+you make. All right,
+so let's start with
+
+47
+00:01:42,659 --> 00:01:44,120
+the first thing you
+need to be able
+
+48
+00:01:44,120 --> 00:01:46,420
+to measure a video
+success. So if I
+
+49
+00:01:46,420 --> 00:01:48,040
+said to you, I'm
+gonna give you 10
+
+50
+00:01:48,040 --> 00:01:50,079
+grand if you win
+the race, you'd be
+
+51
+00:01:50,079 --> 00:01:51,819
+like, cool. And you
+start running, but a
+
+52
+00:01:51,819 --> 00:01:53,560
+few miles in, you'd
+suddenly go, hang on,
+
+53
+00:01:53,700 --> 00:01:56,459
+where's the finish line?
+How do I even
+
+54
+00:01:56,459 --> 00:01:58,579
+win this thing? Then
+what would happen is,
+
+55
+00:01:58,579 --> 00:02:00,260
+you would just keep
+running. You would lose
+
+56
+00:02:00,260 --> 00:02:03,099
+motivation because you have
+no expectation for how
+
+57
+00:02:03,099 --> 00:02:05,280
+long this race could
+take you. And then
+
+58
+00:02:05,280 --> 00:02:07,120
+you'd feel like you
+were making no real
+
+59
+00:02:07,120 --> 00:02:10,400
+progress. YouTube is the
+same. People post a
+
+60
+00:02:10,400 --> 00:02:12,680
+video, open the YouTube
+studio, see the ranking
+
+61
+00:02:12,680 --> 00:02:16,800
+and immediately react very
+emotionally. Why is this
+
+62
+00:02:16,800 --> 00:02:18,599
+an eight out of
+10? This one flopped.
+
+63
+00:02:18,599 --> 00:02:20,460
+Do I need a
+better title? Maybe I
+
+64
+00:02:20,460 --> 00:02:21,979
+should start a TikTok
+and get my billion
+
+65
+00:02:21,979 --> 00:02:23,740
+views from my loyal
+fans in the Congo
+
+66
+00:02:23,740 --> 00:02:25,560
+so I feel better
+about myself. And this
+
+67
+00:02:25,560 --> 00:02:28,379
+happens because they didn't
+set their expectations for
+
+68
+00:02:28,379 --> 00:02:31,139
+what they thought would
+happen or even set
+
+69
+00:02:31,139 --> 00:02:32,819
+an end goal to
+measure by, meaning they
+
+70
+00:02:32,819 --> 00:02:35,219
+get totally lost. So
+the first thing you
+
+71
+00:02:35,219 --> 00:02:37,460
+need to do when
+making a video is
+
+72
+00:02:37,460 --> 00:02:39,639
+set your expectations before
+you post and pick
+
+73
+00:02:39,639 --> 00:02:42,039
+your goal, which is
+why it's the top
+
+74
+00:02:42,039 --> 00:02:43,960
+thing on every planner
+I made you. So
+
+75
+00:02:43,960 --> 00:02:46,460
+here's how to set
+expectations for a video.
+
+76
+00:02:46,680 --> 00:02:47,939
+The first thing you
+need to do is
+
+77
+00:02:47,939 --> 00:02:50,360
+understand there are different
+levels of risk for
+
+78
+00:02:50,360 --> 00:02:51,740
+every video you make.
+So have a look
+
+79
+00:02:51,740 --> 00:02:53,740
+at this chart. If
+you are repeating a
+
+80
+00:02:53,740 --> 00:02:55,680
+proven format that has
+already worked on your
+
+81
+00:02:55,680 --> 00:02:58,759
+channel, you can expect
+an above average performance
+
+82
+00:02:58,759 --> 00:03:01,639
+for it, meaning above
+a six out of
+
+83
+00:03:01,639 --> 00:03:03,520
+10 on your one
+out of 10 ranking.
+
+84
+00:03:03,759 --> 00:03:06,000
+Now, this is a
+lower risk video because
+
+85
+00:03:06,000 --> 00:03:09,039
+when viewers know you
+for a format or
+
+86
+00:03:09,039 --> 00:03:11,159
+a title or a
+topic, that's their expectations
+
+87
+00:03:11,159 --> 00:03:13,400
+they want meeting again
+for your channel. And
+
+88
+00:03:13,400 --> 00:03:16,080
+hopefully you've realized finding
+these videos and repeating
+
+89
+00:03:16,080 --> 00:03:17,439
+over and over again
+is the name of
+
+90
+00:03:17,439 --> 00:03:19,599
+the game by now.
+If not, my gosh,
+
+91
+00:03:19,719 --> 00:03:21,680
+you need help. I've
+literally said it in
+
+92
+00:03:21,680 --> 00:03:23,280
+every video. Now, after
+that, if you're trying
+
+93
+00:03:23,280 --> 00:03:24,840
+something that worked on
+another channel in your
+
+94
+00:03:24,840 --> 00:03:27,039
+niche or an adjacent
+one, AKA an outlier,
+
+95
+00:03:27,120 --> 00:03:28,800
+the thing we built
+our entire Patent Bank
+
+96
+00:03:28,800 --> 00:03:32,699
+on, that's medium risk.
+And my expectations for
+
+97
+00:03:32,699 --> 00:03:35,939
+its performance would be
+it's more likely to
+
+98
+00:03:35,939 --> 00:03:37,860
+perform in your bottom
+four than your top
+
+99
+00:03:37,860 --> 00:03:41,180
+because it worked elsewhere,
+but that doesn't mean
+
+100
+00:03:41,180 --> 00:03:42,979
+it will work for
+you. It's a test
+
+101
+00:03:42,979 --> 00:03:44,939
+that we're failing as
+fast as we can
+
+102
+00:03:44,939 --> 00:03:47,580
+to establish. So one
+creator might have built
+
+103
+00:03:47,580 --> 00:03:50,020
+their channel on listicles
+that only appeal to
+
+104
+00:03:50,020 --> 00:03:52,219
+like a beginner audience
+and your channel might
+
+105
+00:03:52,219 --> 00:03:54,500
+have been built on
+deep dives, which don't.
+
+106
+00:03:54,500 --> 00:03:56,500
+So when you test
+this out, you're potentially
+
+107
+00:03:56,500 --> 00:03:58,479
+going against what your
+viewers might want. So
+
+108
+00:03:58,479 --> 00:04:00,099
+anytime I try a
+new style of video
+
+109
+00:04:00,099 --> 00:04:01,639
+on my channel, even
+if it's based on
+
+110
+00:04:01,639 --> 00:04:04,479
+outliers, I expect below
+six out of 10
+
+111
+00:04:04,479 --> 00:04:06,639
+in the ranking, but
+it's still important we
+
+112
+00:04:06,639 --> 00:04:08,979
+try this because we
+only need it to
+
+113
+00:04:08,979 --> 00:04:11,479
+work once before we
+then have another repeatable
+
+114
+00:04:11,479 --> 00:04:13,500
+format we can do,
+which will lift our
+
+115
+00:04:13,500 --> 00:04:15,879
+entire channel. And then
+the last thing that's
+
+116
+00:04:15,879 --> 00:04:17,560
+incredibly high risk is
+if you're just making
+
+117
+00:04:17,560 --> 00:04:19,300
+a video without any
+research where you're like,
+
+118
+00:04:19,360 --> 00:04:20,360
+I just think I
+want to make this
+
+119
+00:04:20,360 --> 00:04:21,839
+because I think it's
+a good idea. I
+
+120
+00:04:21,839 --> 00:04:23,980
+would expect that to
+always be a 10
+
+121
+00:04:23,980 --> 00:04:26,000
+out of 10 flop.
+And that is sadly
+
+122
+00:04:26,000 --> 00:04:27,620
+why most people never
+grow a channel because
+
+123
+00:04:27,620 --> 00:04:29,839
+they do that over
+and over again, which
+
+124
+00:04:29,839 --> 00:04:31,879
+I'm telling you now
+is never going to
+
+125
+00:04:31,879 --> 00:04:33,860
+work. It might work
+one in every million
+
+126
+00:04:34,459 --> 00:04:37,040
+before you go, it
+worked for me. So
+
+127
+00:04:37,040 --> 00:04:38,879
+before every video you
+make, you have to
+
+128
+00:04:38,879 --> 00:04:41,319
+set some expectations to
+measure by, which should
+
+129
+00:04:41,319 --> 00:04:43,040
+be that three out
+of 10 times, this
+
+130
+00:04:43,040 --> 00:04:44,240
+is probably not going
+to work for you.
+
+131
+00:04:44,300 --> 00:04:45,800
+If you don't repeat
+something that's worked on
+
+132
+00:04:45,800 --> 00:04:47,000
+the channel, it's probably
+not going to work
+
+133
+00:04:47,000 --> 00:04:48,259
+for me. And if
+you put a ton
+
+134
+00:04:48,259 --> 00:04:50,959
+of effort into this,
+it's 70 % likely
+
+135
+00:04:50,959 --> 00:04:52,459
+not to work for
+you. Okay, so once
+
+136
+00:04:52,459 --> 00:04:54,959
+you've got those expectations,
+you pick a goal
+
+137
+00:04:54,959 --> 00:04:57,180
+that ties into it.
+So if you remember
+
+138
+00:04:57,180 --> 00:05:00,439
+from your planning phase,
+every video should be
+
+139
+00:05:00,439 --> 00:05:03,060
+optimized for either views,
+sales or emails. And
+
+140
+00:05:03,060 --> 00:05:05,579
+it's very unlikely we
+can get all three
+
+141
+00:05:05,579 --> 00:05:06,879
+of those to work
+at once. So I
+
+142
+00:05:06,879 --> 00:05:08,899
+just pick one that
+I'm most bothered about.
+
+143
+00:05:09,040 --> 00:05:11,040
+And then I make
+sure the video ticks
+
+144
+00:05:11,040 --> 00:05:12,879
+all the boxes to
+hopefully achieve it. Anything
+
+145
+00:05:12,879 --> 00:05:14,920
+else that happens there
+is a bonus. When
+
+146
+00:05:14,920 --> 00:05:17,240
+you have that goal
+and expectations, you can
+
+147
+00:05:17,240 --> 00:05:20,240
+now successfully measure against
+them. So let's talk
+
+148
+00:05:20,240 --> 00:05:23,300
+about how to track
+views based on those
+
+149
+00:05:23,300 --> 00:05:25,959
+expectations and goals in
+a useful way, because
+
+150
+00:05:25,959 --> 00:05:27,839
+pretty much everyone does
+this in a way
+
+151
+00:05:27,839 --> 00:05:29,720
+that sets them up
+for the staircase of
+
+152
+00:05:29,720 --> 00:05:32,360
+pain, being 10 times
+more painful than it
+
+153
+00:05:32,360 --> 00:05:34,519
+needs to be. And
+actually meaning they can
+
+154
+00:05:34,519 --> 00:05:35,980
+never get off it.
+All right, so what
+
+155
+00:05:35,980 --> 00:05:36,819
+I want you to
+do is think about
+
+156
+00:05:36,819 --> 00:05:39,959
+YouTube like this. You
+already know that even
+
+157
+00:05:39,959 --> 00:05:41,259
+for the best channels
+in the world, only
+
+158
+00:05:41,259 --> 00:05:43,800
+three in 10 videos
+perform above average. So
+
+159
+00:05:43,800 --> 00:05:45,399
+expecting every video to
+be in your top
+
+160
+00:05:45,399 --> 00:05:48,879
+three is very, very
+unrealistic. So to avoid
+
+161
+00:05:48,879 --> 00:05:51,000
+feeling like you're failing
+and to measure properly,
+
+162
+00:05:51,240 --> 00:05:54,220
+we measure views by
+the middle. What does
+
+163
+00:05:54,220 --> 00:05:55,839
+that mean? Well, you
+look at where your
+
+164
+00:05:55,839 --> 00:05:59,959
+videos rank against spots
+five and 10 in
+
+165
+00:05:59,959 --> 00:06:01,759
+this one of 10
+board. And if it
+
+166
+00:06:01,759 --> 00:06:04,480
+lands position six or
+higher, that's a win
+
+167
+00:06:04,980 --> 00:06:07,540
+because you've just replaced
+one of your old
+
+168
+00:06:07,540 --> 00:06:10,660
+middle performers and raised
+your channel average. So
+
+169
+00:06:10,660 --> 00:06:13,600
+let's say your position
+five video gets 500
+
+170
+00:06:13,600 --> 00:06:16,060
+views. Then you post
+the video that gets
+
+171
+00:06:16,060 --> 00:06:19,399
+600 and that 600
+views becomes your new
+
+172
+00:06:19,399 --> 00:06:21,660
+position five. If you
+keep hitting new five
+
+173
+00:06:21,660 --> 00:06:24,660
+of 10s, every time
+your middle shifts from
+
+174
+00:06:24,660 --> 00:06:27,519
+500 to a thousand
+views and your entire
+
+175
+00:06:27,519 --> 00:06:30,399
+channel on how well
+optimized your sales system
+
+176
+00:06:30,399 --> 00:06:33,959
+is now 200 %
+more effective because your
+
+177
+00:06:33,959 --> 00:06:36,300
+middle doubled. The YouTube
+one of 10 board
+
+178
+00:06:36,300 --> 00:06:38,259
+only really makes it
+clear when you've got
+
+179
+00:06:38,259 --> 00:06:40,759
+an outlier, not when
+you're raising your channels
+
+180
+00:06:40,759 --> 00:06:42,220
+average views bit by
+bit, which was the
+
+181
+00:06:42,220 --> 00:06:44,259
+most important bit. That
+is the bit that
+
+182
+00:06:44,259 --> 00:06:46,779
+generates the sales, not
+the cold outliers. So
+
+183
+00:06:46,779 --> 00:06:49,220
+you need to celebrate
+beating the middle consistently
+
+184
+00:06:49,959 --> 00:06:53,199
+because this creates sustainable
+growth, not short -term
+
+185
+00:06:53,199 --> 00:06:56,259
+spikes. And just as
+importantly, this approach protects
+
+186
+00:06:56,259 --> 00:06:59,000
+your mindset from the
+emotional burnout you're gonna
+
+187
+00:06:59,000 --> 00:07:00,779
+feel. But here's another
+thing about the one
+
+188
+00:07:00,779 --> 00:07:02,699
+of 10 board. Most
+creators, they look at
+
+189
+00:07:02,699 --> 00:07:04,180
+their one of 10
+dashboard and they panic
+
+190
+00:07:04,180 --> 00:07:06,980
+when a video ranks
+eighth, ninth or 10th.
+
+191
+00:07:07,019 --> 00:07:08,319
+But firstly, if your
+one of 10 has
+
+192
+00:07:08,319 --> 00:07:10,740
+a thousand views and
+your 10 of 10
+
+193
+00:07:10,740 --> 00:07:12,899
+has 900 views, you
+do not have a
+
+194
+00:07:12,899 --> 00:07:15,019
+one of 10 board.
+A mouse could sneeze
+
+195
+00:07:15,019 --> 00:07:17,319
+in the outer Hebrides
+and YouTube could suddenly
+
+196
+00:07:17,319 --> 00:07:19,240
+give it a bunch
+of impressions that makes
+
+197
+00:07:19,240 --> 00:07:20,740
+your 10 out of
+10 a one out
+
+198
+00:07:20,740 --> 00:07:23,100
+of 10. That is
+not a big enough
+
+199
+00:07:23,100 --> 00:07:25,839
+spread. That's actually impressive.
+So look at mine.
+
+200
+00:07:26,019 --> 00:07:27,839
+My one of 10
+here has 88 ,000
+
+201
+00:07:27,839 --> 00:07:30,019
+views to 8 ,000.
+So with a 10X
+
+202
+00:07:30,019 --> 00:07:32,300
+split. So you only
+have a one of
+
+203
+00:07:32,300 --> 00:07:34,600
+10 board when the
+top video has significantly
+
+204
+00:07:34,600 --> 00:07:38,180
+more views than the
+bottom. Otherwise, they're all
+
+205
+00:07:38,180 --> 00:07:40,639
+ranked the same. But
+also you actually want
+
+206
+00:07:40,639 --> 00:07:42,860
+a massive gap like
+I have. It's really
+
+207
+00:07:42,860 --> 00:07:46,220
+important because look, the
+top videos clearly show
+
+208
+00:07:46,220 --> 00:07:48,399
+this worked, do more
+of this. The bottom
+
+209
+00:07:48,399 --> 00:07:50,579
+videos clearly show this
+flopped, do less of
+
+210
+00:07:50,579 --> 00:07:52,319
+that. So this couldn't
+give you a more
+
+211
+00:07:52,319 --> 00:07:54,199
+obvious sign of what
+to repeat and what
+
+212
+00:07:54,199 --> 00:07:55,560
+to do more of.
+So if your one
+
+213
+00:07:55,560 --> 00:07:57,399
+of 10 board has
+a tiny difference, you're
+
+214
+00:07:57,399 --> 00:08:00,160
+very likely second guessing
+everything. So just stop
+
+215
+00:08:00,160 --> 00:08:02,180
+obsessing over it. It's
+not really that useful.
+
+216
+00:08:02,420 --> 00:08:04,040
+All right, so now
+that we've covered how
+
+217
+00:08:04,040 --> 00:08:06,540
+to react to YouTube
+view performance using the
+
+218
+00:08:06,540 --> 00:08:08,459
+one of 10 board,
+let's move into measuring
+
+219
+00:08:08,459 --> 00:08:10,959
+business results and the
+metrics that can actually
+
+220
+00:08:10,959 --> 00:08:13,279
+make you more money.
+So these metrics matter
+
+221
+00:08:13,279 --> 00:08:15,279
+way more than views
+to me because they
+
+222
+00:08:15,279 --> 00:08:17,319
+directly grow your business,
+not make YouTube ad
+
+223
+00:08:17,319 --> 00:08:19,819
+revenue. Also the business
+metrics are a much
+
+224
+00:08:19,819 --> 00:08:22,959
+clearer sign of how
+impactful and useful your
+
+225
+00:08:22,959 --> 00:08:25,100
+content was for your
+target buyer, where the
+
+226
+00:08:25,100 --> 00:08:26,720
+views are not. And
+the good news is
+
+227
+00:08:26,720 --> 00:08:29,180
+you don't need a
+million views to make
+
+228
+00:08:29,180 --> 00:08:30,779
+a great income. You
+just need a video
+
+229
+00:08:30,779 --> 00:08:32,759
+that converts. So here's
+how to measure the
+
+230
+00:08:32,759 --> 00:08:34,539
+business side of performance.
+And then to do
+
+231
+00:08:34,539 --> 00:08:35,960
+that, we're going to
+use RevTrack. If you
+
+232
+00:08:35,960 --> 00:08:37,960
+don't have RevTrack, this
+can still work for
+
+233
+00:08:37,960 --> 00:08:40,480
+you. It just requires
+much more of an
+
+234
+00:08:40,480 --> 00:08:43,580
+educated guess rather than
+just looking at quick
+
+235
+00:08:43,580 --> 00:08:47,179
+raw data. So firstly,
+measure everything at the
+
+236
+00:08:47,179 --> 00:08:48,840
+seven day mark. So
+why do we measure
+
+237
+00:08:48,840 --> 00:08:50,259
+by the seven day
+mark? Well, it will
+
+238
+00:08:50,259 --> 00:08:52,299
+have given us enough
+data to start off
+
+239
+00:08:52,299 --> 00:08:54,039
+with because many of
+you won't have much
+
+240
+00:08:54,039 --> 00:08:56,399
+in the first day,
+but also it's telling
+
+241
+00:08:56,399 --> 00:08:58,879
+us when our hot
+returning viewers are taking
+
+242
+00:08:58,879 --> 00:09:00,820
+actions. And those are
+the people that we've
+
+243
+00:09:00,820 --> 00:09:03,440
+been nurturing over time.
+It's very unlikely that
+
+244
+00:09:03,440 --> 00:09:05,259
+a new cold audience
+just jumps in and
+
+245
+00:09:05,259 --> 00:09:07,860
+buy your stuff and
+cold audiences massively dilute
+
+246
+00:09:07,860 --> 00:09:09,659
+your data and they'll
+make it feel like
+
+247
+00:09:09,659 --> 00:09:11,100
+you're not doing as
+well. So when I'm
+
+248
+00:09:11,100 --> 00:09:12,559
+tracking on day seven,
+there's a few things
+
+249
+00:09:12,559 --> 00:09:14,639
+I look at. Link
+clicks, email signups from
+
+250
+00:09:14,639 --> 00:09:17,019
+the video, sales from
+the video, waitlist signups
+
+251
+00:09:17,019 --> 00:09:18,899
+for video, calls booked
+from the video. Now
+
+252
+00:09:18,899 --> 00:09:20,480
+you might not have
+a waitlist or a
+
+253
+00:09:20,480 --> 00:09:22,220
+call booking thing. That's
+fine if you don't,
+
+254
+00:09:22,220 --> 00:09:24,039
+but let's move on
+to look at how
+
+255
+00:09:24,039 --> 00:09:26,080
+to analyze some of
+these key ones that
+
+256
+00:09:26,080 --> 00:09:27,820
+most of us will
+have starting with link
+
+257
+00:09:27,820 --> 00:09:30,759
+clicks. So we've tracked
+over half a billion
+
+258
+00:09:30,759 --> 00:09:32,919
+views using RevTrack up
+until the time of
+
+259
+00:09:32,919 --> 00:09:35,299
+filming this and discovered
+that this is actually
+
+260
+00:09:35,299 --> 00:09:37,360
+the most important business
+metric, because let's say
+
+261
+00:09:37,360 --> 00:09:39,679
+your average video drives
+1 % of your
+
+262
+00:09:39,679 --> 00:09:41,379
+viewers to click on
+the link below it.
+
+263
+00:09:41,460 --> 00:09:43,720
+If you increase that
+to 4%, that's not
+
+264
+00:09:43,720 --> 00:09:46,519
+a 3 % increase.
+That's a 400 %
+
+265
+00:09:46,519 --> 00:09:48,419
+increase. So 400 %
+increase is a 4
+
+266
+00:09:48,419 --> 00:09:49,600
+% increase. So 100
+% more people than
+
+267
+00:09:49,600 --> 00:09:51,340
+average go to your
+sales page or email
+
+268
+00:09:51,340 --> 00:09:53,039
+signup. What that means
+is the link below
+
+269
+00:09:53,039 --> 00:09:54,200
+one of your videos
+is one of the
+
+270
+00:09:54,200 --> 00:09:56,179
+highest leverage pieces of
+data in our entire
+
+271
+00:09:56,179 --> 00:09:59,000
+system. And it's really
+easy to increase too.
+
+272
+00:09:59,559 --> 00:10:02,679
+So the video about
+conversion optimization in the
+
+273
+00:10:02,679 --> 00:10:04,820
+planning module taught you
+how to increase this.
+
+274
+00:10:04,919 --> 00:10:06,259
+I'm not gonna go
+over it again, but
+
+275
+00:10:06,259 --> 00:10:08,580
+not everyone knows how
+important the link click
+
+276
+00:10:08,580 --> 00:10:11,019
+is. So when you
+post a video on
+
+277
+00:10:11,019 --> 00:10:15,179
+day seven, anything above
+the middle performance for
+
+278
+00:10:15,179 --> 00:10:17,460
+link clicks from your
+RevTrack is good. Anything
+
+279
+00:10:17,460 --> 00:10:19,539
+in the top two,
+is gonna teach you
+
+280
+00:10:19,539 --> 00:10:21,539
+a massive lesson you
+wanna repeat and anything
+
+281
+00:10:21,539 --> 00:10:23,399
+below the middle, don't
+do again. If you
+
+282
+00:10:23,399 --> 00:10:26,039
+don't have RevTrack, you
+can't really track link
+
+283
+00:10:26,039 --> 00:10:27,759
+clicks in this way.
+But what you can
+
+284
+00:10:27,759 --> 00:10:29,279
+do is just look
+at the traffic to
+
+285
+00:10:29,279 --> 00:10:31,799
+the page in the
+seven days when you
+
+286
+00:10:31,799 --> 00:10:33,899
+posted it and then
+track that. Now, if
+
+287
+00:10:33,899 --> 00:10:35,620
+there's traffic coming to
+that page from lots
+
+288
+00:10:35,620 --> 00:10:37,700
+of different places, the
+data is gonna be
+
+289
+00:10:37,700 --> 00:10:39,779
+muddied. And we're not
+gonna know if that
+
+290
+00:10:39,779 --> 00:10:41,720
+traffic is caused by
+the video or other
+
+291
+00:10:41,720 --> 00:10:44,620
+things, but it could
+still be useful. Next,
+
+292
+00:10:44,779 --> 00:10:47,620
+we have email signups.
+Again, we measure by
+
+293
+00:10:47,620 --> 00:10:49,779
+the middle on day
+seven and ask, why
+
+294
+00:10:49,779 --> 00:10:52,159
+did this video get
+better results than this
+
+295
+00:10:52,159 --> 00:10:53,820
+one? And then we
+do the same. We
+
+296
+00:10:53,820 --> 00:10:55,720
+repeat more of what
+worked and less of
+
+297
+00:10:55,720 --> 00:10:58,559
+what didn't and celebrate
+anything above the middle.
+
+298
+00:10:58,679 --> 00:10:59,700
+Don't worry, later on
+in this module, I'm
+
+299
+00:10:59,700 --> 00:11:01,340
+gonna give you questions
+that you ask to
+
+300
+00:11:01,340 --> 00:11:03,480
+help work out why
+things performed the way
+
+301
+00:11:03,480 --> 00:11:04,820
+they did or why
+they didn't. But you
+
+302
+00:11:04,820 --> 00:11:06,620
+do need to be
+very careful looking at
+
+303
+00:11:06,620 --> 00:11:09,899
+this data because look,
+that's YouTube telling me,
+
+304
+00:11:09,960 --> 00:11:12,120
+Ed, your viewers hated
+this video, never make
+
+305
+00:11:12,120 --> 00:11:13,639
+it again with a
+10 or 10 flop.
+
+306
+00:11:13,899 --> 00:11:15,399
+And then that's RevTrack
+telling me, Ed, this
+
+307
+00:11:15,399 --> 00:11:17,340
+was so good for
+email signups, do whatever
+
+308
+00:11:17,340 --> 00:11:18,399
+the heck you did
+again. So, that's what
+
+309
+00:11:18,399 --> 00:11:18,699
+I'm gonna do. And
+then I'm gonna do
+
+310
+00:11:18,399 --> 00:11:18,919
+this. So, that's what
+I'm gonna do. And
+
+311
+00:11:18,919 --> 00:11:19,219
+then I'm gonna do
+this. This is why
+
+312
+00:11:19,200 --> 00:11:21,799
+tracking these metrics is
+critical because YouTube is
+
+313
+00:11:21,799 --> 00:11:23,779
+going to get you
+to do what makes
+
+314
+00:11:23,779 --> 00:11:25,679
+them money, not you.
+In your landing page
+
+315
+00:11:25,679 --> 00:11:28,159
+builder, you can look
+at the email signups
+
+316
+00:11:28,159 --> 00:11:30,580
+for the week. If
+you posted a video
+
+317
+00:11:30,580 --> 00:11:33,179
+that week, you'll likely
+see an increase in
+
+318
+00:11:33,179 --> 00:11:35,860
+email signups. It's just
+not quite as accurate
+
+319
+00:11:35,860 --> 00:11:37,899
+as using RevTrack. So,
+the next thing we
+
+320
+00:11:37,899 --> 00:11:39,299
+track on the seven
+day mark is sales.
+
+321
+00:11:39,600 --> 00:11:42,460
+And this is where
+most people panic. But
+
+322
+00:11:42,460 --> 00:11:44,879
+the reality is a
+video can have average
+
+323
+00:11:44,879 --> 00:11:46,480
+views and still make
+a lot of money
+
+324
+00:11:46,480 --> 00:11:49,039
+because conversion content is
+often more specific to
+
+325
+00:11:49,039 --> 00:11:51,720
+less people, more serious
+people. And that is
+
+326
+00:11:51,720 --> 00:11:53,960
+what will make you
+more money. And if
+
+327
+00:11:53,960 --> 00:11:55,740
+you're not tracking what
+videos make you money,
+
+328
+00:11:55,879 --> 00:11:58,399
+you can't optimize your
+channels for sales or
+
+329
+00:11:58,399 --> 00:12:01,240
+point content back to
+high converting videos. So,
+
+330
+00:12:01,279 --> 00:12:03,299
+it's critical. And again,
+all you do is
+
+331
+00:12:03,299 --> 00:12:04,840
+when this data loads,
+you measure by the
+
+332
+00:12:04,840 --> 00:12:07,559
+middle. And if the
+video is above average,
+
+333
+00:12:07,659 --> 00:12:10,059
+ask why. And if
+it's below, ask why
+
+334
+00:12:10,059 --> 00:12:12,139
+and just repeat what
+worked. And then for
+
+335
+00:12:12,139 --> 00:12:14,379
+sales, if you don't
+have RevTrack, you'll just
+
+336
+00:12:14,379 --> 00:12:16,480
+need to look at
+the week sales and
+
+337
+00:12:16,480 --> 00:12:18,419
+know them. But if
+there's multiple traffic, if
+
+338
+00:12:18,419 --> 00:12:19,720
+there's multiple traffic sources
+going to the page,
+
+339
+00:12:19,840 --> 00:12:21,620
+then the data is
+not as accurate. So,
+
+340
+00:12:21,659 --> 00:12:22,580
+you kind of want
+to look at, did
+
+341
+00:12:22,580 --> 00:12:24,639
+the average sales increase
+that week? If so,
+
+342
+00:12:24,740 --> 00:12:26,419
+it could be the
+video. Seeing the pattern
+
+343
+00:12:26,419 --> 00:12:28,220
+here, right? This data
+is so much more
+
+344
+00:12:28,220 --> 00:12:30,139
+simple than the YouTube
+studio, right? And just
+
+345
+00:12:30,139 --> 00:12:31,720
+remember a one of
+10 for sales and
+
+346
+00:12:31,720 --> 00:12:33,519
+a 10 of 10
+for views doesn't matter
+
+347
+00:12:33,519 --> 00:12:36,159
+because sales is the
+most important metric. And
+
+348
+00:12:36,159 --> 00:12:38,399
+we can always point
+more end screens back
+
+349
+00:12:38,399 --> 00:12:40,240
+at this video. So,
+please don't panic. So,
+
+350
+00:12:40,279 --> 00:12:42,899
+that's the basic idea
+behind measurement. Have expectations,
+
+351
+00:12:43,159 --> 00:12:44,960
+a goal, measure by
+the middle, and then
+
+352
+00:12:44,960 --> 00:12:46,879
+repeat what worked to
+grow the business if
+
+353
+00:12:46,879 --> 00:12:48,919
+you want sales and
+emails, and then repeat
+
+354
+00:12:48,919 --> 00:12:50,980
+what works to get
+views if you just
+
+355
+00:12:50,980 --> 00:12:53,379
+want more views. Don't
+expect many videos to
+
+356
+00:12:53,379 --> 00:12:54,659
+do all three. I've
+got about four that
+
+357
+00:12:54,659 --> 00:12:55,940
+did amazing for all
+of them at once,
+
+358
+00:12:56,059 --> 00:12:58,419
+but that's four in
+a lot of videos.
+
+359
+00:12:58,799 --> 00:13:00,159
+All right, now, before
+we move on to
+
+360
+00:13:00,159 --> 00:13:01,279
+the measurement system, I
+just want to run
+
+361
+00:13:01,279 --> 00:13:04,120
+over one more myth.
+And this is something
+
+362
+00:13:04,120 --> 00:13:07,360
+that really confuses people
+and causes them to
+
+363
+00:13:07,360 --> 00:13:09,379
+procrastinate and waste a
+lot of time mucking
+
+364
+00:13:09,379 --> 00:13:11,019
+around in the YouTube
+studio, making changes they
+
+365
+00:13:11,019 --> 00:13:12,759
+don't need to. So,
+people come to me
+
+366
+00:13:12,759 --> 00:13:14,539
+and they say, Ed,
+my watch time dropped
+
+367
+00:13:14,539 --> 00:13:17,019
+help, or Ed, my
+click -through rates dropped,
+
+368
+00:13:17,159 --> 00:13:18,379
+but here's what you
+need to understand. Click
+
+369
+00:13:18,379 --> 00:13:20,080
+-through rate goes down
+when you get more
+
+370
+00:13:20,080 --> 00:13:23,639
+views from cold viewers,
+and views go up
+
+371
+00:13:23,639 --> 00:13:26,320
+when you reach more
+cold viewers. So, your
+
+372
+00:13:26,320 --> 00:13:28,059
+click -through rate can
+look worse, but if
+
+373
+00:13:28,059 --> 00:13:29,879
+your video is getting
+more traffic, it doesn't
+
+374
+00:13:29,879 --> 00:13:31,940
+matter. It's the same
+with watch time. And
+
+375
+00:13:31,940 --> 00:13:33,500
+I spoke about this
+in the earlier modules,
+
+376
+00:13:33,580 --> 00:13:34,539
+but I have to
+bring it up again.
+
+377
+00:13:34,779 --> 00:13:36,639
+So, what happens is
+people come to me
+
+378
+00:13:36,639 --> 00:13:38,059
+and they're trying to
+fix their click -through
+
+379
+00:13:38,059 --> 00:13:40,720
+rate when it doesn't
+need fixing. It's actually
+
+380
+00:13:40,720 --> 00:13:43,139
+doing quite well. But
+also, I don't look
+
+381
+00:13:43,139 --> 00:13:44,399
+at click -through rate.
+I don't look at
+
+382
+00:13:44,399 --> 00:13:46,100
+any of this data.
+All I look at
+
+383
+00:13:46,100 --> 00:13:50,080
+is, did this video,
+meet my expectations or
+
+384
+00:13:50,080 --> 00:13:52,779
+miss them, and did
+it hit my views,
+
+385
+00:13:52,960 --> 00:13:54,899
+email, or sales goal?
+Okay, so now you
+
+386
+00:13:54,899 --> 00:13:57,000
+understand the basics of
+measuring, let's go one
+
+387
+00:13:57,000 --> 00:13:58,639
+level deeper in the
+next video to show
+
+388
+00:13:58,639 --> 00:14:01,559
+you exactly where to
+measure to then base
+
+389
+00:14:01,559 --> 00:14:04,659
+your decisions on and
+to learn lessons from.

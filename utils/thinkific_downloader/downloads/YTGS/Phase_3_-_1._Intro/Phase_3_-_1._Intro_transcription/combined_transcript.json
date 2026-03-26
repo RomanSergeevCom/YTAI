@@ -1,0 +1,38 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T15:11:03Z",
+  "project": "Phase_3_-_1._Intro",
+  "total_duration": 73.398,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "Phase_3_-_1._Intro"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "Phase_3_-_1._Intro",
+      "local_start": 0.0,
+      "local_end": 72.8,
+      "global_start": 0.0,
+      "global_end": 72.8,
+      "speaker": "SPEAKER_00",
+      "text": "Welcome to the next phase, and now it's time to go one level deeper in our pipe system. So you know that to generate views and email signups and sales from YouTube, all you need to do is get water to pass through these three stages of our pipe and to warm it up. But what I didn't tell you is that inside each of these three sections, there's multiple places that the pipe gets blocked. So in this phase, all we're going to do is look at how you can unblock the very first of them in the YouTube section so that water can actually flow into your system. So this phase is about helping you understand what actually makes a great YouTube video. You're going to learn how to write titles that make people want to click. You're going to discover the basics of thumbnails, one of the most important parts of the system. We're then going to go deeper into thumbnails, the different image strategies that work. We're going to look at the design rules. We're going to look at how to use AI to create thumbnails. And then after that, we're going to look at different types of video formats that exist and why this matters a lot, way more than you might think when it comes to getting a click. And hardly anyone seems to realize what I'm going to show you. So move on to the next video where we're going to move on to the secret of making content that brings viewers back and grows your channel too. And it's all about Louis Vuitton.",
+      "avg_confidence": 0.977
+    }
+  ],
+  "stats": {
+    "total_words": 271,
+    "total_segments": 1,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 1,
+        "words": 271,
+        "duration": 72.8,
+        "avg_confidence": 0.977
+      }
+    },
+    "avg_confidence": 0.977,
+    "low_confidence_segments": 0
+  }
+}

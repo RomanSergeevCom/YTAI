@@ -1,0 +1,37 @@
+[17:27:19] Loading lessons from manifest: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_batch_manifest.json
+[17:27:19] Loaded 59 lessons from manifest
+
+=== Configuration ===
+Source          : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_batch_manifest.json (manifest)
+Lessons in DOCX : 59
+Processing      : 3
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Pipeline mode   : parallel (download + transcribe)
+Dry run         : True
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_172719.log
+
+[17:27:19] Starting sequential processing
+[17:27:19] 📥 [01/3] Phase_1_-_1._Intro_Video.mp4
+[17:27:19]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+[17:27:19]   ~ Dry run — would create: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_1._Intro_Video
+[17:27:19] 📥 [02/3] Phase_1_-_3._Expectations.mp4
+[17:27:19]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+[17:27:19]   ~ Dry run — would create: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_3._Expectations
+[17:27:19] 📥 [03/3] Phase_1_-_4._How_YouTube_Works.mp4
+[17:27:19]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef
+[17:27:19]   ~ Dry run — would create: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_4._How_YouTube_Works
+
+=== Result ===
+
+═══════════════════════════════════════════════════════
+  Batch complete: 3 lessons
+  ✓ OK: 3  |  ⏭ Skipped: 0  |  ✗ Failed: 0
+  Downloaded: 3  |  Transcribed: 0
+  Total time: 0s  |  Disk: 0.0 GB
+  Log: /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_172719.log
+═══════════════════════════════════════════════════════

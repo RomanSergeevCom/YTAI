@@ -1,0 +1,38 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T14:38:27Z",
+  "project": "Phase_1_-_10._Doing_Your_Tasks",
+  "total_duration": 314.352,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "Phase_1_-_10._Doing_Your_Tasks"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "Phase_1_-_10._Doing_Your_Tasks",
+      "local_start": 0.0,
+      "local_end": 313.86,
+      "global_start": 0.0,
+      "global_end": 313.86,
+      "speaker": "SPEAKER_00",
+      "text": "Okay, so now you have an umbrella statement, three buyer problems, a channel, marketing, and offer audit complete. And you might not have realized this, but you are further ahead than most creators, even with six -figure subscriber counts, because you've got some clarity. And even if it seems like everything is a mess, clarity is potentially worth millions eventually. So give yourself a pat on the back. You're doing an amazing job so far. Right, now what we're gonna do is we're gonna work out our 10X, our 2X, and our minus 10X tasks based on this information. So a 10X task is one that if you do it, can have a 10X result on your business. So let's say you have tons of views and low sales, the 10X task now becomes fixing the sales page and your offer so that you can turn more of those views into sales. Or if you look and go, oh my gosh, my channel and offer and email are all out of line. Well, fixing this is your 10X task over the medium term, because anything else you do won't have impact unless it's working. Now a 2X task is a task that is helpful, but it doesn't really progress you much. That's things like responding to comments or doing admin or emailing people that you really don't have to. And a minus 10X task is things like editing, trying to grow an Instagram account at the same time as a YouTube channel, or working on things that can be outsourced really easily. And the good news is your 10X task right now is just to do what our plumber did after they found the block in the sink and that was to try a quick fix before they tore the whole kitchen apart and gave themselves more work that maybe could have been avoided. So to do that, we're just going to take some small actions on any red sections we found in your pipeline with minor adjustments. And then after that, your 10X task is to make new videos to try and get viewers to go into your pipeline. And that will then start to reveal if we need to do anything more major. For some of you, we won't, for many of you, we will. Now, if you're in a position where you scored green on all three, then just move on to the next module right now. So now I'm going to give you some data benchmarks that will help you work out your next move. And so if you looked at your data and it said, your sales page was out of line with your channel and your conversion rate is currently under 1%, what we want to do is do some minor adjustments where we're going to rewrite the headline on the page to be positioned to solve the problem. You're going to position yourself as the expert in solving. Now, there's a video on writing headlines and sub headlines in the advanced module about offers. You can watch that to help guide you here. And to calculate your sales page conversions, you take the amount of purchases in the last 90 days and divide by the unique sales page visitors, then times that by 100. If you don't have the data of your sales page, then your only 10X task is to install Google Analytics or RevTrack so that you can then get it over time. This is critical data we need. Keep in mind, RevTrack only tracks link clicks. So if you have traffic coming from Google or other places to your sales page, you need to install Google Analytics. You can search yourself on how to do that, but most landing page builders will give you that data anyway. All right, so do that. Now, if your email opt -in page or your lead magnet opt -in page got a red flag and is converting less than 40 % of the people who arrive on it to sign up, I want you to watch the video on writing an email signup page in the email module in the advanced section and change your headline and sub headline. Make it speak directly to the umbrella problem. And then to work that out, use the same calculation. Look at how many people went to that page, how many of them signed up, and then times that by 100. Again, if you don't have a data, it's critical. You get it over time because we build everything around this data. And if your metrics are above any of those benchmarks, don't change anything yet. These are just small, simple fixes that can sometimes flip a red light green. But don't expect all your problems to be solved overnight doing this. It's very likely we're gonna have to do more optimization down the line. All right, so you're probably filming very overwhelmed right now. You're worried your new positioning might be wrong, or you might be thinking, this is so much. I didn't know I had to fix this many things. I didn't even know these things existed. That's very normal. Don't worry. We have just performed open heart surgery on your entire business model. So you're now capable of starting your transformation into the Hulk. Now comes the recovery, the rebuild. So once you've made those minor changes, here's how we're gonna move forward. If you don't have an email nurture campaign set up, that is your side mission to go to next. An email nurture is this part of our system where you build an email signup form. And then when they sign up to it, you auto email them with some value and then some promotion to try and get them to convert something. And for people who don't have one, we're not gonna build a big 30 day in campaign. We're literally just gonna build a one to three welcome sequence. Why? Because without traffic from your videos, we're just kind of guessing what buyers want from you right now. So there's no point doing anything bigger until we learn more about them posting videos. If you already have one, just keep that. Don't do anything else. So that's it. Go and fix any red lights with minor tweaks only. And then move on to phase two, where we're gonna make our first little test video together.",
+      "avg_confidence": 0.9761
+    }
+  ],
+  "stats": {
+    "total_words": 1075,
+    "total_segments": 1,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 1,
+        "words": 1075,
+        "duration": 313.86,
+        "avg_confidence": 0.9761
+      }
+    },
+    "avg_confidence": 0.9761,
+    "low_confidence_segments": 0
+  }
+}

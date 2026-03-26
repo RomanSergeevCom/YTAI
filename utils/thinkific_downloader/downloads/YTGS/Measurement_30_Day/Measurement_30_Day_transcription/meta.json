@@ -1,0 +1,36 @@
+{
+  "version": "3.0",
+  "status": "completed",
+  "created_at": "2026-03-15T21:47:48Z",
+  "updated_at": "2026-03-15T21:50:32Z",
+  "project_name": "Measurement_30_Day",
+  "input_type": "file",
+  "input_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Measurement_30_Day/Measurement_30_Day.mp4",
+  "params": {
+    "num_speakers": 1,
+    "whisper_model": "large-v3",
+    "language": "en",
+    "device": "mps"
+  },
+  "clips": [
+    "Measurement_30_Day"
+  ],
+  "total_duration_sec": 395.413,
+  "stages_completed": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "stages_timing": {
+    "1_extract_audio": 0.5,
+    "2_diarization": 14.2,
+    "3_whisper": 137.6,
+    "4_speaker_mapping": 0.0,
+    "5_generate_outputs": 0.0,
+    "6_ingest_json": 0.0
+  },
+  "total_time": 152.3
+}

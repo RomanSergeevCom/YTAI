@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 21:37:56
+============================================================
+
+=== Configuration ===
+Project:    Phase_5_-_4._How_To_Write_Your_Intro
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_4._How_To_Write_Your_Intro/Phase_5_-_4._How_To_Write_Your_Intro.mp4
+Clips:      1
+Duration:   3:20 (200.9s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_5_-_4._How_To_Write_Your_Intro    3:20  3840×2160 25.0fps H264  2.4Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.06 GB
+    offset 0.000s  Phase_5_-_4._How_To_Write_Your_Intro.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    3:20  99.8%  2 segments
+  Gaps                       0:00  0.2%
+
+=== Transcription ===
+Total words:     724
+Total segments:  2
+Avg confidence:  0.9740
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_5_-_4._How_To_Write_Your_Intro:
+    Words: 724  Segments: 2  Confidence: 0.9746  Low: 0
+    Speaker 1: 724 words, 2 segs, 3:19
+
+=== Whisper Per-Clip ===
+  Phase_5_-_4._How_To_Write_Your_Intro    3:20    724 words   216 wpm    1m 15s  (2.66x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         0s        0s  -    0s    0.3%
+  Diarization           7s        9s  +    2s   10.5%
+  Whisper           1m 50s    1m 15s  -   35s   89.2%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              0s        0s  -    0s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             1m 58s    1m 24s  -   34s  100.0%
+  Speed:          2.4x realtime
+  Wall clock:     1m 24s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_5_-_4._How_To_Write_Your_Intro_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                            4.8 KB
+    diarization.json                                    0.3 KB
+    full_audio.wav                                   6278.9 KB
+    meta.json                                           0.9 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_5_-_4._How_To_Write_Your_Intro/Phase_5_-_4._How_To_Write_Your_Intro_audio.wav    6278.9 KB
+    per_clip/Phase_5_-_4._How_To_Write_Your_Intro/Phase_5_-_4._How_To_Write_Your_Intro_captions.srt       6.7 KB
+    per_clip/Phase_5_-_4._How_To_Write_Your_Intro/Phase_5_-_4._How_To_Write_Your_Intro_premiere_transcript.json     164.0 KB
+    per_clip/Phase_5_-_4._How_To_Write_Your_Intro/Phase_5_-_4._How_To_Write_Your_Intro_transcript.json      95.6 KB
+    per_clip/Phase_5_-_4._How_To_Write_Your_Intro/Phase_5_-_4._How_To_Write_Your_Intro_transcript.srt       3.8 KB
+    per_clip/Phase_5_-_4._How_To_Write_Your_Intro/Phase_5_-_4._How_To_Write_Your_Intro_transcript.txt       3.7 KB
+    per_clip/Phase_5_-_4._How_To_Write_Your_Intro/Phase_5_-_4._How_To_Write_Your_Intro_whisper_raw.json      89.4 KB
+  Phase_5_-_4._How_To_Write_Your_Intro_transcript.xlsx  (9.2 KB)
+
+============================================================

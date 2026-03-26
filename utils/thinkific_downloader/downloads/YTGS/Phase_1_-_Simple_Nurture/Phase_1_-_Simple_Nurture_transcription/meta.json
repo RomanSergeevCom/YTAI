@@ -1,0 +1,36 @@
+{
+  "version": "3.0",
+  "status": "completed",
+  "created_at": "2026-03-15T14:38:28Z",
+  "updated_at": "2026-03-15T14:40:32Z",
+  "project_name": "Phase_1_-_Simple_Nurture",
+  "input_type": "file",
+  "input_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture/Phase_1_-_Simple_Nurture.mp4",
+  "params": {
+    "num_speakers": 1,
+    "whisper_model": "large-v3",
+    "language": "en",
+    "device": "mps"
+  },
+  "clips": [
+    "Phase_1_-_Simple_Nurture"
+  ],
+  "total_duration_sec": 248.012,
+  "stages_completed": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "stages_timing": {
+    "1_extract_audio": 0.3,
+    "2_diarization": 10.1,
+    "3_whisper": 100.9,
+    "4_speaker_mapping": 0.0,
+    "5_generate_outputs": 0.0,
+    "6_ingest_json": 0.0
+  },
+  "total_time": 111.3
+}

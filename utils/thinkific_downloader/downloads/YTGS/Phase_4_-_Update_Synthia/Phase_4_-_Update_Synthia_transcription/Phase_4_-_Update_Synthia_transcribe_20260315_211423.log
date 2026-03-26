@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 21:14:23
+============================================================
+
+=== Configuration ===
+Project:    Phase_4_-_Update_Synthia
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_Update_Synthia/Phase_4_-_Update_Synthia.mp4
+Clips:      1
+Duration:   2:40 (160.4s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_4_-_Update_Synthia    2:40  3840×2160 25.0fps H264  3.7Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.07 GB
+    offset 0.000s  Phase_4_-_Update_Synthia.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    2:40  99.8%  2 segments
+  Gaps                       0:00  0.2%
+
+=== Transcription ===
+Total words:     650
+Total segments:  1
+Avg confidence:  0.9397
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_4_-_Update_Synthia:
+    Words: 650  Segments: 1  Confidence: 0.9397  Low: 1
+    Speaker 1: 650 words, 1 segs, 2:39
+
+=== Whisper Per-Clip ===
+  Phase_4_-_Update_Synthia    2:40    650 words   243 wpm    1m 29s  (1.80x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         0s        0s  -    0s    0.2%
+  Diarization           6s        7s  +    2s    7.5%
+  Whisper           1m 28s    1m 29s  +    1s   92.2%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              0s        0s  -    0s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             1m 34s    1m 36s  +    2s  100.0%
+  Speed:          1.7x realtime
+  Wall clock:     1m 36s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_4_-_Update_Synthia_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                            4.0 KB
+    diarization.json                                    0.3 KB
+    full_audio.wav                                   5013.4 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_4_-_Update_Synthia/Phase_4_-_Update_Synthia_audio.wav    5013.4 KB
+    per_clip/Phase_4_-_Update_Synthia/Phase_4_-_Update_Synthia_captions.srt       5.9 KB
+    per_clip/Phase_4_-_Update_Synthia/Phase_4_-_Update_Synthia_premiere_transcript.json     144.0 KB
+    per_clip/Phase_4_-_Update_Synthia/Phase_4_-_Update_Synthia_transcript.json      85.4 KB
+    per_clip/Phase_4_-_Update_Synthia/Phase_4_-_Update_Synthia_transcript.srt       3.3 KB
+    per_clip/Phase_4_-_Update_Synthia/Phase_4_-_Update_Synthia_transcript.txt       3.2 KB
+    per_clip/Phase_4_-_Update_Synthia/Phase_4_-_Update_Synthia_whisper_raw.json      73.1 KB
+  Phase_4_-_Update_Synthia_transcript.xlsx  (8.9 KB)
+
+============================================================

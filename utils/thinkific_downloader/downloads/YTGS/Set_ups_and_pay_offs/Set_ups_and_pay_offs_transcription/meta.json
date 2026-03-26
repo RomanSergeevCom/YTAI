@@ -1,0 +1,36 @@
+{
+  "version": "3.0",
+  "status": "completed",
+  "created_at": "2026-03-15T18:19:07Z",
+  "updated_at": "2026-03-15T18:27:00Z",
+  "project_name": "Set_ups_and_pay_offs",
+  "input_type": "file",
+  "input_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs/Set_ups_and_pay_offs.mp4",
+  "params": {
+    "num_speakers": 1,
+    "whisper_model": "large-v3",
+    "language": "en",
+    "device": "mps"
+  },
+  "clips": [
+    "Set_ups_and_pay_offs"
+  ],
+  "total_duration_sec": 805.454,
+  "stages_completed": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "stages_timing": {
+    "1_extract_audio": 0.7,
+    "2_diarization": 26.6,
+    "3_whisper": 434.1,
+    "4_speaker_mapping": 0.0,
+    "5_generate_outputs": 0.1,
+    "6_ingest_json": 0.0
+  },
+  "total_time": 461.5
+}

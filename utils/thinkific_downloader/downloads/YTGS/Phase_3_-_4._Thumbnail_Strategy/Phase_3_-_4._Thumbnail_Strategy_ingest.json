@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "Phase_3_-_4._Thumbnail_Strategy",
+  "created_at": "2026-03-15T16:15:32Z",
+  "media": {
+    "width": 3840,
+    "height": 2160,
+    "fps": 25.0,
+    "sample_rate": 44100
+  },
+  "clips": [
+    {
+      "clip_id": "Phase_3_-_4._Thumbnail_Strategy",
+      "filename": "Phase_3_-_4._Thumbnail_Strategy.mp4",
+      "path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy.mp4",
+      "duration": 668.71,
+      "offset": 0.0,
+      "premiere_transcript": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_transcription/per_clip/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy_1_Ingest_captions.srt"
+  },
+  "source_folder": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy"
+}

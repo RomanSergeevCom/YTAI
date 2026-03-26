@@ -1,0 +1,1253 @@
+1
+00:00:00,000 --> 00:00:02,720
+Okay, so now you've
+got that data, it's
+
+2
+00:00:02,720 --> 00:00:04,580
+time to ask what
+the heck does it
+
+3
+00:00:04,580 --> 00:00:06,099
+actually mean and how
+do we learn a
+
+4
+00:00:06,099 --> 00:00:07,919
+lesson from it? Because
+without a clear lesson,
+
+5
+00:00:08,039 --> 00:00:09,939
+those numbers are just
+numbers and you can't
+
+6
+00:00:09,939 --> 00:00:11,859
+grow on just numbers
+alone. So all the
+
+7
+00:00:11,859 --> 00:00:13,439
+benchmarks I'm about to
+talk you through are
+
+8
+00:00:13,439 --> 00:00:15,339
+in the video planner
+in the learner lesson
+
+9
+00:00:15,339 --> 00:00:17,399
+section. There's a big
+checklist in there too
+
+10
+00:00:17,399 --> 00:00:18,359
+if it's going to
+help. If you're using
+
+11
+00:00:18,359 --> 00:00:19,960
+RevTrack, some of the
+data we're going to
+
+12
+00:00:19,960 --> 00:00:22,199
+go through will have
+been pulled together nicely
+
+13
+00:00:22,199 --> 00:00:23,980
+on a dashboard, but
+you can follow this
+
+14
+00:00:23,980 --> 00:00:25,940
+if you don't have
+it too. It's just
+
+15
+00:00:25,940 --> 00:00:27,120
+going to take a
+little bit more manual
+
+16
+00:00:27,120 --> 00:00:28,160
+tracking and the data
+is not going to
+
+17
+00:00:28,160 --> 00:00:29,500
+be as clean. All
+right, so the first
+
+18
+00:00:29,500 --> 00:00:31,000
+thing you do to
+learn a lesson is
+
+19
+00:00:31,000 --> 00:00:32,299
+you start on step
+one and you ask,
+
+20
+00:00:32,380 --> 00:00:33,880
+did I hit my
+goal? The goal you
+
+21
+00:00:33,880 --> 00:00:35,920
+set every time you
+plan the video, views,
+
+22
+00:00:36,020 --> 00:00:38,200
+sales or emails. The
+answer is no, we
+
+23
+00:00:38,200 --> 00:00:39,679
+try and find out
+why. If the answer
+
+24
+00:00:39,679 --> 00:00:41,280
+is yes, we try
+and find out why.
+
+25
+00:00:41,399 --> 00:00:43,560
+That's it. Then step
+two, we go to
+
+26
+00:00:43,560 --> 00:00:45,820
+the video lesson checklist
+to try and work
+
+27
+00:00:45,820 --> 00:00:48,020
+out why that video
+did what it did.
+
+28
+00:00:48,159 --> 00:00:50,060
+Problem is, look how
+flipping big it is.
+
+29
+00:00:50,179 --> 00:00:51,880
+Tons of things, right?
+And that's the thing
+
+30
+00:00:51,880 --> 00:00:53,479
+that sucks about YouTube.
+This is how many
+
+31
+00:00:53,479 --> 00:00:55,460
+bottlenecks you can come
+up against versus this
+
+32
+00:00:55,460 --> 00:00:57,619
+in your marketing and
+this in your sales
+
+33
+00:00:57,619 --> 00:00:59,619
+system. It's weird. It's
+way more complex and
+
+34
+00:00:59,619 --> 00:01:02,420
+it's way harder to
+learn a lesson. So
+
+35
+00:01:02,420 --> 00:01:04,099
+what I'm going to
+do now is just
+
+36
+00:01:04,099 --> 00:01:07,659
+break down the four
+biggest places that most
+
+37
+00:01:07,659 --> 00:01:09,939
+of the mistakes or
+reasons for success happen.
+
+38
+00:01:10,099 --> 00:01:12,640
+And they are positioning,
+packaging, scripting and execution.
+
+39
+00:01:13,019 --> 00:01:15,700
+So let's start by
+breaking down positioning. So
+
+40
+00:01:15,700 --> 00:01:17,739
+if your views are
+lower than you expect,
+
+41
+00:01:18,040 --> 00:01:19,519
+say you're an eight
+or 10 or worse,
+
+42
+00:01:20,159 --> 00:01:22,500
+basically what happens is
+your fans and your
+
+43
+00:01:22,500 --> 00:01:24,760
+return viewers didn't click.
+They didn't come back.
+
+44
+00:01:24,920 --> 00:01:26,620
+And that's often because
+the topic or the
+
+45
+00:01:26,620 --> 00:01:29,040
+format left what they
+expected, from you. And
+
+46
+00:01:29,040 --> 00:01:30,900
+this is what sucks
+about YouTube because it's
+
+47
+00:01:30,900 --> 00:01:32,840
+very hard to tell
+that you have left
+
+48
+00:01:32,840 --> 00:01:34,980
+that sometimes. Another reason
+this might happen to
+
+49
+00:01:34,980 --> 00:01:36,659
+you is because you
+are just solving too
+
+50
+00:01:36,659 --> 00:01:38,319
+many problems for too
+many types of people
+
+51
+00:01:38,319 --> 00:01:40,079
+on your channel. So
+here's what you want
+
+52
+00:01:40,079 --> 00:01:42,819
+to do when a
+video flops. Drop your
+
+53
+00:01:42,819 --> 00:01:44,819
+thumbnail and your title
+into guardrails and just
+
+54
+00:01:44,819 --> 00:01:47,079
+ask, why did this
+flop? And then it's
+
+55
+00:01:47,079 --> 00:01:49,000
+going to give you
+some lessons based on
+
+56
+00:01:49,000 --> 00:01:51,060
+the brain that you
+filled out and the
+
+57
+00:01:51,060 --> 00:01:52,239
+way that you want
+to position your channel.
+
+58
+00:01:52,340 --> 00:01:54,540
+That in itself might
+then give you the
+
+59
+00:01:54,540 --> 00:01:56,480
+lesson that you can
+add to this sheet.
+
+60
+00:01:57,140 --> 00:01:59,200
+Now, if it scored,
+a one to four
+
+61
+00:01:59,200 --> 00:02:01,040
+out of 10 usually
+means it's taken with
+
+62
+00:02:01,040 --> 00:02:03,319
+your existing viewers and
+it's potentially grown with
+
+63
+00:02:03,319 --> 00:02:05,280
+a new audience too.
+So you've got faster
+
+64
+00:02:05,280 --> 00:02:07,920
+views on release and
+we want to find
+
+65
+00:02:07,920 --> 00:02:09,060
+out why. So we
+can throw it into
+
+66
+00:02:09,060 --> 00:02:10,780
+guardrails and ask, why
+did this video perform?
+
+67
+00:02:11,000 --> 00:02:13,259
+And it's going to
+tell us. And then
+
+68
+00:02:13,259 --> 00:02:14,520
+you want to go
+through the video checklist
+
+69
+00:02:14,520 --> 00:02:16,800
+too, to establish at
+least one lesson as
+
+70
+00:02:16,800 --> 00:02:18,439
+to why. But what
+I would do every
+
+71
+00:02:18,439 --> 00:02:21,219
+time is just remake
+that video in a
+
+72
+00:02:21,219 --> 00:02:23,539
+slightly different way. So
+repeat the format, very
+
+73
+00:02:23,539 --> 00:02:25,659
+similar title, very similar
+thumbnail. And that can
+
+74
+00:02:25,659 --> 00:02:27,479
+be your lesson that
+you try. If you
+
+75
+00:02:27,479 --> 00:02:28,500
+land in a video
+that you've done before,
+
+76
+00:02:28,500 --> 00:02:28,800
+you're going to have
+to do a little
+
+77
+00:02:28,520 --> 00:02:28,820
+bit of a different
+thing. So you want
+
+78
+00:02:28,819 --> 00:02:29,120
+to go back and
+look at the five
+
+79
+00:02:28,819 --> 00:02:30,599
+to six out of
+10. It's much harder
+
+80
+00:02:30,599 --> 00:02:32,539
+to learn a lesson
+from. It basically means
+
+81
+00:02:32,539 --> 00:02:34,340
+you probably didn't grow
+with a cold audience.
+
+82
+00:02:34,460 --> 00:02:36,139
+You brought some viewers
+back, but you maybe
+
+83
+00:02:36,139 --> 00:02:37,860
+didn't bring a huge
+amount of them back.
+
+84
+00:02:37,960 --> 00:02:40,020
+So in terms of
+positioning, you might want
+
+85
+00:02:40,020 --> 00:02:41,939
+to look at it
+and ask, was this
+
+86
+00:02:41,939 --> 00:02:44,000
+a topic they really
+care about? Now, the
+
+87
+00:02:44,000 --> 00:02:46,620
+next biggest criminal here
+is packaging. It's basically
+
+88
+00:02:46,620 --> 00:02:48,020
+your thumbnail and your
+title and your format.
+
+89
+00:02:48,159 --> 00:02:51,319
+So look, forget click
+through rates. Just think
+
+90
+00:02:51,319 --> 00:02:53,319
+of this on a
+human level, not an
+
+91
+00:02:53,319 --> 00:02:55,780
+algorithm level. It's too
+hard to interpret. So
+
+92
+00:02:55,780 --> 00:02:56,740
+I think of it
+like this. If the
+
+93
+00:02:56,740 --> 00:02:58,979
+views are low, did
+you make the wrong
+
+94
+00:02:58,979 --> 00:03:01,280
+video format for your
+fans and your return
+
+95
+00:03:01,280 --> 00:03:03,020
+viewers? A style of
+video they're not used
+
+96
+00:03:03,020 --> 00:03:04,479
+to you making and
+are not interested in?
+
+97
+00:03:04,819 --> 00:03:07,180
+Or did your thumbnail
+and title lack the
+
+98
+00:03:07,180 --> 00:03:09,520
+how, what, and why
+curiosity? And then the
+
+99
+00:03:09,520 --> 00:03:11,520
+third thing is, is
+the design just amateur
+
+100
+00:03:11,520 --> 00:03:14,520
+cluttered or breaking the
+design rules? 90 %
+
+101
+00:03:14,520 --> 00:03:16,740
+of the time when
+a video doesn't perform,
+
+102
+00:03:17,099 --> 00:03:19,240
+it's going to be
+the positioning or these
+
+103
+00:03:19,240 --> 00:03:23,180
+thumbnails. Now, if your
+video exceeded expectation, all
+
+104
+00:03:23,180 --> 00:03:24,400
+you do is you
+mark the thumbnail and
+
+105
+00:03:24,400 --> 00:03:26,900
+title and that style
+to reuse as well
+
+106
+00:03:26,900 --> 00:03:28,259
+as the format. And
+you can also ask
+
+107
+00:03:28,259 --> 00:03:30,219
+gardener, why did it
+perform to try and
+
+108
+00:03:30,219 --> 00:03:31,479
+learn a little bit
+about it too. Now,
+
+109
+00:03:31,500 --> 00:03:33,259
+the third thing that
+causes a lot of
+
+110
+00:03:33,259 --> 00:03:35,439
+the problems is scripting.
+So if you look
+
+111
+00:03:35,439 --> 00:03:36,419
+at your video and
+you're like, do you
+
+112
+00:03:36,419 --> 00:03:38,139
+know what? The positioning
+is good. The packaging
+
+113
+00:03:38,139 --> 00:03:40,199
+is good. This is
+exactly what my viewers
+
+114
+00:03:40,199 --> 00:03:42,219
+usually want. It's usually
+a sign that you
+
+115
+00:03:42,219 --> 00:03:44,120
+missed the mark with
+your script. So one
+
+116
+00:03:44,120 --> 00:03:46,300
+thing you can check
+is, is your average
+
+117
+00:03:46,300 --> 00:03:47,800
+watch time down, which
+you can find out
+
+118
+00:03:47,800 --> 00:03:49,900
+here when the video
+is being displayed. Now
+
+119
+00:03:49,900 --> 00:03:51,240
+keep in mind, if
+your video is shorter,
+
+120
+00:03:51,439 --> 00:03:53,639
+it's going to be
+down. That's just how
+
+121
+00:03:53,639 --> 00:03:56,020
+it works. So don't
+just look at that
+
+122
+00:03:56,020 --> 00:03:57,819
+number and go, oh
+no, it's down. That's
+
+123
+00:03:57,819 --> 00:04:00,280
+bad. Usually if positioning
+and packaging is hitting
+
+124
+00:04:00,280 --> 00:04:02,259
+the mark, it basically
+means your script has
+
+125
+00:04:02,259 --> 00:04:05,819
+confused people, didn't match
+their expectations, didn't exceed
+
+126
+00:04:05,819 --> 00:04:08,159
+it, didn't give them
+information that felt new,
+
+127
+00:04:08,300 --> 00:04:10,080
+easier, inspiring. So that's
+the next thing you
+
+128
+00:04:10,080 --> 00:04:11,300
+want to look at.
+So what I would
+
+129
+00:04:11,300 --> 00:04:12,680
+do is I would
+take your script, put
+
+130
+00:04:12,680 --> 00:04:14,319
+it into point bot
+and say, why did
+
+131
+00:04:14,319 --> 00:04:16,000
+this script not perform?
+And it's going to
+
+132
+00:04:16,000 --> 00:04:17,379
+give you up to
+10 issues, 10 lessons
+
+133
+00:04:17,379 --> 00:04:18,779
+you could learn. And
+you can go through
+
+134
+00:04:18,779 --> 00:04:20,300
+and when one sticks
+out, that can be
+
+135
+00:04:20,300 --> 00:04:22,560
+your lesson. And then
+the fourth problem is
+
+136
+00:04:22,560 --> 00:04:26,000
+execution. So if everything
+else is really good,
+
+137
+00:04:26,100 --> 00:04:27,540
+if your script's good,
+if thumbnail and title
+
+138
+00:04:27,540 --> 00:04:28,480
+is good, you position
+it, you can go
+
+139
+00:04:28,480 --> 00:04:28,780
+through and then you
+can go through and
+
+140
+00:04:28,480 --> 00:04:28,879
+then you can go
+through and positioning is
+
+141
+00:04:28,879 --> 00:04:30,579
+good, but your delivery
+is flat or you're
+
+142
+00:04:30,579 --> 00:04:32,639
+nervous or you're too
+fast. This is going
+
+143
+00:04:32,639 --> 00:04:34,100
+to be it most
+of the time. And
+
+144
+00:04:34,100 --> 00:04:35,420
+the thing about this
+is the only way
+
+145
+00:04:35,420 --> 00:04:36,699
+you can fix it
+is just by practicing.
+
+146
+00:04:36,879 --> 00:04:38,199
+So the more you
+present, the better your
+
+147
+00:04:38,199 --> 00:04:40,259
+pacing, the better your
+energy, the better your
+
+148
+00:04:40,259 --> 00:04:42,560
+edits, the more confidence
+you have, the more
+
+149
+00:04:42,560 --> 00:04:44,399
+your results are going
+to increase. Now, AI
+
+150
+00:04:44,399 --> 00:04:46,680
+can't help you to
+diagnose this yet. So
+
+151
+00:04:46,680 --> 00:04:47,879
+if you look at
+all of those things
+
+152
+00:04:47,879 --> 00:04:49,199
+and you think they
+all worked well, this
+
+153
+00:04:49,199 --> 00:04:52,540
+could potentially be the
+unfortunate issue staring you
+
+154
+00:04:52,540 --> 00:04:54,360
+in the face. Okay.
+So then once we've
+
+155
+00:04:54,360 --> 00:04:56,720
+done the metrics for
+the videos and we've
+
+156
+00:04:56,720 --> 00:04:58,379
+tried to learn a
+lesson, we go over.
+
+157
+00:04:58,480 --> 00:05:00,680
+To look at the
+business metrics. So if
+
+158
+00:05:00,680 --> 00:05:03,199
+your goal was sales
+from the video, RevTrack's
+
+159
+00:05:03,199 --> 00:05:04,939
+going to show you
+the click -through rate
+
+160
+00:05:04,939 --> 00:05:06,939
+and the conversion rate
+on the sales page
+
+161
+00:05:06,939 --> 00:05:09,600
+and the benchmarks that
+we use to learn
+
+162
+00:05:09,600 --> 00:05:11,379
+from here to work
+out if that was
+
+163
+00:05:11,379 --> 00:05:14,100
+good or bad are
+5 % click -through
+
+164
+00:05:14,100 --> 00:05:15,259
+rate. That's a rocket
+
+165
+00:05:16,399 --> 00:05:18,759
+repeat, whatever you did,
+a three to 5
+
+166
+00:05:18,759 --> 00:05:21,459
+% click -through rate.
+That's excellent. Just repeat
+
+167
+00:05:21,459 --> 00:05:23,459
+exactly a one to
+2 % click -through
+
+168
+00:05:23,459 --> 00:05:25,459
+rate is still above
+average. So here you
+
+169
+00:05:25,459 --> 00:05:26,399
+want to check if
+the call to action
+
+170
+00:05:26,399 --> 00:05:28,279
+was early enough or
+came after some value.
+
+171
+00:05:28,480 --> 00:05:31,300
+And was relevant and
+then below 1 %
+
+172
+00:05:31,300 --> 00:05:32,579
+click -through rate. This
+is actually the industry
+
+173
+00:05:32,579 --> 00:05:34,000
+average. What you want
+to try and do
+
+174
+00:05:34,000 --> 00:05:35,379
+is add in maybe
+another call to action
+
+175
+00:05:35,379 --> 00:05:36,660
+and make sure your
+call to action is
+
+176
+00:05:36,660 --> 00:05:38,839
+very tightly aligned with
+the content of the
+
+177
+00:05:38,839 --> 00:05:41,220
+video. If I'm talking
+to you about how
+
+178
+00:05:41,220 --> 00:05:42,519
+to write a script,
+and then I do
+
+179
+00:05:42,519 --> 00:05:44,199
+a call to action
+for a thumbnail product,
+
+180
+00:05:44,439 --> 00:05:45,699
+that's not in line.
+So you're going to
+
+181
+00:05:45,699 --> 00:05:47,399
+see your click rates
+drop and also make
+
+182
+00:05:47,399 --> 00:05:48,500
+sure your links at
+the top of description
+
+183
+00:05:48,500 --> 00:05:50,759
+and the top comment.
+And if you're below
+
+184
+00:05:50,759 --> 00:05:52,819
+a 0 .5 click
+-through rate, that needs
+
+185
+00:05:52,819 --> 00:05:55,819
+some immediate action, but
+it basically means people
+
+186
+00:05:55,819 --> 00:05:57,279
+aren't interested in what
+you're trying to sell
+
+187
+00:05:57,279 --> 00:05:58,759
+them. So you need
+to ask. Why for
+
+188
+00:05:58,759 --> 00:06:00,980
+the same reasons as
+before. Now, when it
+
+189
+00:06:00,980 --> 00:06:03,839
+comes to sales page
+conversions, you need to
+
+190
+00:06:03,839 --> 00:06:06,079
+realize this. So RevTrack
+is going to show
+
+191
+00:06:06,079 --> 00:06:07,439
+you data. That's going
+to show you the
+
+192
+00:06:07,439 --> 00:06:10,339
+sales page conversion rate
+of that particular video.
+
+193
+00:06:10,540 --> 00:06:12,899
+But we don't want
+to go making changes
+
+194
+00:06:12,899 --> 00:06:15,439
+to our sales page
+based on this individual
+
+195
+00:06:15,439 --> 00:06:17,379
+number, because what can
+happen is I can
+
+196
+00:06:17,379 --> 00:06:18,920
+make a video. It's
+really in line with
+
+197
+00:06:18,920 --> 00:06:20,959
+my offer, nail the
+call to action and
+
+198
+00:06:20,959 --> 00:06:22,939
+warm people up so
+much. They click on
+
+199
+00:06:22,939 --> 00:06:24,959
+the sales page and
+more people buy, or
+
+200
+00:06:24,959 --> 00:06:26,459
+I can do a
+worse job. And that
+
+201
+00:06:26,459 --> 00:06:29,060
+same sales page could
+not perform based on
+
+202
+00:06:29,060 --> 00:06:30,339
+what I did and
+said in the video.
+
+203
+00:06:30,439 --> 00:06:32,019
+So we make all
+of our decisions about
+
+204
+00:06:32,019 --> 00:06:34,459
+updating our sales page
+based on the information
+
+205
+00:06:34,459 --> 00:06:36,100
+I'll teach you in
+phase seven. And then
+
+206
+00:06:36,100 --> 00:06:37,879
+we want to look
+at the click -through
+
+207
+00:06:37,879 --> 00:06:40,279
+rate and conversion from
+our email or our
+
+208
+00:06:40,279 --> 00:06:42,360
+lead magnet. So once
+the data is loaded
+
+209
+00:06:42,360 --> 00:06:45,420
+on day seven, you
+can look and if
+
+210
+00:06:45,420 --> 00:06:47,480
+you've got an 8
+% or above click
+
+211
+00:06:47,480 --> 00:06:50,240
+-through rate on that,
+that's unbelievably good. Repeat
+
+212
+00:06:50,240 --> 00:06:51,920
+whatever you did. Your
+lesson is just repeat
+
+213
+00:06:51,920 --> 00:06:55,220
+above 5%. We're still
+excellent. Three to 5
+
+214
+00:06:55,220 --> 00:06:58,319
+% above average. Still
+keep going. So 3
+
+215
+00:06:58,319 --> 00:07:00,779
+% that's the industry
+average. You want to
+
+216
+00:07:00,779 --> 00:07:02,160
+move your click -through
+rate earlier. You want
+
+217
+00:07:02,160 --> 00:07:04,120
+to make sure you
+mentioned it multiple times
+
+218
+00:07:04,120 --> 00:07:05,660
+in the video that
+they can sign up.
+
+219
+00:07:05,699 --> 00:07:06,759
+You want to make
+sure your call to
+
+220
+00:07:06,759 --> 00:07:09,319
+action is very in
+line with that lead
+
+221
+00:07:09,319 --> 00:07:11,639
+magnet. And then if
+it's below 1%, you
+
+222
+00:07:11,639 --> 00:07:13,259
+got to fix that.
+And it's the same
+
+223
+00:07:13,259 --> 00:07:15,779
+for the email signup
+page as the sales
+
+224
+00:07:15,779 --> 00:07:19,019
+page. Don't make changes
+based on this data,
+
+225
+00:07:19,220 --> 00:07:21,980
+the individual conversion rate
+from a video, because
+
+226
+00:07:21,980 --> 00:07:23,399
+that can go up
+and down a lot.
+
+227
+00:07:23,519 --> 00:07:25,160
+We make changes based
+on what I teach
+
+228
+00:07:25,160 --> 00:07:26,740
+in phase seven. Okay.
+So you're going to
+
+229
+00:07:26,740 --> 00:07:28,800
+see down the video
+here at the bottom,
+
+230
+00:07:28,860 --> 00:07:31,100
+the lessons checklists, all
+the benchmarks are on
+
+231
+00:07:31,100 --> 00:07:32,660
+it. It's going to
+help you ask questions
+
+232
+00:07:32,660 --> 00:07:34,800
+that help you establish
+things too. Now what
+
+233
+00:07:34,800 --> 00:07:35,779
+you need to go
+and do is batch
+
+234
+00:07:35,779 --> 00:07:37,620
+produce your next three
+to four videos, following
+
+235
+00:07:37,620 --> 00:07:40,560
+the system, start testing
+new formats, repeating what
+
+236
+00:07:40,560 --> 00:07:43,000
+works, drive some traffic
+into your system. That's
+
+237
+00:07:43,000 --> 00:07:44,699
+had some minor adjustments.
+The goal of the
+
+238
+00:07:44,699 --> 00:07:45,959
+first three to four
+videos is just to
+
+239
+00:07:45,959 --> 00:07:48,540
+make sure the minor
+adjustments did anything. Or
+
+240
+00:07:48,540 --> 00:07:51,000
+if we need to
+do more heavy lifting
+
+241
+00:07:51,000 --> 00:07:53,860
+and rebuilds of our
+sales system after, which
+
+242
+00:07:53,860 --> 00:07:54,899
+for many of you,
+the answer is going
+
+243
+00:07:54,899 --> 00:07:56,519
+to be yes, but
+it doesn't make sense
+
+244
+00:07:56,519 --> 00:07:58,819
+to do the hard
+work. The simple work
+
+245
+00:07:58,819 --> 00:08:00,779
+might work first, right?
+Once you've made these
+
+246
+00:08:00,779 --> 00:08:03,060
+videos, move on to
+phase seven, where you're
+
+247
+00:08:03,060 --> 00:08:05,060
+going to learn how
+to measure your entire
+
+248
+00:08:05,060 --> 00:08:08,379
+business pipeline from YouTube
+to actually people signing
+
+249
+00:08:08,379 --> 00:08:10,199
+up. And then we're
+going to work out
+
+250
+00:08:10,199 --> 00:08:11,879
+what your next 10
+X move and thing
+
+251
+00:08:11,879 --> 00:08:13,560
+to work is on
+from that point.

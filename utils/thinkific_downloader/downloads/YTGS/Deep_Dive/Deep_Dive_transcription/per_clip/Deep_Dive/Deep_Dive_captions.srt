@@ -1,0 +1,2593 @@
+1
+00:00:00,000 --> 00:00:02,940
+Right, so welcome to
+our deep dive planning
+
+2
+00:00:02,940 --> 00:00:04,759
+template. Let me give
+you a rundown of
+
+3
+00:00:04,759 --> 00:00:06,320
+how it works and
+then I'll introduce you
+
+4
+00:00:06,320 --> 00:00:08,300
+to the plan. So
+a deep dive, what
+
+5
+00:00:08,300 --> 00:00:10,720
+is it? Well, it's
+a 25 minute plus
+
+6
+00:00:11,300 --> 00:00:14,179
+video that basically should
+lay out some kind
+
+7
+00:00:14,179 --> 00:00:16,339
+of system to get
+a result. Now there
+
+8
+00:00:16,339 --> 00:00:18,559
+are other ways of
+making these longer videos,
+
+9
+00:00:18,739 --> 00:00:20,019
+but this is the
+one I'm going to
+
+10
+00:00:20,019 --> 00:00:21,719
+teach you. So this
+is one of the
+
+11
+00:00:21,719 --> 00:00:23,820
+most profitable videos I
+have ever made. Did
+
+12
+00:00:23,820 --> 00:00:26,140
+amazing reviews, did amazing
+for sales. This is
+
+13
+00:00:26,140 --> 00:00:28,920
+Simon Squibb. He got
+13 million views on
+
+14
+00:00:28,920 --> 00:00:31,160
+this two hour beast.
+And then you can
+
+15
+00:00:31,160 --> 00:00:33,119
+see there's other types
+of channels that make
+
+16
+00:00:33,119 --> 00:00:34,520
+these two that get
+a lot of views
+
+17
+00:00:34,520 --> 00:00:36,920
+as well. So the
+pros of a deep
+
+18
+00:00:36,920 --> 00:00:39,299
+dive are, they are
+just amazing at warming
+
+19
+00:00:39,299 --> 00:00:41,320
+viewers up and turning
+them into buyers. They're
+
+20
+00:00:41,320 --> 00:00:44,640
+also very good for
+email signups and sales
+
+21
+00:00:44,640 --> 00:00:47,719
+so long as it's
+executed well. But the
+
+22
+00:00:47,719 --> 00:00:49,679
+cons are probably one
+of the best ways
+
+23
+00:00:49,679 --> 00:00:51,799
+to prove you're not
+credible, because if you
+
+24
+00:00:51,799 --> 00:00:53,719
+take on a giant
+process and try and
+
+25
+00:00:53,719 --> 00:00:55,439
+teach someone it, and
+it doesn't really look
+
+26
+00:00:55,439 --> 00:00:56,979
+like you know what
+you're talking about, people
+
+27
+00:00:56,979 --> 00:00:58,799
+are going to notice.
+But also it's a
+
+28
+00:00:58,799 --> 00:01:01,240
+longer video. So it's
+difficult to master. It's
+
+29
+00:01:01,240 --> 00:01:03,619
+difficult to keep people
+engaged. We need to
+
+30
+00:01:03,619 --> 00:01:05,040
+put a lot more
+work into the planning
+
+31
+00:01:05,040 --> 00:01:06,560
+to pull these off.
+So who should make
+
+32
+00:01:06,560 --> 00:01:08,579
+these? Well, what I
+would say is intermediate
+
+33
+00:01:08,579 --> 00:01:11,459
+creators and pros. So
+if you are brand
+
+34
+00:01:11,459 --> 00:01:13,579
+new to YouTube, I
+wouldn't jump into one
+
+35
+00:01:13,579 --> 00:01:14,840
+of these. I'd probably
+try and get like
+
+36
+00:01:14,840 --> 00:01:17,239
+10, 20 videos under
+your belt first. So
+
+37
+00:01:17,239 --> 00:01:19,900
+what kind of viewers
+like watching these? Well,
+
+38
+00:01:20,060 --> 00:01:23,439
+they're viewer types who
+love depth and they
+
+39
+00:01:23,439 --> 00:01:25,640
+love steps to get
+a specific result. So
+
+40
+00:01:25,640 --> 00:01:27,680
+when you're doing your
+research, you're going to
+
+41
+00:01:27,680 --> 00:01:30,579
+find that maybe some
+of your previous outliers
+
+42
+00:01:30,579 --> 00:01:34,239
+were processed based. And
+the AI showed you
+
+43
+00:01:34,239 --> 00:01:36,120
+the things that people
+love about your content
+
+44
+00:01:36,120 --> 00:01:39,099
+is they like step
+by step. So it's
+
+45
+00:01:39,099 --> 00:01:40,819
+great for those type
+of viewers. It's great
+
+46
+00:01:40,819 --> 00:01:42,739
+for viewers who are
+taking the topic seriously.
+
+47
+00:01:42,980 --> 00:01:44,920
+If you put an
+hour long video up,
+
+48
+00:01:45,019 --> 00:01:47,159
+people who aren't bought
+into the topic yet
+
+49
+00:01:47,159 --> 00:01:49,620
+aren't going to watch
+it. But those who
+
+50
+00:01:49,620 --> 00:01:51,060
+are way more serious
+about it are and
+
+51
+00:01:51,060 --> 00:01:52,799
+that's what makes it
+good for converting views
+
+52
+00:01:52,799 --> 00:01:54,980
+to buyers, as well
+as buyers who kind
+
+53
+00:01:54,980 --> 00:01:56,859
+of already know their
+problem and they're actively
+
+54
+00:01:56,859 --> 00:01:59,200
+looking for a deeper
+solution. So where are
+
+55
+00:01:59,200 --> 00:02:01,019
+these best used? If
+you want to present
+
+56
+00:02:01,019 --> 00:02:03,579
+a clear system or
+workflow, if you want
+
+57
+00:02:03,579 --> 00:02:06,180
+to teach strategy or
+an execution that does
+
+58
+00:02:06,180 --> 00:02:08,860
+have many steps, that's
+kind of it. Now,
+
+59
+00:02:08,900 --> 00:02:10,860
+the secret sauce to
+these is a few
+
+60
+00:02:10,860 --> 00:02:13,740
+things. Firstly, what I
+did in this one,
+
+61
+00:02:13,819 --> 00:02:16,580
+this is just an
+outline of my previous
+
+62
+00:02:16,580 --> 00:02:19,900
+program. So what I
+did was I just
+
+63
+00:02:19,900 --> 00:02:22,360
+kind of lay out
+everything the program includes
+
+64
+00:02:22,360 --> 00:02:24,419
+and the order it's
+in and then gave
+
+65
+00:02:24,419 --> 00:02:26,500
+like one little bit
+of nugget of wisdom
+
+66
+00:02:26,500 --> 00:02:29,560
+per step rather than
+everything deep. Now that's
+
+67
+00:02:29,560 --> 00:02:30,979
+kind of powerful because
+it primes them for
+
+68
+00:02:30,979 --> 00:02:32,860
+your service too. The
+next bit of secret
+
+69
+00:02:32,860 --> 00:02:34,699
+sauce to this is
+let's say there are
+
+70
+00:02:34,699 --> 00:02:36,360
+100 things they need
+to do to get
+
+71
+00:02:36,360 --> 00:02:38,159
+a result. We can't
+give all of them
+
+72
+00:02:38,159 --> 00:02:39,560
+in a video. So
+you want to simplify
+
+73
+00:02:39,560 --> 00:02:41,879
+it down to the
+20 steps that are
+
+74
+00:02:41,879 --> 00:02:44,000
+the easiest to action.
+They get the biggest
+
+75
+00:02:44,000 --> 00:02:48,000
+result. So basically the
+highest leverage tasks. And
+
+76
+00:02:48,000 --> 00:02:49,520
+if you give them
+that and they action
+
+77
+00:02:49,520 --> 00:02:51,680
+it and get a
+result, it's going to
+
+78
+00:02:51,680 --> 00:02:52,879
+reflect well on you
+and they're going to
+
+79
+00:02:52,879 --> 00:02:54,560
+come back to your
+channel. The next thing
+
+80
+00:02:54,560 --> 00:02:55,680
+is you want to
+use content that's not
+
+81
+00:02:55,680 --> 00:02:55,980
+just for you. So
+you want to use
+
+82
+00:02:55,680 --> 00:02:57,240
+content that's client wins
+as much as you
+
+83
+00:02:57,240 --> 00:03:00,340
+can. So in your
+intro, when you set
+
+84
+00:03:00,340 --> 00:03:02,060
+up that you've got
+this system, you need
+
+85
+00:03:02,060 --> 00:03:03,439
+to make it crystal
+clear it worked and
+
+86
+00:03:03,439 --> 00:03:04,979
+look, here's who it
+worked for and aren't
+
+87
+00:03:04,979 --> 00:03:06,439
+I amazing and look
+at all these fantastic
+
+88
+00:03:06,439 --> 00:03:09,699
+results. And then when
+you're transitioning between steps,
+
+89
+00:03:09,860 --> 00:03:11,340
+you might want to
+set up the next
+
+90
+00:03:11,340 --> 00:03:14,419
+step like so. Okay,
+so step five enabled
+
+91
+00:03:14,419 --> 00:03:18,699
+Jerry here to go
+from £25 overweight to
+
+92
+00:03:18,699 --> 00:03:21,120
+winning a bikini modeling
+competition.
+
+93
+00:03:22,280 --> 00:03:24,139
+And then you show
+that result on screen.
+
+94
+00:03:24,259 --> 00:03:25,860
+So if you click
+on it, you'll see
+
+95
+00:03:25,860 --> 00:03:26,160
+it. And then you're
+going to go back
+
+96
+00:03:25,860 --> 00:03:26,160
+to the first step,
+which is you're going
+
+97
+00:03:25,860 --> 00:03:27,000
+to watch and I'll
+link to it later.
+
+98
+00:03:27,060 --> 00:03:30,539
+This video, within you
+know, the first quarter
+
+99
+00:03:30,539 --> 00:03:32,139
+of it, you're going
+to see how much
+
+100
+00:03:32,139 --> 00:03:33,620
+I'm like, this works.
+This works. This works.
+
+101
+00:03:33,699 --> 00:03:35,919
+Look at this. Work's
+proof proof proof. We
+
+102
+00:03:35,919 --> 00:03:37,759
+need to front load
+proof in this. If
+
+103
+00:03:37,759 --> 00:03:38,780
+we're going to get
+them to stick around
+
+104
+00:03:38,780 --> 00:03:40,479
+for a long time.
+You also want to
+
+105
+00:03:40,479 --> 00:03:42,840
+tell your own relatable,
+I've been their stories.
+
+106
+00:03:42,960 --> 00:03:45,879
+So if you run
+this through skyscraper bot
+
+107
+00:03:45,879 --> 00:03:48,099
+and you ask it,
+you know, what did
+
+108
+00:03:48,099 --> 00:03:49,780
+the viewers love about
+it? You will see
+
+109
+00:03:49,780 --> 00:03:52,439
+that many of them
+really liked the relatable
+
+110
+00:03:52,439 --> 00:03:54,000
+stories. I told out
+my own struggle
+
+111
+00:03:55,680 --> 00:03:57,780
+the position the viewer
+is in right now
+
+112
+00:03:57,780 --> 00:03:59,620
+and it just makes
+you so much more
+
+113
+00:03:59,620 --> 00:04:02,500
+human you also need
+to over deliver here
+
+114
+00:04:02,500 --> 00:04:05,699
+so my goal when
+i created that video
+
+115
+00:04:05,699 --> 00:04:08,460
+was to make something
+where people wrote i
+
+116
+00:04:08,460 --> 00:04:10,159
+can't believe this is
+free and that's what
+
+117
+00:04:10,159 --> 00:04:12,819
+happened so one of
+the things you need
+
+118
+00:04:12,819 --> 00:04:13,800
+to do in your
+planning is take the
+
+119
+00:04:13,800 --> 00:04:15,500
+time to do that
+now the next thing
+
+120
+00:04:15,500 --> 00:04:17,660
+to keep in mind
+is the emotion logic
+
+121
+00:04:17,660 --> 00:04:20,319
+brick so the way
+that we're gonna structure
+
+122
+00:04:20,319 --> 00:04:22,920
+deep dive is like
+this intro proof i'll
+
+123
+00:04:22,920 --> 00:04:25,579
+show that means later
+some emotion and then
+
+124
+00:04:25,579 --> 00:04:28,160
+the logical steps step
+one step two step
+
+125
+00:04:28,160 --> 00:04:30,959
+three step four step
+five if when you
+
+126
+00:04:30,959 --> 00:04:33,480
+are getting to a
+step that is more
+
+127
+00:04:33,480 --> 00:04:36,439
+complex what you need
+to do is get
+
+128
+00:04:36,439 --> 00:04:38,180
+into the habit of
+going i know ed
+
+129
+00:04:38,180 --> 00:04:41,620
+didn't say emotion logic
+emotion logic in this
+
+130
+00:04:41,620 --> 00:04:43,720
+brick but would it
+be good to use
+
+131
+00:04:43,720 --> 00:04:45,639
+a story a metaphor
+or a visual demo
+
+132
+00:04:45,639 --> 00:04:48,860
+to start off this
+step to help people
+
+133
+00:04:48,860 --> 00:04:51,060
+explain and that's what
+makes this kind of
+
+134
+00:04:51,060 --> 00:04:54,259
+black belt stuff because
+you only really understand
+
+135
+00:04:54,259 --> 00:04:57,079
+what is super complex
+to your viewers when
+
+136
+00:04:57,079 --> 00:04:58,500
+you've worked with them
+for a long time
+
+137
+00:04:58,500 --> 00:05:00,459
+and you've had a
+lot of conversations with
+
+138
+00:05:00,459 --> 00:05:03,259
+them so let's say
+you've got 10 steps
+
+139
+00:05:03,259 --> 00:05:05,360
+in here and you're
+just going to give
+
+140
+00:05:05,360 --> 00:05:09,379
+information here we might
+say okay step five
+
+141
+00:05:09,379 --> 00:05:10,819
+is a complex one
+i know people get
+
+142
+00:05:10,819 --> 00:05:12,899
+stuck on this i
+also know people often
+
+143
+00:05:12,899 --> 00:05:14,959
+don't believe that this
+step's powerful why don't
+
+144
+00:05:14,959 --> 00:05:17,720
+i tell a story
+to start it to
+
+145
+00:05:17,720 --> 00:05:19,720
+show that it works
+and then give the
+
+146
+00:05:19,720 --> 00:05:21,180
+step and then you
+might get to step
+
+147
+00:05:21,180 --> 00:05:22,439
+15 and go do
+you know what we
+
+148
+00:05:22,439 --> 00:05:24,220
+need a visual demo
+here to simplify this
+
+149
+00:05:24,220 --> 00:05:26,000
+so the name of
+the game is asking
+
+150
+00:05:26,000 --> 00:05:29,800
+do i need emotion
+even if ed hasn't
+
+151
+00:05:29,800 --> 00:05:30,939
+said you have to
+have it in the
+
+152
+00:05:30,939 --> 00:05:32,699
+logic brick now the
+mistake to make here
+
+153
+00:05:32,699 --> 00:05:35,579
+is overwhelming viewers so
+think of this as
+
+154
+00:05:35,579 --> 00:05:38,459
+a marathon for your
+viewer to watch what
+
+155
+00:05:38,459 --> 00:05:40,500
+we can't do is
+make them run up
+
+156
+00:05:40,500 --> 00:05:43,379
+a hill and struggle
+to keep up in
+
+157
+00:05:43,379 --> 00:05:45,100
+the first few minutes
+because you're going to
+
+158
+00:05:45,100 --> 00:05:47,500
+mentally exhaust them so
+we need to make
+
+159
+00:05:47,500 --> 00:05:50,740
+sure that these videos
+are just a master
+
+160
+00:05:50,740 --> 00:05:52,800
+class in simplification how
+to reduce attention Book
+
+161
+00:05:52,800 --> 00:05:53,100
+Coleman the word mock
+Testament by affordableness motion
+
+162
+00:05:52,800 --> 00:05:54,160
+paper and feature features
+visual demos, frameworks, all
+
+163
+00:05:54,160 --> 00:05:56,240
+the things I've been
+teaching you because we
+
+164
+00:05:56,240 --> 00:05:57,860
+need them to get
+to the end. If
+
+165
+00:05:57,860 --> 00:05:58,980
+they get to the
+end of these that
+
+166
+00:05:58,980 --> 00:06:00,860
+is where all the
+buying power is unleashed.
+
+167
+00:06:00,980 --> 00:06:03,040
+So we need to
+focus on simplification, not
+
+168
+00:06:03,040 --> 00:06:05,360
+getting them over confused
+and not going and
+
+169
+00:06:05,360 --> 00:06:07,279
+talking over their head
+with tons of information
+
+170
+00:06:07,279 --> 00:06:09,279
+that isn't well structured.
+The next mistake is
+
+171
+00:06:09,279 --> 00:06:11,579
+no call to action.
+I didn't make a
+
+172
+00:06:11,579 --> 00:06:13,040
+call to action in
+this video other than
+
+173
+00:06:13,040 --> 00:06:15,240
+my email and it
+still generated a quarter
+
+174
+00:06:15,240 --> 00:06:17,420
+of a million dollars.
+That was a mistake.
+
+175
+00:06:17,920 --> 00:06:19,279
+I should have pitched
+at the end of
+
+176
+00:06:19,279 --> 00:06:20,800
+this video because it's
+basically kind of a
+
+177
+00:06:20,800 --> 00:06:23,079
+webinar. So if I
+was doing a deep
+
+178
+00:06:23,079 --> 00:06:25,199
+dive, you know, and
+it's 45 minutes long,
+
+179
+00:06:25,339 --> 00:06:28,300
+I would then pitch
+quite aggressively at the
+
+180
+00:06:28,300 --> 00:06:29,860
+end and be like,
+look, you've probably watched
+
+181
+00:06:29,860 --> 00:06:31,019
+this and gone, well,
+there's way more to
+
+182
+00:06:31,019 --> 00:06:32,540
+it. I've been helping
+people do this for
+
+183
+00:06:32,540 --> 00:06:34,240
+years. It's what I
+do all day, every
+
+184
+00:06:34,240 --> 00:06:35,660
+day. You've seen all
+the case studies, all
+
+185
+00:06:35,660 --> 00:06:37,360
+the wins I showed
+you in here. If
+
+186
+00:06:37,360 --> 00:06:38,740
+you would like me
+to help you with
+
+187
+00:06:38,740 --> 00:06:40,899
+this, just click the
+link below. You can
+
+188
+00:06:40,899 --> 00:06:42,740
+learn more about how
+I might be able
+
+189
+00:06:42,740 --> 00:06:44,279
+to do that. Something
+like that, right? Doesn't
+
+190
+00:06:44,279 --> 00:06:45,860
+need to be much
+more, but I wish
+
+191
+00:06:45,860 --> 00:06:47,420
+I'd pitched in mine.
+And the next thing
+
+192
+00:06:47,420 --> 00:06:50,120
+is just not making
+your information feel new,
+
+193
+00:06:50,199 --> 00:06:53,439
+easy, or inspiring. It
+has to, has to
+
+194
+00:06:53,439 --> 00:06:55,579
+be a video that
+ticks all of these
+
+195
+00:06:55,579 --> 00:06:57,819
+boxes for it to
+really work well. All
+
+196
+00:06:57,819 --> 00:07:00,180
+right. So what's the
+strategy for this video?
+
+197
+00:07:00,399 --> 00:07:03,040
+Well, firstly, you just
+need to produce a
+
+198
+00:07:03,040 --> 00:07:05,459
+system, a framework, a
+step -by -step something
+
+199
+00:07:05,459 --> 00:07:07,759
+to enable your viewer
+to get a specific
+
+200
+00:07:07,759 --> 00:07:10,300
+result they want that
+solves the problem you
+
+201
+00:07:10,300 --> 00:07:11,860
+know they care about.
+You then want to
+
+202
+00:07:11,860 --> 00:07:14,319
+pitch a lead magnet
+tailored to the video
+
+203
+00:07:14,319 --> 00:07:17,480
+or your offer in
+there. So in mine,
+
+204
+00:07:17,579 --> 00:07:20,879
+I used an AI
+bot as one of
+
+205
+00:07:20,879 --> 00:07:22,259
+the steps. And then
+I said to the
+
+206
+00:07:22,259 --> 00:07:23,899
+viewers, you can have
+this, get it below.
+
+207
+00:07:24,040 --> 00:07:25,500
+Now, the next thing
+we're going to do
+
+208
+00:07:25,500 --> 00:07:28,060
+is the whole point
+of this is conversions,
+
+209
+00:07:28,100 --> 00:07:30,720
+not views. Now I
+know we want views
+
+210
+00:07:30,720 --> 00:07:32,839
+and conversions, but what
+we want to do
+
+211
+00:07:32,839 --> 00:07:35,259
+is produce something that
+warms people up and
+
+212
+00:07:35,259 --> 00:07:36,600
+get some over the
+line. So if we
+
+213
+00:07:36,600 --> 00:07:39,560
+do this, we can
+get views, we can
+
+214
+00:07:39,560 --> 00:07:41,459
+get emails, we can
+get sales, we can
+
+215
+00:07:41,459 --> 00:07:43,959
+take control of the
+views too. It's very
+
+216
+00:07:43,959 --> 00:07:46,240
+powerful. So what sort
+of title should you
+
+217
+00:07:46,240 --> 00:07:48,399
+use for these videos?
+You need to use
+
+218
+00:07:48,399 --> 00:07:49,459
+your own pattern bank
+here. You can use
+
+219
+00:07:49,459 --> 00:07:49,759
+a lot of different
+titles. You can use
+
+220
+00:07:49,459 --> 00:07:49,759
+a lot of different
+titles. You can use
+
+221
+00:07:49,459 --> 00:07:49,839
+a lot of different
+keywords. You can use
+
+222
+00:07:49,839 --> 00:07:50,139
+a lot of different
+keywords. You can use
+
+223
+00:07:49,839 --> 00:07:51,360
+a lot of different
+to look at outliers
+
+224
+00:07:51,360 --> 00:07:53,100
+and things that have
+worked on your own
+
+225
+00:07:53,100 --> 00:07:54,720
+channel. But if I
+was just going to
+
+226
+00:07:54,720 --> 00:07:57,600
+give you a general
+rule or guide here,
+
+227
+00:07:57,680 --> 00:08:00,300
+make the title very
+clear. They're going to
+
+228
+00:08:00,300 --> 00:08:02,860
+get a specific result
+following some steps and
+
+229
+00:08:02,860 --> 00:08:05,480
+avoid very general claims.
+So we don't want
+
+230
+00:08:05,480 --> 00:08:09,160
+do this. It'll change
+your life. It's the
+
+231
+00:08:09,160 --> 00:08:13,600
+exact process to go
+from depressed to extreme
+
+232
+00:08:13,600 --> 00:08:16,180
+happiness in 90 days,
+something like that. Right?
+
+233
+00:08:16,300 --> 00:08:18,819
+So how to X,
+how to X in
+
+234
+00:08:18,819 --> 00:08:19,439
+Y times X. So
+you can see how
+
+235
+00:08:19,439 --> 00:08:19,740
+to X in Y
+times Y. So you
+
+236
+00:08:19,439 --> 00:08:19,860
+can see how to
+X in Y times
+
+237
+00:08:19,860 --> 00:08:20,160
+Y. So you can
+see how to X
+
+238
+00:08:19,980 --> 00:08:20,280
+in Y times Y.
+So you can see
+
+239
+00:08:19,980 --> 00:08:20,280
+how to X in
+Y times Y. How
+
+240
+00:08:19,980 --> 00:08:22,240
+I X step by
+step, how I blew
+
+241
+00:08:22,240 --> 00:08:24,259
+up my business step
+by step, right? So
+
+242
+00:08:24,259 --> 00:08:26,319
+that's a rough idea
+for titles. Don't just
+
+243
+00:08:26,319 --> 00:08:27,639
+go and use them
+because I've said they're
+
+244
+00:08:27,639 --> 00:08:30,279
+there. It's just an
+example. Thumbnails. I would
+
+245
+00:08:30,279 --> 00:08:32,700
+highly recommend sticking to
+a result, a cognitive
+
+246
+00:08:32,700 --> 00:08:36,679
+distance or a comparison
+or curiosity thumbnail. So
+
+247
+00:08:36,679 --> 00:08:38,220
+a result, you simply
+show the result of
+
+248
+00:08:38,220 --> 00:08:40,600
+your wants in the
+thumbnail cognitive dissonance. You
+
+249
+00:08:40,600 --> 00:08:42,279
+challenge what they thought
+to be true by
+
+250
+00:08:42,279 --> 00:08:43,919
+saying something like, don't
+buy a house in
+
+251
+00:08:43,919 --> 00:08:46,120
+the thumbnail. Comparison is
+a side -by -side
+
+252
+00:08:46,120 --> 00:08:48,039
+before and after. And
+a curiosity is just
+
+253
+00:08:48,039 --> 00:08:49,419
+another way of making
+them go how, what
+
+254
+00:08:49,419 --> 00:08:50,720
+or why. And we
+really want them to
+
+255
+00:08:50,720 --> 00:08:53,139
+think that how, what
+or why, because that's
+
+256
+00:08:53,139 --> 00:08:54,340
+what will get the
+click. All right. So
+
+257
+00:08:54,340 --> 00:08:56,120
+let's go a bit
+deeper on the framework.
+
+258
+00:08:56,279 --> 00:08:58,240
+So the way we're
+going to structure the
+
+259
+00:08:58,240 --> 00:08:59,940
+deep dive is like,
+so we have our
+
+260
+00:08:59,940 --> 00:09:01,659
+intro and what I
+would recommend here is
+
+261
+00:09:01,659 --> 00:09:02,720
+if you're making a
+video, it's going to
+
+262
+00:09:02,720 --> 00:09:05,279
+be like 45 minutes
+long plus set more
+
+263
+00:09:05,279 --> 00:09:07,200
+up in your intro.
+If you watch Simon
+
+264
+00:09:07,200 --> 00:09:10,639
+Squibb's two hour absolute
+beast, he sets up
+
+265
+00:09:10,639 --> 00:09:12,340
+what's in his video
+for about two minutes.
+
+266
+00:09:12,480 --> 00:09:14,419
+It's really annoying and
+over the top. And
+
+267
+00:09:14,419 --> 00:09:16,120
+most people would have
+skipped that. But what
+
+268
+00:09:16,120 --> 00:09:17,860
+I recommend doing is
+setting up, maybe five
+
+269
+00:09:17,860 --> 00:09:19,720
+things because we want
+to raise that tension
+
+270
+00:09:19,720 --> 00:09:21,879
+nice and high. Then
+you have to provide
+
+271
+00:09:21,879 --> 00:09:25,320
+proof this works because
+nobody is going to
+
+272
+00:09:25,320 --> 00:09:27,059
+sit around and listen
+to any of this.
+
+273
+00:09:27,419 --> 00:09:29,639
+If there's no proof.
+So once you set
+
+274
+00:09:29,639 --> 00:09:31,299
+up that intro, it's
+like his proof, it
+
+275
+00:09:31,299 --> 00:09:32,779
+works. Here's a client
+who did this. Here's
+
+276
+00:09:32,779 --> 00:09:34,059
+someone who went from
+X to Y, like
+
+277
+00:09:34,059 --> 00:09:35,759
+get as much in
+as you can. Don't
+
+278
+00:09:35,759 --> 00:09:37,620
+labor it for too
+long, but talking like
+
+279
+00:09:37,620 --> 00:09:39,620
+30 seconds of proof
+here, then we have
+
+280
+00:09:39,620 --> 00:09:41,159
+the emotion break. So
+there's lots of different
+
+281
+00:09:41,159 --> 00:09:42,879
+ways of doing this,
+but my preferred method
+
+282
+00:09:42,879 --> 00:09:44,559
+is this call it
+old way. New way.
+
+283
+00:09:44,659 --> 00:09:47,379
+What we do is
+we. Shit. All I
+
+284
+00:09:47,379 --> 00:09:47,679
+want to do is
+I want to do
+
+285
+00:09:47,379 --> 00:09:47,679
+this. I want to
+do this. I want
+
+286
+00:09:47,379 --> 00:09:47,720
+to do this. I
+want to do this.
+
+287
+00:09:47,720 --> 00:09:48,019
+I want to do
+this. I want to
+
+288
+00:09:47,720 --> 00:09:48,019
+do this. I want
+to do this. I
+
+289
+00:09:47,720 --> 00:09:48,019
+want to do this.
+I want to do
+
+290
+00:09:47,720 --> 00:09:49,059
+this. The old way,
+the status quo. And
+
+291
+00:09:49,059 --> 00:09:50,259
+we say there is
+a new, better way.
+
+292
+00:09:50,340 --> 00:09:51,580
+And then we turn
+around and say, look
+
+293
+00:09:51,580 --> 00:09:53,519
+at the problem. The
+old way is causing
+
+294
+00:09:53,519 --> 00:09:56,419
+you. So for example,
+I said, search doesn't
+
+295
+00:09:56,419 --> 00:09:58,480
+work. It's done. It's
+been outdated for years.
+
+296
+00:09:58,620 --> 00:10:00,480
+No one makes any
+money from it. There's
+
+297
+00:10:00,480 --> 00:10:01,899
+a far better way.
+That's got all of
+
+298
+00:10:01,899 --> 00:10:03,019
+these results. You can
+see on the screen
+
+299
+00:10:03,019 --> 00:10:06,019
+right now. Here's why
+search doesn't bring people
+
+300
+00:10:06,019 --> 00:10:08,299
+back. It's all about
+new viewers. How are
+
+301
+00:10:08,299 --> 00:10:09,940
+you supposed to make
+sales? If people only
+
+302
+00:10:09,940 --> 00:10:11,580
+watch one video that
+doesn't happen, that's a
+
+303
+00:10:11,580 --> 00:10:14,440
+lie. You've been lied
+to. And then we
+
+304
+00:10:14,440 --> 00:10:17,059
+tease the result, but
+look what happens when
+
+305
+00:10:17,059 --> 00:10:17,360
+you do it. You're
+going to get a
+
+306
+00:10:17,360 --> 00:10:17,659
+lot of people who
+are going to do
+
+307
+00:10:17,360 --> 00:10:19,240
+it my way, the
+new way. And we
+
+308
+00:10:19,240 --> 00:10:22,679
+start showing them more
+testimonials, right? And just
+
+309
+00:10:22,679 --> 00:10:25,200
+keep reminding them it
+works. So that was
+
+310
+00:10:25,200 --> 00:10:28,179
+my preferred method for
+the emotion brick. It's
+
+311
+00:10:28,179 --> 00:10:30,440
+literally showing them the
+old way doesn't work
+
+312
+00:10:30,440 --> 00:10:32,440
+and showing proof the
+new way does. And
+
+313
+00:10:32,440 --> 00:10:34,019
+then we move on
+to the logic brick.
+
+314
+00:10:34,220 --> 00:10:36,720
+So this is pretty
+simple. We now show
+
+315
+00:10:36,720 --> 00:10:38,559
+them what the new
+way is. So in
+
+316
+00:10:38,559 --> 00:10:40,080
+the video, we would
+have promised I'm going
+
+317
+00:10:40,080 --> 00:10:41,019
+to show you how
+to get some sort
+
+318
+00:10:41,019 --> 00:10:42,559
+of big result in
+the intro. Now we
+
+319
+00:10:42,559 --> 00:10:43,799
+just show them how
+to do it, giving
+
+320
+00:10:43,799 --> 00:10:46,240
+only the most critical
+steps. And at any
+
+321
+00:10:46,240 --> 00:10:48,500
+point, the steps complex
+or the viewers might
+
+322
+00:10:48,500 --> 00:10:50,639
+be skeptical of its
+power, using the motion
+
+323
+00:10:50,639 --> 00:10:52,820
+brick to simplify that
+one bit. And then
+
+324
+00:10:52,820 --> 00:10:54,559
+just keep reminding them
+this works with proof
+
+325
+00:10:54,559 --> 00:10:56,320
+throughout the video. And
+then we get to
+
+326
+00:10:56,320 --> 00:10:58,039
+your end screen. So
+if you're optimizing for
+
+327
+00:10:58,039 --> 00:11:00,120
+views, if that's your
+goal, you want to
+
+328
+00:11:00,120 --> 00:11:02,320
+push to a previous
+version of this video
+
+329
+00:11:02,320 --> 00:11:03,980
+template if you have
+done a deep dive.
+
+330
+00:11:04,299 --> 00:11:06,940
+Otherwise, just push to
+another video that you
+
+331
+00:11:06,940 --> 00:11:09,240
+think is the next
+logical video for them
+
+332
+00:11:09,240 --> 00:11:10,779
+to watch. Shouldn't be
+a very long decision.
+
+333
+00:11:10,960 --> 00:11:13,179
+If you're optimizing for
+sales, push this video
+
+334
+00:11:13,179 --> 00:11:14,740
+to one of your
+high converting sales videos.
+
+335
+00:11:15,240 --> 00:11:17,019
+If you're optimizing for
+emails, push to a
+
+336
+00:11:17,019 --> 00:11:18,799
+high converting email video.
+That's kind of it.
+
+337
+00:11:19,059 --> 00:11:21,399
+So this is my
+script. And what you
+
+338
+00:11:21,399 --> 00:11:22,600
+can see here is
+I'm going to read
+
+339
+00:11:22,600 --> 00:11:24,139
+it out a little
+bit. So have you
+
+340
+00:11:24,139 --> 00:11:26,259
+ever wondered if the
+advice you're following for
+
+341
+00:11:26,259 --> 00:11:28,299
+growing a channel can
+make you money is
+
+342
+00:11:28,299 --> 00:11:29,740
+wrong? Well, I believe
+a lot of it
+
+343
+00:11:29,740 --> 00:11:30,860
+is and it's holding
+you back. In fact,
+
+344
+00:11:30,860 --> 00:11:32,720
+I know it because
+in October 2021, I
+
+345
+00:11:32,720 --> 00:11:34,620
+quit my business and
+I ignored most of
+
+346
+00:11:34,620 --> 00:11:35,860
+it. And I started
+from scratch in three
+
+347
+00:11:35,860 --> 00:11:38,039
+years generated over 4
+million from YouTube using
+
+348
+00:11:38,039 --> 00:11:39,620
+a system that's not
+only work for me,
+
+349
+00:11:39,720 --> 00:11:41,740
+it's work for countless
+others. So we've got
+
+350
+00:11:41,740 --> 00:11:43,460
+our hook. I then
+insert some
+
+351
+00:11:44,679 --> 00:11:47,799
+new system works. So
+tease the result. And
+
+352
+00:11:47,799 --> 00:11:49,519
+then I'm doing the
+setup. So I'm excited
+
+353
+00:11:49,519 --> 00:11:51,000
+because today I'm going
+to give you the
+
+354
+00:11:51,000 --> 00:11:52,700
+exact blueprint to go
+from zero followers to
+
+355
+00:11:52,700 --> 00:11:54,299
+making a million dollars
+on YouTube without worrying
+
+356
+00:11:54,299 --> 00:11:55,960
+about your subscriber count
+because it's not even
+
+357
+00:11:55,960 --> 00:11:58,620
+a metric we're going
+to track. Okay. So
+
+358
+00:11:58,620 --> 00:12:00,600
+in this deep dive,
+you're going to discover
+
+359
+00:12:00,600 --> 00:12:02,460
+exactly what to focus
+on a more awful
+
+360
+00:12:02,460 --> 00:12:04,379
+outdated advice to ignore.
+So you can start
+
+361
+00:12:04,379 --> 00:12:05,740
+getting results like you
+see on screen right
+
+362
+00:12:05,740 --> 00:12:07,320
+now. See how I'm
+teasing the old way.
+
+363
+00:12:07,440 --> 00:12:09,259
+And then I move
+into the proof. So
+
+364
+00:12:09,259 --> 00:12:11,799
+you're probably wondering, will
+this actually work for
+
+365
+00:12:11,799 --> 00:12:13,740
+me? So this will
+work for people who
+
+366
+00:12:13,740 --> 00:12:14,860
+want to solve a
+problem with their channel.
+
+367
+00:12:14,960 --> 00:12:17,240
+So they make educational
+videos that help people
+
+368
+00:12:17,240 --> 00:12:19,179
+solve a problem of
+some source. If you're
+
+369
+00:12:19,179 --> 00:12:21,379
+an entertainment channel, it's
+definitely not the right
+
+370
+00:12:21,379 --> 00:12:23,480
+system. Feel free to
+watch it, but otherwise
+
+371
+00:12:23,480 --> 00:12:26,139
+I would not do
+this. So I'm trying
+
+372
+00:12:26,139 --> 00:12:28,120
+to put off the
+wrong avatar from watching
+
+373
+00:12:28,120 --> 00:12:29,340
+because I have so
+many of them on
+
+374
+00:12:29,340 --> 00:12:30,559
+my channel. You don't
+have to do that.
+
+375
+00:12:30,679 --> 00:12:32,419
+So how does it
+work? I wanted to
+
+376
+00:12:32,419 --> 00:12:34,379
+test this system. So
+I got 40 YouTube
+
+377
+00:12:34,379 --> 00:12:36,159
+creators in 2023 and
+I put them through
+
+378
+00:12:36,159 --> 00:12:37,159
+it. And on average,
+I made 10 K
+
+379
+00:12:37,159 --> 00:12:38,340
+in the first seven
+days of a launch,
+
+380
+00:12:38,440 --> 00:12:40,080
+but also only two
+of them made under
+
+381
+00:12:40,080 --> 00:12:41,860
+a couple of thousand.
+Some people went past
+
+382
+00:12:41,860 --> 00:12:43,700
+40 K. It was
+life -changing. It worked
+
+383
+00:12:43,700 --> 00:12:46,159
+for you. I'm just
+basically, I'm just unpacking
+
+384
+00:12:46,159 --> 00:12:48,019
+like results, results, results.
+And when you're watching
+
+385
+00:12:48,019 --> 00:12:49,419
+this, it's like, oh
+my gosh, he has
+
+386
+00:12:49,419 --> 00:12:50,720
+got a new way.
+So we're just doing
+
+387
+00:12:50,720 --> 00:12:52,059
+that. Then we come
+into the old way
+
+388
+00:12:52,059 --> 00:12:53,940
+versus new way section.
+So let's look at
+
+389
+00:12:53,940 --> 00:12:55,700
+the transition. So with
+that in mind, what's
+
+390
+00:12:55,700 --> 00:12:57,299
+the strategy we're going
+to use to grow
+
+391
+00:12:57,299 --> 00:12:59,200
+your channel and business
+from zero so you
+
+392
+00:12:59,200 --> 00:13:01,120
+can make a million
+dollars? That's my transition.
+
+393
+00:13:01,379 --> 00:13:03,100
+Well, the first thing
+is we're not going
+
+394
+00:13:03,100 --> 00:13:04,879
+to do it with
+affiliate because affiliate basically
+
+395
+00:13:04,879 --> 00:13:06,340
+means you're putting your
+fate in someone else's
+
+396
+00:13:06,340 --> 00:13:07,960
+hands and a company
+can just turn around
+
+397
+00:13:07,960 --> 00:13:09,320
+and say, we're no
+longer giving you commission
+
+398
+00:13:09,320 --> 00:13:11,039
+and lose all income.
+We're not going to
+
+399
+00:13:11,039 --> 00:13:13,279
+do sponsors. That's great
+for entertainment channels, but
+
+400
+00:13:13,279 --> 00:13:14,700
+not for people who
+solve problems. And also
+
+401
+00:13:14,700 --> 00:13:16,500
+everyone hates working with
+them. And we're also
+
+402
+00:13:16,500 --> 00:13:18,139
+not going to look
+at ad revenue because
+
+403
+00:13:18,139 --> 00:13:19,220
+many of you are
+going to be in
+
+404
+00:13:19,220 --> 00:13:20,860
+niches where that's far
+too small to make
+
+405
+00:13:20,860 --> 00:13:22,919
+it pay off and
+worth your while. It's
+
+406
+00:13:22,919 --> 00:13:24,600
+a great little bonus
+because we're able to
+
+407
+00:13:24,600 --> 00:13:25,620
+hire people to get
+your leg up, but
+
+408
+00:13:25,620 --> 00:13:26,620
+it's not the way
+to do this. What
+
+409
+00:13:26,620 --> 00:13:27,700
+I'm going to do
+is show you is
+
+410
+00:13:27,700 --> 00:13:30,000
+night and day to
+what you often get
+
+411
+00:13:30,000 --> 00:13:31,419
+told to do online.
+So you see what
+
+412
+00:13:31,419 --> 00:13:32,340
+I've done there? I've
+just said the old
+
+413
+00:13:32,340 --> 00:13:33,399
+way, the old way,
+the way you've been
+
+414
+00:13:33,399 --> 00:13:35,240
+told sucks. So let
+me ask you a
+
+415
+00:13:35,240 --> 00:13:37,220
+question. If you wanted
+to catch some fish,
+
+416
+00:13:37,320 --> 00:13:38,779
+would you sit with
+a rod and wait
+
+417
+00:13:38,779 --> 00:13:40,580
+for one? So what
+I'm doing now is
+
+418
+00:13:40,580 --> 00:13:42,200
+I'm bringing in the
+emotion brick. So what
+
+419
+00:13:42,200 --> 00:13:43,940
+I'll do is I'll
+label this up and
+
+420
+00:13:43,940 --> 00:13:45,980
+I'll link to it.
+So you can see
+
+421
+00:13:45,980 --> 00:13:48,200
+the emotion brick, the
+steps. And every time
+
+422
+00:13:48,200 --> 00:13:49,440
+I switch, I won't
+read the whole thing
+
+423
+00:13:49,440 --> 00:13:50,440
+out now. It'll go
+on for a while.
+
+424
+00:13:50,919 --> 00:13:52,379
+I'll probably spell check
+it too, because this
+
+425
+00:13:52,379 --> 00:13:54,000
+is my drivel. But
+now let's have a
+
+426
+00:13:54,000 --> 00:13:55,919
+look at how to
+use the template. All
+
+427
+00:13:55,919 --> 00:13:57,679
+right. So in our
+deep dive at the
+
+428
+00:13:57,679 --> 00:13:58,860
+top, there's some links
+so you can check
+
+429
+00:13:58,860 --> 00:14:00,779
+out my own videos
+on it. Here is
+
+430
+00:14:00,779 --> 00:14:03,679
+the framework we use.
+And the first thing
+
+431
+00:14:03,679 --> 00:14:05,240
+you do is you
+set your goal. Like
+
+432
+00:14:05,240 --> 00:14:06,799
+we do every video.
+What do you want?
+
+433
+00:14:06,879 --> 00:14:08,820
+Sales, views, or emails?
+You can't have all
+
+434
+00:14:08,820 --> 00:14:10,779
+three. It would be
+amazing if you can,
+
+435
+00:14:10,820 --> 00:14:11,960
+and it happens every
+now and then, but
+
+436
+00:14:11,960 --> 00:14:14,600
+just pick one. If
+you're a very small
+
+437
+00:14:14,600 --> 00:14:17,120
+channel, basically it has
+to be views, unless
+
+438
+00:14:17,120 --> 00:14:19,460
+you're just going to
+release this as conversion
+
+439
+00:14:19,460 --> 00:14:22,399
+content and drive other
+future videos back at
+
+440
+00:14:22,399 --> 00:14:25,240
+it. But if you're
+an experienced creator, not
+
+441
+00:14:25,240 --> 00:14:26,700
+advised. Then you're going
+to make your thumbnails
+
+442
+00:14:26,700 --> 00:14:29,360
+and titles. Then you're
+going to do your
+
+443
+00:14:29,360 --> 00:14:31,940
+top three questions that
+you think the viewers
+
+444
+00:14:31,940 --> 00:14:33,259
+are going to want
+answers to based on
+
+445
+00:14:33,259 --> 00:14:35,139
+this packaging. Then you're
+going to do your
+
+446
+00:14:35,139 --> 00:14:37,860
+messy brain dump. So
+list every step from
+
+447
+00:14:37,860 --> 00:14:39,539
+your system to get
+a result. Make sure
+
+448
+00:14:39,539 --> 00:14:42,080
+they'll match or exceed
+the expectations. For every
+
+449
+00:14:42,080 --> 00:14:44,159
+step or claim, find
+some sort of proof
+
+450
+00:14:44,159 --> 00:14:46,840
+that it works. Use
+skyscraper bot to research
+
+451
+00:14:46,840 --> 00:14:48,720
+other videos. You just
+want a big plan
+
+452
+00:14:48,720 --> 00:14:50,960
+here, which is going
+to unpack the proof,
+
+453
+00:14:51,179 --> 00:14:52,799
+the emotion brick, you
+know, how you might
+
+454
+00:14:52,799 --> 00:14:54,740
+get this across the
+logic. And then after
+
+455
+00:14:54,740 --> 00:14:56,500
+that, you're going to
+refine it. So start
+
+456
+00:14:56,500 --> 00:14:58,720
+deleting stuff and just
+keep the things that
+
+457
+00:14:58,720 --> 00:15:01,240
+directly pay off your
+three viewers questions. Delete
+
+458
+00:15:01,240 --> 00:15:03,539
+any steps that are
+not critical for getting
+
+459
+00:15:03,539 --> 00:15:06,139
+a viewer and result,
+which is hard. And
+
+460
+00:15:06,139 --> 00:15:08,620
+then focus heavily on
+proving this works. So
+
+461
+00:15:08,620 --> 00:15:10,399
+you can see I've
+got these sections here,
+
+462
+00:15:10,480 --> 00:15:12,940
+like just plan out
+your proof section. Plan
+
+463
+00:15:12,940 --> 00:15:15,379
+out your emotion brick,
+plan out your logic
+
+464
+00:15:15,379 --> 00:15:17,000
+like this. And in
+a dream mode, it's
+
+465
+00:15:17,000 --> 00:15:18,399
+step one, proof it
+works, step two, proof
+
+466
+00:15:18,399 --> 00:15:19,740
+it works. If you
+don't have proof for
+
+467
+00:15:19,740 --> 00:15:21,039
+every step, don't worry.
+But if you can
+
+468
+00:15:21,039 --> 00:15:22,639
+keep throwing in, it's
+good. It needs to
+
+469
+00:15:22,639 --> 00:15:23,980
+be quick. After that,
+we want to be
+
+470
+00:15:23,980 --> 00:15:26,500
+thinking about what's the
+conversion strategy. So if
+
+471
+00:15:26,500 --> 00:15:29,159
+you picked your goal
+as emails, you need
+
+472
+00:15:29,159 --> 00:15:30,340
+to make sure you've
+got your lead magnet
+
+473
+00:15:30,340 --> 00:15:32,779
+in. You mentioned it
+three times, early, mid
+
+474
+00:15:32,779 --> 00:15:35,340
+and end, and you're
+pointing to a high
+
+475
+00:15:35,340 --> 00:15:37,559
+converting video in the
+end screen for emails.
+
+476
+00:15:38,039 --> 00:15:40,340
+For sales, are you
+doing an obvious call
+
+477
+00:15:40,340 --> 00:15:42,100
+to action or stealth
+selling? For this, I
+
+478
+00:15:42,100 --> 00:15:42,399
+would highly recommend you
+do a little bit
+
+479
+00:15:42,379 --> 00:15:42,700
+of a call to
+action. I highly recommend
+
+480
+00:15:42,700 --> 00:15:44,480
+doing an obvious call
+to action towards the
+
+481
+00:15:44,480 --> 00:15:46,259
+end and then point
+to another high converting
+
+482
+00:15:46,259 --> 00:15:48,580
+sales video. If you're
+optimizing for views, don't
+
+483
+00:15:48,580 --> 00:15:50,720
+have any external calls
+to action. Just link
+
+484
+00:15:50,720 --> 00:15:53,000
+to bingeable videos, point
+to a well -received
+
+485
+00:15:53,000 --> 00:15:54,899
+video that makes sense,
+and then move on
+
+486
+00:15:54,899 --> 00:15:57,960
+to writing or presenting
+from bullets. So I
+
+487
+00:15:57,960 --> 00:16:00,399
+actually presented mine from
+bullets, which I know
+
+488
+00:16:00,399 --> 00:16:01,740
+I've told you not
+to do. It took
+
+489
+00:16:01,740 --> 00:16:03,440
+me six hours to
+film and I wouldn't
+
+490
+00:16:03,440 --> 00:16:05,179
+do it again. It
+was exhausting, but I
+
+491
+00:16:05,179 --> 00:16:07,519
+planned it and practiced
+it for a very
+
+492
+00:16:07,519 --> 00:16:10,100
+long time. So it
+worked. So I would
+
+493
+00:16:10,100 --> 00:16:12,039
+say write it, but
+if you're going to
+
+494
+00:16:12,039 --> 00:16:12,360
+present it for a
+long time, it's going
+
+495
+00:16:12,360 --> 00:16:12,799
+to be a lot
+easier. So I would
+
+496
+00:16:12,799 --> 00:16:13,099
+recommend you do a
+call to action. If
+
+497
+00:16:12,799 --> 00:16:13,099
+you're going to do
+a live video, just
+
+498
+00:16:12,799 --> 00:16:14,539
+keep practicing it over
+and over again. I
+
+499
+00:16:14,539 --> 00:16:16,799
+recorded it, watched it
+back, deleted it, recorded
+
+500
+00:16:16,799 --> 00:16:17,980
+it, watched it back,
+and just getting better
+
+501
+00:16:17,980 --> 00:16:19,779
+and better. And then
+upload and add your
+
+502
+00:16:19,779 --> 00:16:21,480
+tracking links. Now there's
+a deep dive guide
+
+503
+00:16:21,480 --> 00:16:23,600
+here below, which is
+just going to keep
+
+504
+00:16:23,600 --> 00:16:26,279
+you on track. And
+then once you've posted
+
+505
+00:16:26,279 --> 00:16:27,940
+it, we just put
+it through our measurement
+
+506
+00:16:27,940 --> 00:16:30,080
+system. You ask, did
+I hit my goal
+
+507
+00:16:30,080 --> 00:16:32,820
+after seven to 30
+days? If so, repeat
+
+508
+00:16:32,820 --> 00:16:34,940
+the lesson. If you
+missed, ask why, avoid
+
+509
+00:16:34,940 --> 00:16:37,379
+the lesson. And just
+remove the emotion from
+
+510
+00:16:37,379 --> 00:16:39,659
+this and understand that
+if we can get
+
+511
+00:16:39,659 --> 00:16:41,820
+sales, the views on
+this doesn't matter. We
+
+512
+00:16:41,820 --> 00:16:42,820
+can drive it. We
+can put emails at
+
+513
+00:16:42,820 --> 00:16:45,279
+it if we want.
+We can put it
+
+514
+00:16:45,279 --> 00:16:47,139
+as our channel trailer.
+We can link every
+
+515
+00:16:47,139 --> 00:16:48,519
+flipping video to it.
+We could even put
+
+516
+00:16:48,519 --> 00:16:50,700
+some ad revenue behind
+it. Although don't go
+
+517
+00:16:50,700 --> 00:16:52,120
+doing that yet. I
+need to do more
+
+518
+00:16:52,120 --> 00:16:54,179
+investigating on it. So
+that is your deep
+
+519
+00:16:54,179 --> 00:16:54,479
+dive.

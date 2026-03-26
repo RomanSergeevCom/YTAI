@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "AI_UPDATE__Intro_Feedback",
+  "created_at": "2026-03-15T18:06:22Z",
+  "media": {
+    "width": 3840,
+    "height": 2160,
+    "fps": 25.0,
+    "sample_rate": 44100
+  },
+  "clips": [
+    {
+      "clip_id": "AI_UPDATE__Intro_Feedback",
+      "filename": "AI_UPDATE__Intro_Feedback.mp4",
+      "path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE__Intro_Feedback/AI_UPDATE__Intro_Feedback.mp4",
+      "duration": 151.15,
+      "offset": 0.0,
+      "premiere_transcript": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE__Intro_Feedback/AI_UPDATE__Intro_Feedback_transcription/per_clip/AI_UPDATE__Intro_Feedback/AI_UPDATE__Intro_Feedback_premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE__Intro_Feedback/AI_UPDATE__Intro_Feedback_transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE__Intro_Feedback/AI_UPDATE__Intro_Feedback_transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE__Intro_Feedback/AI_UPDATE__Intro_Feedback_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE__Intro_Feedback/AI_UPDATE__Intro_Feedback_1_Ingest_captions.srt"
+  },
+  "source_folder": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE__Intro_Feedback"
+}

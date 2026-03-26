@@ -1,0 +1,68 @@
+{
+  "created_at": "2026-03-15T21:24:01Z",
+  "source": {
+    "page_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892345-the-secret-to-amazing-titles?wvideo=7pzo6ty60l",
+    "media_url": "https://embed-ssl.wistia.com/deliveries/7f23b3332f65ab4bf810849914f91aae796ffe41.bin",
+    "title": "Phase_3_-_3._Titles.mp4"
+  },
+  "project": {
+    "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles",
+    "video_file": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/Phase_3_-_3._Titles.mp4",
+    "video_info_file": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/Phase_3_-_3._Titles.info.json"
+  },
+  "download": {
+    "engine": "ffmpeg",
+    "completed": true
+  },
+  "transcription": {
+    "enabled": true,
+    "completed": true,
+    "command": [
+      "/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3",
+      "/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py",
+      "--project",
+      "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/Phase_3_-_3._Titles.mp4",
+      "-y",
+      "-m",
+      "large-v3",
+      "-n",
+      "1",
+      "--language",
+      "en"
+    ],
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/Phase_3_-_3._Titles_transcript.xlsx",
+    "transcription_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/Phase_3_-_3._Titles_transcription",
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/Phase_3_-_3._Titles_transcription/Phase_3_-_3._Titles_transcript.json",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/Phase_3_-_3._Titles_transcription/Phase_3_-_3._Titles_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/Phase_3_-_3._Titles_transcription/Phase_3_-_3._Titles_1_Ingest_captions.srt"
+  },
+  "screenshots": {
+    "enabled": false,
+    "dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/screenshots",
+    "manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/screenshots_manifest.json",
+    "count": 0
+  },
+  "screenshot_descriptions": {
+    "enabled": false,
+    "completed": false,
+    "manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/screenshots_descriptions.json"
+  },
+  "settings": {
+    "screenshot_mode": "interval",
+    "screenshot_interval": 2.0,
+    "scene_threshold": 0.18,
+    "scene_max_width": 1600,
+    "whisper_model": "large-v3",
+    "speakers": 1,
+    "language": "en"
+  },
+  "errors": [],
+  "document": {
+    "notes_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/document_notes.md",
+    "document_manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/document_manifest.json",
+    "doc_images_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/doc_images",
+    "extra_links_manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/extra_links_manifest.json",
+    "extra_links_count": 0
+  },
+  "extra_links": []
+}

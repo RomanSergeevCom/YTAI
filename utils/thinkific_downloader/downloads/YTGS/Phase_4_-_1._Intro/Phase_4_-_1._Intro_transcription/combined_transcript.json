@@ -1,0 +1,38 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T16:34:30Z",
+  "project": "Phase_4_-_1._Intro",
+  "total_duration": 115.357,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "Phase_4_-_1._Intro"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "Phase_4_-_1._Intro",
+      "local_start": 0.0,
+      "local_end": 114.88,
+      "global_start": 0.0,
+      "global_end": 114.88,
+      "speaker": "SPEAKER_00",
+      "text": "All right, welcome to the next stage of our YouTube pipe. And in this phase, all we're going to do is look at fixing the most common blockage area in our sales system, ideation and strategy. And we're going to do it in a way that is easier, more effective. It saves you time. It earns you more money. It is quite literally the only way to do this if you want to succeed. But the weird thing is this. For years, I have been teaching YouTube. And this, without doubt, has been the most ignored advice I ever give. And it's also the thing that I've had the most emails about where people are going, Ed, I wish I listened to you sooner. I finally did what you said and it worked. And I could never figure out why would people skip the easy thing until I realized two things. Well, it sounds too simple to be true. And then secondly, people try it once, don't get an instant result and then go, No, it won't work for me. And they give up and go back to doing stuff that will not work for them in the long term. So here's what I need from you. If you want to continue your transformation into a hulk of a channel and business that you are meant to become, I need you to stick to this plan religiously for at least 40 videos before you judge it. Why? Because failing as fast as you can is the biggest part of this process. I need you to have a ton of flops so we can learn lessons from them and then turn them into wins. So you have to remove the emotion from this. Do not write it off as a strategy. It doesn't work in your niche. Do not write it off as only working for Ed. Don't blame. Don't blame your audience for not wanting it. Just fail as fast as you can and keep going. This works. Okay, so here's what we're going to do together in this phase to try and remove your blockage. To start, we're going to learn the overall strategy we're going to teach you. We're then going to research your niche to find patterns that are going to grow your channel. We're then going to turn those patterns into video ideas that people actually want. And then you're going to use that research to plan three to four video thumbnails and titles. And that's it. All right, so move on to the next video where we're going to start learning about how strategy works.",
+      "avg_confidence": 0.9805
+    }
+  ],
+  "stats": {
+    "total_words": 440,
+    "total_segments": 1,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 1,
+        "words": 440,
+        "duration": 114.88,
+        "avg_confidence": 0.9805
+      }
+    },
+    "avg_confidence": 0.9805,
+    "low_confidence_segments": 0
+  }
+}

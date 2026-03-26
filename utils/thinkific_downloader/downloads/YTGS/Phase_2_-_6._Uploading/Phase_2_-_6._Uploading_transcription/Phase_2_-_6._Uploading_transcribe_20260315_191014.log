@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 19:10:14
+============================================================
+
+=== Configuration ===
+Project:    Phase_2_-_6._Uploading
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_6._Uploading/Phase_2_-_6._Uploading.mp4
+Clips:      1
+Duration:   2:42 (162.7s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_2_-_6._Uploading    2:42  3840×2160 25.0fps H264  3.4Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.07 GB
+    offset 0.000s  Phase_2_-_6._Uploading.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    2:42  99.7%  3 segments
+  Gaps                       0:00  0.3%
+
+=== Transcription ===
+Total words:     574
+Total segments:  2
+Avg confidence:  0.8913
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_2_-_6._Uploading:
+    Words: 574  Segments: 2  Confidence: 0.8770  Low: 2
+    Speaker 1: 574 words, 2 segs, 2:38
+
+=== Whisper Per-Clip ===
+  Phase_2_-_6._Uploading    2:42    574 words   212 wpm    2m 11s  (1.23x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         0s        0s  -    0s    0.2%
+  Diarization           6s        8s  +    2s    5.6%
+  Whisper           1m 29s    2m 11s  +   42s   94.2%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              0s        0s  -    0s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             1m 36s    2m 19s  +   44s  100.0%
+  Speed:          1.2x realtime
+  Wall clock:     2m 19s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_2_-_6._Uploading_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                            3.9 KB
+    diarization.json                                    0.4 KB
+    full_audio.wav                                   5085.2 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_2_-_6._Uploading/Phase_2_-_6._Uploading_audio.wav    5085.2 KB
+    per_clip/Phase_2_-_6._Uploading/Phase_2_-_6._Uploading_captions.srt       5.3 KB
+    per_clip/Phase_2_-_6._Uploading/Phase_2_-_6._Uploading_premiere_transcript.json     126.4 KB
+    per_clip/Phase_2_-_6._Uploading/Phase_2_-_6._Uploading_transcript.json      75.7 KB
+    per_clip/Phase_2_-_6._Uploading/Phase_2_-_6._Uploading_transcript.srt       2.9 KB
+    per_clip/Phase_2_-_6._Uploading/Phase_2_-_6._Uploading_transcript.txt       2.9 KB
+    per_clip/Phase_2_-_6._Uploading/Phase_2_-_6._Uploading_whisper_raw.json      67.9 KB
+  Phase_2_-_6._Uploading_transcript.xlsx  (8.9 KB)
+
+============================================================

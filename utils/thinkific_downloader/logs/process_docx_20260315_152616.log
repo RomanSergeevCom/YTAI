@@ -1,0 +1,36 @@
+
+=== Configuration ===
+DOCX            : /Users/romansergeev/Downloads/YTCG.docx
+Lessons in DOCX : 59
+Processing      : 2
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Dry run         : False
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_152616.log
+
+=== Lesson 01 ===
+
+[01/2] Phase_1_-_1._Intro_Video.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+  ⏭  Skipped (already completed)
+
+=== Lesson 02 ===
+
+[02/2] Phase_1_-_3._Expectations.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+  ⏭  Skipped (already completed)
+
+=== Result ===
+
+═══════════════════════════════════════════════════════
+  Batch complete: 2 lessons
+  ✓ OK: 0  |  ⏭ Skipped: 2  |  ✗ Failed: 0
+  Total time: 0s  |  Disk: 1.8 GB
+  Log: /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_152616.log
+  Summary JSON : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_summary.json
+  Summary Table: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_summary_table.txt
+═══════════════════════════════════════════════════════

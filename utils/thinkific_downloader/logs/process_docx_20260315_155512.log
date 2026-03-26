@@ -1,0 +1,135 @@
+
+=== Configuration ===
+DOCX            : /Users/romansergeev/Downloads/YTCG.docx
+Lessons in DOCX : 59
+Processing      : 59
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Dry run         : False
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_155512.log
+
+=== Lesson 01 ===
+
+[01/59] Phase_1_-_1._Intro_Video.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+  ⏭  Skipped (already completed)
+
+=== Lesson 02 ===
+
+[02/59] Phase_1_-_3._Expectations.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+  ⏭  Skipped (already completed)
+
+=== Lesson 03 ===
+
+[03/59] Phase_1_-_4._How_YouTube_Works.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef
+  ⏭  Skipped (already completed)
+
+=== Lesson 04 ===
+
+[04/59] Phase_1_-_6._Position_Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1
+  ⏭  Skipped (already completed)
+
+=== Lesson 05 ===
+
+[05/59] Phase_1_-_7._How_To_Position.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4
+  ⏭  Skipped (already completed)
+
+=== Lesson 06 ===
+
+[06/59] Phase_1_-_9._Audit_V2.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892283-task-auditing-your-foundations?wvideo=uca14sgz0s
+  ⏭  Skipped (already completed)
+
+=== Lesson 07 ===
+
+[07/59] Phase_1_-_10._Doing_Your_Tasks.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892288-task-minor-adjustments?wvideo=yg65ujy4qv
+  ⏭  Skipped (already completed)
+
+=== Lesson 08 ===
+
+[08/59] Phase_1_-_Simple_Nurture.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921638-side-mission-building-a-simple-email-system?wvideo=9xdr515qzr
+  ⏭  Skipped (already completed)
+
+=== Lesson 09 ===
+
+[09/59] Phase_2_-_1._Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892293-phase-2-intro?wvideo=obyeqz0swb
+  ⏭  Skipped (already completed)
+
+=== Lesson 10 ===
+
+[10/59] Phase_2_-_2._Demo_Video.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892694-task-making-your-demo-video?wvideo=sgjg69vbud
+  ↳ Video exists (533 MB), skipping download
+
+════════════════════════════════════════════════════════════
+  [44m[97m[1m Preflight Checks [0m
+  [92m✓[0m ffmpeg
+  [92m✓[0m Python packages
+  [2mLoading Whisper large-v3...[0m  [92m✓[0m Whisper model: large-v3          
+  [92m✓[0m HuggingFace token
+  [92m✓[0m Device: mps
+
+  [2m╭──────────────────────────────────────────────────────────────╮[0m
+  [2m│[0m  [1mEnvironment[0m                                                 [2m│[0m
+  [2m│[0m  [2m──────────────────────────────────────────────────────────[0m  [2m│[0m
+  [2m│[0m  Python:     3.11.14                                         [2m│[0m
+  [2m│[0m  Torch:      2.8.0 · MPS (Apple Silicon)                     [2m│[0m
+  [2m│[0m  Whisper:    large-v3                                        [2m│[0m
+  [2m│[0m  Pyannote:   4.0.3                                           [2m│[0m
+  [2m│[0m  Platform:   macOS 26.2 · arm64                              [2m│[0m
+  [2m│[0m  venv:       .venv_transcribe                                [2m│[0m
+  [2m╰──────────────────────────────────────────────────────────────╯[0m
+  [92m✓[0m Input: file — 1 file
+  [92m✓[0m Total duration: 0:00 (0.0s)
+  [92m✓[0m Media: 0×0 0.0fps 
+  [92m✓[0m Disk space: 16.2GB free
+  [92m✓[0m No previous run
+
+════════════════════════════════════════════════════════════
+  [46m[97m[1m YTAI Transcribe v3.0 [0m
+────────────────────────────────────────────────────────────
+  Project:    [1mPhase_2_-_2._Demo_Video[0m
+  Files:      1 | 0:00 | 1 speakers
+  Model:      large-v3 | MPS
+  Estimated:  [93m~0-0 min[0m
+════════════════════════════════════════════════════════════
+
+  [2m┌──────────────────────────────────────────────────────────────┐[0m
+  [2m│[0m  [1mPhase_2_-_2._Demo_Video[0m                                     [2m│[0m
+  [2m│[0m  1 clips · 0:00                    0/6 done · 0s · [96m~0s left[0m  [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [2m   Stage                Plan    Actual     Delta[0m            [2m│[0m
+  [2m│[0m  ──────────────────────────────────────────────────────────  [2m│[0m
+  [2m│[0m  [96m▶[0m  [1mExtract audio   [0m       0s   [96mrunning...[0m                   [2m│[0m
+  [2m│[0m  [2m·  Diarization            0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Whisper                0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Speaker map            0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Generate               0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Ingest JSON            0s[0m                                [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [96m[0m[2m░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░[0m  [1m  0%[0m   0s / ~0s left        [2m│[0m
+  [2m└──────────────────────────────────────────────────────────────┘[0m
+
+  [46m[97m[1m Stage 1/6 [0m [1mExtracting audio[0m
+  [2m╸ Plan —  ·  Elapsed 0s  ·  Left —[0m
+]0;YTAI > Stage 1/5 > Phase_2_-_2._Demo_Video (1/1)  [91m✗[0m Phase_2_-_2._Demo_Video: ffmpeg failed — [mov,mp4,m4a,3gp,3g2,mj2 @ 0x80080c000] moov atom not found
+[in#0 @ 0x801400000] Error opening input: Invalid data found when processing input
+Error opening input file /Users/romansergeev/YTAI/utils/t
+  ✗ Transcription error: Command '['/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3', '/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py', '--project', '/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video.mp4', '-y', '-m', 'large-v3', '-n', '1', '--language', 'en']' returned non-zero exit status 1.
+  ✗ Error: Transcription failed: Command '['/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3', '/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py', '--project', '/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video.mp4', '-y', '-m', 'large-v3', '-n', '1', '--language', 'en']' returned non-zero exit status 1.
+
+=== Lesson 11 ===
+
+[11/59] Phase_2_-_3._Teleprompter.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892310-using-a-teleprompter-don-t-skip?wvideo=v2pqjjgk5f

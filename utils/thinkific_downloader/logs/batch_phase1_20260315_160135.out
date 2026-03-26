@@ -1,0 +1,57 @@
+DOCX            : /Users/romansergeev/Downloads/YTCG.docx
+Lessons in DOCX : 59
+Processing      : 59
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Dry run         : False
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_160135.log
+
+[01/59] Phase_1_-_1._Intro_Video.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+  ⏭  Skipped (already completed)
+
+[02/59] Phase_1_-_3._Expectations.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+  ⏭  Skipped (already completed)
+
+[03/59] Phase_1_-_4._How_YouTube_Works.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef
+  ⏭  Skipped (already completed)
+
+[04/59] Phase_1_-_6._Position_Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1
+  ⏭  Skipped (already completed)
+
+[05/59] Phase_1_-_7._How_To_Position.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4
+  ⏭  Skipped (already completed)
+
+[06/59] Phase_1_-_9._Audit_V2.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892283-task-auditing-your-foundations?wvideo=uca14sgz0s
+  ⏭  Skipped (already completed)
+
+[07/59] Phase_1_-_10._Doing_Your_Tasks.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892288-task-minor-adjustments?wvideo=yg65ujy4qv
+  ⏭  Skipped (already completed)
+
+[08/59] Phase_1_-_Simple_Nurture.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921638-side-mission-building-a-simple-email-system?wvideo=9xdr515qzr
+  ⏭  Skipped (already completed)
+
+[09/59] Phase_2_-_1._Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892293-phase-2-intro?wvideo=obyeqz0swb
+  ⏭  Skipped (already completed)
+
+[10/59] Phase_2_-_2._Demo_Video.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892694-task-making-your-demo-video?wvideo=sgjg69vbud
+  ⏭  Skipped (already completed)
+
+[11/59] Phase_2_-_3._Teleprompter.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892310-using-a-teleprompter-don-t-skip?wvideo=v2pqjjgk5f
+  ↳ Video exists (135 MB), skipping download
+/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

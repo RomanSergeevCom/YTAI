@@ -1,0 +1,36 @@
+{
+  "version": "3.0",
+  "status": "completed",
+  "created_at": "2026-03-15T21:07:39Z",
+  "updated_at": "2026-03-15T21:15:21Z",
+  "project_name": "Phase_2_-_2._Demo_Video",
+  "input_type": "file",
+  "input_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video.mp4",
+  "params": {
+    "num_speakers": 1,
+    "whisper_model": "large-v3",
+    "language": "en",
+    "device": "mps"
+  },
+  "clips": [
+    "Phase_2_-_2._Demo_Video"
+  ],
+  "total_duration_sec": 1091.825,
+  "stages_completed": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "stages_timing": {
+    "1_extract_audio": 1.3,
+    "2_diarization": 35.3,
+    "3_whisper": 410.2,
+    "4_speaker_mapping": 0.0,
+    "5_generate_outputs": 0.1,
+    "6_ingest_json": 0.0
+  },
+  "total_time": 446.9
+}

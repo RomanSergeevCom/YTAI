@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 22:38:50
+============================================================
+
+=== Configuration ===
+Project:    Roasts
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Roasts/Roasts.mp4
+Clips:      1
+Duration:   12:15 (735.3s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Roasts                 12:15  3840×2160 25.0fps H264  2.1Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.19 GB
+    offset 0.000s  Roasts.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   12:05  98.7%  19 segments
+  Gaps                       0:09  1.3%
+
+=== Transcription ===
+Total words:     2,789
+Total segments:  5
+Avg confidence:  0.9514
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Roasts:
+    Words: 2789  Segments: 5  Confidence: 0.9482  Low: 1
+    Speaker 1: 2789 words, 5 segs, 12:08
+
+=== Whisper Per-Clip ===
+  Roasts                 12:15   2789 words   228 wpm    5m 21s  (2.29x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    1s    0.2%
+  Diarization          26s       24s  -    2s    7.0%
+  Whisper           6m 44s    5m 21s  -1m 23s   92.8%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             7m 14s    5m 45s  -1m 28s  100.0%
+  Speed:          2.1x realtime
+  Wall clock:     5m 45s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Roasts_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           16.1 KB
+    diarization.json                                    1.8 KB
+    full_audio.wav                                  22977.6 KB
+    meta.json                                           0.7 KB
+    speakers.json                                       0.2 KB
+    per_clip/Roasts/Roasts_audio.wav                 22977.7 KB
+    per_clip/Roasts/Roasts_captions.srt                 26.3 KB
+    per_clip/Roasts/Roasts_premiere_transcript.json     637.9 KB
+    per_clip/Roasts/Roasts_transcript.json             368.9 KB
+    per_clip/Roasts/Roasts_transcript.srt               14.7 KB
+    per_clip/Roasts/Roasts_transcript.txt               14.6 KB
+    per_clip/Roasts/Roasts_whisper_raw.json            344.6 KB
+  Roasts_transcript.xlsx  (13.3 KB)
+
+============================================================

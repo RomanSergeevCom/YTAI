@@ -1,0 +1,6796 @@
+{
+  "language": "en-us",
+  "segments": [
+    {
+      "language": "en-us",
+      "speaker": "d9cd73ea-8e00-4190-ae7e-220382fab584",
+      "start": 0.0,
+      "duration": 168.44,
+      "words": [
+        {
+          "text": "Okay",
+          "start": 0.0,
+          "duration": 0.2,
+          "confidence": 0.7514,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 0.2,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "so",
+          "start": 0.22,
+          "duration": 0.14,
+          "confidence": 0.9982,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "when",
+          "start": 0.36,
+          "duration": 0.44,
+          "confidence": 0.9918,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "most",
+          "start": 0.8,
+          "duration": 0.48,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "people",
+          "start": 1.28,
+          "duration": 0.36,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "plan",
+          "start": 1.64,
+          "duration": 0.32,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 1.96,
+          "duration": 0.1,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "video",
+          "start": 2.06,
+          "duration": 0.26,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 2.32,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "they",
+          "start": 2.36,
+          "duration": 0.16,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "open",
+          "start": 2.52,
+          "duration": 0.36,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 2.88,
+          "duration": 0.2,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "document",
+          "start": 3.08,
+          "duration": 0.32,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 3.4,
+          "duration": 0.16,
+          "confidence": 0.9107,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "they",
+          "start": 3.56,
+          "duration": 0.04,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "just",
+          "start": 3.6,
+          "duration": 0.16,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "try",
+          "start": 3.76,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 3.98,
+          "duration": 0.14,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "write",
+          "start": 4.12,
+          "duration": 0.36,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 4.48,
+          "duration": 0.18,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "script",
+          "start": 4.66,
+          "duration": 0.48,
+          "confidence": 0.9998,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 5.14,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "But",
+          "start": 5.36,
+          "duration": 0.14,
+          "confidence": 0.9986,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 5.5,
+          "duration": 0.16,
+          "confidence": 0.999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 5.66,
+          "duration": 0.12,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "just",
+          "start": 5.78,
+          "duration": 0.12,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 5.9,
+          "duration": 0.12,
+          "confidence": 0.951,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 6.02,
+          "duration": 0.14,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "be",
+          "start": 6.16,
+          "duration": 0.08,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "an",
+          "start": 6.24,
+          "duration": 0.1,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "absolute",
+          "start": 6.34,
+          "duration": 0.52,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "nightmare",
+          "start": 6.86,
+          "duration": 0.62,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "because",
+          "start": 7.48,
+          "duration": 0.36,
+          "confidence": 0.7771,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it's",
+          "start": 7.84,
+          "duration": 0.14,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "like",
+          "start": 7.98,
+          "duration": 0.08,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "sitting",
+          "start": 8.06,
+          "duration": 0.26,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "in",
+          "start": 8.32,
+          "duration": 0.14,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "front",
+          "start": 8.46,
+          "duration": 0.12,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 8.58,
+          "duration": 0.1,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 8.68,
+          "duration": 0.06,
+          "confidence": 0.9988,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "blank",
+          "start": 8.74,
+          "duration": 0.18,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "canvas",
+          "start": 8.92,
+          "duration": 0.4,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 9.32,
+          "duration": 0.46,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "trying",
+          "start": 9.78,
+          "duration": 0.16,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 9.94,
+          "duration": 0.1,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "paint",
+          "start": 10.04,
+          "duration": 0.26,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 10.3,
+          "duration": 0.14,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "masterpiece",
+          "start": 10.44,
+          "duration": 0.42,
+          "confidence": 0.9986,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "with",
+          "start": 10.86,
+          "duration": 0.26,
+          "confidence": 0.9979,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "no",
+          "start": 11.12,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "sketch",
+          "start": 11.24,
+          "duration": 0.32,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "or",
+          "start": 11.56,
+          "duration": 0.2,
+          "confidence": 0.9958,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "guide",
+          "start": 11.76,
+          "duration": 0.34,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "or",
+          "start": 12.1,
+          "duration": 0.5,
+          "confidence": 0.9982,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "any",
+          "start": 12.6,
+          "duration": 0.34,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "idea",
+          "start": 12.94,
+          "duration": 0.34,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "as",
+          "start": 13.28,
+          "duration": 0.2,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 13.48,
+          "duration": 0.02,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "where",
+          "start": 13.5,
+          "duration": 0.14,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 13.64,
+          "duration": 0.1,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "start",
+          "start": 13.74,
+          "duration": 0.26,
+          "confidence": 0.9997,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 14.0,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "What",
+          "start": 14.24,
+          "duration": 0.12,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "we",
+          "start": 14.36,
+          "duration": 0.18,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "need",
+          "start": 14.54,
+          "duration": 0.18,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 14.72,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 14.84,
+          "duration": 0.28,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 15.12,
+          "duration": 0.46,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "turn",
+          "start": 15.58,
+          "duration": 0.18,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "our",
+          "start": 15.76,
+          "duration": 0.1,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "video",
+          "start": 15.86,
+          "duration": 0.18,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "into",
+          "start": 16.04,
+          "duration": 0.14,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "like",
+          "start": 16.18,
+          "duration": 0.14,
+          "confidence": 0.9677,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 16.32,
+          "duration": 0.1,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "paint",
+          "start": 16.42,
+          "duration": 0.32,
+          "confidence": 0.9983,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "by",
+          "start": 16.74,
+          "duration": 0.14,
+          "confidence": 0.5049,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "numbers",
+          "start": 16.88,
+          "duration": 0.42,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "outline",
+          "start": 17.3,
+          "duration": 0.4,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 17.7,
+          "duration": 0.44,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "takes",
+          "start": 18.14,
+          "duration": 0.24,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "all",
+          "start": 18.38,
+          "duration": 0.36,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 18.74,
+          "duration": 0.18,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "chaos",
+          "start": 18.92,
+          "duration": 0.38,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 19.3,
+          "duration": 0.32,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "guessing",
+          "start": 19.62,
+          "duration": 0.36,
+          "confidence": 0.9024,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "out",
+          "start": 19.98,
+          "duration": 0.8,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 20.78,
+          "duration": 0.04,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "creativity",
+          "start": 20.82,
+          "duration": 0.46,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 21.28,
+          "duration": 0.18,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "gives",
+          "start": 21.46,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 21.58,
+          "duration": 0.12,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "shape",
+          "start": 21.7,
+          "duration": 0.34,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 22.04,
+          "duration": 0.14,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "structure",
+          "start": 22.18,
+          "duration": 0.24,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 22.42,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "clarity",
+          "start": 22.64,
+          "duration": 0.36,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "very",
+          "start": 23.0,
+          "duration": 0.28,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "easily",
+          "start": 23.28,
+          "duration": 0.44,
+          "confidence": 1.0,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 23.72,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "So",
+          "start": 24.0,
+          "duration": 0.36,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "when",
+          "start": 24.36,
+          "duration": 0.16,
+          "confidence": 0.9868,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 24.52,
+          "duration": 0.14,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 24.66,
+          "duration": 0.2,
+          "confidence": 0.9985,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "come",
+          "start": 24.86,
+          "duration": 0.24,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 25.1,
+          "duration": 0.18,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "write",
+          "start": 25.28,
+          "duration": 0.18,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 25.46,
+          "duration": 0.14,
+          "confidence": 0.9987,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "into",
+          "start": 25.6,
+          "duration": 0.14,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 25.74,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "script",
+          "start": 25.86,
+          "duration": 0.24,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 26.1,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "it's",
+          "start": 26.3,
+          "duration": 0.3,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "just",
+          "start": 26.6,
+          "duration": 0.16,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 26.76,
+          "duration": 0.14,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "game",
+          "start": 26.9,
+          "duration": 0.34,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 27.24,
+          "duration": 0.34,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "filling",
+          "start": 27.58,
+          "duration": 0.66,
+          "confidence": 0.9983,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "in",
+          "start": 28.24,
+          "duration": 0.18,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 28.42,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "blanks",
+          "start": 28.54,
+          "duration": 0.46,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 29.0,
+          "duration": 0.02,
+          "confidence": 0.9964,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it's",
+          "start": 29.02,
+          "duration": 0.16,
+          "confidence": 0.5178,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "easy",
+          "start": 29.18,
+          "duration": 0.26,
+          "confidence": 0.999,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 29.44,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "So",
+          "start": 29.66,
+          "duration": 0.18,
+          "confidence": 0.9419,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "here's",
+          "start": 29.84,
+          "duration": 0.4,
+          "confidence": 0.9793,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "exactly",
+          "start": 30.24,
+          "duration": 0.52,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "how",
+          "start": 30.76,
+          "duration": 0.34,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I",
+          "start": 31.1,
+          "duration": 0.16,
+          "confidence": 0.9918,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "want",
+          "start": 31.26,
+          "duration": 0.16,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 31.42,
+          "duration": 0.08,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 31.5,
+          "duration": 0.1,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "plan",
+          "start": 31.6,
+          "duration": 0.16,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "every",
+          "start": 31.76,
+          "duration": 0.18,
+          "confidence": 0.9984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "video",
+          "start": 31.94,
+          "duration": 0.34,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 32.28,
+          "duration": 0.24,
+          "confidence": 0.8168,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "how",
+          "start": 32.52,
+          "duration": 0.16,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I",
+          "start": 32.68,
+          "duration": 0.14,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 32.82,
+          "duration": 0.16,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it",
+          "start": 32.98,
+          "duration": 0.08,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "too",
+          "start": 33.06,
+          "duration": 0.18,
+          "confidence": 0.9735,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 33.24,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "So",
+          "start": 33.36,
+          "duration": 0.18,
+          "confidence": 0.7794,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 33.54,
+          "duration": 0.04,
+          "confidence": 0.9853,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "first",
+          "start": 33.58,
+          "duration": 0.22,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "thing",
+          "start": 33.8,
+          "duration": 0.18,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 33.98,
+          "duration": 0.2,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 34.18,
+          "duration": 0.34,
+          "confidence": 0.9097,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "want",
+          "start": 34.52,
+          "duration": 0.1,
+          "confidence": 0.9938,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 34.62,
+          "duration": 0.08,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "just",
+          "start": 34.7,
+          "duration": 0.2,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "brain",
+          "start": 34.9,
+          "duration": 0.58,
+          "confidence": 0.9981,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "dump",
+          "start": 35.48,
+          "duration": 0.3,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "all",
+          "start": 35.78,
+          "duration": 0.46,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 36.24,
+          "duration": 0.2,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "points",
+          "start": 36.44,
+          "duration": 0.32,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 36.76,
+          "duration": 0.2,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "think",
+          "start": 36.96,
+          "duration": 0.3,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 37.26,
+          "duration": 0.2,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "want",
+          "start": 37.46,
+          "duration": 0.14,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 37.6,
+          "duration": 0.1,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "make",
+          "start": 37.7,
+          "duration": 0.18,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "on",
+          "start": 37.88,
+          "duration": 0.18,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 38.06,
+          "duration": 0.1,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "doc",
+          "start": 38.16,
+          "duration": 0.2,
+          "confidence": 0.9644,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 38.36,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Don't",
+          "start": 38.54,
+          "duration": 0.24,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "worry",
+          "start": 38.78,
+          "duration": 0.16,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "about",
+          "start": 38.94,
+          "duration": 0.2,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "order",
+          "start": 39.14,
+          "duration": 0.44,
+          "confidence": 0.9995,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 39.58,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Don't",
+          "start": 39.88,
+          "duration": 0.36,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "worry",
+          "start": 40.24,
+          "duration": 0.12,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "about",
+          "start": 40.36,
+          "duration": 0.12,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "structure",
+          "start": 40.48,
+          "duration": 0.28,
+          "confidence": 0.9999,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 40.76,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Just",
+          "start": 41.1,
+          "duration": 0.34,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "get",
+          "start": 41.44,
+          "duration": 0.22,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 41.66,
+          "duration": 0.26,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "raw",
+          "start": 41.92,
+          "duration": 0.18,
+          "confidence": 0.9968,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "thoughts",
+          "start": 42.1,
+          "duration": 0.5,
+          "confidence": 0.9885,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "out",
+          "start": 42.6,
+          "duration": 0.4,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 43.0,
+          "duration": 0.08,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "your",
+          "start": 43.08,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "head",
+          "start": 43.2,
+          "duration": 0.4,
+          "confidence": 1.0,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 43.6,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 43.68,
+          "duration": 0.18,
+          "confidence": 0.9982,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you're",
+          "start": 43.86,
+          "duration": 0.2,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 44.06,
+          "duration": 0.02,
+          "confidence": 0.9974,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 44.08,
+          "duration": 0.06,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "need",
+          "start": 44.14,
+          "duration": 0.2,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 44.34,
+          "duration": 0.14,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "give",
+          "start": 44.48,
+          "duration": 0.1,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "yourself",
+          "start": 44.58,
+          "duration": 0.26,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "an",
+          "start": 44.84,
+          "duration": 0.62,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "hour",
+          "start": 45.46,
+          "duration": 0.32,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "or",
+          "start": 45.78,
+          "duration": 0.18,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "so",
+          "start": 45.96,
+          "duration": 0.22,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "at",
+          "start": 46.18,
+          "duration": 0.14,
+          "confidence": 0.9538,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "least",
+          "start": 46.32,
+          "duration": 0.24,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 46.56,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 46.78,
+          "duration": 0.18,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 46.96,
+          "duration": 0.22,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "because",
+          "start": 47.18,
+          "duration": 0.36,
+          "confidence": 0.6429,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 47.54,
+          "duration": 0.34,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 47.88,
+          "duration": 0.08,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "one",
+          "start": 47.96,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 48.08,
+          "duration": 0.08,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 48.16,
+          "duration": 0.02,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "most",
+          "start": 48.18,
+          "duration": 0.1,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "important",
+          "start": 48.28,
+          "duration": 0.34,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "parts",
+          "start": 48.62,
+          "duration": 0.26,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 48.88,
+          "duration": 0.14,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 49.02,
+          "duration": 0.06,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "video",
+          "start": 49.08,
+          "duration": 0.26,
+          "confidence": 0.9999,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 49.34,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Then",
+          "start": 49.54,
+          "duration": 0.22,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 49.76,
+          "duration": 0.18,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "next",
+          "start": 49.94,
+          "duration": 0.14,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "thing",
+          "start": 50.08,
+          "duration": 0.12,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 50.2,
+          "duration": 0.08,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 50.28,
+          "duration": 0.12,
+          "confidence": 0.9984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 50.4,
+          "duration": 0.1,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 50.5,
+          "duration": 0.06,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "want",
+          "start": 50.56,
+          "duration": 0.08,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 50.64,
+          "duration": 0.02,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "find",
+          "start": 50.66,
+          "duration": 0.2,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "outliers",
+          "start": 50.86,
+          "duration": 0.46,
+          "confidence": 0.9974,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "on",
+          "start": 51.32,
+          "duration": 0.16,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 51.48,
+          "duration": 0.08,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "topic",
+          "start": 51.56,
+          "duration": 0.28,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 51.84,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "have",
+          "start": 52.06,
+          "duration": 0.16,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "performed",
+          "start": 52.22,
+          "duration": 0.42,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "above",
+          "start": 52.64,
+          "duration": 0.46,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "average",
+          "start": 53.1,
+          "duration": 0.44,
+          "confidence": 0.9992,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 53.54,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 53.74,
+          "duration": 0.18,
+          "confidence": 0.9984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 53.92,
+          "duration": 0.44,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "are",
+          "start": 54.36,
+          "duration": 0.2,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 54.56,
+          "duration": 0.2,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 54.76,
+          "duration": 0.32,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "take",
+          "start": 55.08,
+          "duration": 0.6,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "their",
+          "start": 55.68,
+          "duration": 0.24,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "transcript",
+          "start": 55.92,
+          "duration": 0.4,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "by",
+          "start": 56.32,
+          "duration": 0.42,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "using",
+          "start": 56.74,
+          "duration": 0.28,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 57.02,
+          "duration": 0.12,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "Google",
+          "start": 57.14,
+          "duration": 0.22,
+          "confidence": 0.9972,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "Chrome",
+          "start": 57.36,
+          "duration": 0.26,
+          "confidence": 0.9988,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "plugin",
+          "start": 57.62,
+          "duration": 0.38,
+          "confidence": 0.9896,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 58.0,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "which",
+          "start": 58.08,
+          "duration": 0.14,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I'll",
+          "start": 58.22,
+          "duration": 0.14,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "link",
+          "start": 58.36,
+          "duration": 0.1,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 58.46,
+          "duration": 0.12,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "below",
+          "start": 58.58,
+          "duration": 0.16,
+          "confidence": 0.9951,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 58.74,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "and",
+          "start": 59.02,
+          "duration": 0.12,
+          "confidence": 0.6253,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 59.14,
+          "duration": 0.1,
+          "confidence": 0.982,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 59.24,
+          "duration": 0.14,
+          "confidence": 0.9766,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it",
+          "start": 59.38,
+          "duration": 0.08,
+          "confidence": 0.9961,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "like",
+          "start": 59.46,
+          "duration": 0.12,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 59.58,
+          "duration": 0.24,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 59.82,
+          "duration": 0.18,
+          "confidence": 0.6098,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 60.0,
+          "duration": 0.12,
+          "confidence": 0.9856,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "just",
+          "start": 60.12,
+          "duration": 0.08,
+          "confidence": 0.9978,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "copy",
+          "start": 60.2,
+          "duration": 0.32,
+          "confidence": 0.9967,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it",
+          "start": 60.52,
+          "duration": 0.16,
+          "confidence": 0.9947,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 60.68,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 60.76,
+          "duration": 0.12,
+          "confidence": 0.9011,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "then",
+          "start": 60.88,
+          "duration": 0.06,
+          "confidence": 0.9943,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 60.94,
+          "duration": 0.1,
+          "confidence": 0.992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "go",
+          "start": 61.04,
+          "duration": 0.1,
+          "confidence": 0.9965,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 61.14,
+          "duration": 0.1,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "Skyscraper",
+          "start": 61.24,
+          "duration": 0.6,
+          "confidence": 0.9224,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "Bot",
+          "start": 61.84,
+          "duration": 0.14,
+          "confidence": 0.6108,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 61.98,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "which",
+          "start": 62.16,
+          "duration": 0.22,
+          "confidence": 0.9981,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I'll",
+          "start": 62.38,
+          "duration": 0.34,
+          "confidence": 0.989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "link",
+          "start": 62.72,
+          "duration": 0.16,
+          "confidence": 0.9984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 62.88,
+          "duration": 0.14,
+          "confidence": 0.9978,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "below",
+          "start": 63.02,
+          "duration": 0.18,
+          "confidence": 0.9859,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 63.2,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "It's",
+          "start": 63.42,
+          "duration": 0.14,
+          "confidence": 0.9979,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "not",
+          "start": 63.56,
+          "duration": 0.22,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "in",
+          "start": 63.78,
+          "duration": 0.22,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 64.0,
+          "duration": 0.14,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "custom",
+          "start": 64.14,
+          "duration": 0.28,
+          "confidence": 0.9539,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "AI",
+          "start": 64.42,
+          "duration": 0.2,
+          "confidence": 0.9882,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "platform",
+          "start": 64.62,
+          "duration": 0.38,
+          "confidence": 0.9955,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 65.0,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 65.24,
+          "duration": 0.2,
+          "confidence": 0.9967,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "then",
+          "start": 65.44,
+          "duration": 0.2,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "what",
+          "start": 65.64,
+          "duration": 0.1,
+          "confidence": 0.9976,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 65.74,
+          "duration": 0.1,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 65.84,
+          "duration": 0.12,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 65.96,
+          "duration": 0.1,
+          "confidence": 0.9976,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 66.06,
+          "duration": 0.1,
+          "confidence": 0.9914,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "highlight",
+          "start": 66.16,
+          "duration": 0.54,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "up",
+          "start": 66.7,
+          "duration": 0.2,
+          "confidence": 0.9988,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 66.9,
+          "duration": 0.16,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "200",
+          "start": 67.06,
+          "duration": 0.28,
+          "confidence": 0.9915,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 67.34,
+          "duration": 0.18,
+          "confidence": 0.8386,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 67.52,
+          "duration": 0.02,
+          "confidence": 0.9984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "comments",
+          "start": 67.54,
+          "duration": 0.32,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 67.86,
+          "duration": 0.26,
+          "confidence": 0.9906,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 68.12,
+          "duration": 0.14,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "paste",
+          "start": 68.26,
+          "duration": 0.26,
+          "confidence": 0.9953,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "them",
+          "start": 68.52,
+          "duration": 0.24,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "in",
+          "start": 68.76,
+          "duration": 0.18,
+          "confidence": 0.9991,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 68.94,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Skyscraper",
+          "start": 69.26,
+          "duration": 0.36,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "Bot",
+          "start": 69.62,
+          "duration": 0.14,
+          "confidence": 0.98,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 69.76,
+          "duration": 0.18,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "now",
+          "start": 69.94,
+          "duration": 0.14,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 70.08,
+          "duration": 0.16,
+          "confidence": 0.7881,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 70.24,
+          "duration": 0.1,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "tell",
+          "start": 70.34,
+          "duration": 0.18,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 70.52,
+          "duration": 0.2,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "everything",
+          "start": 70.72,
+          "duration": 0.86,
+          "confidence": 0.9978,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 71.58,
+          "duration": 0.32,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "made",
+          "start": 71.9,
+          "duration": 0.16,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 72.06,
+          "duration": 0.18,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "video",
+          "start": 72.24,
+          "duration": 0.26,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 72.5,
+          "duration": 0.16,
+          "confidence": 0.9972,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "hit",
+          "start": 72.66,
+          "duration": 0.2,
+          "confidence": 0.9999,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 72.86,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "It's",
+          "start": 73.0,
+          "duration": 0.22,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 73.22,
+          "duration": 0.04,
+          "confidence": 0.9838,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 73.26,
+          "duration": 0.08,
+          "confidence": 0.997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "tell",
+          "start": 73.34,
+          "duration": 0.1,
+          "confidence": 0.9921,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 73.44,
+          "duration": 0.06,
+          "confidence": 0.9975,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "what",
+          "start": 73.5,
+          "duration": 0.08,
+          "confidence": 0.9981,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 73.58,
+          "duration": 0.1,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "comments",
+          "start": 73.68,
+          "duration": 0.28,
+          "confidence": 0.9982,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "loved",
+          "start": 73.96,
+          "duration": 0.32,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 74.28,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "what's",
+          "start": 74.48,
+          "duration": 0.5,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "missing",
+          "start": 74.98,
+          "duration": 0.34,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 75.32,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "what",
+          "start": 75.46,
+          "duration": 0.1,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "confused",
+          "start": 75.56,
+          "duration": 0.32,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "people",
+          "start": 75.88,
+          "duration": 0.46,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 76.34,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "what",
+          "start": 76.56,
+          "duration": 0.32,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 76.88,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "creator",
+          "start": 77.1,
+          "duration": 0.4,
+          "confidence": 0.6813,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "spoke",
+          "start": 77.5,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "about",
+          "start": 77.72,
+          "duration": 0.46,
+          "confidence": 0.9999,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 78.18,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "It's",
+          "start": 78.38,
+          "duration": 0.28,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "then",
+          "start": 78.66,
+          "duration": 0.1,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 78.76,
+          "duration": 0.24,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 79.0,
+          "duration": 0.18,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "tell",
+          "start": 79.18,
+          "duration": 0.18,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 79.36,
+          "duration": 0.26,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "what",
+          "start": 79.62,
+          "duration": 0.44,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "made",
+          "start": 80.06,
+          "duration": 0.24,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 80.3,
+          "duration": 0.32,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "unique",
+          "start": 80.62,
+          "duration": 0.5,
+          "confidence": 0.9984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 81.12,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "feel",
+          "start": 81.56,
+          "duration": 0.36,
+          "confidence": 0.9979,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "new",
+          "start": 81.92,
+          "duration": 0.28,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 82.2,
+          "duration": 0.32,
+          "confidence": 0.9609,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "inspiring",
+          "start": 82.52,
+          "duration": 0.32,
+          "confidence": 0.9998,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 82.84,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 83.1,
+          "duration": 0.16,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it's",
+          "start": 83.26,
+          "duration": 0.2,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "also",
+          "start": 83.46,
+          "duration": 0.08,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 83.54,
+          "duration": 0.24,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 83.78,
+          "duration": 0.06,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "tell",
+          "start": 83.84,
+          "duration": 0.12,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 83.96,
+          "duration": 0.08,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "what",
+          "start": 84.04,
+          "duration": 0.2,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it",
+          "start": 84.24,
+          "duration": 0.12,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "would",
+          "start": 84.36,
+          "duration": 0.14,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "include",
+          "start": 84.5,
+          "duration": 0.52,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "in",
+          "start": 85.02,
+          "duration": 0.56,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 85.58,
+          "duration": 0.18,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "video",
+          "start": 85.76,
+          "duration": 0.3,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "about",
+          "start": 86.06,
+          "duration": 0.3,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it",
+          "start": 86.36,
+          "duration": 0.3,
+          "confidence": 0.9999,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 86.66,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "What",
+          "start": 86.8,
+          "duration": 0.06,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 86.86,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "want",
+          "start": 86.98,
+          "duration": 0.1,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 87.08,
+          "duration": 0.08,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 87.16,
+          "duration": 0.1,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 87.26,
+          "duration": 0.1,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "take",
+          "start": 87.36,
+          "duration": 0.12,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "some",
+          "start": 87.48,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 87.7,
+          "duration": 0.08,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 87.78,
+          "duration": 0.06,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "information",
+          "start": 87.84,
+          "duration": 0.3,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 88.14,
+          "duration": 0.26,
+          "confidence": 0.9726,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "add",
+          "start": 88.4,
+          "duration": 0.18,
+          "confidence": 0.9987,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it",
+          "start": 88.58,
+          "duration": 0.12,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 88.7,
+          "duration": 0.14,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "your",
+          "start": 88.84,
+          "duration": 0.12,
+          "confidence": 0.9942,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "blog",
+          "start": 88.96,
+          "duration": 0.04,
+          "confidence": 0.0354,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 89.0,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 89.0,
+          "duration": 0.0,
+          "confidence": 0.4364,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "then",
+          "start": 89.0,
+          "duration": 0.0,
+          "confidence": 0.5198,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you're",
+          "start": 89.02,
+          "duration": 0.08,
+          "confidence": 0.0679,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 89.1,
+          "duration": 0.0,
+          "confidence": 0.6938,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 89.1,
+          "duration": 0.0,
+          "confidence": 0.9948,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "list",
+          "start": 89.1,
+          "duration": 0.0,
+          "confidence": 0.7377,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 89.1,
+          "duration": 0.62,
+          "confidence": 0.984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "kind",
+          "start": 89.72,
+          "duration": 0.18,
+          "confidence": 0.9289,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 89.9,
+          "duration": 0.14,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "messy",
+          "start": 90.04,
+          "duration": 0.26,
+          "confidence": 0.9944,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "chaos",
+          "start": 90.3,
+          "duration": 0.34,
+          "confidence": 0.9634,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "list",
+          "start": 90.64,
+          "duration": 0.34,
+          "confidence": 0.9941,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 90.98,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Then",
+          "start": 91.2,
+          "duration": 0.14,
+          "confidence": 0.992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "once",
+          "start": 91.34,
+          "duration": 0.28,
+          "confidence": 0.9254,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you've",
+          "start": 91.62,
+          "duration": 0.22,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "done",
+          "start": 91.84,
+          "duration": 0.18,
+          "confidence": 0.9986,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 92.02,
+          "duration": 0.34,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 92.36,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "we",
+          "start": 92.42,
+          "duration": 0.18,
+          "confidence": 0.8943,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "move",
+          "start": 92.6,
+          "duration": 0.16,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "on",
+          "start": 92.76,
+          "duration": 0.14,
+          "confidence": 0.8956,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 92.9,
+          "duration": 0.08,
+          "confidence": 0.9979,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 92.98,
+          "duration": 0.08,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "next",
+          "start": 93.06,
+          "duration": 0.26,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "step",
+          "start": 93.32,
+          "duration": 0.34,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 93.66,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "which",
+          "start": 93.82,
+          "duration": 0.46,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 94.28,
+          "duration": 0.32,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "basically",
+          "start": 94.6,
+          "duration": 0.42,
+          "confidence": 0.9965,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "taking",
+          "start": 95.02,
+          "duration": 0.36,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 95.38,
+          "duration": 0.22,
+          "confidence": 0.976,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "information",
+          "start": 95.6,
+          "duration": 0.38,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 95.98,
+          "duration": 0.22,
+          "confidence": 0.9948,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 96.2,
+          "duration": 0.12,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 96.32,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "right",
+          "start": 96.4,
+          "duration": 0.08,
+          "confidence": 0.9571,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 96.48,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "what's",
+          "start": 96.56,
+          "duration": 0.14,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 96.7,
+          "duration": 0.1,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "key",
+          "start": 96.8,
+          "duration": 0.22,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "things",
+          "start": 97.02,
+          "duration": 0.34,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I",
+          "start": 97.36,
+          "duration": 0.24,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "need",
+          "start": 97.6,
+          "duration": 0.28,
+          "confidence": 0.9998,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "?",
+          "start": 97.88,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "What",
+          "start": 98.04,
+          "duration": 0.38,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "can",
+          "start": 98.42,
+          "duration": 0.16,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I",
+          "start": 98.58,
+          "duration": 0.14,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "delete",
+          "start": 98.72,
+          "duration": 0.34,
+          "confidence": 0.9999,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "?",
+          "start": 99.06,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 99.28,
+          "duration": 0.26,
+          "confidence": 0.9971,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "what",
+          "start": 99.54,
+          "duration": 0.1,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 99.64,
+          "duration": 0.1,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I",
+          "start": 99.74,
+          "duration": 0.12,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "definitely",
+          "start": 99.86,
+          "duration": 0.32,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "need",
+          "start": 100.18,
+          "duration": 0.32,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 100.5,
+          "duration": 0.18,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "include",
+          "start": 100.68,
+          "duration": 0.34,
+          "confidence": 0.9999,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "?",
+          "start": 101.02,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "So",
+          "start": 101.34,
+          "duration": 0.2,
+          "confidence": 0.9973,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "we've",
+          "start": 101.54,
+          "duration": 0.12,
+          "confidence": 0.9898,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "gone",
+          "start": 101.66,
+          "duration": 0.14,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "from",
+          "start": 101.8,
+          "duration": 0.2,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "mess",
+          "start": 102.0,
+          "duration": 0.36,
+          "confidence": 0.9983,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 102.36,
+          "duration": 0.58,
+          "confidence": 0.9983,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 102.94,
+          "duration": 0.12,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "little",
+          "start": 103.06,
+          "duration": 0.2,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "bit",
+          "start": 103.26,
+          "duration": 0.18,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "more",
+          "start": 103.44,
+          "duration": 0.2,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "structured",
+          "start": 103.64,
+          "duration": 0.5,
+          "confidence": 0.9982,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 104.14,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Then",
+          "start": 104.32,
+          "duration": 0.24,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "after",
+          "start": 104.56,
+          "duration": 0.5,
+          "confidence": 0.9985,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 105.06,
+          "duration": 0.26,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 105.32,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "we",
+          "start": 105.58,
+          "duration": 0.46,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "want",
+          "start": 106.04,
+          "duration": 0.26,
+          "confidence": 0.9875,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 106.3,
+          "duration": 0.18,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "start",
+          "start": 106.48,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "looking",
+          "start": 106.7,
+          "duration": 0.42,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "at",
+          "start": 107.12,
+          "duration": 0.24,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "how",
+          "start": 107.36,
+          "duration": 0.24,
+          "confidence": 0.9977,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 107.6,
+          "duration": 0.12,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "we",
+          "start": 107.72,
+          "duration": 0.18,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "bring",
+          "start": 107.9,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "emotion",
+          "start": 108.12,
+          "duration": 0.34,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 108.46,
+          "duration": 0.7,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "logic",
+          "start": 109.16,
+          "duration": 0.32,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "into",
+          "start": 109.48,
+          "duration": 0.44,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "each",
+          "start": 109.92,
+          "duration": 0.24,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 110.16,
+          "duration": 0.2,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "these",
+          "start": 110.36,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "points",
+          "start": 110.48,
+          "duration": 0.36,
+          "confidence": 1.0,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 110.84,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "So",
+          "start": 111.08,
+          "duration": 0.4,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 111.48,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 111.7,
+          "duration": 0.14,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "where",
+          "start": 111.84,
+          "duration": 0.14,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it's",
+          "start": 111.98,
+          "duration": 0.22,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 112.2,
+          "duration": 0.08,
+          "confidence": 0.9982,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 112.28,
+          "duration": 0.12,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "get",
+          "start": 112.4,
+          "duration": 0.08,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "hard",
+          "start": 112.48,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 112.7,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "This",
+          "start": 112.76,
+          "duration": 0.12,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 112.88,
+          "duration": 0.1,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "when",
+          "start": 112.98,
+          "duration": 0.12,
+          "confidence": 0.9974,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you're",
+          "start": 113.1,
+          "duration": 0.38,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 113.48,
+          "duration": 0.08,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 113.56,
+          "duration": 0.08,
+          "confidence": 0.9984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "get",
+          "start": 113.64,
+          "duration": 0.1,
+          "confidence": 0.9984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "overwhelmed",
+          "start": 113.74,
+          "duration": 0.32,
+          "confidence": 0.9979,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 114.06,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "You",
+          "start": 114.36,
+          "duration": 0.32,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "need",
+          "start": 114.68,
+          "duration": 0.18,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 114.86,
+          "duration": 0.16,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "start",
+          "start": 115.02,
+          "duration": 0.14,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "asking",
+          "start": 115.16,
+          "duration": 0.34,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "yourself",
+          "start": 115.5,
+          "duration": 0.34,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 115.84,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "do",
+          "start": 116.16,
+          "duration": 0.56,
+          "confidence": 0.9601,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I",
+          "start": 116.72,
+          "duration": 0.22,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "just",
+          "start": 116.94,
+          "duration": 0.22,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "give",
+          "start": 117.16,
+          "duration": 0.22,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "them",
+          "start": 117.38,
+          "duration": 0.16,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 117.54,
+          "duration": 0.12,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "bit",
+          "start": 117.66,
+          "duration": 0.16,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 117.82,
+          "duration": 0.1,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "emotion",
+          "start": 117.92,
+          "duration": 0.28,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "at",
+          "start": 118.2,
+          "duration": 0.24,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 118.44,
+          "duration": 0.06,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "start",
+          "start": 118.5,
+          "duration": 0.32,
+          "confidence": 0.9998,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "?",
+          "start": 118.82,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Then",
+          "start": 119.02,
+          "duration": 0.18,
+          "confidence": 0.0527,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "give",
+          "start": 119.2,
+          "duration": 0.2,
+          "confidence": 0.9891,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "them",
+          "start": 119.4,
+          "duration": 0.14,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "all",
+          "start": 119.54,
+          "duration": 0.14,
+          "confidence": 0.9973,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 119.68,
+          "duration": 0.1,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "steps",
+          "start": 119.78,
+          "duration": 0.32,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "or",
+          "start": 120.1,
+          "duration": 0.6,
+          "confidence": 0.2588,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 120.7,
+          "duration": 0.18,
+          "confidence": 0.999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I",
+          "start": 120.88,
+          "duration": 0.16,
+          "confidence": 0.9766,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "give",
+          "start": 121.04,
+          "duration": 0.24,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "them",
+          "start": 121.28,
+          "duration": 0.24,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "emotion",
+          "start": 121.52,
+          "duration": 0.56,
+          "confidence": 0.9428,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 122.08,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "logic",
+          "start": 122.2,
+          "duration": 0.26,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 122.46,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "emotion",
+          "start": 122.5,
+          "duration": 0.18,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 122.68,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "logic",
+          "start": 122.84,
+          "duration": 0.24,
+          "confidence": 0.9993,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 123.08,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Now",
+          "start": 123.18,
+          "duration": 0.14,
+          "confidence": 0.99,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 123.32,
+          "duration": 0.1,
+          "confidence": 0.6189,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "format",
+          "start": 123.42,
+          "duration": 0.38,
+          "confidence": 0.9967,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "planners",
+          "start": 123.8,
+          "duration": 0.34,
+          "confidence": 0.9959,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "I'm",
+          "start": 124.14,
+          "duration": 0.34,
+          "confidence": 0.9922,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "giving",
+          "start": 124.48,
+          "duration": 0.24,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 124.72,
+          "duration": 0.3,
+          "confidence": 0.999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "are",
+          "start": 125.02,
+          "duration": 0.18,
+          "confidence": 0.9975,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 125.2,
+          "duration": 0.1,
+          "confidence": 0.9461,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 125.3,
+          "duration": 0.06,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "help",
+          "start": 125.36,
+          "duration": 0.22,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 125.58,
+          "duration": 0.14,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "lot",
+          "start": 125.72,
+          "duration": 0.16,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "with",
+          "start": 125.88,
+          "duration": 0.16,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 126.04,
+          "duration": 0.3,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 126.34,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "but",
+          "start": 126.46,
+          "duration": 0.26,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 126.72,
+          "duration": 0.4,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 127.12,
+          "duration": 0.18,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 127.3,
+          "duration": 0.08,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "part",
+          "start": 127.38,
+          "duration": 0.24,
+          "confidence": 0.9888,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "where",
+          "start": 127.62,
+          "duration": 0.2,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you're",
+          "start": 127.82,
+          "duration": 0.12,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "most",
+          "start": 127.94,
+          "duration": 0.24,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "likely",
+          "start": 128.18,
+          "duration": 0.32,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 128.5,
+          "duration": 0.24,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "get",
+          "start": 128.74,
+          "duration": 0.2,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "incredibly",
+          "start": 128.94,
+          "duration": 0.76,
+          "confidence": 0.9974,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "overwhelmed",
+          "start": 129.7,
+          "duration": 0.54,
+          "confidence": 0.9995,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 130.24,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 130.58,
+          "duration": 0.14,
+          "confidence": 0.9162,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "then",
+          "start": 130.72,
+          "duration": 0.28,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "once",
+          "start": 131.0,
+          "duration": 0.6,
+          "confidence": 0.9936,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 131.6,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "have",
+          "start": 131.82,
+          "duration": 0.3,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 132.12,
+          "duration": 0.26,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 132.38,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "you",
+          "start": 132.5,
+          "duration": 0.46,
+          "confidence": 0.9985,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "want",
+          "start": 132.96,
+          "duration": 0.22,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "something",
+          "start": 133.18,
+          "duration": 0.26,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 133.44,
+          "duration": 0.3,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "looks",
+          "start": 133.74,
+          "duration": 0.2,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "like",
+          "start": 133.94,
+          "duration": 0.22,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 134.16,
+          "duration": 0.3,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 134.46,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "where",
+          "start": 134.62,
+          "duration": 0.56,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "we",
+          "start": 135.18,
+          "duration": 0.72,
+          "confidence": 0.9988,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "have",
+          "start": 135.9,
+          "duration": 0.3,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "point",
+          "start": 136.2,
+          "duration": 0.74,
+          "confidence": 0.6957,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "one",
+          "start": 136.94,
+          "duration": 0.22,
+          "confidence": 0.9718,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 137.16,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "a",
+          "start": 137.26,
+          "duration": 0.28,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "little",
+          "start": 137.54,
+          "duration": 0.2,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "note",
+          "start": 137.74,
+          "duration": 0.26,
+          "confidence": 0.9982,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "on",
+          "start": 138.0,
+          "duration": 0.38,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 138.38,
+          "duration": 0.12,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "emotion",
+          "start": 138.5,
+          "duration": 0.22,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "side",
+          "start": 138.72,
+          "duration": 0.44,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 139.16,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "and",
+          "start": 139.36,
+          "duration": 0.28,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "then",
+          "start": 139.64,
+          "duration": 0.16,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 139.8,
+          "duration": 0.3,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "little",
+          "start": 140.1,
+          "duration": 0.22,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "note",
+          "start": 140.32,
+          "duration": 0.18,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "on",
+          "start": 140.5,
+          "duration": 0.18,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 140.68,
+          "duration": 0.12,
+          "confidence": 0.9999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "logic",
+          "start": 140.8,
+          "duration": 0.28,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "point",
+          "start": 141.08,
+          "duration": 0.72,
+          "confidence": 0.221,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 141.8,
+          "duration": 0.24,
+          "confidence": 0.7626,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 142.04,
+          "duration": 0.4,
+          "confidence": 0.9949,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "little",
+          "start": 142.44,
+          "duration": 0.24,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "note",
+          "start": 142.68,
+          "duration": 0.22,
+          "confidence": 0.9923,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "on",
+          "start": 142.9,
+          "duration": 0.26,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 143.16,
+          "duration": 0.08,
+          "confidence": 0.9981,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "emotion",
+          "start": 143.24,
+          "duration": 0.22,
+          "confidence": 0.998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "point",
+          "start": 143.46,
+          "duration": 0.54,
+          "confidence": 0.8727,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "three",
+          "start": 144.0,
+          "duration": 0.3,
+          "confidence": 0.9967,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 144.3,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "a",
+          "start": 144.38,
+          "duration": 0.36,
+          "confidence": 0.9961,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "little",
+          "start": 144.74,
+          "duration": 0.2,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 144.94,
+          "duration": 0.32,
+          "confidence": 0.6658,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "so",
+          "start": 145.26,
+          "duration": 0.2,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "on",
+          "start": 145.46,
+          "duration": 0.2,
+          "confidence": 0.9997,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 145.66,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Right",
+          "start": 145.72,
+          "duration": 0.1,
+          "confidence": 0.9778,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 145.82,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "So",
+          "start": 145.9,
+          "duration": 0.1,
+          "confidence": 0.999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 146.0,
+          "duration": 0.1,
+          "confidence": 0.999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "can",
+          "start": 146.1,
+          "duration": 0.12,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "see",
+          "start": 146.22,
+          "duration": 0.22,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 146.44,
+          "duration": 0.54,
+          "confidence": 0.9983,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "doesn't",
+          "start": 146.98,
+          "duration": 0.52,
+          "confidence": 0.999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "look",
+          "start": 147.5,
+          "duration": 0.24,
+          "confidence": 0.9998,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "messy",
+          "start": 147.74,
+          "duration": 0.4,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "anymore",
+          "start": 148.14,
+          "duration": 0.32,
+          "confidence": 0.9963,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 148.46,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "So",
+          "start": 149.02,
+          "duration": 0.0,
+          "confidence": 0.0076,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 149.02,
+          "duration": 0.0,
+          "confidence": 0.0983,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "can",
+          "start": 149.02,
+          "duration": 0.0,
+          "confidence": 0.2373,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "see",
+          "start": 149.02,
+          "duration": 0.0,
+          "confidence": 0.1395,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 149.02,
+          "duration": 0.0,
+          "confidence": 0.2926,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it's",
+          "start": 149.02,
+          "duration": 0.0,
+          "confidence": 0.5883,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "really",
+          "start": 149.02,
+          "duration": 0.0,
+          "confidence": 0.7989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "kind",
+          "start": 149.02,
+          "duration": 0.28,
+          "confidence": 0.7682,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 149.3,
+          "duration": 0.14,
+          "confidence": 0.9983,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "simplified",
+          "start": 149.44,
+          "duration": 0.38,
+          "confidence": 0.993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "down",
+          "start": 149.82,
+          "duration": 0.34,
+          "confidence": 0.9819,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 150.16,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Once",
+          "start": 150.28,
+          "duration": 0.28,
+          "confidence": 0.9954,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you've",
+          "start": 150.56,
+          "duration": 0.3,
+          "confidence": 0.9967,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "got",
+          "start": 150.86,
+          "duration": 0.28,
+          "confidence": 0.9983,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 151.14,
+          "duration": 0.24,
+          "confidence": 0.9986,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 151.38,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "you",
+          "start": 151.64,
+          "duration": 0.4,
+          "confidence": 0.9962,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "are",
+          "start": 152.04,
+          "duration": 0.14,
+          "confidence": 0.9686,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "basically",
+          "start": 152.18,
+          "duration": 0.42,
+          "confidence": 0.9978,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "then",
+          "start": 152.6,
+          "duration": 0.4,
+          "confidence": 0.982,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "in",
+          "start": 153.38,
+          "duration": 0.18,
+          "confidence": 0.9773,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 153.56,
+          "duration": 0.08,
+          "confidence": 0.9987,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "position",
+          "start": 153.64,
+          "duration": 0.32,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "where",
+          "start": 153.96,
+          "duration": 0.28,
+          "confidence": 0.9884,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 154.24,
+          "duration": 0.12,
+          "confidence": 0.9989,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "are",
+          "start": 154.36,
+          "duration": 0.06,
+          "confidence": 0.9339,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "ready",
+          "start": 154.42,
+          "duration": 0.22,
+          "confidence": 0.9986,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 154.64,
+          "duration": 0.22,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "write",
+          "start": 154.86,
+          "duration": 0.24,
+          "confidence": 0.9735,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 155.1,
+          "duration": 0.24,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "up",
+          "start": 155.34,
+          "duration": 0.26,
+          "confidence": 0.9984,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 155.6,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 155.76,
+          "duration": 0.22,
+          "confidence": 0.9607,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 155.98,
+          "duration": 0.12,
+          "confidence": 0.9965,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 156.1,
+          "duration": 0.2,
+          "confidence": 0.9969,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "kind",
+          "start": 156.3,
+          "duration": 0.24,
+          "confidence": 0.9928,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "of",
+          "start": 156.54,
+          "duration": 0.36,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "it",
+          "start": 156.9,
+          "duration": 0.24,
+          "confidence": 0.9969,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 157.14,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "Go",
+          "start": 157.36,
+          "duration": 0.28,
+          "confidence": 0.9913,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 157.64,
+          "duration": 0.14,
+          "confidence": 0.893,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "watch",
+          "start": 157.78,
+          "duration": 0.12,
+          "confidence": 0.9975,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "the",
+          "start": 157.9,
+          "duration": 0.1,
+          "confidence": 0.9979,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "next",
+          "start": 158.0,
+          "duration": 0.12,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "video",
+          "start": 158.12,
+          "duration": 0.26,
+          "confidence": 0.9984,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "about",
+          "start": 158.38,
+          "duration": 0.36,
+          "confidence": 0.9599,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "writing",
+          "start": 158.74,
+          "duration": 0.44,
+          "confidence": 0.9976,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "them",
+          "start": 159.18,
+          "duration": 0.2,
+          "confidence": 0.9821,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 159.38,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "And",
+          "start": 159.46,
+          "duration": 0.16,
+          "confidence": 0.9874,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "then",
+          "start": 159.62,
+          "duration": 0.14,
+          "confidence": 0.9948,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "after",
+          "start": 159.76,
+          "duration": 0.22,
+          "confidence": 0.9818,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 159.98,
+          "duration": 0.36,
+          "confidence": 0.999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ",",
+          "start": 160.34,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "you're",
+          "start": 160.42,
+          "duration": 0.3,
+          "confidence": 0.9477,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 160.72,
+          "duration": 0.06,
+          "confidence": 0.4539,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 160.78,
+          "duration": 0.08,
+          "confidence": 0.9948,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "have",
+          "start": 160.86,
+          "duration": 0.04,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 160.9,
+          "duration": 0.1,
+          "confidence": 0.9976,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "task",
+          "start": 161.0,
+          "duration": 0.28,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 161.28,
+          "duration": 0.34,
+          "confidence": 0.7318,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "you",
+          "start": 161.62,
+          "duration": 0.08,
+          "confidence": 0.8662,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "have",
+          "start": 161.7,
+          "duration": 0.12,
+          "confidence": 0.7331,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 161.82,
+          "duration": 0.1,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 161.92,
+          "duration": 0.12,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "some",
+          "start": 162.04,
+          "duration": 0.16,
+          "confidence": 0.999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "work",
+          "start": 162.2,
+          "duration": 0.28,
+          "confidence": 0.9995,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 162.48,
+          "duration": 0.32,
+          "confidence": 0.8497,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "expect",
+          "start": 162.8,
+          "duration": 0.38,
+          "confidence": 0.9982,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "that",
+          "start": 163.18,
+          "duration": 0.34,
+          "confidence": 0.9962,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "pain",
+          "start": 163.52,
+          "duration": 0.36,
+          "confidence": 0.9727,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 163.88,
+          "duration": 0.48,
+          "confidence": 0.999,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "shoot",
+          "start": 164.36,
+          "duration": 0.22,
+          "confidence": 0.9933,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "up",
+          "start": 164.58,
+          "duration": 0.18,
+          "confidence": 0.9992,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "a",
+          "start": 164.76,
+          "duration": 0.12,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "bit",
+          "start": 164.88,
+          "duration": 0.14,
+          "confidence": 0.9997,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 165.02,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        },
+        {
+          "text": "But",
+          "start": 165.08,
+          "duration": 0.1,
+          "confidence": 0.9517,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "we",
+          "start": 165.18,
+          "duration": 0.12,
+          "confidence": 0.9971,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "do",
+          "start": 165.3,
+          "duration": 0.1,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "need",
+          "start": 165.4,
+          "duration": 0.16,
+          "confidence": 0.9993,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 165.56,
+          "duration": 0.12,
+          "confidence": 0.9996,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "get",
+          "start": 165.68,
+          "duration": 0.12,
+          "confidence": 0.9994,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "some",
+          "start": 165.8,
+          "duration": 0.16,
+          "confidence": 0.9991,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "reps",
+          "start": 165.96,
+          "duration": 0.18,
+          "confidence": 0.9988,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "in",
+          "start": 166.14,
+          "duration": 0.18,
+          "confidence": 0.9623,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "and",
+          "start": 166.32,
+          "duration": 0.08,
+          "confidence": 0.9822,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "fail",
+          "start": 166.4,
+          "duration": 0.18,
+          "confidence": 0.9006,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "as",
+          "start": 166.58,
+          "duration": 0.14,
+          "confidence": 0.9967,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "fast",
+          "start": 166.72,
+          "duration": 0.2,
+          "confidence": 0.9788,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "as",
+          "start": 166.92,
+          "duration": 0.12,
+          "confidence": 0.9908,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "we",
+          "start": 167.04,
+          "duration": 0.06,
+          "confidence": 0.9968,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "can",
+          "start": 167.1,
+          "duration": 0.18,
+          "confidence": 0.9997,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "until",
+          "start": 167.28,
+          "duration": 0.24,
+          "confidence": 0.9094,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "this",
+          "start": 167.52,
+          "duration": 0.2,
+          "confidence": 0.9962,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "is",
+          "start": 167.72,
+          "duration": 0.12,
+          "confidence": 0.9987,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "going",
+          "start": 167.84,
+          "duration": 0.08,
+          "confidence": 0.9382,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "to",
+          "start": 167.92,
+          "duration": 0.12,
+          "confidence": 0.9988,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "feel",
+          "start": 168.04,
+          "duration": 0.12,
+          "confidence": 0.9884,
+          "eos": false,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": "easier",
+          "start": 168.16,
+          "duration": 0.28,
+          "confidence": 0.9975,
+          "eos": true,
+          "tags": [],
+          "type": "word"
+        },
+        {
+          "text": ".",
+          "start": 168.44,
+          "duration": 0,
+          "confidence": 1.0,
+          "eos": false,
+          "tags": [],
+          "type": "punctuation"
+        }
+      ]
+    }
+  ],
+  "speakers": [
+    {
+      "id": "d9cd73ea-8e00-4190-ae7e-220382fab584",
+      "name": "Speaker 1"
+    }
+  ]
+}

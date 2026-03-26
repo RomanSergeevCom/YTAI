@@ -1,0 +1,33 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T14:38:51Z",
+  "num_speakers": 1,
+  "total_duration": 248.012,
+  "segments": [
+    {
+      "start": 0.031,
+      "end": 151.973,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 152.294,
+      "end": 171.413,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 172.055,
+      "end": 172.983,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 173.607,
+      "end": 174.451,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 174.873,
+      "end": 247.958,
+      "speaker": "SPEAKER_00"
+    }
+  ]
+}

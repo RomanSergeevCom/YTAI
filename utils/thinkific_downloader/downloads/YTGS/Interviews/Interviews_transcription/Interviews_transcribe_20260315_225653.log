@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 22:56:53
+============================================================
+
+=== Configuration ===
+Project:    Interviews
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Interviews/Interviews.mp4
+Clips:      1
+Duration:   12:11 (732.0s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Interviews             12:11  3840×2160 25.0fps H264  2.1Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.19 GB
+    offset 0.000s  Interviews.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   12:03  98.9%  17 segments
+  Gaps                       0:08  1.1%
+
+=== Transcription ===
+Total words:     2,810
+Total segments:  4
+Avg confidence:  0.9416
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Interviews:
+    Words: 2810  Segments: 4  Confidence: 0.9333  Low: 2
+    Speaker 1: 2810 words, 4 segs, 12:07
+
+=== Whisper Per-Clip ===
+  Interviews             12:11   2810 words   230 wpm    7m 34s  (1.61x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    1s    0.1%
+  Diarization          26s       24s  -    1s    5.1%
+  Whisper           6m 42s    7m 34s  +   52s   94.8%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             7m 12s    7m 59s  +   47s  100.0%
+  Speed:          1.5x realtime
+  Wall clock:     7m 59s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Interviews_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           16.0 KB
+    diarization.json                                    1.6 KB
+    full_audio.wav                                  22873.9 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Interviews/Interviews_audio.wav             22873.9 KB
+    per_clip/Interviews/Interviews_captions.srt             26.5 KB
+    per_clip/Interviews/Interviews_premiere_transcript.json     624.7 KB
+    per_clip/Interviews/Interviews_transcript.json         370.5 KB
+    per_clip/Interviews/Interviews_transcript.srt           14.7 KB
+    per_clip/Interviews/Interviews_transcript.txt           14.6 KB
+    per_clip/Interviews/Interviews_whisper_raw.json        321.8 KB
+  Interviews_transcript.xlsx  (13.3 KB)
+
+============================================================

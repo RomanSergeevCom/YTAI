@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 21:12:33
+============================================================
+
+=== Configuration ===
+Project:    Phase_4_-_4._Patterns
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_4._Patterns/Phase_4_-_4._Patterns.mp4
+Clips:      1
+Duration:   24:18 (1458.1s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_4_-_4._Patterns   24:18  3840×2160 25.0fps H264  3.3Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.58 GB
+    offset 0.000s  Phase_4_-_4._Patterns.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   24:10  99.5%  16 segments
+  Gaps                       0:07  0.5%
+
+=== Transcription ===
+Total words:     5,323
+Total segments:  7
+Avg confidence:  0.9564
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_4_-_4._Patterns:
+    Words: 5323  Segments: 7  Confidence: 0.9398  Low: 4
+    Speaker 1: 5323 words, 7 segs, 24:09
+
+=== Whisper Per-Clip ===
+  Phase_4_-_4._Patterns   24:18   5323 words   219 wpm   10m 34s  (2.30x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         3s        2s  -    1s    0.2%
+  Diarization          51s       46s  -    5s    6.8%
+  Whisper           13m 22s   10m 34s  -2m 47s   93.0%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              3s        0s  -    3s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             14m 21s   11m 22s  -2m 59s  100.0%
+  Speed:          2.1x realtime
+  Wall clock:     11m 22s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_4_-_4._Patterns_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           29.6 KB
+    diarization.json                                    1.5 KB
+    full_audio.wav                                  45566.3 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_4_-_4._Patterns/Phase_4_-_4._Patterns_audio.wav   45566.3 KB
+    per_clip/Phase_4_-_4._Patterns/Phase_4_-_4._Patterns_captions.srt      50.1 KB
+    per_clip/Phase_4_-_4._Patterns/Phase_4_-_4._Patterns_premiere_transcript.json    1212.9 KB
+    per_clip/Phase_4_-_4._Patterns/Phase_4_-_4._Patterns_transcript.json     706.3 KB
+    per_clip/Phase_4_-_4._Patterns/Phase_4_-_4._Patterns_transcript.srt      27.6 KB
+    per_clip/Phase_4_-_4._Patterns/Phase_4_-_4._Patterns_transcript.txt      27.5 KB
+    per_clip/Phase_4_-_4._Patterns/Phase_4_-_4._Patterns_whisper_raw.json     668.2 KB
+  Phase_4_-_4._Patterns_transcript.xlsx  (17.5 KB)
+
+============================================================

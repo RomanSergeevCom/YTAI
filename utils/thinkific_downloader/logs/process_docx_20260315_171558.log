@@ -1,0 +1,28 @@
+[17:15:58] Loading DOCX images into memory...
+[17:15:58] Cached 11 images from DOCX
+
+=== Configuration ===
+DOCX            : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS.docx
+Lessons in DOCX : 0
+Processing      : 0
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Pipeline mode   : parallel (download + transcribe)
+Dry run         : True
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_171558.log
+
+[17:15:58] Starting sequential processing
+
+=== Result ===
+
+═══════════════════════════════════════════════════════
+  Batch complete: 0 lessons
+  ✓ OK: 0  |  ⏭ Skipped: 0  |  ✗ Failed: 0
+  Downloaded: 0  |  Transcribed: 0
+  Total time: 0s  |  Disk: 0.0 GB
+  Log: /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_171558.log
+═══════════════════════════════════════════════════════

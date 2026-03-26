@@ -1,0 +1,53 @@
+
+=== Configuration ===
+Source page      : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+Media URL        : https://embed-ssl.wistia.com/deliveries/2ee9e33ff23954902d15bacfef985dcaf5c019a5.bin
+Download engine  : ffmpeg
+Project dir      : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video
+Video file       : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video.mp4
+Transcript xlsx  : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video_transcript.xlsx
+Transcript dir   : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video_transcription
+Transcribe cmd   : /Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3 /Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py --project /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video.mp4 -y -m large-v3
+Screenshots dir  : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video/screenshots
+Scene threshold  : 0.18
+Log file         : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/download_thinkific_20260315_064040.log
+
+=== Download ===
+Download complete: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video/Phase_1_-_1._Intro_Video.mp4
+
+=== Screenshots ===
+
+Extracting screenshots...
+Screenshots saved: 16
+
+=== Screenshot Descriptions ===
+
+Describing screenshots with vision model...
+  [001/16] scene_0001_t00-00-05.200.jpg ... ok
+  [002/16] scene_0002_t00-00-28.480.jpg ... ok
+  [003/16] scene_0003_t00-00-48.120.jpg ... ok
+  [004/16] scene_0004_t00-00-50.360.jpg ... ok
+  [005/16] scene_0005_t00-01-11.800.jpg ... ok
+  [006/16] scene_0006_t00-01-25.640.jpg ... ok
+  [007/16] scene_0007_t00-01-32.040.jpg ... ok
+  [008/16] scene_0008_t00-01-36.640.jpg ... ok
+  [009/16] scene_0009_t00-01-56.760.jpg ... ok
+  [010/16] scene_0010_t00-03-52.200.jpg ... ok
+  [011/16] scene_0011_t00-03-58.120.jpg ... ok
+  [012/16] scene_0012_t00-04-38.680.jpg ... ok
+  [013/16] scene_0013_t00-04-59.040.jpg ... ok
+  [014/16] scene_0014_t00-05-36.680.jpg ... ok
+  [015/16] scene_0015_t00-05-49.480.jpg ... ok
+  [016/16] scene_0016_t00-07-08.280.jpg ... ok
+Descriptions saved: 16
+
+=== Transcription ===
+
+Running transcription pipeline...
+Transcription complete
+
+=== Result ===
+
+Pipeline complete.
+Project manifest : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video/project_manifest.json
+Log file         : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/download_thinkific_20260315_064040.log

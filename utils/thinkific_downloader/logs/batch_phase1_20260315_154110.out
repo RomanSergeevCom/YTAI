@@ -1,0 +1,234 @@
+
+════════════════════════════════════════════════════════════
+  [44m[97m[1m Preflight Checks [0m
+  [92m✓[0m ffmpeg
+  [92m✓[0m Python packages
+  [2mLoading Whisper large-v3...[0m  [92m✓[0m Whisper model: large-v3          
+  [92m✓[0m HuggingFace token
+  [92m✓[0m Device: mps
+
+  [2m╭──────────────────────────────────────────────────────────────╮[0m
+  [2m│[0m  [1mEnvironment[0m                                                 [2m│[0m
+  [2m│[0m  [2m──────────────────────────────────────────────────────────[0m  [2m│[0m
+  [2m│[0m  Python:     3.11.14                                         [2m│[0m
+  [2m│[0m  Torch:      2.8.0 · MPS (Apple Silicon)                     [2m│[0m
+  [2m│[0m  Whisper:    large-v3                                        [2m│[0m
+  [2m│[0m  Pyannote:   4.0.3                                           [2m│[0m
+  [2m│[0m  Platform:   macOS 26.2 · arm64                              [2m│[0m
+  [2m│[0m  venv:       .venv_transcribe                                [2m│[0m
+  [2m╰──────────────────────────────────────────────────────────────╯[0m
+  [92m✓[0m Input: file — 1 file
+  [92m✓[0m Total duration: 0:00 (0.0s)
+  [92m✓[0m Media: 0×0 0.0fps 
+  [92m✓[0m Disk space: 15.7GB free
+  [93m⚠[0m Previous run exists: Phase_1_-_9._Audit_V2_transcription/
+
+════════════════════════════════════════════════════════════
+  [46m[97m[1m YTAI Transcribe v3.0 [0m
+────────────────────────────────────────────────────────────
+  Project:    [1mPhase_1_-_9._Audit_V2[0m
+  Files:      1 | 0:00 | 1 speakers
+  Model:      large-v3 | MPS
+  Estimated:  [93m~0-0 min[0m
+════════════════════════════════════════════════════════════
+
+  [2m┌──────────────────────────────────────────────────────────────┐[0m
+  [2m│[0m  [1mPhase_1_-_9._Audit_V2[0m                                       [2m│[0m
+  [2m│[0m  1 clips · 0:00                    0/6 done · 0s · [96m~0s left[0m  [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [2m   Stage                Plan    Actual     Delta[0m            [2m│[0m
+  [2m│[0m  ──────────────────────────────────────────────────────────  [2m│[0m
+  [2m│[0m  [96m▶[0m  [1mExtract audio   [0m       0s   [96mrunning...[0m                   [2m│[0m
+  [2m│[0m  [2m·  Diarization            0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Whisper                0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Speaker map            0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Generate               0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Ingest JSON            0s[0m                                [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [96m[0m[2m░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░[0m  [1m  0%[0m   0s / ~0s left        [2m│[0m
+  [2m└──────────────────────────────────────────────────────────────┘[0m
+
+  [46m[97m[1m Stage 1/6 [0m [1mExtracting audio[0m
+  [2m╸ Plan —  ·  Elapsed 0s  ·  Left —[0m
+]0;YTAI > Stage 1/5 > Phase_1_-_9._Audit_V2 (1/1)/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+  Phase_1_-_9._Audit_V2 -> Phase_1_-_9._Audit_V2_audio.wav    0:29  [92mdone[0m  13m 43s
+  [92m[1m✓[0m Stage 1 complete — 1 clips, 0:29  [2m13m 43s  ·  Elapsed 13m 43s  ·  Left —[0m
+
+  [2m┌──────────────────────────────────────────────────────────────┐[0m
+  [2m│[0m  [1mPhase_1_-_9._Audit_V2[0m                                       [2m│[0m
+  [2m│[0m  1 clips · 0:29               1/6 done · 13m 43s · [96m~0s left[0m  [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [2m   Stage                Plan    Actual     Delta[0m            [2m│[0m
+  [2m│[0m  ──────────────────────────────────────────────────────────  [2m│[0m
+  [2m│[0m  [92m✓[0m  Extract audio          0s   → 13m 43s   [91m+13m 43s[0m         [2m│[0m
+  [2m│[0m  [96m▶[0m  [1mDiarization     [0m       0s   [96mrunning...[0m                   [2m│[0m
+  [2m│[0m  [2m·  Whisper                0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Speaker map            0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Generate               0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Ingest JSON            0s[0m                                [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [96m████[0m[2m░░░░░░░░░░░░░░░░░░░░░░░░░░[0m  [1m 17%[0m   13m 43s / ~0s left   [2m│[0m
+  [2m└──────────────────────────────────────────────────────────────┘[0m
+
+  [46m[97m[1m Stage 2/6 [0m [1mSpeaker diarization (0:29)[0m
+  [2m╸ Plan —  ·  Elapsed 13m 43s  ·  Left —[0m
+]0;YTAI > Stage 2/5 > Diarization (0:29)[2K  [96m⠋[0m Diarizing 0:29 of audio  [2m0s[0m[2K  [96m⠙[0m Diarizing 0:29 of audio  [2m0s[0m[2K  [96m⠹[0m Diarizing 0:29 of audio  [2m0s[0m[2K  [96m⠸[0m Diarizing 0:29 of audio  [2m0s[0m[2K  [96m⠼[0m Diarizing 0:29 of audio  [2m0s[0m[2K  [96m⠴[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [96m⠦[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [96m⠧[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [96m⠇[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [96m⠏[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [96m⠋[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [96m⠙[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [96m⠹[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [96m⠸[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [96m⠼[0m Diarizing 0:29 of audio  [2m1s[0m[2K  [92m[1m✓[0m Diarization complete (0:29)  [2m2s[0m
+  Found: 1 speakers, 1 segments
+  Speaker 1: 0:29 (100.0%)  |  Gaps: 0:00 (-0.0%)
+  [92m[1m✓[0m Stage 2 complete  [2m6s  ·  Elapsed 13m 49s  ·  Left —[0m
+
+  [2m┌──────────────────────────────────────────────────────────────┐[0m
+  [2m│[0m  [1mPhase_1_-_9._Audit_V2[0m                                       [2m│[0m
+  [2m│[0m  1 clips · 0:29               2/6 done · 13m 49s · [96m~0s left[0m  [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [2m   Stage                Plan    Actual     Delta[0m            [2m│[0m
+  [2m│[0m  ──────────────────────────────────────────────────────────  [2m│[0m
+  [2m│[0m  [92m✓[0m  Extract audio          0s   → 13m 43s   [91m+13m 43s[0m         [2m│[0m
+  [2m│[0m  [92m✓[0m  Diarization            0s   →     6s   [91m+6s[0m               [2m│[0m
+  [2m│[0m  [96m▶[0m  [1mWhisper         [0m       0s   [96mrunning...[0m                   [2m│[0m
+  [2m│[0m  [2m·  Speaker map            0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Generate               0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Ingest JSON            0s[0m                                [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [96m█████████[0m[2m░░░░░░░░░░░░░░░░░░░░░[0m  [1m 33%[0m   13m 49s / ~0s left   [2m│[0m
+  [2m└──────────────────────────────────────────────────────────────┘[0m
+
+  [46m[97m[1m Stage 3/6 [0m [1mWhisper transcription (word_timestamps)[0m
+  [2m╸ Plan —  ·  Elapsed 13m 49s  ·  Left —[0m
+]0;YTAI > Stage 3/5 > Phase_1_-_9._Audit_V2 (1/1)  [ 1/1] Phase_1_-_9._Audit_V2    0:00    108 words  [96mcached[0m
+  Total words: 108 | Language: en (100.0%)
+  [92m[1m✓[0m Stage 3 complete  [2m0s  ·  Elapsed 13m 49s  ·  Left —[0m
+
+  [2m┌──────────────────────────────────────────────────────────────┐[0m
+  [2m│[0m  [1mPhase_1_-_9._Audit_V2[0m                                       [2m│[0m
+  [2m│[0m  1 clips · 0:29               3/6 done · 13m 49s · [96m~0s left[0m  [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [2m   Stage                Plan    Actual     Delta[0m            [2m│[0m
+  [2m│[0m  ──────────────────────────────────────────────────────────  [2m│[0m
+  [2m│[0m  [92m✓[0m  Extract audio          0s   → 13m 43s   [91m+13m 43s[0m         [2m│[0m
+  [2m│[0m  [92m✓[0m  Diarization            0s   →     6s   [91m+6s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Whisper                0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m│[0m  [96m▶[0m  [1mSpeaker map     [0m       0s   [96mrunning...[0m                   [2m│[0m
+  [2m│[0m  [2m·  Generate               0s[0m                                [2m│[0m
+  [2m│[0m  [2m·  Ingest JSON            0s[0m                                [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [93m███████████████[0m[2m░░░░░░░░░░░░░░░[0m  [1m 50%[0m   13m 49s / ~0s left   [2m│[0m
+  [2m└──────────────────────────────────────────────────────────────┘[0m
+
+  [46m[97m[1m Stage 4/6 [0m [1mMapping speakers[0m
+  [2m╸ Plan —  ·  Elapsed 13m 49s  ·  Left —[0m
+]0;YTAI > Stage 4/5 > Mapping speakers[2K  [96m⠋[0m Mapping speakers for 1 clip  [2m0s[0m[2K  [92m[1m✓[0m 108 words | 1 segments | 0 gap words resolved  [2m0s[0m
+  [92m[1m✓[0m Stage 4 complete  [2m0s  ·  Elapsed 13m 49s  ·  Left —[0m
+
+  [2m┌──────────────────────────────────────────────────────────────┐[0m
+  [2m│[0m  [1mPhase_1_-_9._Audit_V2[0m                                       [2m│[0m
+  [2m│[0m  1 clips · 0:29               4/6 done · 13m 49s · [96m~0s left[0m  [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [2m   Stage                Plan    Actual     Delta[0m            [2m│[0m
+  [2m│[0m  ──────────────────────────────────────────────────────────  [2m│[0m
+  [2m│[0m  [92m✓[0m  Extract audio          0s   → 13m 43s   [91m+13m 43s[0m         [2m│[0m
+  [2m│[0m  [92m✓[0m  Diarization            0s   →     6s   [91m+6s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Whisper                0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Speaker map            0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m│[0m  [96m▶[0m  [1mGenerate        [0m       0s   [96mrunning...[0m                   [2m│[0m
+  [2m│[0m  [2m·  Ingest JSON            0s[0m                                [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [93m███████████████████[0m[2m░░░░░░░░░░░[0m  [1m 67%[0m   13m 49s / ~0s left   [2m│[0m
+  [2m└──────────────────────────────────────────────────────────────┘[0m
+
+  [46m[97m[1m Stage 5/6 [0m [1mGenerating outputs[0m
+  [2m╸ Plan —  ·  Elapsed 13m 49s  ·  Left —[0m
+]0;YTAI > Stage 5/5 > Generating outputs  per_clip files: 5
+  Phase_1_-_9._Audit_V2_transcript.xlsx
+  combined_transcript.json
+  Phase_1_-_9._Audit_V2_transcript.json
+  Phase_1_-_9._Audit_V2_transcript.srt
+  Phase_1_-_9._Audit_V2_1_Ingest_captions.srt
+  [92m[1m✓[0m Stage 5 complete  [2m0s  ·  Elapsed 13m 49s  ·  Left —[0m
+
+  [2m┌──────────────────────────────────────────────────────────────┐[0m
+  [2m│[0m  [1mPhase_1_-_9._Audit_V2[0m                                       [2m│[0m
+  [2m│[0m  1 clips · 0:29               5/6 done · 13m 49s · [96m~0s left[0m  [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [2m   Stage                Plan    Actual     Delta[0m            [2m│[0m
+  [2m│[0m  ──────────────────────────────────────────────────────────  [2m│[0m
+  [2m│[0m  [92m✓[0m  Extract audio          0s   → 13m 43s   [91m+13m 43s[0m         [2m│[0m
+  [2m│[0m  [92m✓[0m  Diarization            0s   →     6s   [91m+6s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Whisper                0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Speaker map            0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Generate               0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m│[0m  [96m▶[0m  [1mIngest JSON     [0m       0s   [96mrunning...[0m                   [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [92m█████████████████████████[0m[2m░░░░░[0m  [1m 83%[0m   13m 49s / ~0s left   [2m│[0m
+  [2m└──────────────────────────────────────────────────────────────┘[0m
+
+  [46m[97m[1m Stage 6/6 [0m [1mGenerating ingest JSON[0m
+  [2m╸ Plan —  ·  Elapsed 13m 49s  ·  Left —[0m
+]0;YTAI > Stage 6 > Generating ingest JSON  Phase_1_-_9._Audit_V2_ingest.json  [92mdone[0m
+  [92m[1m✓[0m Stage 6 complete  [2m0s  ·  Elapsed 13m 49s  ·  Left —[0m
+
+  [2m┌──────────────────────────────────────────────────────────────┐[0m
+  [2m│[0m  [1mPhase_1_-_9._Audit_V2[0m                                       [2m│[0m
+  [2m│[0m  1 clips · 0:29                   6/6 done · 13m 49s · [92mDone[0m  [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [2m   Stage                Plan    Actual     Delta[0m            [2m│[0m
+  [2m│[0m  ──────────────────────────────────────────────────────────  [2m│[0m
+  [2m│[0m  [92m✓[0m  Extract audio          0s   → 13m 43s   [91m+13m 43s[0m         [2m│[0m
+  [2m│[0m  [92m✓[0m  Diarization            0s   →     6s   [91m+6s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Whisper                0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Speaker map            0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Generate               0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m│[0m  [92m✓[0m  Ingest JSON            0s   →     0s   [91m+0s[0m               [2m│[0m
+  [2m├──────────────────────────────────────────────────────────────┤[0m
+  [2m│[0m  [92m██████████████████████████████[0m[2m[0m  [1m100%[0m   [92m[1mDone[0m in 13m 49s      [2m│[0m
+  [2m└──────────────────────────────────────────────────────────────┘[0m
+
+  [42m[97m[1m Summary [0m
+  [2m╔══════════════════════════════════════════════════════════════╗[0m
+  [2m║[0m  Total time:   [1m13m 49s[0m                                       [2m║[0m
+  [2m║[0m  Speed:        [1m0.0x[0m realtime  [2m(0:29 video → 13m 49s)[0m         [2m║[0m
+  [2m║[0m  Words:        108                                           [2m║[0m
+  [2m║[0m  Segments:     1                                             [2m║[0m
+  [2m║[0m  Speakers:     1                                             [2m║[0m
+  [2m║[0m  Language:     en                                            [2m║[0m
+  [2m║[0m  Confidence:   [92m0.97[0m  [2m(0 low)[0m                                 [2m║[0m
+  [2m║[0m  Output:       Phase_1_-_9._Audit_V2_transcription/          [2m║[0m
+  [2m║[0m                Phase_1_-_9._Audit_V2_transcript.xlsx         [2m║[0m
+  [2m╠══════════════════════════════════════════════════════════════╣[0m
+  [2m║[0m  [1mSpeakers[0m                                                    [2m║[0m
+  [2m║[0m  [2m──────────────────────────────────────────────────────────[0m  [2m║[0m
+  [2m║[0m  Speaker 1       0:29 (99.7%)    108 words  [92m0.97[0m conf        [2m║[0m
+  [2m║[0m  [2mGaps            0:00 ( 0.3%)[0m                                [2m║[0m
+  [2m╠══════════════════════════════════════════════════════════════╣[0m
+  [2m║[0m  [2mStage                Est   Actual        Δ    % Bar[0m         [2m║[0m
+  [2m║[0m  [2m──────────────────────────────────────────────────────────[0m  [2m║[0m
+  [2m║[0m  Extract audio         0s  13m 43s [91m+13m 43s[0m  99% [91m██████████[0m  [2m║[0m
+  [2m║[0m  Diarization           0s       6s [91m     +6s[0m   1% [92m░░░░░░░░░░[0m  [2m║[0m
+  [2m║[0m  Whisper               0s       0s [91m     +0s[0m   0% [92m░░░░░░░░░░[0m  [2m║[0m
+  [2m║[0m  Speaker map           0s       0s [91m     +0s[0m   0% [92m░░░░░░░░░░[0m  [2m║[0m
+  [2m║[0m  Generate              0s       0s [91m     +0s[0m   0% [92m░░░░░░░░░░[0m  [2m║[0m
+  [2m║[0m  Ingest JSON           0s       0s [91m     +0s[0m   0% [92m░░░░░░░░░░[0m  [2m║[0m
+  [2m╠══════════════════════════════════════════════════════════════╣[0m
+  [2m║[0m  [1mQuality[0m                                                     [2m║[0m
+  [2m║[0m  [2m────────────────────────────────────────────────────────[0m    [2m║[0m
+  [2m║[0m  [92m✓[0m  High confidence (0.97 avg)                               [2m║[0m
+  [2m║[0m  [92m✓[0m  Single speaker detected                                  [2m║[0m
+  [2m╚══════════════════════════════════════════════════════════════╝[0m
+
+  [44m[97m[1m Project Structure [0m
+  [2m╭──────────────────────────────────────────────────────────╮[0m
+  [1mPhase_1_-_9._Audit_V2/[0m
+  ├── [video files]
+  └── [92mPhase_1_-_9._Audit_V2_transcription/  ← NEW[0m
+  [2m╰──────────────────────────────────────────────────────────╯[0m
+
+  [46m[97m[1m NEXT STEP [0m
+  [2m────────────────────────────────────────────────────────[0m
+  [1m1.[0m Review transcript:
+  [96mopen "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_9._Audit_V2/Phase_1_-_9._Audit_V2_transcript.xlsx"[0m
+
+  [1m2.[0m Re-run transcription:
+  [96msource ~/YTAI/environment/.venv_transcribe/bin/activate && python3 ~/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py --project "~/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_9._Audit_V2" -n 1[0m
+
+]0;YTAI > Done > Phase_1_-_9._Audit_V2

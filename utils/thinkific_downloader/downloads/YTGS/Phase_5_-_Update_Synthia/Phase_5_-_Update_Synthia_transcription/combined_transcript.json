@@ -1,0 +1,38 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T17:36:21Z",
+  "project": "Phase_5_-_Update_Synthia",
+  "total_duration": 69.799,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "Phase_5_-_Update_Synthia"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "Phase_5_-_Update_Synthia",
+      "local_start": 0.0,
+      "local_end": 69.38,
+      "global_start": 0.0,
+      "global_end": 69.38,
+      "speaker": "SPEAKER_00",
+      "text": "Okay, so just a quick update. What I want you to do right now is I want you to go over to Cynthia and I want you to write three things that make you very credible in this section. What this is gonna do is when you are using guardrails to give you feedback on your introductions, it's gonna make sure you inject some credibility in. So I need you to put in three big brags, three things that you have achieved that your viewers want to. Now don't put something like, I've got the Guinness World Record for eating a bucket load of jelly. That's not an achievement the viewers will care about. It needs to be credibility brags. And then what I want you to do is I want you to write your backstory. So the storytelling module's gonna help you more with this, but all I want you to do is keep it simple. Start with the problem your viewer now has that you solved, talk about some actions you took, and then talk about the big result it got. If your backstory is not relevant to your viewers, let's say you're a doctor who helps people with bad backs and you've never had a back back, write the backstory about the best client result you've ever got. And again, what's gonna happen is when you're using the AI and guardrails to help reposition your intros, it's gonna bring in elements of your backstory too. That's it. On to the next video.",
+      "avg_confidence": 0.9682
+    }
+  ],
+  "stats": {
+    "total_words": 255,
+    "total_segments": 1,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 1,
+        "words": 255,
+        "duration": 69.38,
+        "avg_confidence": 0.9682
+      }
+    },
+    "avg_confidence": 0.9682,
+    "low_confidence_segments": 0
+  }
+}

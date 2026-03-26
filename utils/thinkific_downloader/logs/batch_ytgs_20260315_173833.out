@@ -1,0 +1,51 @@
+[17:38:33] Loading lessons from manifest: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_batch_manifest.json
+[17:38:33] Loaded 59 lessons from manifest
+Source          : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_batch_manifest.json (manifest)
+Lessons in DOCX : 59
+Processing      : 59
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Pipeline mode   : parallel (download + transcribe)
+Dry run         : False
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_173833.log
+
+[17:38:33] Starting pipeline: download + transcribe in parallel
+
+[17:38:33] 📥 [01/59] Phase_1_-_1._Intro_Video.mp4
+[17:38:33]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+[17:38:33]   ⏭  Skipped (already completed)
+[17:38:33] 📥 [02/59] Phase_1_-_3._Expectations.mp4
+[17:38:33]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+[17:38:33]   ↳ Video exists and valid (274 MB), skipping download
+[17:38:33]   🔊 [02/59] Transcribing Phase_1_-_3._Expectations.mp4...
+[17:38:33] 📥 [03/59] Phase_1_-_4._How_YouTube_Works.mp4
+[17:38:33]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef
+[17:38:51]   ↳ Downloaded (562 MB, 18s)
+[17:38:51] 📥 [04/59] Phase_1_-_6._Position_Intro.mp4
+[17:38:51]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1
+[17:39:00]   ↳ Downloaded (255 MB, 9s)
+[17:39:00] 📥 [05/59] Phase_1_-_7._How_To_Position.mp4
+[17:39:00]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4
+[17:39:11]   ↳ Downloaded (296 MB, 11s)
+[17:45:46]   🔊 [02/59] Transcribed (433s)
+[17:45:46]   🔊 [03/59] Transcribing Phase_1_-_4._How_YouTube_Works.mp4...
+[17:45:46] 
+──────────────────────────────────────────────────
+[17:45:46]   Progress: 2/59
+[17:45:46]   Downloaded: 4  |  Transcribed: 1
+[17:45:46]   ✓ OK: 1  |  ⏭ Skip: 1  |  ✗ Fail: 0
+[17:45:46]   Elapsed: 7m 13s  |  Disk: 1.6 GB
+[17:45:46]   ETA: ~3h 25m 48s
+[17:45:46] ──────────────────────────────────────────────────
+
+[17:45:46] 📥 [06/59] Phase_1_-_9._Audit_V2.mp4
+[17:45:46]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892283-task-auditing-your-foundations?wvideo=uca14sgz0s
+[17:54:57]   🔊 [03/59] Transcribed (551s)
+[17:54:57]   🔊 [04/59] Transcribing Phase_1_-_6._Position_Intro.mp4...
+[17:59:48]   🔊 [04/59] Transcribed (291s)
+[17:59:48]   🔊 [05/59] Transcribing Phase_1_-_7._How_To_Position.mp4...
+[18:04:20]   🔊 [05/59] Transcribed (272s)

@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 17:45:45
+============================================================
+
+=== Configuration ===
+Project:    Phase_1_-_3._Expectations
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_3._Expectations/Phase_1_-_3._Expectations.mp4
+Clips:      1
+Duration:   8:55 (535.1s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_1_-_3._Expectations    8:55  3840×2160 25.0fps H264  4.0Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.25 GB
+    offset 0.000s  Phase_1_-_3._Expectations.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    8:54  100.0%  3 segments
+  Gaps                       0:00  0.0%
+
+=== Transcription ===
+Total words:     1,944
+Total segments:  1
+Avg confidence:  0.9557
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_1_-_3._Expectations:
+    Words: 1944  Segments: 1  Confidence: 0.9557  Low: 1
+    Speaker 1: 1944 words, 1 segs, 8:55
+
+=== Whisper Per-Clip ===
+  Phase_1_-_3._Expectations    8:55   1944 words   218 wpm    6m 36s  (1.35x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    0s    0.1%
+  Diarization          19s       22s  +    3s    5.2%
+  Whisper           4m 54s    6m 36s  +1m 42s   94.7%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             5m 16s    6m 59s  +1m 43s  100.0%
+  Speed:          1.3x realtime
+  Wall clock:     6m 59s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_1_-_3._Expectations_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           10.7 KB
+    diarization.json                                    0.4 KB
+    full_audio.wav                                  16721.3 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_1_-_3._Expectations/Phase_1_-_3._Expectations_audio.wav   16721.3 KB
+    per_clip/Phase_1_-_3._Expectations/Phase_1_-_3._Expectations_captions.srt      18.1 KB
+    per_clip/Phase_1_-_3._Expectations/Phase_1_-_3._Expectations_premiere_transcript.json     434.4 KB
+    per_clip/Phase_1_-_3._Expectations/Phase_1_-_3._Expectations_transcript.json     255.8 KB
+    per_clip/Phase_1_-_3._Expectations/Phase_1_-_3._Expectations_transcript.srt      10.0 KB
+    per_clip/Phase_1_-_3._Expectations/Phase_1_-_3._Expectations_transcript.txt       9.9 KB
+    per_clip/Phase_1_-_3._Expectations/Phase_1_-_3._Expectations_whisper_raw.json     239.1 KB
+  Phase_1_-_3._Expectations_transcript.xlsx  (11.5 KB)
+
+============================================================

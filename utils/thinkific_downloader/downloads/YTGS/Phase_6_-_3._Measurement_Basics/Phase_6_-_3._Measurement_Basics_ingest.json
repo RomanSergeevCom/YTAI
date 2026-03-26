@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "Phase_6_-_3._Measurement_Basics",
+  "created_at": "2026-03-15T19:16:03Z",
+  "media": {
+    "width": 3840,
+    "height": 2160,
+    "fps": 25.0,
+    "sample_rate": 44100
+  },
+  "clips": [
+    {
+      "clip_id": "Phase_6_-_3._Measurement_Basics",
+      "filename": "Phase_6_-_3._Measurement_Basics.mp4",
+      "path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics.mp4",
+      "duration": 845.03,
+      "offset": 0.0,
+      "premiere_transcript": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_transcription/per_clip/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_3._Measurement_Basics/Phase_6_-_3._Measurement_Basics_1_Ingest_captions.srt"
+  },
+  "source_folder": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_3._Measurement_Basics"
+}

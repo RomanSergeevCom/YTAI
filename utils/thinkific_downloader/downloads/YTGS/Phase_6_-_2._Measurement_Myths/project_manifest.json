@@ -1,0 +1,68 @@
+{
+  "created_at": "2026-03-15T19:09:56Z",
+  "source": {
+    "page_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921533-intro-to-measurement?wvideo=gbke1rgg4p",
+    "media_url": "https://embed-ssl.wistia.com/deliveries/b323bbb9d6dc9f1c099b9f81925988a91036f659.bin",
+    "title": "Phase_6_-_2._Measurement_Myths.mp4"
+  },
+  "project": {
+    "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths",
+    "video_file": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/Phase_6_-_2._Measurement_Myths.mp4",
+    "video_info_file": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/Phase_6_-_2._Measurement_Myths.info.json"
+  },
+  "download": {
+    "engine": "ffmpeg",
+    "completed": true
+  },
+  "transcription": {
+    "enabled": true,
+    "completed": true,
+    "command": [
+      "/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3",
+      "/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py",
+      "--project",
+      "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/Phase_6_-_2._Measurement_Myths.mp4",
+      "-y",
+      "-m",
+      "large-v3",
+      "-n",
+      "1",
+      "--language",
+      "en"
+    ],
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/Phase_6_-_2._Measurement_Myths_transcript.xlsx",
+    "transcription_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/Phase_6_-_2._Measurement_Myths_transcription",
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/Phase_6_-_2._Measurement_Myths_transcription/Phase_6_-_2._Measurement_Myths_transcript.json",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/Phase_6_-_2._Measurement_Myths_transcription/Phase_6_-_2._Measurement_Myths_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/Phase_6_-_2._Measurement_Myths_transcription/Phase_6_-_2._Measurement_Myths_1_Ingest_captions.srt"
+  },
+  "screenshots": {
+    "enabled": false,
+    "dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/screenshots",
+    "manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/screenshots_manifest.json",
+    "count": 0
+  },
+  "screenshot_descriptions": {
+    "enabled": false,
+    "completed": false,
+    "manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/screenshots_descriptions.json"
+  },
+  "settings": {
+    "screenshot_mode": "interval",
+    "screenshot_interval": 2.0,
+    "scene_threshold": 0.18,
+    "scene_max_width": 1600,
+    "whisper_model": "large-v3",
+    "speakers": 1,
+    "language": "en"
+  },
+  "errors": [],
+  "document": {
+    "notes_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/document_notes.md",
+    "document_manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/document_manifest.json",
+    "doc_images_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/doc_images",
+    "extra_links_manifest": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths/extra_links_manifest.json",
+    "extra_links_count": 0
+  },
+  "extra_links": []
+}

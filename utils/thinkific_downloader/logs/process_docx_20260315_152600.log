@@ -1,0 +1,52 @@
+
+=== Configuration ===
+DOCX            : /Users/romansergeev/Downloads/YTCG.docx
+Lessons in DOCX : 59
+Processing      : 5
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=None, lang=None)
+Screenshots     : on (mode=interval, interval=2.0s)
+AI Descriptions : on
+Dry run         : True
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_152600.log
+
+=== Lesson 01 ===
+
+[01/5] Phase_1_-_1._Intro_Video.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+  ~ Dry run — project_dir: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video
+
+=== Lesson 02 ===
+
+[02/5] Phase_1_-_3._Expectations.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+  ~ Dry run — project_dir: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_3._Expectations
+
+=== Lesson 03 ===
+
+[03/5] Phase_1_-_4._How_YouTube_Works.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef
+  ~ Dry run — project_dir: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_4._How_YouTube_Works
+
+=== Lesson 04 ===
+
+[04/5] Phase_1_-_6._Position_Intro.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1
+  ~ Dry run — project_dir: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_6._Position_Intro
+
+=== Lesson 05 ===
+
+[05/5] Phase_1_-_7._How_To_Position.mp4
+  URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4
+  ~ Dry run — project_dir: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_7._How_To_Position
+
+=== Result ===
+
+═══════════════════════════════════════════════════════
+  Batch complete: 5 lessons
+  ✓ OK: 0  |  ⏭ Skipped: 0  |  ✗ Failed: 0
+  Total time: 0s  |  Disk: 1.8 GB
+  Log: /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_152600.log
+═══════════════════════════════════════════════════════

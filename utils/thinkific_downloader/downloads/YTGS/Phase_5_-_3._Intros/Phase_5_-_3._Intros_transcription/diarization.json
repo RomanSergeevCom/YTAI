@@ -1,0 +1,53 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T17:29:35Z",
+  "num_speakers": 1,
+  "total_duration": 983.83,
+  "segments": [
+    {
+      "start": 0.031,
+      "end": 9.818,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 10.527,
+      "end": 15.252,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 15.792,
+      "end": 20.821,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 20.973,
+      "end": 21.344,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 23.217,
+      "end": 345.614,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 346.137,
+      "end": 360.683,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 361.612,
+      "end": 568.583,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 569.292,
+      "end": 794.827,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 795.383,
+      "end": 983.894,
+      "speaker": "SPEAKER_00"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "version": "3.0",
+  "status": "completed",
+  "created_at": "2026-03-15T16:09:16Z",
+  "updated_at": "2026-03-15T16:15:32Z",
+  "project_name": "Phase_3_-_4._Thumbnail_Strategy",
+  "input_type": "file",
+  "input_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy/Phase_3_-_4._Thumbnail_Strategy.mp4",
+  "params": {
+    "num_speakers": 1,
+    "whisper_model": "large-v3",
+    "language": "en",
+    "device": "mps"
+  },
+  "clips": [
+    "Phase_3_-_4._Thumbnail_Strategy"
+  ],
+  "total_duration_sec": 668.735,
+  "stages_completed": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "stages_timing": {
+    "1_extract_audio": 0.6,
+    "2_diarization": 24.0,
+    "3_whisper": 338.7,
+    "4_speaker_mapping": 0.0,
+    "5_generate_outputs": 0.1,
+    "6_ingest_json": 0.0
+  },
+  "total_time": 363.4
+}

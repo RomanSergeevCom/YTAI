@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-16 01:29:13
+============================================================
+
+=== Configuration ===
+Project:    Phase_4_-_2._The_Strategy
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_2._The_Strategy/Phase_4_-_2._The_Strategy.mp4
+Clips:      1
+Duration:   8:15 (495.9s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_4_-_2._The_Strategy    8:15  3840×2160 25.0fps H264  2.8Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.17 GB
+    offset 0.000s  Phase_4_-_2._The_Strategy.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    8:14  99.7%  3 segments
+  Gaps                       0:01  0.3%
+
+=== Transcription ===
+Total words:     1,875
+Total segments:  2
+Avg confidence:  0.9380
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_4_-_2._The_Strategy:
+    Words: 1875  Segments: 2  Confidence: 0.9373  Low: 2
+    Speaker 1: 1875 words, 2 segs, 8:14
+
+=== Whisper Per-Clip ===
+  Phase_4_-_2._The_Strategy    8:15   1875 words   227 wpm    4m 31s  (1.83x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    0s    0.2%
+  Diarization          17s       19s  +    2s    6.5%
+  Whisper           4m 32s    4m 31s  -    1s   93.3%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             4m 53s    4m 50s  -    2s  100.0%
+  Speed:          1.7x realtime
+  Wall clock:     4m 50s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_4_-_2._The_Strategy_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           10.5 KB
+    diarization.json                                    0.4 KB
+    full_audio.wav                                  15497.9 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_4_-_2._The_Strategy/Phase_4_-_2._The_Strategy_audio.wav   15497.9 KB
+    per_clip/Phase_4_-_2._The_Strategy/Phase_4_-_2._The_Strategy_captions.srt      17.3 KB
+    per_clip/Phase_4_-_2._The_Strategy/Phase_4_-_2._The_Strategy_premiere_transcript.json     414.9 KB
+    per_clip/Phase_4_-_2._The_Strategy/Phase_4_-_2._The_Strategy_transcript.json     246.9 KB
+    per_clip/Phase_4_-_2._The_Strategy/Phase_4_-_2._The_Strategy_transcript.srt       9.5 KB
+    per_clip/Phase_4_-_2._The_Strategy/Phase_4_-_2._The_Strategy_transcript.txt       9.5 KB
+    per_clip/Phase_4_-_2._The_Strategy/Phase_4_-_2._The_Strategy_whisper_raw.json     211.2 KB
+  Phase_4_-_2._The_Strategy_transcript.xlsx  (11.2 KB)
+
+============================================================

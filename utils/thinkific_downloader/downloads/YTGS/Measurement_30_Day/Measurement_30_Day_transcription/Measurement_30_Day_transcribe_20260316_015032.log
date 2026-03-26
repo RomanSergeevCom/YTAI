@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-16 01:50:32
+============================================================
+
+=== Configuration ===
+Project:    Measurement_30_Day
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Measurement_30_Day/Measurement_30_Day.mp4
+Clips:      1
+Duration:   6:35 (395.4s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Measurement_30_Day      6:35  3840×2160 25.0fps H264  4.4Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.21 GB
+    offset 0.000s  Measurement_30_Day.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    6:31  99.1%  8 segments
+  Gaps                       0:03  0.9%
+
+=== Transcription ===
+Total words:     1,261
+Total segments:  4
+Avg confidence:  0.9592
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Measurement_30_Day:
+    Words: 1261  Segments: 4  Confidence: 0.9673  Low: 0
+    Speaker 1: 1261 words, 4 segs, 6:31
+
+=== Whisper Per-Clip ===
+  Measurement_30_Day      6:35   1261 words   191 wpm    2m 17s  (2.87x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        0s  -    0s    0.3%
+  Diarization          14s       14s  +    0s    9.3%
+  Whisper           3m 37s    2m 17s  -1m 19s   90.3%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             3m 53s    2m 32s  -1m 21s  100.0%
+  Speed:          2.6x realtime
+  Wall clock:     2m 32s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Measurement_30_Day_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                            8.1 KB
+    diarization.json                                    0.8 KB
+    full_audio.wav                                  12356.7 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Measurement_30_Day/Measurement_30_Day_audio.wav     12356.7 KB
+    per_clip/Measurement_30_Day/Measurement_30_Day_captions.srt      12.0 KB
+    per_clip/Measurement_30_Day/Measurement_30_Day_premiere_transcript.json     282.4 KB
+    per_clip/Measurement_30_Day/Measurement_30_Day_transcript.json     167.4 KB
+    per_clip/Measurement_30_Day/Measurement_30_Day_transcript.srt       6.8 KB
+    per_clip/Measurement_30_Day/Measurement_30_Day_transcript.txt       6.7 KB
+    per_clip/Measurement_30_Day/Measurement_30_Day_whisper_raw.json     143.8 KB
+  Measurement_30_Day_transcript.xlsx  (10.4 KB)
+
+============================================================

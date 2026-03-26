@@ -1,0 +1,13 @@
+
+=== Configuration ===
+Source page      : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+Media URL        : https://embed-ssl.wistia.com/deliveries/2ee9e33ff23954902d15bacfef985dcaf5c019a5.bin
+Download engine  : ffmpeg
+Project dir      : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video_02
+Video file       : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video_02/Phase_1_-_1._Intro_Video.mp4
+Transcript xlsx  : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video_02/Phase_1_-_1._Intro_Video_transcript.xlsx
+Transcript dir   : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video_02/Phase_1_-_1._Intro_Video_transcription
+Transcribe cmd   : /Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3 /Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py --project /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video_02/Phase_1_-_1._Intro_Video.mp4 -y -m large-v3
+Screenshots dir  : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video_02/screenshots
+Scene threshold  : 0.18
+Log file         : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/download_thinkific_20260315_071257.log

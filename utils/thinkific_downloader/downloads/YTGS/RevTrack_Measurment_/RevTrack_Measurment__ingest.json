@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "RevTrack_Measurment_",
+  "created_at": "2026-03-15T19:30:08Z",
+  "media": {
+    "width": 3840,
+    "height": 1924,
+    "fps": 60.0,
+    "sample_rate": 44100
+  },
+  "clips": [
+    {
+      "clip_id": "RevTrack_Measurment_",
+      "filename": "RevTrack_Measurment_.mp4",
+      "path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/RevTrack_Measurment_/RevTrack_Measurment_.mp4",
+      "duration": 580.22,
+      "offset": 0.0,
+      "premiere_transcript": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/RevTrack_Measurment_/RevTrack_Measurment__transcription/per_clip/RevTrack_Measurment_/RevTrack_Measurment__premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/RevTrack_Measurment_/RevTrack_Measurment__transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/RevTrack_Measurment_/RevTrack_Measurment__transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/RevTrack_Measurment_/RevTrack_Measurment__transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/RevTrack_Measurment_/RevTrack_Measurment__1_Ingest_captions.srt"
+  },
+  "source_folder": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/RevTrack_Measurment_"
+}

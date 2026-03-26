@@ -1,0 +1,162 @@
+[18:30:46] Loading lessons from manifest: /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_batch_manifest.json
+[18:30:46] Loaded 59 lessons from manifest
+Source          : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_batch_manifest.json (manifest)
+Lessons in DOCX : 59
+Processing      : 59
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS
+Download engine : ffmpeg
+Resume mode     : True
+Transcription   : on (model=large-v3, speakers=1, lang=en)
+Screenshots     : off
+AI Descriptions : off
+Pipeline mode   : parallel (download + transcribe)
+Dry run         : False
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_183046.log
+
+[18:30:46] Starting pipeline: download + transcribe in parallel
+
+[18:30:46] 📥 [01/59] Phase_1_-_1._Intro_Video.mp4
+[18:30:46]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+[18:30:46]   ⏭  Skipped (already completed)
+[18:30:46] 📥 [02/59] Phase_1_-_3._Expectations.mp4
+[18:30:46]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+[18:30:46]   ⏭  Skipped (already completed)
+[18:30:46] 📥 [03/59] Phase_1_-_4._How_YouTube_Works.mp4
+[18:30:46]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef
+[18:30:46]   ⏭  Skipped (already completed)
+[18:30:46] 📥 [04/59] Phase_1_-_6._Position_Intro.mp4
+[18:30:46]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1
+[18:30:46]   ⏭  Skipped (already completed)
+[18:30:46] 📥 [05/59] Phase_1_-_7._How_To_Position.mp4
+[18:30:46]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4
+[18:30:46]   ⏭  Skipped (already completed)
+[18:30:46] 
+──────────────────────────────────────────────────
+[18:30:46]   Progress: 4/59
+[18:30:46]   Downloaded: 0  |  Transcribed: 0
+[18:30:46]   ✓ OK: 0  |  ⏭ Skip: 4  |  ✗ Fail: 0
+[18:30:46]   Elapsed: 0s  |  Disk: 1.7 GB
+[18:30:46]   ETA: ~0s
+[18:30:46] ──────────────────────────────────────────────────
+
+[18:30:46] 📥 [06/59] Phase_1_-_9._Audit_V2.mp4
+[18:30:46]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892283-task-auditing-your-foundations?wvideo=uca14sgz0s
+[18:30:59]   ↳ Downloaded (281 MB, video=9:25, 12s)
+[18:30:59]   🔊 [06/59] Transcribing Phase_1_-_9._Audit_V2.mp4...
+[18:30:59] 📥 [07/59] Phase_1_-_10._Doing_Your_Tasks.mp4
+[18:30:59]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892288-task-minor-adjustments?wvideo=yg65ujy4qv
+[18:31:04]   ↳ Downloaded (136 MB, video=5:14, 5s)
+[18:31:04] 📥 [08/59] Phase_1_-_Simple_Nurture.mp4
+[18:31:04]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921638-side-mission-building-a-simple-email-system?wvideo=9xdr515qzr
+[18:31:08]   ↳ Downloaded (97 MB, video=4:07, 4s)
+[18:31:08] 📥 [09/59] Phase_2_-_1._Intro.mp4
+[18:31:08]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892293-phase-2-intro?wvideo=obyeqz0swb
+[18:31:12]   ↳ Downloaded (87 MB, video=1:58, 4s)
+[18:35:30]   🔊 [06/59] Transcribed (271s)
+[18:35:30]   🔊 [07/59] Transcribing Phase_1_-_10._Doing_Your_Tasks.mp4...
+[18:35:30] 📥 [10/59] Phase_2_-_2._Demo_Video.mp4
+[18:35:30]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892694-task-making-your-demo-video?wvideo=sgjg69vbud
+[18:38:28]   🔊 [07/59] Transcribed (178s)
+[18:38:28]   🔊 [08/59] Transcribing Phase_1_-_Simple_Nurture.mp4...
+[18:40:32]   🔊 [08/59] Transcribed (125s)
+[18:40:32]   🔊 [09/59] Transcribing Phase_2_-_1._Intro.mp4...
+[18:42:19]   🔊 [09/59] Transcribed (107s)
+[18:46:53]   ✗ Download error: Command '['ffmpeg', '-y', '-v', 'warning', '-nostats', '-loglevel', 'error', '-headers', 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36\r\nReferer: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892694-task-making-your-demo-video?wvideo=sgjg69vbud\r\n', '-i', 'https://embed-ssl.wistia.com/deliveries/a12a1458b1ede498775f1d0f7388bd22f6ff3a1d.bin', '-map', '0:v:0?', '-map', '0:a?', '-c', 'copy', '-movflags', '+faststart', '/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video.mp4']' died with <Signals.SIGKILL: 9>.
+[18:46:53]   🔊 [10/59] No valid video, skipping transcription
+[18:46:53] 
+──────────────────────────────────────────────────
+[18:46:53]   Progress: 9/59
+[18:46:53]   Downloaded: 5  |  Transcribed: 4
+[18:46:53]   ✓ OK: 4  |  ⏭ Skip: 5  |  ✗ Fail: 0
+[18:46:53]   Elapsed: 16m 06s  |  Disk: 2.7 GB
+[18:46:53]   ETA: ~1h 29m 28s
+[18:46:53] ──────────────────────────────────────────────────
+
+[18:46:53] 📥 [11/59] Phase_2_-_3._Teleprompter.mp4
+[18:46:53]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892310-using-a-teleprompter-don-t-skip?wvideo=v2pqjjgk5f
+[18:47:04]   ↳ Downloaded (271 MB, video=7:08, 11s)
+[18:47:04]   🔊 [11/59] Transcribing Phase_2_-_3._Teleprompter.mp4...
+[18:47:04] 📥 [12/59] Phase_2_-_4._Presenting.mp4
+[18:47:04]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892695-presenting-101?wvideo=6vswm3tsmw
+[18:47:48]   ↳ Downloaded (879 MB, video=21:31, 44s)
+[18:47:49] 📥 [13/59] Phase_2_-_5._Edit_Demo.mp4
+[18:47:49]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892314-task-editing-your-demo?wvideo=er9icb0lxo
+[18:47:54]   ↳ Downloaded (79 MB, video=2:28, 6s)
+[18:47:54] 📥 [14/59] Phase_2_-_6._Uploading.mp4
+[18:47:54]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892318-task-posting-your-demo?wvideo=jpfc799wfj
+[18:47:59]   ↳ Downloaded (71 MB, video=2:42, 4s)
+[18:50:47]   🔊 [11/59] Transcribed (223s)
+[18:50:47]   🔊 [12/59] Transcribing Phase_2_-_4._Presenting.mp4...
+[18:50:47] 📥 [15/59] Phase_3_-_1._Intro.mp4
+[18:50:47]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=iwd27pwhi6
+[18:50:51]   ↳ Downloaded (38 MB, video=1:13, 4s)
+[19:06:14]   🔊 [12/59] Transcribed (927s)
+[19:06:14]   🔊 [13/59] Transcribing Phase_2_-_5._Edit_Demo.mp4...
+[19:06:14] 
+──────────────────────────────────────────────────
+[19:06:14]   Progress: 12/59
+[19:06:14]   Downloaded: 10  |  Transcribed: 6
+[19:06:14]   ✓ OK: 6  |  ⏭ Skip: 5  |  ✗ Fail: 1
+[19:06:14]   Elapsed: 35m 27s  |  Disk: 4.0 GB
+[19:06:14]   ETA: ~2h 31m 30s
+[19:06:14] ──────────────────────────────────────────────────
+
+[19:06:14] 📥 [16/59] Phase_3_-_2._Secret_To_Great_Videos.mp4
+[19:06:14]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=ajhwpllaaq
+[19:06:23]   ↳ Downloaded (207 MB, video=6:48, 9s)
+[19:07:40]   🔊 [13/59] Transcribed (86s)
+[19:07:40]   🔊 [14/59] Transcribing Phase_2_-_6._Uploading.mp4...
+[19:07:40] 📥 [17/59] Phase_3_-_3._Titles.mp4
+[19:07:40]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892345-the-secret-to-amazing-titles?wvideo=7pzo6ty60l
+[19:10:14]   🔊 [14/59] Transcribed (154s)
+[19:10:14]   🔊 [15/59] Transcribing Phase_3_-_1._Intro.mp4...
+[19:11:04]   🔊 [15/59] Transcribed (50s)
+[19:11:04]   🔊 [16/59] Transcribing Phase_3_-_2._Secret_To_Great_Videos.mp4...
+[19:15:26]   🔊 [16/59] Transcribed (262s)
+[20:05:19]   ✗ Download error: Command '['ffmpeg', '-y', '-v', 'warning', '-nostats', '-loglevel', 'error', '-headers', 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36\r\nReferer: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892345-the-secret-to-amazing-titles?wvideo=7pzo6ty60l\r\n', '-i', 'https://embed-ssl.wistia.com/deliveries/7f23b3332f65ab4bf810849914f91aae796ffe41.bin', '-map', '0:v:0?', '-map', '0:a?', '-c', 'copy', '-movflags', '+faststart', '/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles/Phase_3_-_3._Titles.mp4']' died with <Signals.SIGKILL: 9>.
+[20:05:19]   🔊 [17/59] No valid video, skipping transcription
+[20:05:19] 📥 [18/59] Phase_3_-_4._Thumbnail_Basics.mp4
+[20:05:19]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892359-the-secrets-to-amazing-thumbnails?wvideo=d2zp80a6mg
+[20:05:24]   ↳ Downloaded (86 MB, video=5:31, 5s)
+[20:05:24]   🔊 [18/59] Transcribing Phase_3_-_4._Thumbnail_Basics.mp4...
+[20:05:24] 📥 [19/59] Phase_3_-_4._Thumbnail_Strategy.mp4
+[20:05:24]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892473-thumbnail-strategies-that-get-clicks?wvideo=2glf2ywtod
+[20:05:34]   ↳ Downloaded (184 MB, video=11:08, 10s)
+[20:05:34] 📥 [20/59] Phase_3_-_5._Design_Basics.mp4
+[20:05:34]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892480-thumbnail-design-basics?wvideo=ydqieh7lyk
+[20:05:48]   ↳ Downloaded (292 MB, video=16:45, 14s)
+[20:05:48] 
+──────────────────────────────────────────────────
+[20:05:48]   Progress: 17/59
+[20:05:48]   Downloaded: 15  |  Transcribed: 10
+[20:05:48]   ✓ OK: 10  |  ⏭ Skip: 5  |  ✗ Fail: 2
+[20:05:48]   Elapsed: 1h 35m 01s  |  Disk: 5.0 GB
+[20:05:48]   ETA: ~4h 26m 04s
+[20:05:48] ──────────────────────────────────────────────────
+
+[20:05:48] 📥 [21/59] Phase_3_-_6._What_Option.mp4
+[20:05:48]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892484-task-pick-your-thumbnail-creation-process?wvideo=s81gw1gu3n
+[20:05:55]   ↳ Downloaded (125 MB, video=3:44, 7s)
+[20:09:16]   🔊 [18/59] Transcribed (232s)
+[20:09:16]   🔊 [19/59] Transcribing Phase_3_-_4._Thumbnail_Strategy.mp4...
+[20:09:16] 📥 [22/59] Phase_3_-_7._Formats.mp4
+[20:09:16]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892489-formats-the-secret-to-packaging-information?wvideo=7gt97axhb7
+[20:09:28]   ↳ Downloaded (250 MB, video=13:17, 12s)
+[20:15:33]   🔊 [19/59] Transcribed (377s)
+[20:15:33]   🔊 [20/59] Transcribing Phase_3_-_5._Design_Basics.mp4...
+[20:15:33] 📥 [23/59] Phase_4_-_1._Intro.mp4
+[20:15:33]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892495-phase-4-intro?wvideo=49ezwwuh2i
+[20:15:39]   ↳ Downloaded (62 MB, video=1:55, 6s)
+[20:25:30]   🔊 [20/59] Transcribed (597s)
+[20:25:30]   🔊 [21/59] Transcribing Phase_3_-_6._What_Option.mp4...
+[20:25:30] 📥 [24/59] Phase_4_-_2._The_Strategy.mp4
+[20:25:30]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892499-the-1-000-000-youtube-strategy?wvideo=jr3427xt8v
+[20:27:24]   🔊 [21/59] Transcribed (114s)
+[20:27:24]   🔊 [22/59] Transcribing Phase_3_-_7._Formats.mp4...
+[20:33:21]   🔊 [22/59] Transcribed (357s)
+[20:33:21]   🔊 [23/59] Transcribing Phase_4_-_1._Intro.mp4...
+[20:34:31]   🔊 [23/59] Transcribed (70s)
+[20:55:39]   ✗ Download error: Command '['ffmpeg', '-y', '-v', 'warning', '-nostats', '-loglevel', 'error', '-headers', 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36\r\nReferer: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892499-the-1-000-000-youtube-strategy?wvideo=jr3427xt8v\r\n', '-i', 'https://embed-ssl.wistia.com/deliveries/c4b3f0cd281604a1f6545bc3c8453eb387301280.bin', '-map', '0:v:0?', '-map', '0:a?', '-c', 'copy', '-movflags', '+faststart', '/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_2._The_Strategy/Phase_4_-_2._The_Strategy.mp4']' died with <Signals.SIGKILL: 9>.
+[20:55:39]   🔊 [24/59] No valid video, skipping transcription
+[20:55:39] 📥 [25/59] Phase_4_-_3._Research_Basics.mp4
+[20:55:39]   URL: https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892508-the-basics-of-research-strategy?wvideo=uszpj80y14

@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 18:38:27
+============================================================
+
+=== Configuration ===
+Project:    Phase_1_-_10._Doing_Your_Tasks
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_10._Doing_Your_Tasks/Phase_1_-_10._Doing_Your_Tasks.mp4
+Clips:      1
+Duration:   5:14 (314.4s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_1_-_10._Doing_Your_Tasks    5:14  3840×2160 25.0fps H264  3.3Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.13 GB
+    offset 0.000s  Phase_1_-_10._Doing_Your_Tasks.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    5:14  100.0%  1 segments
+  Gaps                       0:00  -0.0%
+
+=== Transcription ===
+Total words:     1,075
+Total segments:  1
+Avg confidence:  0.9761
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_1_-_10._Doing_Your_Tasks:
+    Words: 1075  Segments: 1  Confidence: 0.9761  Low: 1
+    Speaker 1: 1075 words, 1 segs, 5:13
+
+=== Whisper Per-Clip ===
+  Phase_1_-_10._Doing_Your_Tasks    5:14   1075 words   205 wpm    2m 28s  (2.12x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        0s  -    0s    0.2%
+  Diarization          11s       15s  +    4s    9.4%
+  Whisper           2m 52s    2m 28s  -   24s   90.4%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             3m 05s    2m 44s  -   21s  100.0%
+  Speed:          1.9x realtime
+  Wall clock:     2m 44s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_1_-_10._Doing_Your_Tasks_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                            6.4 KB
+    diarization.json                                    0.2 KB
+    full_audio.wav                                   9823.5 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_1_-_10._Doing_Your_Tasks/Phase_1_-_10._Doing_Your_Tasks_audio.wav    9823.6 KB
+    per_clip/Phase_1_-_10._Doing_Your_Tasks/Phase_1_-_10._Doing_Your_Tasks_captions.srt      10.1 KB
+    per_clip/Phase_1_-_10._Doing_Your_Tasks/Phase_1_-_10._Doing_Your_Tasks_premiere_transcript.json     238.8 KB
+    per_clip/Phase_1_-_10._Doing_Your_Tasks/Phase_1_-_10._Doing_Your_Tasks_transcript.json     141.8 KB
+    per_clip/Phase_1_-_10._Doing_Your_Tasks/Phase_1_-_10._Doing_Your_Tasks_transcript.srt       5.6 KB
+    per_clip/Phase_1_-_10._Doing_Your_Tasks/Phase_1_-_10._Doing_Your_Tasks_transcript.txt       5.6 KB
+    per_clip/Phase_1_-_10._Doing_Your_Tasks/Phase_1_-_10._Doing_Your_Tasks_whisper_raw.json     141.4 KB
+  Phase_1_-_10._Doing_Your_Tasks_transcript.xlsx  (9.9 KB)
+
+============================================================

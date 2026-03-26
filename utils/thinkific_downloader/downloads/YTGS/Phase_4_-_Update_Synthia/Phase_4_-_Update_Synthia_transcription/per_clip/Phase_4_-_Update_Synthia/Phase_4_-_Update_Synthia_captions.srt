@@ -1,0 +1,408 @@
+1
+00:00:00,000 --> 00:00:01,639
+Okay, so right now
+you've researched the niche,
+
+2
+00:00:01,820 --> 00:00:05,019
+you've got viewers, loves
+and hates, and title
+
+3
+00:00:05,019 --> 00:00:07,139
+structures and formats they
+really seem to be
+
+4
+00:00:07,139 --> 00:00:08,480
+into. What we need
+to do now is
+
+5
+00:00:08,480 --> 00:00:10,800
+update Cynthia's brain. So
+what I want you
+
+6
+00:00:10,800 --> 00:00:12,580
+to do is this.
+If you are a
+
+7
+00:00:12,580 --> 00:00:14,820
+new or small channel,
+and you had no
+
+8
+00:00:14,820 --> 00:00:17,620
+outliers when we originally
+built Cynthia's brain in
+
+9
+00:00:17,620 --> 00:00:19,339
+phase one, you now
+have a big list
+
+10
+00:00:19,339 --> 00:00:21,019
+of them. So I
+want you to double
+
+11
+00:00:21,019 --> 00:00:23,579
+check that final list
+we made that took
+
+12
+00:00:23,579 --> 00:00:25,780
+all of the channels
+you've been analysing and
+
+13
+00:00:25,780 --> 00:00:28,280
+turned it into one
+databank. And just make
+
+14
+00:00:28,280 --> 00:00:29,820
+sure the AI didn't
+write anything silly or
+
+15
+00:00:29,820 --> 00:00:31,179
+weird in there. Then
+what we want to
+
+16
+00:00:31,179 --> 00:00:32,960
+do is we want
+to take that list,
+
+17
+00:00:33,119 --> 00:00:34,479
+and we want to
+make it 12 titles
+
+18
+00:00:34,479 --> 00:00:35,600
+long. And we put
+them on a Google
+
+19
+00:00:35,600 --> 00:00:37,740
+Doc, we make the
+text big like this,
+
+20
+00:00:37,780 --> 00:00:40,320
+put some space between
+them, screenshot it, and
+
+21
+00:00:40,320 --> 00:00:42,539
+load it into Cynthia's
+brain in the image
+
+22
+00:00:42,539 --> 00:00:44,600
+section. Now there's a
+reason we use an
+
+23
+00:00:44,600 --> 00:00:46,380
+image here, which I'm
+not going to bore
+
+24
+00:00:46,380 --> 00:00:48,140
+you with, but please
+do it that way.
+
+25
+00:00:48,320 --> 00:00:50,280
+Now what you have
+is an MVP brain,
+
+26
+00:00:50,439 --> 00:00:51,719
+which we're going to
+build up over time
+
+27
+00:00:51,719 --> 00:00:53,640
+as we learn more
+and more lessons from
+
+28
+00:00:53,640 --> 00:00:55,299
+posting content and failing
+as fast as you
+
+29
+00:00:55,299 --> 00:00:56,799
+can. I also want
+you to look at
+
+30
+00:00:56,799 --> 00:00:59,740
+the top three problems.
+That this information brought
+
+31
+00:00:59,740 --> 00:01:02,320
+up when we analysed
+it, and ask, is
+
+32
+00:01:02,320 --> 00:01:04,280
+that similar to the
+ones I came up
+
+33
+00:01:04,280 --> 00:01:06,019
+with originally when I
+was doing the business
+
+34
+00:01:06,019 --> 00:01:08,799
+research? If it's very
+different, you might want
+
+35
+00:01:08,799 --> 00:01:10,200
+to make a call.
+Go with what the
+
+36
+00:01:10,200 --> 00:01:12,180
+research from YouTube told
+you, or go with
+
+37
+00:01:12,180 --> 00:01:14,599
+the initial research you
+did. Again, don't worry
+
+38
+00:01:14,599 --> 00:01:17,099
+or overthink this. Indecision
+right now is worse
+
+39
+00:01:17,099 --> 00:01:19,239
+than no decision. The
+only way we can
+
+40
+00:01:19,239 --> 00:01:21,159
+discover the right path
+is to take action.
+
+41
+00:01:21,359 --> 00:01:23,280
+So you will refine
+this over time with
+
+42
+00:01:23,280 --> 00:01:24,799
+our fail as fast
+as you can system,
+
+43
+00:01:24,900 --> 00:01:26,140
+but you just need
+to make this call
+
+44
+00:01:26,140 --> 00:01:27,700
+right now. Now if
+you're an experienced user,
+
+45
+00:01:27,700 --> 00:01:28,000
+you might want to
+make a call to
+
+46
+00:01:27,700 --> 00:01:28,900
+Cynthia. If you're an
+experienced business, I would
+
+47
+00:01:28,900 --> 00:01:30,859
+go more by the
+business data you had.
+
+48
+00:01:30,959 --> 00:01:33,379
+If you did the
+business research from Reddit
+
+49
+00:01:33,379 --> 00:01:35,920
+or Google or blogs,
+I would go more
+
+50
+00:01:35,920 --> 00:01:38,420
+by the YouTube data.
+Now, if you were
+
+51
+00:01:38,420 --> 00:01:41,480
+an experienced YouTube channel
+and you had tons
+
+52
+00:01:41,480 --> 00:01:43,359
+of outliers on your
+channel, which you put
+
+53
+00:01:43,359 --> 00:01:45,200
+up that list of
+12 with, what you
+
+54
+00:01:45,200 --> 00:01:47,579
+could now do is
+pick and choose. Delete
+
+55
+00:01:47,579 --> 00:01:50,140
+some of the titles
+from your list and
+
+56
+00:01:50,140 --> 00:01:52,500
+add in some of
+the new ones from
+
+57
+00:01:52,500 --> 00:01:54,500
+the outliers you researched,
+or just leave it
+
+58
+00:01:54,500 --> 00:01:55,879
+the same. What we
+don't want to do
+
+59
+00:01:55,879 --> 00:01:57,700
+is take away the
+things that grew your
+
+60
+00:01:57,700 --> 00:01:58,000
+business. What we don't
+want to do is
+
+61
+00:01:57,799 --> 00:01:58,099
+take away the things
+that grew your channel
+
+62
+00:01:58,040 --> 00:02:01,219
+because leaving that is
+going to put viewers
+
+63
+00:02:01,219 --> 00:02:03,260
+off. The only reason
+we do that is
+
+64
+00:02:03,260 --> 00:02:05,319
+if we're repositioning. And
+now what you have
+
+65
+00:02:05,319 --> 00:02:08,400
+is your version one
+of Cynthia's brain and
+
+66
+00:02:08,400 --> 00:02:09,840
+guardrails set up. It's
+going to be like
+
+67
+00:02:09,840 --> 00:02:11,520
+your avatar giving you
+feedback. And as you
+
+68
+00:02:11,520 --> 00:02:13,560
+learn things over time,
+you'll update this. And
+
+69
+00:02:13,560 --> 00:02:15,259
+as you have more
+of your own outliers,
+
+70
+00:02:15,439 --> 00:02:17,000
+you'll add them to
+the list. So this
+
+71
+00:02:17,000 --> 00:02:19,340
+list just continually evolves.
+In fact, in six
+
+72
+00:02:19,340 --> 00:02:21,819
+months time, it shouldn't
+look the same as
+
+73
+00:02:21,819 --> 00:02:23,300
+it now is. If
+it is, you're not
+
+74
+00:02:23,300 --> 00:02:25,520
+learning enough. Now, one
+last thing to note.
+
+75
+00:02:25,520 --> 00:02:27,419
+We don't want 100
+titles on that list.
+
+76
+00:02:27,599 --> 00:02:30,080
+I kept it to
+12 for a reason.
+
+77
+00:02:30,219 --> 00:02:31,919
+Don't go over. You
+can also fill out
+
+78
+00:02:31,919 --> 00:02:34,139
+your avatar demographic information
+at the top now
+
+79
+00:02:34,139 --> 00:02:36,460
+based on your dream
+buyer too, if you've
+
+80
+00:02:36,460 --> 00:02:37,740
+not already done that.
+And then move on
+
+81
+00:02:37,740 --> 00:02:39,360
+to the next video
+where you're going to
+
+82
+00:02:39,360 --> 00:02:39,979
+start ideating.

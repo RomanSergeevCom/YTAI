@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 22:04:55
+============================================================
+
+=== Configuration ===
+Project:    Phase_5_-_10._End_Screen
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_10._End_Screen/Phase_5_-_10._End_Screen.mp4
+Clips:      1
+Duration:   5:38 (338.6s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_5_-_10._End_Screen    5:38  3840×2160 25.0fps H264  3.3Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.14 GB
+    offset 0.000s  Phase_5_-_10._End_Screen.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    5:37  99.8%  2 segments
+  Gaps                       0:00  0.2%
+
+=== Transcription ===
+Total words:     1,259
+Total segments:  2
+Avg confidence:  0.9742
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_5_-_10._End_Screen:
+    Words: 1259  Segments: 2  Confidence: 0.9642  Low: 0
+    Speaker 1: 1259 words, 2 segs, 5:37
+
+=== Whisper Per-Clip ===
+  Phase_5_-_10._End_Screen    5:38   1259 words   223 wpm    2m 12s  (2.56x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        0s  -    0s    0.3%
+  Diarization          12s       13s  +    1s    8.6%
+  Whisper           3m 06s    2m 12s  -   54s   91.1%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             3m 20s    2m 25s  -   55s  100.0%
+  Speed:          2.3x realtime
+  Wall clock:     2m 25s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_5_-_10._End_Screen_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                            7.5 KB
+    diarization.json                                    0.3 KB
+    full_audio.wav                                  10581.1 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_5_-_10._End_Screen/Phase_5_-_10._End_Screen_audio.wav   10581.1 KB
+    per_clip/Phase_5_-_10._End_Screen/Phase_5_-_10._End_Screen_captions.srt      11.7 KB
+    per_clip/Phase_5_-_10._End_Screen/Phase_5_-_10._End_Screen_premiere_transcript.json     279.6 KB
+    per_clip/Phase_5_-_10._End_Screen/Phase_5_-_10._End_Screen_transcript.json     165.9 KB
+    per_clip/Phase_5_-_10._End_Screen/Phase_5_-_10._End_Screen_transcript.srt       6.5 KB
+    per_clip/Phase_5_-_10._End_Screen/Phase_5_-_10._End_Screen_transcript.txt       6.5 KB
+    per_clip/Phase_5_-_10._End_Screen/Phase_5_-_10._End_Screen_whisper_raw.json     163.6 KB
+  Phase_5_-_10._End_Screen_transcript.xlsx  (10.3 KB)
+
+============================================================

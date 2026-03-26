@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 22:10:07
+============================================================
+
+=== Configuration ===
+Project:    Phase_5_-_11._Conversion_Optimisation
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_11._Conversion_Optimisation/Phase_5_-_11._Conversion_Optimisation.mp4
+Clips:      1
+Duration:   8:18 (498.9s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_5_-_11._Conversion_Optimisation    8:18  3840×2160 25.0fps H264  3.4Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.21 GB
+    offset 0.000s  Phase_5_-_11._Conversion_Optimisation.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    8:18  100.0%  2 segments
+  Gaps                       0:00  -0.0%
+
+=== Transcription ===
+Total words:     1,887
+Total segments:  1
+Avg confidence:  0.9642
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_5_-_11._Conversion_Optimisation:
+    Words: 1887  Segments: 1  Confidence: 0.9642  Low: 0
+    Speaker 1: 1887 words, 1 segs, 8:18
+
+=== Whisper Per-Clip ===
+  Phase_5_-_11._Conversion_Optimisation    8:18   1887 words   227 wpm    3m 12s  (2.59x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    0s    0.3%
+  Diarization          17s       18s  +    1s    8.5%
+  Whisper           4m 34s    3m 12s  -1m 21s   91.2%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             4m 54s    3m 31s  -1m 23s  100.0%
+  Speed:          2.4x realtime
+  Wall clock:     3m 31s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_5_-_11._Conversion_Optimisation_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           10.4 KB
+    diarization.json                                    0.3 KB
+    full_audio.wav                                  15589.3 KB
+    meta.json                                           0.9 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_5_-_11._Conversion_Optimisation/Phase_5_-_11._Conversion_Optimisation_audio.wav   15589.4 KB
+    per_clip/Phase_5_-_11._Conversion_Optimisation/Phase_5_-_11._Conversion_Optimisation_captions.srt      17.5 KB
+    per_clip/Phase_5_-_11._Conversion_Optimisation/Phase_5_-_11._Conversion_Optimisation_premiere_transcript.json     420.5 KB
+    per_clip/Phase_5_-_11._Conversion_Optimisation/Phase_5_-_11._Conversion_Optimisation_transcript.json     248.1 KB
+    per_clip/Phase_5_-_11._Conversion_Optimisation/Phase_5_-_11._Conversion_Optimisation_transcript.srt       9.6 KB
+    per_clip/Phase_5_-_11._Conversion_Optimisation/Phase_5_-_11._Conversion_Optimisation_transcript.txt       9.6 KB
+    per_clip/Phase_5_-_11._Conversion_Optimisation/Phase_5_-_11._Conversion_Optimisation_whisper_raw.json     238.0 KB
+  Phase_5_-_11._Conversion_Optimisation_transcript.xlsx  (11.3 KB)
+
+============================================================

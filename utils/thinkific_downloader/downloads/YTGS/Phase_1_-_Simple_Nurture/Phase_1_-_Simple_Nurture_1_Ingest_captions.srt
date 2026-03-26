@@ -1,0 +1,568 @@
+1
+00:00:00,000 --> 00:00:01,960
+Okay, so because you
+don't have an email
+
+2
+00:00:01,960 --> 00:00:03,680
+system set up yet,
+we're going to build
+
+3
+00:00:03,680 --> 00:00:05,440
+you a very simple
+one. And really our
+
+4
+00:00:05,440 --> 00:00:06,639
+goal is to get
+your list to 300
+
+5
+00:00:06,639 --> 00:00:09,800
+people before we even
+bother sending them a
+
+6
+00:00:09,800 --> 00:00:11,820
+single email, as there's
+not really a huge
+
+7
+00:00:11,820 --> 00:00:14,019
+amount of point sending
+a weekly newsletter at
+
+8
+00:00:14,019 --> 00:00:15,480
+this stage. So we're
+going to keep this
+
+9
+00:00:15,480 --> 00:00:17,739
+as simple as possible.
+And here's what your
+
+10
+00:00:17,739 --> 00:00:21,440
+MVP, minimum viable email
+system version is going
+
+11
+00:00:21,440 --> 00:00:22,820
+to look like. You're
+going to create a
+
+12
+00:00:22,820 --> 00:00:24,660
+signup page of a
+simple form. Then anyone
+
+13
+00:00:24,660 --> 00:00:26,739
+who signs that form
+will get tagged. So
+
+14
+00:00:26,739 --> 00:00:28,780
+they're saved to your
+email list. And then
+
+15
+00:00:28,780 --> 00:00:31,339
+you will just automatically,
+with your software, send
+
+16
+00:00:31,339 --> 00:00:33,820
+a welcome email that
+delivers a welcome and
+
+17
+00:00:33,820 --> 00:00:35,560
+a soft pitch. That
+is literally all we're
+
+18
+00:00:35,560 --> 00:00:36,560
+going to do right
+now. I did this
+
+19
+00:00:36,560 --> 00:00:39,780
+exact thing for years,
+nothing more fancy, and
+
+20
+00:00:39,780 --> 00:00:41,939
+it got me to
+like $60 ,000 a
+
+21
+00:00:41,939 --> 00:00:43,460
+month. So you don't
+need to overthink this
+
+22
+00:00:43,460 --> 00:00:46,240
+right now. This is
+our first step in
+
+23
+00:00:46,240 --> 00:00:48,359
+you collecting emails. And
+later, once you have
+
+24
+00:00:48,359 --> 00:00:49,539
+more people on that
+list, we're going to
+
+25
+00:00:49,539 --> 00:00:51,859
+build bigger systems. So
+like I said, we're
+
+26
+00:00:51,859 --> 00:00:54,179
+not going to email
+these people regularly until
+
+27
+00:00:54,179 --> 00:00:55,719
+you've got around 300
+subscribers on the list.
+
+28
+00:00:55,820 --> 00:00:57,759
+And you don't even
+need to send a
+
+29
+00:00:57,759 --> 00:01:00,159
+week or any email
+to this list. We
+
+30
+00:01:00,159 --> 00:01:01,659
+just want to collect
+them right now. All
+
+31
+00:01:01,659 --> 00:01:03,820
+right. So once you
+hit that number, that's
+
+32
+00:01:03,820 --> 00:01:06,180
+when we start adding
+more nurture emails and
+
+33
+00:01:06,180 --> 00:01:08,379
+scaling your system. Now,
+you're going to need
+
+34
+00:01:08,379 --> 00:01:10,420
+an email platform to
+make this work, but
+
+35
+00:01:10,420 --> 00:01:12,299
+don't overthink it. They
+all pretty much do
+
+36
+00:01:12,299 --> 00:01:14,280
+the same thing. So
+here's a few options.
+
+37
+00:01:14,519 --> 00:01:17,319
+People use GoHighLevel. More
+advanced, perfect if you
+
+38
+00:01:17,319 --> 00:01:18,840
+have or you want
+a sales team later.
+
+39
+00:01:19,719 --> 00:01:21,819
+ActiveCampaign, it's very good
+for email. It's like
+
+40
+00:01:21,819 --> 00:01:23,420
+a specialist in that,
+but it can get
+
+41
+00:01:23,420 --> 00:01:26,379
+expensive fast. Kajabi and
+Kartra. Lots of my
+
+42
+00:01:26,379 --> 00:01:28,620
+clients use Kajabi. Kajabi.
+You also want like
+
+43
+00:01:28,620 --> 00:01:30,719
+a course hosting and
+funnel pages built in.
+
+44
+00:01:30,920 --> 00:01:32,739
+Both of those will
+probably fit your needs.
+
+45
+00:01:32,959 --> 00:01:35,060
+I use Kartra. It's
+a little bit clunky,
+
+46
+00:01:35,219 --> 00:01:36,739
+but I've had it
+for five, six years
+
+47
+00:01:36,739 --> 00:01:38,500
+now. To be honest,
+it doesn't matter which
+
+48
+00:01:38,500 --> 00:01:40,019
+one you get started.
+They're all as bad
+
+49
+00:01:40,019 --> 00:01:42,400
+as each other for
+different reasons. The goal
+
+50
+00:01:42,400 --> 00:01:44,280
+is to get you
+moving, not to spend
+
+51
+00:01:44,280 --> 00:01:46,260
+hours hunting for this
+perfect tool. So the
+
+52
+00:01:46,260 --> 00:01:47,859
+first thing you need
+on your signup page
+
+53
+00:01:47,859 --> 00:01:49,980
+is just a headline.
+The headline just needs
+
+54
+00:01:49,980 --> 00:01:52,760
+to set up the
+benefit of joining in
+
+55
+00:01:52,760 --> 00:01:55,540
+a very short sentence,
+like explode your profits
+
+56
+00:01:55,540 --> 00:01:58,519
+with less work, or
+boost your personal brand
+
+57
+00:01:58,519 --> 00:02:02,200
+and internet fame with
+my next level strategies.
+
+58
+00:02:02,500 --> 00:02:03,900
+Now, because we're not
+going to email it
+
+59
+00:02:03,900 --> 00:02:06,260
+every week to start
+or hardly at all,
+
+60
+00:02:06,340 --> 00:02:08,000
+don't say we're going
+to do it weekly.
+
+61
+00:02:08,180 --> 00:02:10,159
+And if you're struggling,
+use the AI prompt
+
+62
+00:02:10,159 --> 00:02:12,139
+I've got, where you
+say the reader of
+
+63
+00:02:12,139 --> 00:02:14,219
+my emails want to
+insert the big goal,
+
+64
+00:02:14,280 --> 00:02:16,400
+and their biggest problem
+is insert the problem.
+
+65
+00:02:16,819 --> 00:02:19,280
+Write five short landing
+page headlines to encourage
+
+66
+00:02:19,280 --> 00:02:20,979
+them to sign up.
+And really the format
+
+67
+00:02:20,979 --> 00:02:22,919
+that we can use
+is get result they
+
+68
+00:02:22,919 --> 00:02:25,039
+want without problem they
+have. Then we want
+
+69
+00:02:25,039 --> 00:02:26,620
+a sub headline. It's
+just support. It supports
+
+70
+00:02:26,620 --> 00:02:28,439
+the main headline. And
+all it needs to
+
+71
+00:02:28,439 --> 00:02:31,259
+do is address potential
+objections. So you could
+
+72
+00:02:31,259 --> 00:02:35,020
+say, you know, join
+fitness fanatics shaving hours
+
+73
+00:02:35,020 --> 00:02:37,860
+off batch producing their
+weekly gym food with
+
+74
+00:02:37,860 --> 00:02:40,960
+my previously unreleased tips.
+Something like that. So
+
+75
+00:02:40,960 --> 00:02:43,259
+I've got another AI
+prompt, which you can
+
+76
+00:02:43,259 --> 00:02:45,020
+just copy and paste,
+and I'll leave it
+
+77
+00:02:45,020 --> 00:02:46,939
+below the video, and
+you can help it
+
+78
+00:02:46,939 --> 00:02:48,460
+get you, and it
+will help pick you
+
+79
+00:02:48,460 --> 00:02:50,240
+a sub headline. But
+after that, all we
+
+80
+00:02:50,240 --> 00:02:52,680
+then want is a
+form with a name,
+
+81
+00:02:52,699 --> 00:02:55,819
+an email. And that
+is it. We don't
+
+82
+00:02:55,819 --> 00:02:57,759
+want anything more right
+now. Just as simple
+
+83
+00:02:57,759 --> 00:02:59,740
+as possible. And then
+in the welcome email,
+
+84
+00:02:59,780 --> 00:03:01,240
+you simply say hello.
+Thank you for signing
+
+85
+00:03:01,240 --> 00:03:03,960
+up. As soon as
+I have something incredibly
+
+86
+00:03:03,960 --> 00:03:06,439
+useful for you that
+will help you achieve
+
+87
+00:03:06,439 --> 00:03:09,060
+whatever the result they
+signed up for, I'll
+
+88
+00:03:09,060 --> 00:03:11,099
+send it straight to
+your inbox. P .S.
+
+89
+00:03:11,099 --> 00:03:13,620
+If you're serious about
+solving whatever the problem
+
+90
+00:03:13,620 --> 00:03:15,599
+they signed up for
+is, click this link
+
+91
+00:03:15,599 --> 00:03:17,639
+to learn more how
+I can help you
+
+92
+00:03:17,639 --> 00:03:21,080
+accelerate that. Basically, it's
+hi, welcome. Thanks for
+
+93
+00:03:21,080 --> 00:03:23,800
+signing up. I'll send
+you stuff based on
+
+94
+00:03:23,800 --> 00:03:26,240
+what you signed up
+for. P .S. Call
+
+95
+00:03:26,240 --> 00:03:28,080
+to action. Work with
+me. Just keep it
+
+96
+00:03:28,080 --> 00:03:30,099
+very short, very simple.
+Only a few lines,
+
+97
+00:03:30,219 --> 00:03:31,740
+and that is all.
+And don't expect a
+
+98
+00:03:31,740 --> 00:03:33,680
+huge amount from this
+right now. It's just
+
+99
+00:03:33,680 --> 00:03:36,080
+the basics to get
+us going. Because once
+
+100
+00:03:36,080 --> 00:03:38,139
+we've really, all we
+want is that email
+
+101
+00:03:38,139 --> 00:03:40,759
+list built, so that
+when it hits 300,
+
+102
+00:03:40,979 --> 00:03:43,500
+and we do start
+sending emails more often,
+
+103
+00:03:43,560 --> 00:03:44,840
+and we do start
+promoting to it, we
+
+104
+00:03:44,840 --> 00:03:46,740
+can get some sales
+kind of straight away.
+
+105
+00:03:46,939 --> 00:03:48,960
+So that's it. You're
+going to pick a
+
+106
+00:03:48,960 --> 00:03:50,500
+tool. Then you're going
+to build the signup
+
+107
+00:03:50,500 --> 00:03:52,520
+page, and you're going
+to add the welcome
+
+108
+00:03:52,520 --> 00:03:55,280
+email, which I've put
+a template below. Just
+
+109
+00:03:55,280 --> 00:03:57,699
+fill it out and
+adapt it to yourself.
+
+110
+00:03:57,960 --> 00:04:00,740
+Then you're going to
+link that below every
+
+111
+00:04:00,740 --> 00:04:03,460
+video, and in your
+About Us, along with
+
+112
+00:04:03,460 --> 00:04:05,020
+your offer. And we
+can move on fast.
+
+113
+00:04:05,099 --> 00:04:06,759
+In phase seven, we
+might want to come
+
+114
+00:04:06,759 --> 00:04:07,560
+back and revisit this.

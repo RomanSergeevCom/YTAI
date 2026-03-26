@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 21:25:18
+============================================================
+
+=== Configuration ===
+Project:    AI_UPDATE_AI_Feedback_For_Ideas
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE_AI_Feedback_For_Ideas/AI_UPDATE_AI_Feedback_For_Ideas.mp4
+Clips:      1
+Duration:   1:06 (66.9s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  AI_UPDATE_AI_Feedback_For_Ideas    1:06  3840×2160 25.0fps H264  4.7Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.04 GB
+    offset 0.000s  AI_UPDATE_AI_Feedback_For_Ideas.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    1:06  100.1%  1 segments
+  Gaps                       0:00  -0.1%
+
+=== Transcription ===
+Total words:     276
+Total segments:  1
+Avg confidence:  0.9554
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  AI_UPDATE_AI_Feedback_For_Ideas:
+    Words: 276  Segments: 1  Confidence: 0.9554  Low: 1
+    Speaker 1: 276 words, 1 segs, 1:06
+
+=== Whisper Per-Clip ===
+  AI_UPDATE_AI_Feedback_For_Ideas    1:06    276 words   248 wpm       42s  (1.61x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         0s        0s  +    0s    0.3%
+  Diarization           2s        5s  +    3s   10.5%
+  Whisper              37s       42s  +    5s   89.1%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              0s        0s  -    0s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total                40s       47s  +    7s  100.0%
+  Speed:          1.4x realtime
+  Wall clock:     47s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  AI_UPDATE_AI_Feedback_For_Ideas_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                            2.1 KB
+    diarization.json                                    0.2 KB
+    full_audio.wav                                   2090.6 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/AI_UPDATE_AI_Feedback_For_Ideas/AI_UPDATE_AI_Feedback_For_Ideas_audio.wav    2090.6 KB
+    per_clip/AI_UPDATE_AI_Feedback_For_Ideas/AI_UPDATE_AI_Feedback_For_Ideas_captions.srt       2.5 KB
+    per_clip/AI_UPDATE_AI_Feedback_For_Ideas/AI_UPDATE_AI_Feedback_For_Ideas_premiere_transcript.json      61.6 KB
+    per_clip/AI_UPDATE_AI_Feedback_For_Ideas/AI_UPDATE_AI_Feedback_For_Ideas_transcript.json      36.5 KB
+    per_clip/AI_UPDATE_AI_Feedback_For_Ideas/AI_UPDATE_AI_Feedback_For_Ideas_transcript.srt       1.4 KB
+    per_clip/AI_UPDATE_AI_Feedback_For_Ideas/AI_UPDATE_AI_Feedback_For_Ideas_transcript.txt       1.4 KB
+    per_clip/AI_UPDATE_AI_Feedback_For_Ideas/AI_UPDATE_AI_Feedback_For_Ideas_whisper_raw.json      30.6 KB
+  AI_UPDATE_AI_Feedback_For_Ideas_transcript.xlsx  (8.1 KB)
+
+============================================================

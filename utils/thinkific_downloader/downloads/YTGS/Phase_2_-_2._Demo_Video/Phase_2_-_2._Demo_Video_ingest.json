@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "type": "ingest",
+  "project_name": "Phase_2_-_2._Demo_Video",
+  "created_at": "2026-03-15T21:15:21Z",
+  "media": {
+    "width": 3840,
+    "height": 2160,
+    "fps": 25.0,
+    "sample_rate": 44100
+  },
+  "clips": [
+    {
+      "clip_id": "Phase_2_-_2._Demo_Video",
+      "filename": "Phase_2_-_2._Demo_Video.mp4",
+      "path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video.mp4",
+      "duration": 1091.82,
+      "offset": 0.0,
+      "premiere_transcript": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_transcription/per_clip/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_premiere_transcript.json"
+    }
+  ],
+  "files": {
+    "transcript_json": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_transcript.json",
+    "transcript_xlsx": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_transcript.xlsx",
+    "transcript_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_transcript.srt",
+    "captions_srt": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video/Phase_2_-_2._Demo_Video_1_Ingest_captions.srt"
+  },
+  "source_folder": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video"
+}

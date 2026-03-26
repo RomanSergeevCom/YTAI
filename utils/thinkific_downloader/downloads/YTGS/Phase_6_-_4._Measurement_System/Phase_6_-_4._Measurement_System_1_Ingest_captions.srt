@@ -1,0 +1,1029 @@
+1
+00:00:00,000 --> 00:00:01,840
+So let's run through
+the measurement system right
+
+2
+00:00:01,840 --> 00:00:03,160
+now. I'm going to
+teach you how to
+
+3
+00:00:03,160 --> 00:00:05,040
+interpret some of the
+data so you can
+
+4
+00:00:05,040 --> 00:00:06,580
+learn a lesson. All
+right, so step one.
+
+5
+00:00:06,660 --> 00:00:08,779
+When you plan this
+video, you chose a
+
+6
+00:00:08,779 --> 00:00:11,339
+primary goal, views, sales,
+or emails, and that's
+
+7
+00:00:11,339 --> 00:00:12,960
+all you're measuring it
+against now. So don't
+
+8
+00:00:12,960 --> 00:00:15,359
+try to evaluate every
+metric at once. Just
+
+9
+00:00:15,359 --> 00:00:17,059
+stick to the one
+goal you set at
+
+10
+00:00:17,059 --> 00:00:19,500
+the start unless you're
+black belt. So if
+
+11
+00:00:19,500 --> 00:00:21,420
+your goal was views,
+that's what we're going
+
+12
+00:00:21,420 --> 00:00:22,780
+to judge for. If
+your goal was email
+
+13
+00:00:22,780 --> 00:00:24,480
+signups, that's what we're
+going to look at.
+
+14
+00:00:24,539 --> 00:00:26,260
+If your goal was
+sales, we're only going
+
+15
+00:00:26,260 --> 00:00:28,359
+to really care about
+that. Step two is
+
+16
+00:00:28,359 --> 00:00:30,839
+to do a three
+-hour check. So on
+
+17
+00:00:30,839 --> 00:00:32,460
+the three -hour mark,
+come and look at
+
+18
+00:00:32,460 --> 00:00:35,579
+your video. Don't change
+anything before this because
+
+19
+00:00:35,579 --> 00:00:38,259
+YouTube's still collecting data
+and making changes too
+
+20
+00:00:38,259 --> 00:00:39,780
+soon. It's going to
+add stress and confusion
+
+21
+00:00:39,780 --> 00:00:41,460
+and time -wasting. And
+then once you've hit
+
+22
+00:00:41,460 --> 00:00:43,159
+the three -hour check,
+look where your video
+
+23
+00:00:43,159 --> 00:00:44,979
+ranks on your one
+to 10 board. And
+
+24
+00:00:44,979 --> 00:00:46,619
+if it's in your
+top four and matches
+
+25
+00:00:46,619 --> 00:00:48,600
+or beats your expectations,
+just leave it. If
+
+26
+00:00:48,600 --> 00:00:50,600
+it has momentum, let
+it run. If it's
+
+27
+00:00:50,600 --> 00:00:52,859
+sitting at five or
+six, that's the middle.
+
+28
+00:00:53,439 --> 00:00:56,060
+And that's what you
+expected. Don't touch it.
+
+29
+00:00:56,140 --> 00:00:57,740
+That's still a win.
+If it's a seven
+
+30
+00:00:57,740 --> 00:00:59,679
+to 10 and that's
+below what you expected,
+
+31
+00:00:59,759 --> 00:01:02,579
+then maybe test a
+new thumbnail or title.
+
+32
+00:01:02,740 --> 00:01:04,640
+Now, if your thumbnail
+split tester has loaded
+
+33
+00:01:04,640 --> 00:01:06,560
+at this point, which
+is unlikely unless you
+
+34
+00:01:06,560 --> 00:01:08,680
+are a larger channel
+and no option is
+
+35
+00:01:08,680 --> 00:01:11,200
+clearly winning by 6
+% or more, go
+
+36
+00:01:11,200 --> 00:01:13,280
+ahead and set it.
+If the difference is
+
+37
+00:01:13,280 --> 00:01:14,879
+small or you don't
+have enough data yet,
+
+38
+00:01:15,000 --> 00:01:17,459
+leave it and come
+back in 24 hours
+
+39
+00:01:17,459 --> 00:01:19,599
+or so. But keep
+this in mind. At
+
+40
+00:01:19,599 --> 00:01:21,500
+this point, your video
+has only really been
+
+41
+00:01:21,500 --> 00:01:23,500
+shown to fans and
+return viewers. It's not
+
+42
+00:01:23,500 --> 00:01:26,560
+really representing the wider
+market. Now, whilst you're
+
+43
+00:01:26,560 --> 00:01:28,599
+there, you can hop
+on over to RevTrack
+
+44
+00:01:28,599 --> 00:01:31,560
+to check the business
+performance. But what I
+
+45
+00:01:31,560 --> 00:01:33,780
+would say is at
+this early stage, it's
+
+46
+00:01:33,780 --> 00:01:36,959
+likely to have had
+game -changing results. And
+
+47
+00:01:36,959 --> 00:01:39,099
+also just keep in
+mind that sometimes a
+
+48
+00:01:39,099 --> 00:01:40,219
+video is going to
+look like a views
+
+49
+00:01:40,219 --> 00:01:42,099
+flop. If you're very
+small or new, you're
+
+50
+00:01:42,099 --> 00:01:43,260
+not going to have
+much data here. Okay,
+
+51
+00:01:43,319 --> 00:01:45,079
+then the next step
+is you come back
+
+52
+00:01:45,079 --> 00:01:47,719
+on the 24 -hour
+mark. And by now,
+
+53
+00:01:47,840 --> 00:01:49,379
+YouTube's had more time
+to test your video
+
+54
+00:01:49,379 --> 00:01:52,540
+with different audience types,
+especially returning viewers. So
+
+55
+00:01:52,540 --> 00:01:53,780
+you're going to have
+more data. It's still
+
+56
+00:01:53,780 --> 00:01:55,340
+going to be early,
+but now we can
+
+57
+00:01:55,340 --> 00:01:57,239
+start to make smarter
+calls. If your video
+
+58
+00:01:57,239 --> 00:01:58,780
+is ranking in the
+top four and it
+
+59
+00:01:58,780 --> 00:02:01,340
+matches or beats your
+expectations, don't make any
+
+60
+00:02:01,340 --> 00:02:03,340
+changes. It's likely got
+some momentum. And if
+
+61
+00:02:03,340 --> 00:02:05,439
+that continues, it can
+keep growing steadily for
+
+62
+00:02:05,439 --> 00:02:07,219
+weeks. If your video
+is sitting at five
+
+63
+00:02:07,219 --> 00:02:09,659
+or 10, it's the
+middle still, that's solid.
+
+64
+00:02:09,840 --> 00:02:11,379
+If you expected a
+breakout and it's not
+
+65
+00:02:11,379 --> 00:02:13,719
+quite there, sure, you
+could tweak the thumbnail
+
+66
+00:02:13,719 --> 00:02:15,240
+and title again. But
+most of the time,
+
+67
+00:02:15,240 --> 00:02:16,879
+it's probably better just
+to leave it and
+
+68
+00:02:16,879 --> 00:02:18,620
+learn the lesson. And
+if it's ranking seven
+
+69
+00:02:18,620 --> 00:02:20,840
+to 10 and it's
+clearly underperforming and way
+
+70
+00:02:20,840 --> 00:02:22,860
+off your expectations based
+on the ones that
+
+71
+00:02:22,860 --> 00:02:24,580
+we set from my
+chart, this is the
+
+72
+00:02:24,580 --> 00:02:26,400
+moment to take an
+action by changing the
+
+73
+00:02:26,400 --> 00:02:27,960
+title or the thumbnail.
+If you want. For
+
+74
+00:02:27,960 --> 00:02:30,039
+me, I'll change the
+title first, but usually
+
+75
+00:02:30,039 --> 00:02:31,840
+I just go, ah,
+I'll write that one
+
+76
+00:02:31,840 --> 00:02:34,219
+off. What's the lesson?
+Because that's the most
+
+77
+00:02:34,219 --> 00:02:37,180
+important thing rather than
+spending hours saving it.
+
+78
+00:02:37,300 --> 00:02:38,520
+And then in the
+24 hour mark, go
+
+79
+00:02:38,520 --> 00:02:40,120
+and look at your
+business data too. If
+
+80
+00:02:40,120 --> 00:02:41,919
+your video is underperforming
+for views, but crushing
+
+81
+00:02:41,919 --> 00:02:43,539
+it for emails, link
+clicks or sales, that's
+
+82
+00:02:43,539 --> 00:02:45,039
+not a loss. That's
+a sign we can
+
+83
+00:02:45,039 --> 00:02:49,060
+learn from. Remember, don't
+let emotion override you
+
+84
+00:02:49,060 --> 00:02:51,460
+here. Everything in test.
+Nobody's going to die
+
+85
+00:02:51,460 --> 00:02:53,000
+from this. And then
+the next step is
+
+86
+00:02:53,000 --> 00:02:54,439
+we do the seven
+day check. So at
+
+87
+00:02:54,439 --> 00:02:56,500
+this point, YouTube's finished
+its initial rounds of
+
+88
+00:02:56,500 --> 00:02:58,139
+testing. And you're going
+to have a much
+
+89
+00:02:58,139 --> 00:03:00,199
+clearer picture of how
+the video landed with
+
+90
+00:03:00,199 --> 00:03:01,979
+your audience and whether
+it has real momentum
+
+91
+00:03:01,979 --> 00:03:03,840
+or not. So here's
+how we think about
+
+92
+00:03:03,840 --> 00:03:05,099
+it. If your video
+is still ranking the
+
+93
+00:03:05,099 --> 00:03:08,039
+top four, congratulations, that's
+a strong performer. That
+
+94
+00:03:08,039 --> 00:03:09,680
+doesn't mean it's going
+to go viral, but
+
+95
+00:03:09,680 --> 00:03:12,259
+it does mean it's
+gained traction. And what
+
+96
+00:03:12,259 --> 00:03:13,479
+we want to do
+is we want to
+
+97
+00:03:13,479 --> 00:03:15,919
+ask, what worked here?
+Why did this do
+
+98
+00:03:15,919 --> 00:03:18,419
+well? That's the question
+you'll start answering in
+
+99
+00:03:18,419 --> 00:03:20,900
+the next lesson. But
+for now, flag it
+
+100
+00:03:20,900 --> 00:03:22,599
+as a video worth
+repeating in some way.
+
+101
+00:03:22,879 --> 00:03:24,560
+If your video sits
+at a five or
+
+102
+00:03:24,560 --> 00:03:26,360
+six, it's doing exactly
+what we want it
+
+103
+00:03:26,360 --> 00:03:27,139
+to. It's doing exactly
+what we want it
+
+104
+00:03:27,139 --> 00:03:28,819
+to do. It's middle
+performing. So it's steadily
+
+105
+00:03:28,819 --> 00:03:30,699
+growing your channel. Again,
+you can learn from
+
+106
+00:03:30,699 --> 00:03:32,080
+it or just move
+on and aim to
+
+107
+00:03:32,080 --> 00:03:34,479
+replace another middle video
+next time. And then
+
+108
+00:03:34,479 --> 00:03:36,159
+if your video is
+sitting in the seven
+
+109
+00:03:36,159 --> 00:03:38,180
+out of 10 range,
+we don't try to
+
+110
+00:03:38,180 --> 00:03:40,740
+save it now. We
+just go, why did
+
+111
+00:03:40,740 --> 00:03:42,620
+that happen? What can
+we learn? Because unless
+
+112
+00:03:42,620 --> 00:03:44,699
+there is an obvious
+fundamental title fix, the
+
+113
+00:03:44,699 --> 00:03:45,759
+best thing you can
+do is just walk
+
+114
+00:03:45,759 --> 00:03:47,379
+away and apply the
+lesson to the next
+
+115
+00:03:47,379 --> 00:03:49,039
+video. And don't forget
+a seven out of
+
+116
+00:03:49,039 --> 00:03:50,500
+10 for views might
+still be a one
+
+117
+00:03:50,500 --> 00:03:51,780
+out of 10 for
+sales or leads. And
+
+118
+00:03:51,780 --> 00:03:53,800
+that's when we go
+over to our RevTrack
+
+119
+00:03:53,800 --> 00:03:56,520
+dashboard. And this is
+the important business stage.
+
+120
+00:03:56,520 --> 00:03:57,900
+What we want to
+be doing now is
+
+121
+00:03:57,900 --> 00:03:59,620
+going, did it drive
+link clicks? Did it
+
+122
+00:03:59,620 --> 00:04:01,740
+bring in emails? Did
+it generate revenue? Did
+
+123
+00:04:01,740 --> 00:04:03,319
+it get calls? If
+the answer is yes,
+
+124
+00:04:03,479 --> 00:04:05,219
+ignore the view count.
+We're not here to
+
+125
+00:04:05,219 --> 00:04:07,080
+win a popularity contest.
+We're building a business.
+
+126
+00:04:07,159 --> 00:04:08,599
+So we need to
+ask why. Now below
+
+127
+00:04:08,599 --> 00:04:10,539
+this video, you'll see
+there's another one about
+
+128
+00:04:10,539 --> 00:04:12,819
+how to use RevTrack.
+And that's a step
+
+129
+00:04:12,819 --> 00:04:14,300
+-by -step tutorial for
+anyone with the software
+
+130
+00:04:14,300 --> 00:04:16,680
+can follow. And then
+there's one more check
+
+131
+00:04:16,680 --> 00:04:17,980
+we can do on
+the 30 day mark.
+
+132
+00:04:18,199 --> 00:04:20,100
+Most creators never look
+at this because they're
+
+133
+00:04:20,100 --> 00:04:22,120
+so blinded by the
+performance of the one
+
+134
+00:04:22,120 --> 00:04:23,500
+out of 10 board.
+They forget about any
+
+135
+00:04:23,500 --> 00:04:25,240
+video that isn't on
+it. But if you
+
+136
+00:04:25,240 --> 00:04:26,379
+do that, you're not
+going to spot pattern.
+
+137
+00:04:26,519 --> 00:04:28,620
+A more long -term.
+So here's what we
+
+138
+00:04:28,620 --> 00:04:29,579
+want to do on
+the 30 day mark.
+
+139
+00:04:29,779 --> 00:04:31,240
+We want to be
+looking at, how is
+
+140
+00:04:31,240 --> 00:04:32,959
+the video doing? Is
+it still bringing in
+
+141
+00:04:32,959 --> 00:04:34,759
+steady views at day
+30? If it is,
+
+142
+00:04:34,759 --> 00:04:36,699
+it means YouTube slowly
+pushing it out to
+
+143
+00:04:36,699 --> 00:04:38,899
+new people. And that's
+a strong sign of
+
+144
+00:04:38,899 --> 00:04:40,939
+an evergreen video. So
+at this point, you
+
+145
+00:04:40,939 --> 00:04:42,339
+want to check the
+thumbnail and title. If
+
+146
+00:04:42,339 --> 00:04:43,980
+it's working, don't touch
+it. You want to
+
+147
+00:04:43,980 --> 00:04:45,839
+look at the format.
+Is it a process,
+
+148
+00:04:46,079 --> 00:04:47,639
+a listicle, or a
+deep dive and repeat
+
+149
+00:04:47,639 --> 00:04:48,680
+it again? You want
+to look at the
+
+150
+00:04:48,680 --> 00:04:50,740
+business performance. Did it
+grow the business more
+
+151
+00:04:50,740 --> 00:04:52,459
+than other videos? And
+if so, point more
+
+152
+00:04:52,459 --> 00:04:54,040
+videos at it. Now,
+some videos are going
+
+153
+00:04:54,040 --> 00:04:56,040
+to flatline by day
+30. That's totally normal.
+
+154
+00:04:56,040 --> 00:04:57,720
+But the ones that
+keep going, those are
+
+155
+00:04:57,720 --> 00:04:59,519
+gold. Because if you
+can build a few
+
+156
+00:04:59,519 --> 00:05:01,420
+strong evergreen videos that
+keep pulling in views,
+
+157
+00:05:01,620 --> 00:05:04,360
+you start stacking traffic
+and the system gets
+
+158
+00:05:04,360 --> 00:05:06,860
+easier. So don't just
+measure performance in the
+
+159
+00:05:06,860 --> 00:05:08,899
+first few days. Use
+the 30 day mark
+
+160
+00:05:08,899 --> 00:05:11,139
+to spot your slow
+burners too. These are
+
+161
+00:05:11,139 --> 00:05:12,980
+the videos that can
+really grow the business
+
+162
+00:05:12,980 --> 00:05:14,819
+well. Now, this might
+feel like a heck
+
+163
+00:05:14,819 --> 00:05:16,439
+of a lot, but
+don't worry. You don't
+
+164
+00:05:16,439 --> 00:05:18,620
+need to follow all
+of these steps at
+
+165
+00:05:18,620 --> 00:05:21,540
+the exact time. Otherwise,
+this doesn't work. If
+
+166
+00:05:21,540 --> 00:05:22,860
+you can't make the
+three hour mark, do
+
+167
+00:05:22,860 --> 00:05:24,220
+it at the six.
+Or if you can't
+
+168
+00:05:24,220 --> 00:05:25,379
+make it at all,
+just come back the
+
+169
+00:05:25,379 --> 00:05:27,759
+next day. The truth
+is, all we're really
+
+170
+00:05:27,759 --> 00:05:30,439
+doing here is trying
+to learn one lesson
+
+171
+00:05:30,439 --> 00:05:33,040
+per video. Some videos
+might teach you 10.
+
+172
+00:05:33,439 --> 00:05:35,639
+Others, it might be
+hard to find one.
+
+173
+00:05:35,800 --> 00:05:37,579
+So all you do
+is look, learn a
+
+174
+00:05:37,579 --> 00:05:40,199
+lesson. Is it above
+expectations? If so, repeat
+
+175
+00:05:40,199 --> 00:05:42,759
+that lesson. Is it
+below? Learn why. And
+
+176
+00:05:42,759 --> 00:05:45,220
+then point anything back
+at anything that's growing
+
+177
+00:05:45,220 --> 00:05:47,399
+the business in the
+way that you'd hoped.
+
+178
+00:05:47,519 --> 00:05:50,439
+Like, it's not more
+complex than that. Now,
+
+179
+00:05:50,459 --> 00:05:52,240
+sometimes you think you
+will have learned a
+
+180
+00:05:52,240 --> 00:05:53,720
+lesson and you're going
+to action it in
+
+181
+00:05:53,720 --> 00:05:55,600
+the next video and
+it won't work. But
+
+182
+00:05:55,600 --> 00:05:57,759
+don't worry, this doesn't
+mean you're wrong. You
+
+183
+00:05:57,759 --> 00:06:00,500
+have to try the
+lesson multiple times before
+
+184
+00:06:00,500 --> 00:06:02,019
+you write it off.
+And then all you
+
+185
+00:06:02,019 --> 00:06:03,480
+do is just use
+the spreadsheet I've got
+
+186
+00:06:03,480 --> 00:06:05,420
+you here and you
+mark down the results
+
+187
+00:06:05,420 --> 00:06:08,180
+of each stage and
+then you write your
+
+188
+00:06:08,180 --> 00:06:10,220
+lesson. So I would
+paste in your video
+
+189
+00:06:10,220 --> 00:06:12,500
+link, put the date,
+select the dropdown as
+
+190
+00:06:12,500 --> 00:06:14,279
+to the format that
+it is, put the
+
+191
+00:06:14,279 --> 00:06:15,500
+views in each of
+them and the sales
+
+192
+00:06:15,500 --> 00:06:17,160
+data. And then you've
+got this bird's eye
+
+193
+00:06:17,160 --> 00:06:19,199
+view. You can really
+quickly look and go,
+
+194
+00:06:19,279 --> 00:06:20,800
+oh, look, short process
+is my best style.
+
+195
+00:06:20,879 --> 00:06:22,720
+Do more of that.
+Or look, oh, that
+
+196
+00:06:22,720 --> 00:06:24,120
+title is really good.
+Do more of that.
+
+197
+00:06:24,259 --> 00:06:26,240
+Now, RevTrack users, you
+are going to have
+
+198
+00:06:26,240 --> 00:06:28,720
+click, sales, email, call
+data all in one
+
+199
+00:06:28,720 --> 00:06:30,779
+place. You can still
+make this sheet if
+
+200
+00:06:30,779 --> 00:06:32,680
+you want because RevTrack
+won't track like the
+
+201
+00:06:32,680 --> 00:06:34,399
+three hour data in
+the same way. But
+
+202
+00:06:34,399 --> 00:06:35,899
+really the only thing
+out of all of
+
+203
+00:06:35,899 --> 00:06:37,300
+this is just we
+learn one lesson per
+
+204
+00:06:37,300 --> 00:06:38,839
+video and repeat it.
+So move on to
+
+205
+00:06:38,839 --> 00:06:39,899
+the next video where
+I'm going to show
+
+206
+00:06:39,899 --> 00:06:40,620
+you how to learn
+lessons.

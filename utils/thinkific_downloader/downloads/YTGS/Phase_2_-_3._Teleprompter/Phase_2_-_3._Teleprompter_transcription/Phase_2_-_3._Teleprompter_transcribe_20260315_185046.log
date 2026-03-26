@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 18:50:46
+============================================================
+
+=== Configuration ===
+Project:    Phase_2_-_3._Teleprompter
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter.mp4
+Clips:      1
+Duration:   7:08 (428.8s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_2_-_3._Teleprompter    7:08  3840×2160 25.0fps H264  4.9Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.25 GB
+    offset 0.000s  Phase_2_-_3._Teleprompter.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    7:04  99.0%  8 segments
+  Gaps                       0:04  1.0%
+
+=== Transcription ===
+Total words:     1,763
+Total segments:  4
+Avg confidence:  0.9398
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_2_-_3._Teleprompter:
+    Words: 1763  Segments: 4  Confidence: 0.9531  Low: 0
+    Speaker 1: 1763 words, 4 segs, 7:03
+
+=== Whisper Per-Clip ===
+  Phase_2_-_3._Teleprompter    7:08   1763 words   247 wpm    3m 12s  (2.22x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    0s    0.3%
+  Diarization          15s       16s  +    1s    7.5%
+  Whisper           3m 55s    3m 12s  -   43s   92.2%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             4m 13s    3m 29s  -   44s  100.0%
+  Speed:          2.0x realtime
+  Wall clock:     3m 29s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_2_-_3._Teleprompter_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           10.4 KB
+    diarization.json                                    0.8 KB
+    full_audio.wav                                  13400.1 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter_audio.wav   13400.2 KB
+    per_clip/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter_captions.srt      16.4 KB
+    per_clip/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter_premiere_transcript.json     395.0 KB
+    per_clip/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter_transcript.json     233.0 KB
+    per_clip/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter_transcript.srt       9.1 KB
+    per_clip/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter_transcript.txt       9.0 KB
+    per_clip/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter_whisper_raw.json     209.2 KB
+  Phase_2_-_3._Teleprompter_transcript.xlsx  (11.4 KB)
+
+============================================================

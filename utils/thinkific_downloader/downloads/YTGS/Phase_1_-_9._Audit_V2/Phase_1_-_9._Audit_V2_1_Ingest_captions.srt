@@ -1,0 +1,1369 @@
+1
+00:00:00,000 --> 00:00:00,900
+If you want to
+grow and make money
+
+2
+00:00:00,900 --> 00:00:02,620
+from YouTube, the first
+thing you need to
+
+3
+00:00:02,620 --> 00:00:04,860
+do is make sure
+the three main parts
+
+4
+00:00:04,860 --> 00:00:07,299
+of your pipeline are
+perfectly aligned. The first
+
+5
+00:00:07,299 --> 00:00:09,060
+part is your channel,
+which drives the traffic
+
+6
+00:00:09,060 --> 00:00:11,099
+to your marketing. Things
+like your email, your
+
+7
+00:00:11,099 --> 00:00:14,380
+lead magnets, your email
+nurture sequences. And the
+
+8
+00:00:14,380 --> 00:00:16,260
+job of this section
+is to keep people
+
+9
+00:00:16,260 --> 00:00:18,600
+engaged, but also to
+introduce them to your
+
+10
+00:00:18,600 --> 00:00:21,539
+offer. And then your
+offer is the final
+
+11
+00:00:21,539 --> 00:00:23,039
+part, and that is
+the thing you actually
+
+12
+00:00:23,039 --> 00:00:25,600
+sell. When all three
+of these are aligned
+
+13
+00:00:25,600 --> 00:00:28,260
+under your umbrella statement,
+the I help X
+
+14
+00:00:28,260 --> 00:00:31,420
+get Y, your traffic
+will flow smoothly between
+
+15
+00:00:31,420 --> 00:00:33,500
+them. And the people
+who go from your
+
+16
+00:00:33,500 --> 00:00:36,100
+channel to your offer
+will be the perfect
+
+17
+00:00:36,100 --> 00:00:38,880
+fit. And this is
+how some people make
+
+18
+00:00:38,880 --> 00:00:41,520
+like $25 ,000 from
+just a few thousand
+
+19
+00:00:41,520 --> 00:00:43,939
+views. If one of
+these stages is misaligned,
+
+20
+00:00:44,000 --> 00:00:45,700
+which is very easy
+to do, the pipe
+
+21
+00:00:45,700 --> 00:00:48,240
+clogs. So if your
+channel doesn't match your
+
+22
+00:00:48,240 --> 00:00:50,020
+offer and your marketing,
+you're going to attract
+
+23
+00:00:50,020 --> 00:00:52,299
+the wrong people into
+it. If your marketing
+
+24
+00:00:52,299 --> 00:00:54,719
+doesn't match your channel.
+Viewers are going to
+
+25
+00:00:54,719 --> 00:00:56,280
+fill a mismatch and
+they're not going to
+
+26
+00:00:56,280 --> 00:00:58,960
+interact. And if your
+offer is misaligned, people
+
+27
+00:00:58,960 --> 00:01:00,079
+are going to come
+to it from your
+
+28
+00:01:00,079 --> 00:01:02,380
+channel expecting one thing,
+but get given presented
+
+29
+00:01:02,380 --> 00:01:05,159
+something completely different. So
+they won't buy. So
+
+30
+00:01:05,159 --> 00:01:07,459
+any red lights in
+this pipeline creates a
+
+31
+00:01:07,459 --> 00:01:10,040
+huge blockage. And unless
+we fix it, your
+
+32
+00:01:10,040 --> 00:01:11,780
+views can't turn into
+income in the way
+
+33
+00:01:11,780 --> 00:01:13,739
+that you'd want. So
+in this video, we're
+
+34
+00:01:13,739 --> 00:01:15,599
+going to audit your
+channel, your marketing and
+
+35
+00:01:15,599 --> 00:01:17,620
+your offer to see
+how they are positioned.
+
+36
+00:01:17,939 --> 00:01:19,739
+And then we're going
+to use guardrails AI
+
+37
+00:01:19,739 --> 00:01:22,519
+to help spot misalignments.
+And then at the
+
+38
+00:01:22,519 --> 00:01:23,459
+end, I'm going to
+show you some tricks.
+
+39
+00:01:23,480 --> 00:01:25,819
+Guardrails can do once
+you've got this all
+
+40
+00:01:25,819 --> 00:01:27,780
+set up. And then
+once you've posted three
+
+41
+00:01:27,780 --> 00:01:30,299
+or four new videos
+using the new system,
+
+42
+00:01:30,400 --> 00:01:32,959
+we will then measure
+their results based on
+
+43
+00:01:32,959 --> 00:01:35,219
+these adjustments in phase
+seven. And then that
+
+44
+00:01:35,219 --> 00:01:37,379
+will show you exactly
+where any bottlenecks might
+
+45
+00:01:37,379 --> 00:01:40,680
+still remain based on
+the new data you've
+
+46
+00:01:40,680 --> 00:01:43,200
+got following the system.
+So how long should
+
+47
+00:01:43,200 --> 00:01:45,299
+you leave this audit?
+Well, it could take
+
+48
+00:01:45,299 --> 00:01:47,040
+half an hour. It
+could take you 10.
+
+49
+00:01:47,500 --> 00:01:49,299
+It's going to be
+different depending on everyone's
+
+50
+00:01:49,299 --> 00:01:51,540
+situation. But just take
+your time here and
+
+51
+00:01:51,540 --> 00:01:53,420
+follow the steps. Really
+was a game changer.
+
+52
+00:01:53,420 --> 00:01:53,840
+It was a game
+changer for me when
+
+53
+00:01:53,840 --> 00:01:55,439
+I first did this.
+OK, so let's move
+
+54
+00:01:55,439 --> 00:01:57,620
+into step one of
+auditing. So here you
+
+55
+00:01:57,620 --> 00:01:59,439
+want to find the
+top three buyer problems.
+
+56
+00:01:59,739 --> 00:02:01,060
+All right. So why
+are we focusing on
+
+57
+00:02:01,060 --> 00:02:03,560
+buyers, not viewers? Well,
+when I first did
+
+58
+00:02:03,560 --> 00:02:05,819
+this for myself, I
+realized that my channel
+
+59
+00:02:05,819 --> 00:02:09,199
+was targeting different problems
+than my buyers cared
+
+60
+00:02:09,199 --> 00:02:12,000
+about. And when I
+switched to make sure
+
+61
+00:02:12,000 --> 00:02:13,840
+that the channel was
+more in line with
+
+62
+00:02:13,840 --> 00:02:15,819
+what the buyers cared
+about, income went up
+
+63
+00:02:15,819 --> 00:02:18,099
+a lot. And that's
+the thing on YouTube.
+
+64
+00:02:18,240 --> 00:02:19,419
+Not every viewer is
+going to be the
+
+65
+00:02:19,419 --> 00:02:21,620
+perfect fit for you.
+In fact, for some
+
+66
+00:02:21,620 --> 00:02:23,719
+of you. Most of
+them probably are. So
+
+67
+00:02:23,719 --> 00:02:24,819
+we need to optimize
+for the people who
+
+68
+00:02:24,819 --> 00:02:26,680
+actually give us money,
+not the people who
+
+69
+00:02:26,680 --> 00:02:29,000
+don't. But you might
+be wondering, hang on
+
+70
+00:02:29,000 --> 00:02:31,360
+a sec. Why the
+top three buyer problems?
+
+71
+00:02:31,520 --> 00:02:34,060
+Why is this different
+between the umbrella statement?
+
+72
+00:02:34,180 --> 00:02:36,159
+You've got to position
+everything around. So think
+
+73
+00:02:36,159 --> 00:02:37,819
+of it like this.
+Your umbrella statement is
+
+74
+00:02:37,819 --> 00:02:41,620
+like the main storm
+you solve. But the
+
+75
+00:02:41,620 --> 00:02:44,419
+storm isn't necessarily the
+problem, right? The problem
+
+76
+00:02:44,419 --> 00:02:45,840
+you have in a
+storm is getting wet.
+
+77
+00:02:46,020 --> 00:02:49,080
+The wind, the cold,
+the puddles. This is
+
+78
+00:02:49,080 --> 00:02:50,379
+why we want to
+work out our buyers
+
+79
+00:02:50,379 --> 00:02:51,879
+top three problems. Because
+those are the problems.
+
+80
+00:02:51,879 --> 00:02:54,400
+Those are the pain
+points they feel. So
+
+81
+00:02:54,400 --> 00:02:56,419
+for example, if you're
+a fitness coach, your
+
+82
+00:02:56,419 --> 00:02:58,099
+umbrella statement might be,
+I help business owners
+
+83
+00:02:58,099 --> 00:03:00,500
+lose weight with short
+workouts. And their top
+
+84
+00:03:00,500 --> 00:03:03,159
+three problems they know
+they have might be,
+
+85
+00:03:03,199 --> 00:03:04,659
+I don't have time
+for long workouts. I
+
+86
+00:03:04,659 --> 00:03:06,979
+can't stay consistent. I
+tried diets, but I
+
+87
+00:03:06,979 --> 00:03:09,520
+still can't lose weight.
+So let's work that
+
+88
+00:03:09,520 --> 00:03:11,879
+out for ourselves. If
+you have clients already,
+
+89
+00:03:11,979 --> 00:03:15,680
+follow this process. I
+want you to collect
+
+90
+00:03:15,680 --> 00:03:18,740
+data from them. So
+hopefully at some point
+
+91
+00:03:18,740 --> 00:03:19,840
+you've got them to
+fill out a form
+
+92
+00:03:19,840 --> 00:03:22,500
+after they've bought from
+you. That says what
+
+93
+00:03:22,500 --> 00:03:24,419
+their problems are. Or
+you might have cool
+
+94
+00:03:24,419 --> 00:03:27,000
+notes. And if you
+do, download them all,
+
+95
+00:03:27,060 --> 00:03:29,599
+drop them into guardrails
+AI and ask audit
+
+96
+00:03:29,599 --> 00:03:31,580
+my business. And it's
+going to pull out
+
+97
+00:03:31,580 --> 00:03:33,680
+the top three problems
+based on that data.
+
+98
+00:03:34,039 --> 00:03:35,659
+Then you just want
+to manually check that.
+
+99
+00:03:35,840 --> 00:03:37,840
+Now, if you didn't
+get your clients to
+
+100
+00:03:37,840 --> 00:03:38,719
+do that, what I
+want you to do
+
+101
+00:03:38,719 --> 00:03:40,659
+is email everyone who's
+ever bought from you
+
+102
+00:03:40,659 --> 00:03:43,460
+a quick survey that
+says something like this.
+
+103
+00:03:43,460 --> 00:03:45,840
+Hey, name, I want
+to help more people.
+
+104
+00:03:46,379 --> 00:03:47,759
+And then put the
+result you want to
+
+105
+00:03:47,759 --> 00:03:50,159
+help with. Could you
+give me 30 seconds
+
+106
+00:03:50,159 --> 00:03:52,319
+to fill out this
+survey? I'll pick one
+
+107
+00:03:52,319 --> 00:03:54,000
+person who fills it
+out and give them
+
+108
+00:03:54,000 --> 00:03:55,919
+and then insert some
+sort of prize. Thank
+
+109
+00:03:55,919 --> 00:03:57,580
+you very much. Your
+name and then link
+
+110
+00:03:57,580 --> 00:03:59,520
+to a Google form.
+And ideally we want
+
+111
+00:03:59,520 --> 00:04:02,319
+to be getting like
+25, 30 plus people
+
+112
+00:04:02,319 --> 00:04:03,659
+to fill this out.
+And if we can
+
+113
+00:04:03,659 --> 00:04:05,479
+get that, we then
+do the same. We
+
+114
+00:04:05,479 --> 00:04:07,719
+take that data from
+the Google forms. We
+
+115
+00:04:07,719 --> 00:04:09,680
+put it into guardrails
+and say, audit my
+
+116
+00:04:09,680 --> 00:04:10,659
+business. And it's going
+to tell you the
+
+117
+00:04:10,659 --> 00:04:12,979
+top three problems, which
+you manually verify. Now,
+
+118
+00:04:13,099 --> 00:04:17,480
+if you don't have
+enough client data, enough
+
+119
+00:04:17,480 --> 00:04:20,100
+clients, or you can't
+do that, don't worry.
+
+120
+00:04:20,180 --> 00:04:21,199
+Instead, what we're going
+to do here is
+
+121
+00:04:21,199 --> 00:04:22,720
+we're going to. Take
+our best educated guess
+
+122
+00:04:22,720 --> 00:04:24,420
+as to what these
+problems might be. And
+
+123
+00:04:24,420 --> 00:04:25,660
+to help you with
+that, just answer these
+
+124
+00:04:25,660 --> 00:04:27,699
+three questions. What do
+people complain about the
+
+125
+00:04:27,699 --> 00:04:29,220
+most in your niche?
+What do they keep
+
+126
+00:04:29,220 --> 00:04:30,939
+trying but failing to
+fix on their own?
+
+127
+00:04:31,019 --> 00:04:32,759
+What's the number one
+frustration or pain point
+
+128
+00:04:32,759 --> 00:04:34,600
+that's blocking results? And
+then take those three
+
+129
+00:04:34,600 --> 00:04:36,139
+problems and put them
+into the brain here
+
+130
+00:04:36,139 --> 00:04:38,459
+in guardrails. Now, you
+can do extra work
+
+131
+00:04:38,459 --> 00:04:39,860
+on these two. You
+could go to Reddit,
+
+132
+00:04:40,019 --> 00:04:42,300
+Quora. You could look
+at YouTube comments to
+
+133
+00:04:42,300 --> 00:04:44,420
+try and establish these.
+But don't overcomplicate right
+
+134
+00:04:44,420 --> 00:04:47,139
+now. An educated guess
+is good enough. We
+
+135
+00:04:47,139 --> 00:04:48,480
+will build on this
+over time. Let me
+
+136
+00:04:48,480 --> 00:04:49,660
+move on to step
+two, where we're going
+
+137
+00:04:49,660 --> 00:04:52,160
+to check if your
+content's actually solving those
+
+138
+00:04:52,160 --> 00:04:55,180
+same problems too in
+the eyes of the
+
+139
+00:04:55,180 --> 00:04:57,439
+people coming to your
+channel. If you've got
+
+140
+00:04:57,439 --> 00:04:59,040
+an established channel, here's
+what I want you
+
+141
+00:04:59,040 --> 00:05:00,800
+to do. I want
+you to pick the
+
+142
+00:05:00,800 --> 00:05:03,360
+top 12 outliers from
+the last two years.
+
+143
+00:05:03,579 --> 00:05:05,360
+An outlier is simply
+a video that performed
+
+144
+00:05:05,360 --> 00:05:08,600
+at least twice above
+your average views. Basically,
+
+145
+00:05:08,620 --> 00:05:11,220
+you're looking for your
+top performers in the
+
+146
+00:05:11,220 --> 00:05:13,259
+last two years, as
+long as they're still
+
+147
+00:05:13,259 --> 00:05:14,759
+in line with the
+direction you want to
+
+148
+00:05:14,759 --> 00:05:16,180
+take your channel. And
+just to be clear,
+
+149
+00:05:16,220 --> 00:05:18,819
+an established channel isn't
+one where you've only
+
+150
+00:05:18,819 --> 00:05:20,920
+got 20 videos or
+one random hit. You've
+
+151
+00:05:20,920 --> 00:05:21,220
+got a lot of
+videos that have hit
+
+152
+00:05:20,920 --> 00:05:22,819
+55 ,000 views and
+the rest have like
+
+153
+00:05:22,819 --> 00:05:25,899
+500 views. That's not
+established. Established means you've
+
+154
+00:05:25,899 --> 00:05:28,240
+been posting consistently for
+a while. You've got
+
+155
+00:05:28,240 --> 00:05:30,300
+lots of videos pulling
+in thousands of views
+
+156
+00:05:30,300 --> 00:05:32,199
+and you've been hitting
+those numbers for a
+
+157
+00:05:32,199 --> 00:05:33,240
+while. Then what I
+want you to do
+
+158
+00:05:33,240 --> 00:05:35,560
+is take those 12
+outliers and write them
+
+159
+00:05:35,560 --> 00:05:37,540
+on a Google Doc
+like this. And then
+
+160
+00:05:37,540 --> 00:05:39,000
+I want you to
+space them out clearly
+
+161
+00:05:39,000 --> 00:05:41,420
+and then take a
+screenshot of that. Make
+
+162
+00:05:41,420 --> 00:05:42,860
+sure it's just the
+titles in the screenshot.
+
+163
+00:05:43,180 --> 00:05:44,540
+So then once you've
+done that, go to
+
+164
+00:05:44,540 --> 00:05:47,079
+the brain, add it
+here and then go
+
+165
+00:05:47,079 --> 00:05:49,139
+back to Guardrails and
+ask, audit my channel.
+
+166
+00:05:49,139 --> 00:05:50,459
+It's going to give
+you the top three
+
+167
+00:05:50,459 --> 00:05:52,300
+problems it thinks your
+viewers care about based
+
+168
+00:05:52,300 --> 00:05:54,319
+on those outliers. And
+the goal here is
+
+169
+00:05:54,319 --> 00:05:56,759
+really simple. You ask,
+do those problems that
+
+170
+00:05:56,759 --> 00:05:58,560
+is listed line up
+with what you believe
+
+171
+00:05:58,560 --> 00:06:01,360
+your buyers problems are?
+Don't panic if they're
+
+172
+00:06:01,360 --> 00:06:03,579
+a little different. That's
+very normal. It only
+
+173
+00:06:03,579 --> 00:06:05,399
+really becomes a massive
+issue if there's a
+
+174
+00:06:05,399 --> 00:06:07,980
+big mismatch. Now, if
+you're not established yet
+
+175
+00:06:07,980 --> 00:06:10,519
+or you're repositioning your
+channel in a completely
+
+176
+00:06:10,519 --> 00:06:12,600
+new direction, just skip
+that step for now.
+
+177
+00:06:12,680 --> 00:06:13,800
+We're going to come
+back to it in
+
+178
+00:06:13,800 --> 00:06:16,000
+phase four. And don't
+stress if you can't
+
+179
+00:06:16,000 --> 00:06:17,300
+fill it out. It
+doesn't mean this course
+
+180
+00:06:17,300 --> 00:06:18,800
+doesn't work for you
+at all. Still the
+
+181
+00:06:18,800 --> 00:06:20,779
+perfect. We're just going
+to update this later.
+
+182
+00:06:20,959 --> 00:06:22,560
+One other thing I
+might add is for
+
+183
+00:06:22,560 --> 00:06:25,699
+me, my list of
+12 outliers were not
+
+184
+00:06:25,699 --> 00:06:27,639
+just views based because
+I have rev track.
+
+185
+00:06:27,800 --> 00:06:29,259
+I can see which
+videos generate the most
+
+186
+00:06:29,259 --> 00:06:31,540
+sales and email signups.
+So my list is
+
+187
+00:06:31,540 --> 00:06:32,879
+a mixture of videos
+that perform well for
+
+188
+00:06:32,879 --> 00:06:35,819
+the business and for
+views. Then step three,
+
+189
+00:06:35,860 --> 00:06:37,939
+we're going to audit
+your offer. So all
+
+190
+00:06:37,939 --> 00:06:39,720
+you do is you
+go to your sales
+
+191
+00:06:39,720 --> 00:06:42,720
+page, drag your mouse
+down it, copy all
+
+192
+00:06:42,720 --> 00:06:44,600
+the text, paste all
+the text into Guardrails
+
+193
+00:06:44,600 --> 00:06:46,160
+and say, audit my
+sales page and then
+
+194
+00:06:46,160 --> 00:06:47,660
+write down your score.
+If you don't have
+
+195
+00:06:47,660 --> 00:06:49,720
+a sales page, don't
+worry. Move on. Step
+
+196
+00:06:49,720 --> 00:06:51,740
+four, we're then going
+to audit your marketing.
+
+197
+00:06:51,939 --> 00:06:53,420
+So you're going to
+go to your email
+
+198
+00:06:53,420 --> 00:06:55,500
+signup or your lead
+magnet signup, and you're
+
+199
+00:06:55,500 --> 00:06:56,600
+going to copy the
+text in the same
+
+200
+00:06:56,600 --> 00:06:58,199
+way, paste it into
+Guardrails and then write
+
+201
+00:06:58,199 --> 00:07:00,139
+audit my email signup
+page and then write
+
+202
+00:07:00,139 --> 00:07:01,860
+down your score. And
+in step five, all
+
+203
+00:07:01,860 --> 00:07:03,000
+we're going to do
+is spot the red
+
+204
+00:07:03,000 --> 00:07:05,839
+light, look at the
+score and any advice
+
+205
+00:07:05,839 --> 00:07:07,980
+it might give and
+ask, oh, do we
+
+206
+00:07:07,980 --> 00:07:09,240
+have a problem there
+or not? But here's
+
+207
+00:07:09,240 --> 00:07:10,519
+something you need to
+understand. AI is not
+
+208
+00:07:10,519 --> 00:07:12,819
+perfect. This is a
+tool. It's version one
+
+209
+00:07:12,819 --> 00:07:14,060
+of the tool as
+well. So I'll be
+
+210
+00:07:14,060 --> 00:07:16,000
+improving it over time.
+But you still have
+
+211
+00:07:16,000 --> 00:07:17,879
+a brain. So just
+don't treat this as
+
+212
+00:07:17,879 --> 00:07:20,240
+gospel. The real value
+of all this information
+
+213
+00:07:20,240 --> 00:07:22,379
+is it explains things
+quite clearly to you.
+
+214
+00:07:22,459 --> 00:07:23,959
+So it's going to
+help you spot problems
+
+215
+00:07:23,959 --> 00:07:26,019
+for yourself. This is
+also the part that
+
+216
+00:07:26,019 --> 00:07:28,819
+generally requires the most
+support questions to be
+
+217
+00:07:28,819 --> 00:07:30,660
+asked. So if you're
+like, this is hard
+
+218
+00:07:30,660 --> 00:07:32,579
+to figure out for
+myself, the positioning, all
+
+219
+00:07:32,579 --> 00:07:34,279
+this stuff. Don't be
+a stranger in the
+
+220
+00:07:34,279 --> 00:07:36,019
+chat members. OK, so
+now we've got the
+
+221
+00:07:36,019 --> 00:07:38,259
+minimum part of our
+brain set up. Let
+
+222
+00:07:38,259 --> 00:07:39,879
+me show you what
+it can do once
+
+223
+00:07:39,879 --> 00:07:41,720
+it's fully set up.
+So the whole point
+
+224
+00:07:41,720 --> 00:07:43,500
+of filling out the
+brain here with your
+
+225
+00:07:43,500 --> 00:07:45,740
+positioning statement, your buyer
+problems and eventually the
+
+226
+00:07:45,740 --> 00:07:47,779
+other data you're going
+to see is that
+
+227
+00:07:47,779 --> 00:07:49,160
+later in the course,
+I can use it
+
+228
+00:07:49,160 --> 00:07:50,759
+like this so I
+could take a random
+
+229
+00:07:50,759 --> 00:07:53,220
+intro that has nothing
+to do with the
+
+230
+00:07:53,220 --> 00:07:55,100
+positioning of my channel,
+I can drop it
+
+231
+00:07:55,100 --> 00:07:57,480
+into guardrails and it
+instantly rewrites it so
+
+232
+00:07:57,480 --> 00:07:59,079
+it's aligned with my
+umbrella statement and the
+
+233
+00:07:59,079 --> 00:08:01,399
+top three problems my
+buyers care about. Can
+
+234
+00:08:01,399 --> 00:08:03,759
+you see the difference
+there? It literally makes
+
+235
+00:08:03,759 --> 00:08:06,660
+sure we always relate
+everything back to the
+
+236
+00:08:06,660 --> 00:08:09,139
+thing our dream buyers
+care about. And this
+
+237
+00:08:09,139 --> 00:08:10,939
+is what makes it
+so powerful and what
+
+238
+00:08:10,939 --> 00:08:12,480
+will make your content
+stick out more than
+
+239
+00:08:12,480 --> 00:08:14,420
+anyone else's because the
+viewers are going to
+
+240
+00:08:14,420 --> 00:08:16,259
+go, wow, this person
+flipping gets me. But
+
+241
+00:08:16,259 --> 00:08:18,399
+we can also put
+in an idea and
+
+242
+00:08:18,399 --> 00:08:19,519
+just say, what do
+you think of this
+
+243
+00:08:19,519 --> 00:08:22,019
+idea? And it's going
+to say this is
+
+244
+00:08:22,019 --> 00:08:24,699
+poorly aligned with what
+your buyers care about.
+
+245
+00:08:24,860 --> 00:08:26,399
+It might say this
+is perfect. We can
+
+246
+00:08:26,399 --> 00:08:28,220
+throw in a title
+and it's going to
+
+247
+00:08:28,220 --> 00:08:29,699
+say this is a
+great title or a
+
+248
+00:08:29,699 --> 00:08:31,180
+bad title. And it's
+going to give you
+
+249
+00:08:31,180 --> 00:08:33,279
+some other suggestions. Now,
+what you need to
+
+250
+00:08:33,279 --> 00:08:35,259
+be careful with is
+don't just go using
+
+251
+00:08:35,259 --> 00:08:37,000
+the titles. This is
+not the ultimate title
+
+252
+00:08:37,000 --> 00:08:39,580
+bot. It's just there
+for inspiration or use
+
+253
+00:08:39,580 --> 00:08:41,519
+weird words. You will
+learn how to do
+
+254
+00:08:41,519 --> 00:08:44,500
+titles properly in phase
+four when we do
+
+255
+00:08:44,500 --> 00:08:46,100
+the strategy. But the
+real goal here is
+
+256
+00:08:46,100 --> 00:08:48,419
+over the next six
+to 18 months, what
+
+257
+00:08:48,419 --> 00:08:50,460
+we want to do
+is test fail as
+
+258
+00:08:50,460 --> 00:08:51,679
+fast as we can
+and learn as much
+
+259
+00:08:51,679 --> 00:08:53,759
+about our buyers as
+we possibly can. And
+
+260
+00:08:53,759 --> 00:08:55,360
+then you just keep
+updating this problem list
+
+261
+00:08:55,360 --> 00:08:58,720
+inside the brain. You
+update your outliers. Even
+
+262
+00:08:58,720 --> 00:09:00,840
+your positioning statement can
+get updated. And then
+
+263
+00:09:00,840 --> 00:09:03,039
+each update will make
+this thing smarter and
+
+264
+00:09:03,039 --> 00:09:05,039
+more like your dream
+buyer, because that's what
+
+265
+00:09:05,039 --> 00:09:07,399
+this is. We're basically
+creating your dream buyer
+
+266
+00:09:07,399 --> 00:09:09,899
+to give feedback on
+everything you make so
+
+267
+00:09:09,899 --> 00:09:11,840
+that it optimises it
+for them, nobody else.
+
+268
+00:09:12,340 --> 00:09:14,039
+Honestly, this is one
+of the most powerful
+
+269
+00:09:14,039 --> 00:09:16,279
+tools I've ever used
+for YouTube. I use
+
+270
+00:09:16,279 --> 00:09:18,740
+it every flipping day.
+I'm very excited for
+
+271
+00:09:18,740 --> 00:09:19,799
+you to have it
+too. Now, moving to
+
+272
+00:09:19,799 --> 00:09:20,700
+the next video, we're
+just going to make
+
+273
+00:09:20,700 --> 00:09:23,360
+some small adjustments to
+anything that you've discovered
+
+274
+00:09:23,360 --> 00:09:25,159
+here following a slightly
+different process.

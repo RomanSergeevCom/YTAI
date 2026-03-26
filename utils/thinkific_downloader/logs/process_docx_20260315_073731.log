@@ -1,0 +1,76 @@
+
+=== Configuration ===
+DOCX            : /Users/romansergeev/Downloads/YTCG.docx
+Lessons found   : 59
+Output root     : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads
+Download engine : ffmpeg
+Dry run         : False
+Log file        : /Users/romansergeev/YTAI/utils/thinkific_downloader/logs/process_docx_20260315_073731.log
+
+=== Lesson 01 ===
+
+[01] Phase_1_-_1._Intro_Video.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr
+  Project dir : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video_02
+  Status      : ok
+
+=== Lesson 02 ===
+
+[02] Phase_1_-_3._Expectations.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67
+  Project dir : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_3._Expectations
+  Status      : ok
+
+=== Lesson 03 ===
+
+[03] Phase_1_-_4._How_YouTube_Works.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef
+  Project dir : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_4._How_YouTube_Works
+  Status      : ok
+
+=== Lesson 04 ===
+
+[04] Phase_1_-_6._Position_Intro.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1
+  Project dir : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_6._Position_Intro
+  Status      : ok
+
+=== Lesson 05 ===
+
+[05] Phase_1_-_7._How_To_Position.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4
+  Project dir : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_7._How_To_Position
+  Status      : ok
+
+=== Lesson 06 ===
+
+[06] Phase_1_-_9._Audit_V2.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892283-task-auditing-your-foundations?wvideo=uca14sgz0s
+  Project dir : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_9._Audit_V2
+  Status      : ok
+
+=== Lesson 07 ===
+
+[07] Phase_1_-_10._Doing_Your_Tasks.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892288-task-minor-adjustments?wvideo=yg65ujy4qv
+  Project dir : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_10._Doing_Your_Tasks
+  Status      : ok
+
+=== Lesson 08 ===
+
+[08] Phase_1_-_Simple_Nurture.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921638-side-mission-building-a-simple-email-system?wvideo=9xdr515qzr
+  Project dir : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_Simple_Nurture
+  Status      : ok
+
+=== Lesson 09 ===
+
+[09] Phase_2_-_1._Intro.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892293-phase-2-intro?wvideo=obyeqz0swb
+  Project dir : /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_1._Intro
+  Status      : ok
+
+=== Lesson 10 ===
+
+[10] Phase_2_-_2._Demo_Video.mp4
+  Main lesson : https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892694-task-making-your-demo-video?wvideo=sgjg69vbud

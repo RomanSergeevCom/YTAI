@@ -1,0 +1,780 @@
+{
+  "created_at": "2026-03-15T21:50:33Z",
+  "docx_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTCG_batch_manifest.json",
+  "lessons_total": 59,
+  "ok": 1,
+  "skipped": 58,
+  "failed": 0,
+  "total_time_seconds": 165.3,
+  "results": [
+    {
+      "lesson_index": 1,
+      "title": "Phase_1_-_1._Intro_Video.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_1._Intro_Video",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 2,
+      "title": "Phase_1_-_3._Expectations.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_3._Expectations",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 3,
+      "title": "Phase_1_-_4._How_YouTube_Works.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_4._How_YouTube_Works",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 4,
+      "title": "Phase_1_-_6._Position_Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_6._Position_Intro",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 5,
+      "title": "Phase_1_-_7._How_To_Position.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_7._How_To_Position",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 6,
+      "title": "Phase_1_-_9._Audit_V2.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892283-task-auditing-your-foundations?wvideo=uca14sgz0s",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_9._Audit_V2",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 7,
+      "title": "Phase_1_-_10._Doing_Your_Tasks.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892288-task-minor-adjustments?wvideo=yg65ujy4qv",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_10._Doing_Your_Tasks",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 8,
+      "title": "Phase_1_-_Simple_Nurture.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921638-side-mission-building-a-simple-email-system?wvideo=9xdr515qzr",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_Simple_Nurture",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 9,
+      "title": "Phase_2_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892293-phase-2-intro?wvideo=obyeqz0swb",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_1._Intro",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 10,
+      "title": "Phase_2_-_2._Demo_Video.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892694-task-making-your-demo-video?wvideo=sgjg69vbud",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_2._Demo_Video",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 11,
+      "title": "Phase_2_-_3._Teleprompter.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892310-using-a-teleprompter-don-t-skip?wvideo=v2pqjjgk5f",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_3._Teleprompter",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 12,
+      "title": "Phase_2_-_4._Presenting.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892695-presenting-101?wvideo=6vswm3tsmw",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_4._Presenting",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 13,
+      "title": "Phase_2_-_5._Edit_Demo.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892314-task-editing-your-demo?wvideo=er9icb0lxo",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_5._Edit_Demo",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 14,
+      "title": "Phase_2_-_6._Uploading.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892318-task-posting-your-demo?wvideo=jpfc799wfj",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_2_-_6._Uploading",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 15,
+      "title": "Phase_3_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=iwd27pwhi6",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_1._Intro",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 16,
+      "title": "Phase_3_-_2._Secret_To_Great_Videos.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=ajhwpllaaq",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_2._Secret_To_Great_Videos",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 17,
+      "title": "Phase_3_-_3._Titles.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892345-the-secret-to-amazing-titles?wvideo=7pzo6ty60l",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_3._Titles",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 18,
+      "title": "Phase_3_-_4._Thumbnail_Basics.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892359-the-secrets-to-amazing-thumbnails?wvideo=d2zp80a6mg",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Basics",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 19,
+      "title": "Phase_3_-_4._Thumbnail_Strategy.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892473-thumbnail-strategies-that-get-clicks?wvideo=2glf2ywtod",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_4._Thumbnail_Strategy",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 20,
+      "title": "Phase_3_-_5._Design_Basics.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892480-thumbnail-design-basics?wvideo=ydqieh7lyk",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_5._Design_Basics",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 21,
+      "title": "Phase_3_-_6._What_Option.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892484-task-pick-your-thumbnail-creation-process?wvideo=s81gw1gu3n",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_6._What_Option",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 22,
+      "title": "Phase_3_-_7._Formats.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892489-formats-the-secret-to-packaging-information?wvideo=7gt97axhb7",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_7._Formats",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 23,
+      "title": "Phase_4_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892495-phase-4-intro?wvideo=49ezwwuh2i",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_1._Intro",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 24,
+      "title": "Phase_4_-_2._The_Strategy.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892499-the-1-000-000-youtube-strategy?wvideo=jr3427xt8v",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_2._The_Strategy",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 25,
+      "title": "Phase_4_-_3._Research_Basics.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892508-the-basics-of-research-strategy?wvideo=uszpj80y14",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_3._Research_Basics",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 26,
+      "title": "Phase_4_-_4._Patterns.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892525-task-how-to-find-patterns?wvideo=ibgzddhxhy",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_4._Patterns",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 27,
+      "title": "Phase_4_-_Update_Synthia.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892556-task-update-synthia-s-ai-brain?wvideo=rpzbz338js",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_Update_Synthia",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 28,
+      "title": "Phase_4_-_5._Ideation.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892522-task-how-to-ideate-your-next-3-4-videos?wvideo=kllyj6isvb",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_5._Ideation",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 29,
+      "title": "AI_UPDATE_AI_Feedback_For_Ideas.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921147-task-play-with-the-ai?wvideo=bm5b2mkwpc",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE_AI_Feedback_For_Ideas",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 30,
+      "title": "Phase_5_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921173-phase-5-intro?wvideo=j69dwc9lei",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_1._Intro",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 31,
+      "title": "Phase_5_-_2._What_Makes_a_Great_Script.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921180-the-secret-to-making-amazing-videos?wvideo=d1b1p9hnp9",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_2._What_Makes_a_Great_Script",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 32,
+      "title": "Phase_5_-_3._Intros.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921186-video-intros-101?wvideo=2zwmkut8es",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_3._Intros",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 33,
+      "title": "Phase_5_-_Update_Synthia.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921236-task-update-synthia-s-ai-brain?wvideo=jjcbpvg1m6",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_Update_Synthia",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 34,
+      "title": "Phase_5_-_4._How_To_Write_Your_Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921206-how-to-write-an-intro?wvideo=vqec3ghwtv",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_4._How_To_Write_Your_Intro",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 35,
+      "title": "Phase_5_-_5._Making_Points.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921202-how-to-make-a-point?wvideo=vuhp1q8wi1",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_5._Making_Points",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 36,
+      "title": "Phase_5_-_6._Visual_Demos.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921210-emotion-brick-visual-demos?wvideo=nt057v09sk",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_6._Visual_Demos",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 37,
+      "title": "Phase_5_-_7._Story.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921214-emotion-brick-storytelling?wvideo=5twxs6tmyx",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_7._Story",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 38,
+      "title": "Phase_5_-_8._Metaphor.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921216-emotion-brick-metaphor?wvideo=a5993o8b2d",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_8._Metaphor",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 39,
+      "title": "Phase_5_-_9._Logic.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921216-emotion-brick-metaphor?wvideo=z0o0lkunj6",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_9._Logic",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 40,
+      "title": "Phase_5_-_10._End_Screen.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921224-ending-your-video?wvideo=z40xvhcy1z",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_10._End_Screen",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 41,
+      "title": "AI_UPDATE__Intro_Feedback.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921193-task-getting-feedback-on-intros-points?wvideo=vbsyi5u8wg",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/AI_UPDATE__Intro_Feedback",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 42,
+      "title": "Phase_5_-_11._Conversion_Optimisation.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921226-optimising-videos-for-sales-views-leads?wvideo=0gvivli29q",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_11._Conversion_Optimisation",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 43,
+      "title": "Phase_5_-_12._Planning.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921227-how-to-plan-a-video-basics?wvideo=mbt3psf79g",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_12._Planning",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 44,
+      "title": "Phase_5_-_13._Writing_v2.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921230-how-to-write-a-script-basics?wvideo=zhn92cte0m",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_5_-_13._Writing_v2",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 45,
+      "title": "Set_ups_and_pay_offs.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921491-set-up-and-payoffs-reviewing-my-own-scripts?wvideo=x15np5d5w8",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Set_ups_and_pay_offs",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 46,
+      "title": "Short_Process.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921521-short-process-videos?wvideo=fjlr60e15b",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Short_Process",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 47,
+      "title": "Case_Study.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921522-case-studies?wvideo=12f9bjm06s",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Case_Study",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 48,
+      "title": "Roasts.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921524-roasts-reviews?wvideo=hzvddp3mcs",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Roasts",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 49,
+      "title": "Deep_Dive.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921525-deep-dives?wvideo=iyxjkapitj",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Deep_Dive",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 50,
+      "title": "Interviews.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921527-interviews?wvideo=4mbhij28hy",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Interviews",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 51,
+      "title": "News.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921528-news?wvideo=q9y0q06rbo",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/News",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 52,
+      "title": "Listicles.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921529-listicles?wvideo=i5bsp1pacv",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Listicles",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 53,
+      "title": "Phase_6_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921533-intro-to-measurement?wvideo=cp668r8ewi",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_1._Intro",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 54,
+      "title": "Phase_6_-_2._Measurement_Myths.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921533-intro-to-measurement?wvideo=gbke1rgg4p",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_2._Measurement_Myths",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 55,
+      "title": "Phase_6_-_3._Measurement_Basics.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921537-measurement-basics?wvideo=qjkhj4ks3m",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_3._Measurement_Basics",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 56,
+      "title": "Phase_6_-_4._Measurement_System.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921541-measurement-system?wvideo=ibuoeaif87",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_4._Measurement_System",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 57,
+      "title": "Learn_a_Lesson.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921543-how-to-learn-a-lesson?wvideo=2w1intfy72",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Learn_a_Lesson",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    },
+    {
+      "lesson_index": 58,
+      "title": "Measurement_30_Day.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67953961-channel-health-measurement?wvideo=6r79ikar23",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Measurement_30_Day",
+      "status": "ok",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "ok (165s)",
+        "screenshots": "disabled",
+        "descriptions": "disabled"
+      }
+    },
+    {
+      "lesson_index": 59,
+      "title": "RevTrack_Measurment_.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921554-how-to-use-revtracks-data?wvideo=e9v5gu9k3h",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/RevTrack_Measurment_",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped"
+      }
+    }
+  ]
+}

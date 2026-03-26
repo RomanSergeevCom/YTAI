@@ -1,0 +1,429 @@
+1
+00:00:00,000 --> 00:00:02,319
+Okay, so when most
+people plan a video,
+
+2
+00:00:02,359 --> 00:00:03,980
+they open a document
+and they just try
+
+3
+00:00:03,980 --> 00:00:05,900
+and write a script.
+But that is just
+
+4
+00:00:05,900 --> 00:00:07,980
+going to be an
+absolute nightmare because it's
+
+5
+00:00:07,980 --> 00:00:09,320
+like sitting in front
+of a blank canvas
+
+6
+00:00:09,320 --> 00:00:11,240
+and trying to paint
+a masterpiece with no
+
+7
+00:00:11,240 --> 00:00:13,500
+sketch or guide or
+any idea as to
+
+8
+00:00:13,500 --> 00:00:15,119
+where to start. What
+we need to do
+
+9
+00:00:15,119 --> 00:00:16,739
+is turn our video
+into like a paint
+
+10
+00:00:16,739 --> 00:00:19,300
+by numbers outline that
+takes all the chaos
+
+11
+00:00:19,300 --> 00:00:21,699
+and guessing out of
+creativity and gives you
+
+12
+00:00:21,699 --> 00:00:24,359
+shape and structure and
+clarity very easily. So
+
+13
+00:00:24,359 --> 00:00:25,739
+when you do come
+to write this into
+
+14
+00:00:25,739 --> 00:00:28,239
+a script, it's just
+a game of filling
+
+15
+00:00:28,239 --> 00:00:30,239
+in the blanks and
+it's easy. So here's
+
+16
+00:00:30,239 --> 00:00:31,940
+exactly how I want
+you to plan every
+
+17
+00:00:31,940 --> 00:00:33,539
+video and how I
+do it too. So
+
+18
+00:00:33,539 --> 00:00:34,899
+the first thing is
+you want to just
+
+19
+00:00:34,899 --> 00:00:37,460
+brain dump all the
+points you think you
+
+20
+00:00:37,460 --> 00:00:38,939
+want to make on
+a doc. Don't worry
+
+21
+00:00:38,939 --> 00:00:41,659
+about order. Don't worry
+about structure. Just get
+
+22
+00:00:41,659 --> 00:00:43,859
+the raw thoughts out
+of your head. And
+
+23
+00:00:43,859 --> 00:00:45,460
+you're going to need
+to give yourself an
+
+24
+00:00:45,460 --> 00:00:47,179
+hour or so at
+least to do this
+
+25
+00:00:47,179 --> 00:00:48,619
+because this is one
+of the most important
+
+26
+00:00:48,619 --> 00:00:50,200
+parts of the video.
+Then the next thing
+
+27
+00:00:50,200 --> 00:00:51,320
+you do is you
+want to find outliers
+
+28
+00:00:51,320 --> 00:00:53,539
+on the topic that
+have performed above average.
+
+29
+00:00:53,740 --> 00:00:56,320
+And you are going
+to take their transcript
+
+30
+00:00:56,320 --> 00:00:58,359
+by using a Google
+Chrome plugin, which I'll
+
+31
+00:00:58,359 --> 00:00:59,579
+link to below, and
+you do it like
+
+32
+00:00:59,579 --> 00:01:00,939
+this and you just
+copy it. And then
+
+33
+00:01:00,939 --> 00:01:02,880
+you go to Skyscraper
+Bot, which I'll link
+
+34
+00:01:02,880 --> 00:01:04,620
+to below. It's not
+in the custom AI
+
+35
+00:01:04,620 --> 00:01:06,159
+platform. And then what
+you do is you
+
+36
+00:01:06,159 --> 00:01:08,120
+highlight up to 200
+of the comments and
+
+37
+00:01:08,120 --> 00:01:10,079
+you paste them in.
+Skyscraper Bot is now
+
+38
+00:01:10,079 --> 00:01:12,239
+going to tell you
+everything that made this
+
+39
+00:01:12,239 --> 00:01:13,500
+video a hit. It's
+going to tell you
+
+40
+00:01:13,500 --> 00:01:15,879
+what the comments loved,
+what's missing, what confused
+
+41
+00:01:15,879 --> 00:01:18,760
+people, what the creator
+spoke about. It's then
+
+42
+00:01:18,760 --> 00:01:21,120
+going to tell you
+what made this unique,
+
+43
+00:01:21,560 --> 00:01:23,780
+feel new and inspiring.
+And it's also going
+
+44
+00:01:23,780 --> 00:01:25,579
+to tell you what
+it would include in
+
+45
+00:01:25,579 --> 00:01:27,159
+a video about it.
+What you want to
+
+46
+00:01:27,159 --> 00:01:28,400
+do is take some
+of that information and
+
+47
+00:01:28,400 --> 00:01:29,099
+add it to your
+blog. And then you're
+
+48
+00:01:29,099 --> 00:01:30,640
+going to list the
+kind of messy chaos
+
+49
+00:01:30,640 --> 00:01:32,760
+list. Then once you've
+done that, we move
+
+50
+00:01:32,760 --> 00:01:35,019
+on to the next
+step, which is basically
+
+51
+00:01:35,019 --> 00:01:36,799
+taking this information and
+going, right, what's the
+
+52
+00:01:36,799 --> 00:01:39,060
+key things I need?
+What can I delete?
+
+53
+00:01:39,280 --> 00:01:41,019
+And what do I
+definitely need to include?
+
+54
+00:01:41,340 --> 00:01:43,260
+So we've gone from
+mess to a little
+
+55
+00:01:43,260 --> 00:01:46,299
+bit more structured. Then
+after that, we want
+
+56
+00:01:46,299 --> 00:01:48,120
+to start looking at
+how do we bring
+
+57
+00:01:48,120 --> 00:01:50,840
+emotion and logic into
+each of these points.
+
+58
+00:01:51,079 --> 00:01:52,480
+So this is where
+it's going to get
+
+59
+00:01:52,480 --> 00:01:53,739
+hard. This is when
+you're going to get
+
+60
+00:01:53,739 --> 00:01:56,719
+overwhelmed. You need to
+start asking yourself, do
+
+61
+00:01:56,719 --> 00:01:58,200
+I just give them
+a bit of emotion
+
+62
+00:01:58,200 --> 00:01:59,780
+at the start? Then
+give them all the
+
+63
+00:01:59,780 --> 00:02:02,459
+steps or do I
+give them emotion, logic,
+
+64
+00:02:02,500 --> 00:02:04,719
+emotion, logic. Now the
+format planners I'm giving
+
+65
+00:02:04,719 --> 00:02:06,040
+you are going to
+help a lot with
+
+66
+00:02:06,040 --> 00:02:07,939
+this, but this is
+the part where you're
+
+67
+00:02:07,939 --> 00:02:11,000
+most likely to get
+incredibly overwhelmed. And then
+
+68
+00:02:11,000 --> 00:02:13,740
+once you have that,
+you want something that
+
+69
+00:02:13,740 --> 00:02:17,159
+looks like this, where
+we have point one,
+
+70
+00:02:17,259 --> 00:02:19,639
+a little note on
+the emotion side, and
+
+71
+00:02:19,639 --> 00:02:21,800
+then a little note
+on the logic point
+
+72
+00:02:21,800 --> 00:02:24,000
+to a little note
+on the emotion point
+
+73
+00:02:24,000 --> 00:02:26,000
+three, a little and
+so on. Right. So
+
+74
+00:02:26,000 --> 00:02:28,460
+you can see that
+doesn't look messy anymore.
+
+75
+00:02:29,020 --> 00:02:29,320
+So you can see
+that it's really kind
+
+76
+00:02:29,300 --> 00:02:32,039
+of simplified down. Once
+you've got that, you
+
+77
+00:02:32,039 --> 00:02:34,360
+are basically then in
+a position where you
+
+78
+00:02:34,360 --> 00:02:36,099
+are ready to write
+this up. And that
+
+79
+00:02:36,099 --> 00:02:38,000
+is kind of it.
+Go and watch the
+
+80
+00:02:38,000 --> 00:02:39,979
+next video about writing
+them. And then after
+
+81
+00:02:39,979 --> 00:02:41,620
+that, you're going to
+have a task and
+
+82
+00:02:41,620 --> 00:02:43,180
+you have to do
+some work and expect
+
+83
+00:02:43,180 --> 00:02:45,180
+that pain to shoot
+up a bit. But
+
+84
+00:02:45,180 --> 00:02:46,319
+we do need to
+get some reps in
+
+85
+00:02:46,319 --> 00:02:47,520
+and fail as fast
+as we can until
+
+86
+00:02:47,520 --> 00:02:48,439
+this is going to
+feel easier.

@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 23:30:08
+============================================================
+
+=== Configuration ===
+Project:    RevTrack_Measurment_
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/RevTrack_Measurment_/RevTrack_Measurment_.mp4
+Clips:      1
+Duration:   9:40 (580.2s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  RevTrack_Measurment_    9:40  3840×1924 60.0fps H264  0.5Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.05 GB
+    offset 0.000s  RevTrack_Measurment_.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    9:17  96.0%  28 segments
+  Gaps                       0:22  4.0%
+
+=== Transcription ===
+Total words:     2,059
+Total segments:  4
+Avg confidence:  0.9448
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  RevTrack_Measurment_:
+    Words: 2059  Segments: 4  Confidence: 0.9274  Low: 2
+    Speaker 1: 2059 words, 4 segs, 9:34
+
+=== Whisper Per-Clip ===
+  RevTrack_Measurment_    9:40   2059 words   213 wpm    5m 49s  (1.66x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        0s  -    1s    0.1%
+  Diarization          20s       19s  -    1s    5.3%
+  Whisper           5m 19s    5m 49s  +   30s   94.6%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             5m 42s    6m 09s  +   26s  100.0%
+  Speed:          1.6x realtime
+  Wall clock:     6m 09s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  RevTrack_Measurment__transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           11.6 KB
+    diarization.json                                    2.6 KB
+    full_audio.wav                                  18132.7 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/RevTrack_Measurment_/RevTrack_Measurment__audio.wav   18132.7 KB
+    per_clip/RevTrack_Measurment_/RevTrack_Measurment__captions.srt      18.8 KB
+    per_clip/RevTrack_Measurment_/RevTrack_Measurment__premiere_transcript.json     438.3 KB
+    per_clip/RevTrack_Measurment_/RevTrack_Measurment__transcript.json     271.1 KB
+    per_clip/RevTrack_Measurment_/RevTrack_Measurment__transcript.srt      10.3 KB
+    per_clip/RevTrack_Measurment_/RevTrack_Measurment__transcript.txt      10.2 KB
+    per_clip/RevTrack_Measurment_/RevTrack_Measurment__whisper_raw.json     230.0 KB
+  RevTrack_Measurment__transcript.xlsx  (11.4 KB)
+
+============================================================

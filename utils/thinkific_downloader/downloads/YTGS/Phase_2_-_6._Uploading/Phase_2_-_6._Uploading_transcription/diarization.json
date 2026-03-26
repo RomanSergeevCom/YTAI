@@ -1,0 +1,23 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T15:08:02Z",
+  "num_speakers": 1,
+  "total_duration": 162.725,
+  "segments": [
+    {
+      "start": 0.031,
+      "end": 9.447,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 9.7,
+      "end": 103.897,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 103.964,
+      "end": 162.605,
+      "speaker": "SPEAKER_00"
+    }
+  ]
+}

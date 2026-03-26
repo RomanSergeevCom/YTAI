@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 20:27:23
+============================================================
+
+=== Configuration ===
+Project:    Phase_3_-_6._What_Option
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option.mp4
+Clips:      1
+Duration:   3:44 (224.5s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_3_-_6._What_Option    3:44  3840×2160 25.0fps H264  4.3Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.12 GB
+    offset 0.000s  Phase_3_-_6._What_Option.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    3:42  98.9%  4 segments
+  Gaps                       0:02  1.1%
+
+=== Transcription ===
+Total words:     841
+Total segments:  2
+Avg confidence:  0.9700
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_3_-_6._What_Option:
+    Words: 841  Segments: 2  Confidence: 0.9686  Low: 0
+    Speaker 1: 841 words, 2 segs, 3:41
+
+=== Whisper Per-Clip ===
+  Phase_3_-_6._What_Option    3:44    841 words   225 wpm    1m 30s  (2.49x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         0s        0s  -    0s    0.3%
+  Diarization           8s       10s  +    2s    9.5%
+  Whisper           2m 03s    1m 30s  -   33s   90.1%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              0s        0s  -    0s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             2m 12s    1m 40s  -   33s  100.0%
+  Speed:          2.2x realtime
+  Wall clock:     1m 40s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_3_-_6._What_Option_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                            5.3 KB
+    diarization.json                                    0.5 KB
+    full_audio.wav                                   7015.4 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_audio.wav    7015.4 KB
+    per_clip/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_captions.srt       7.8 KB
+    per_clip/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_premiere_transcript.json     189.1 KB
+    per_clip/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_transcript.json     111.2 KB
+    per_clip/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_transcript.srt       4.4 KB
+    per_clip/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_transcript.txt       4.3 KB
+    per_clip/Phase_3_-_6._What_Option/Phase_3_-_6._What_Option_whisper_raw.json     101.3 KB
+  Phase_3_-_6._What_Option_transcript.xlsx  (9.4 KB)
+
+============================================================

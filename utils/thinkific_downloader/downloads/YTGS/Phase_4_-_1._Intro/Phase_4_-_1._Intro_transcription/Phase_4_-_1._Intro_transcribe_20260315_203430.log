@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 20:34:30
+============================================================
+
+=== Configuration ===
+Project:    Phase_4_-_1._Intro
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_1._Intro/Phase_4_-_1._Intro.mp4
+Clips:      1
+Duration:   1:55 (115.4s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_4_-_1._Intro      1:55  3840×2160 25.0fps H264  4.2Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.06 GB
+    offset 0.000s  Phase_4_-_1._Intro.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    1:55  100.0%  1 segments
+  Gaps                       0:00  0.0%
+
+=== Transcription ===
+Total words:     440
+Total segments:  1
+Avg confidence:  0.9805
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_4_-_1._Intro:
+    Words: 440  Segments: 1  Confidence: 0.9805  Low: 0
+    Speaker 1: 440 words, 1 segs, 1:54
+
+=== Whisper Per-Clip ===
+  Phase_4_-_1._Intro      1:55    440 words   229 wpm       49s  (2.34x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         0s        0s  -    0s    0.3%
+  Diarization           4s        6s  +    2s   11.2%
+  Whisper           1m 03s       49s  -   14s   88.5%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              0s        0s  -    0s    0.1%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             1m 08s       56s  -   12s  100.0%
+  Speed:          2.1x realtime
+  Wall clock:     56s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_4_-_1._Intro_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                            3.0 KB
+    diarization.json                                    0.2 KB
+    full_audio.wav                                   3604.9 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_4_-_1._Intro/Phase_4_-_1._Intro_audio.wav      3605.0 KB
+    per_clip/Phase_4_-_1._Intro/Phase_4_-_1._Intro_captions.srt       4.0 KB
+    per_clip/Phase_4_-_1._Intro/Phase_4_-_1._Intro_premiere_transcript.json      97.9 KB
+    per_clip/Phase_4_-_1._Intro/Phase_4_-_1._Intro_transcript.json      57.6 KB
+    per_clip/Phase_4_-_1._Intro/Phase_4_-_1._Intro_transcript.srt       2.2 KB
+    per_clip/Phase_4_-_1._Intro/Phase_4_-_1._Intro_transcript.txt       2.2 KB
+    per_clip/Phase_4_-_1._Intro/Phase_4_-_1._Intro_whisper_raw.json      50.8 KB
+  Phase_4_-_1._Intro_transcript.xlsx  (8.5 KB)
+
+============================================================

@@ -1,0 +1,36 @@
+{
+  "version": "3.0",
+  "status": "completed",
+  "created_at": "2026-03-15T19:16:05Z",
+  "updated_at": "2026-03-15T19:19:26Z",
+  "project_name": "Phase_6_-_4._Measurement_System",
+  "input_type": "file",
+  "input_path": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_6_-_4._Measurement_System/Phase_6_-_4._Measurement_System.mp4",
+  "params": {
+    "num_speakers": 1,
+    "whisper_model": "large-v3",
+    "language": "en",
+    "device": "mps"
+  },
+  "clips": [
+    "Phase_6_-_4._Measurement_System"
+  ],
+  "total_duration_sec": 401.125,
+  "stages_completed": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "stages_timing": {
+    "1_extract_audio": 0.4,
+    "2_diarization": 14.6,
+    "3_whisper": 174.4,
+    "4_speaker_mapping": 0.0,
+    "5_generate_outputs": 0.0,
+    "6_ingest_json": 0.0
+  },
+  "total_time": 189.5
+}

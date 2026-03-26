@@ -1,0 +1,83 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 21:00:57
+============================================================
+
+=== Configuration ===
+Project:    Phase_4_-_3._Research_Basics
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_3._Research_Basics/Phase_4_-_3._Research_Basics.mp4
+Clips:      1
+Duration:   7:53 (473.7s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_4_-_3._Research_Basics    7:53  3840×2160 25.0fps H264  2.8Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.16 GB
+    offset 0.000s  Phase_4_-_3._Research_Basics.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    7:52  99.7%  4 segments
+  Gaps                       0:01  0.3%
+
+=== Transcription ===
+Total words:     1,766
+Total segments:  3
+Avg confidence:  0.6425
+Low confidence:  1 segments
+  Low confidence details:
+    [Phase_4_-_3._Research_Basics] seg 1: "We saw the" (conf=0.05)
+    [Phase_4_-_3._Research_Basics] seg 2: "And then we just had a lighter background because that's wha..." (conf=0.91)
+
+=== Per-Clip Details ===
+  Phase_4_-_3._Research_Basics:
+    Words: 1766  Segments: 3  Confidence: 0.9574  Low: 2
+    Speaker 1: 1766 words, 3 segs, 7:48
+
+=== Whisper Per-Clip ===
+  Phase_4_-_3._Research_Basics    7:53   1766 words   224 wpm    3m 21s  (2.36x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    0s    0.2%
+  Diarization          17s       18s  +    1s    8.2%
+  Whisper           4m 20s    3m 21s  -   59s   91.5%
+  Speaker map           0s        0s  -    0s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           0s        0s  -    0s    0.0%
+  ────────────────────────────────────────────────
+  Total             4m 39s    3m 39s  -1m 00s  100.0%
+  Speed:          2.2x realtime
+  Wall clock:     3m 39s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_4_-_3._Research_Basics_transcription/
+    clip_offsets.json                                   0.3 KB
+    combined_transcript.json                           10.2 KB
+    diarization.json                                    0.5 KB
+    full_audio.wav                                  14802.0 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_4_-_3._Research_Basics/Phase_4_-_3._Research_Basics_audio.wav   14802.1 KB
+    per_clip/Phase_4_-_3._Research_Basics/Phase_4_-_3._Research_Basics_captions.srt      16.4 KB
+    per_clip/Phase_4_-_3._Research_Basics/Phase_4_-_3._Research_Basics_premiere_transcript.json     394.3 KB
+    per_clip/Phase_4_-_3._Research_Basics/Phase_4_-_3._Research_Basics_transcript.json     232.7 KB
+    per_clip/Phase_4_-_3._Research_Basics/Phase_4_-_3._Research_Basics_transcript.srt       9.0 KB
+    per_clip/Phase_4_-_3._Research_Basics/Phase_4_-_3._Research_Basics_transcript.txt       9.0 KB
+    per_clip/Phase_4_-_3._Research_Basics/Phase_4_-_3._Research_Basics_whisper_raw.json     214.0 KB
+  Phase_4_-_3._Research_Basics_transcript.xlsx  (11.0 KB)
+
+============================================================

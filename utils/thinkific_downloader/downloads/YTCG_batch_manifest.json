@@ -1,0 +1,616 @@
+{
+  "created_at": "2026-03-15T12:34:45Z",
+  "docx_path": "/Users/romansergeev/Downloads/YTCG.docx",
+  "lessons_total": 59,
+  "ok": 1,
+  "skipped": 10,
+  "failed": 48,
+  "total_time_seconds": 862.1,
+  "results": [
+    {
+      "lesson_index": 1,
+      "title": "Phase_1_-_1._Intro_Video.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892261-how-to-get-sales-views-on-youtube?wvideo=owhy8fghdr",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_1._Intro_Video",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 2,
+      "title": "Phase_1_-_3._Expectations.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892266-setting-yourself-up-to-succeed?wvideo=o2u5e67f67",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_3._Expectations",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 3,
+      "title": "Phase_1_-_4._How_YouTube_Works.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892666-how-youtube-works-to-grow-a-business-channel?wvideo=66s1jr2gef",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_4._How_YouTube_Works",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 4,
+      "title": "Phase_1_-_6._Position_Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892271-positioning-basics?wvideo=jkqkczfru1",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_6._Position_Intro",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 5,
+      "title": "Phase_1_-_7._How_To_Position.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892275-task-how-to-position-yourself-to-succeed?wvideo=l3fj6kg1y4",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_7._How_To_Position",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 2,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 6,
+      "title": "Phase_1_-_9._Audit_V2.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892283-task-auditing-your-foundations?wvideo=uca14sgz0s",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_9._Audit_V2",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 7,
+      "title": "Phase_1_-_10._Doing_Your_Tasks.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892288-task-minor-adjustments?wvideo=yg65ujy4qv",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_10._Doing_Your_Tasks",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 3,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 8,
+      "title": "Phase_1_-_Simple_Nurture.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921638-side-mission-building-a-simple-email-system?wvideo=9xdr515qzr",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_1_-_Simple_Nurture",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 9,
+      "title": "Phase_2_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892293-phase-2-intro?wvideo=obyeqz0swb",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_1._Intro",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 10,
+      "title": "Phase_2_-_2._Demo_Video.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892694-task-making-your-demo-video?wvideo=sgjg69vbud",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_2._Demo_Video",
+      "status": "skipped",
+      "errors": [],
+      "extra_links": 2,
+      "steps": {
+        "download": "skipped",
+        "transcription": "skipped",
+        "screenshots": "skipped",
+        "descriptions": "skipped"
+      }
+    },
+    {
+      "lesson_index": 11,
+      "title": "Phase_2_-_3._Teleprompter.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892310-using-a-teleprompter-don-t-skip?wvideo=v2pqjjgk5f",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_3._Teleprompter",
+      "status": "error",
+      "errors": [
+        "Transcription failed: Command '['/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3', '/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py', '--project', '/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter.mp4', '-y', '-m', 'large-v3', '-n', '1', '--language', 'en']' returned non-zero exit status 1."
+      ],
+      "extra_links": 3,
+      "steps": {
+        "download": "skipped",
+        "transcription": "error: Command '['/Users/romansergeev/YTAI/environment/.venv_transcribe/bin/python3', '/Users/romansergeev/YTAI/scripts/02_transcribe/020101_transcribe/transcribe_project.py', '--project', '/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_3._Teleprompter/Phase_2_-_3._Teleprompter.mp4', '-y', '-m', 'large-v3', '-n', '1', '--language', 'en']' returned non-zero exit status 1.",
+        "screenshots": "disabled",
+        "descriptions": "disabled"
+      }
+    },
+    {
+      "lesson_index": 12,
+      "title": "Phase_2_-_4._Presenting.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892695-presenting-101?wvideo=6vswm3tsmw",
+      "project_dir": "/Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/Phase_2_-_4._Presenting",
+      "status": "ok",
+      "errors": [],
+      "extra_links": 0,
+      "steps": {
+        "download": "ok (879MB, 75s)",
+        "transcription": "ok (771s)",
+        "screenshots": "disabled",
+        "descriptions": "disabled"
+      }
+    },
+    {
+      "lesson_index": 13,
+      "title": "Phase_2_-_5._Edit_Demo.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892314-task-editing-your-demo?wvideo=er9icb0lxo",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 14,
+      "title": "Phase_2_-_6._Uploading.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892318-task-posting-your-demo?wvideo=jpfc799wfj",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 15,
+      "title": "Phase_3_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=iwd27pwhi6",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 16,
+      "title": "Phase_3_-_2._Secret_To_Great_Videos.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892334-phase-3-intro?wvideo=ajhwpllaaq",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 17,
+      "title": "Phase_3_-_3._Titles.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892345-the-secret-to-amazing-titles?wvideo=7pzo6ty60l",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 18,
+      "title": "Phase_3_-_4._Thumbnail_Basics.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892359-the-secrets-to-amazing-thumbnails?wvideo=d2zp80a6mg",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 19,
+      "title": "Phase_3_-_4._Thumbnail_Strategy.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892473-thumbnail-strategies-that-get-clicks?wvideo=2glf2ywtod",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 20,
+      "title": "Phase_3_-_5._Design_Basics.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892480-thumbnail-design-basics?wvideo=ydqieh7lyk",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 21,
+      "title": "Phase_3_-_6._What_Option.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892484-task-pick-your-thumbnail-creation-process?wvideo=s81gw1gu3n",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 22,
+      "title": "Phase_3_-_7._Formats.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892489-formats-the-secret-to-packaging-information?wvideo=7gt97axhb7",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 23,
+      "title": "Phase_4_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892495-phase-4-intro?wvideo=49ezwwuh2i",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 24,
+      "title": "Phase_4_-_2._The_Strategy.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892499-the-1-000-000-youtube-strategy?wvideo=jr3427xt8v",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 25,
+      "title": "Phase_4_-_3._Research_Basics.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892508-the-basics-of-research-strategy?wvideo=uszpj80y14",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 26,
+      "title": "Phase_4_-_4._Patterns.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892525-task-how-to-find-patterns?wvideo=ibgzddhxhy",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 27,
+      "title": "Phase_4_-_Update_Synthia.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892556-task-update-synthia-s-ai-brain?wvideo=rpzbz338js",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 28,
+      "title": "Phase_4_-_5._Ideation.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67892522-task-how-to-ideate-your-next-3-4-videos?wvideo=kllyj6isvb",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 29,
+      "title": "AI_UPDATE_AI_Feedback_For_Ideas.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921147-task-play-with-the-ai?wvideo=bm5b2mkwpc",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 30,
+      "title": "Phase_5_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921173-phase-5-intro?wvideo=j69dwc9lei",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 31,
+      "title": "Phase_5_-_2._What_Makes_a_Great_Script.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921180-the-secret-to-making-amazing-videos?wvideo=d1b1p9hnp9",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 32,
+      "title": "Phase_5_-_3._Intros.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921186-video-intros-101?wvideo=2zwmkut8es",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 33,
+      "title": "Phase_5_-_Update_Synthia.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921236-task-update-synthia-s-ai-brain?wvideo=jjcbpvg1m6",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 34,
+      "title": "Phase_5_-_4._How_To_Write_Your_Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921206-how-to-write-an-intro?wvideo=vqec3ghwtv",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 35,
+      "title": "Phase_5_-_5._Making_Points.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921202-how-to-make-a-point?wvideo=vuhp1q8wi1",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 36,
+      "title": "Phase_5_-_6._Visual_Demos.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921210-emotion-brick-visual-demos?wvideo=nt057v09sk",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 37,
+      "title": "Phase_5_-_7._Story.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921214-emotion-brick-storytelling?wvideo=5twxs6tmyx",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 38,
+      "title": "Phase_5_-_8._Metaphor.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921216-emotion-brick-metaphor?wvideo=a5993o8b2d",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 39,
+      "title": "Phase_5_-_9._Logic.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921216-emotion-brick-metaphor?wvideo=z0o0lkunj6",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 40,
+      "title": "Phase_5_-_10._End_Screen.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921224-ending-your-video?wvideo=z40xvhcy1z",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 41,
+      "title": "AI_UPDATE__Intro_Feedback.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921193-task-getting-feedback-on-intros-points?wvideo=vbsyi5u8wg",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 42,
+      "title": "Phase_5_-_11._Conversion_Optimisation.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921226-optimising-videos-for-sales-views-leads?wvideo=0gvivli29q",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 43,
+      "title": "Phase_5_-_12._Planning.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921227-how-to-plan-a-video-basics?wvideo=mbt3psf79g",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 44,
+      "title": "Phase_5_-_13._Writing_v2.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921230-how-to-write-a-script-basics?wvideo=zhn92cte0m",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 45,
+      "title": "Set_ups_and_pay_offs.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921491-set-up-and-payoffs-reviewing-my-own-scripts?wvideo=x15np5d5w8",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 46,
+      "title": "Short_Process.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921521-short-process-videos?wvideo=fjlr60e15b",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 47,
+      "title": "Case_Study.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921522-case-studies?wvideo=12f9bjm06s",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 48,
+      "title": "Roasts.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921524-roasts-reviews?wvideo=hzvddp3mcs",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 49,
+      "title": "Deep_Dive.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921525-deep-dives?wvideo=iyxjkapitj",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 50,
+      "title": "Interviews.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921527-interviews?wvideo=4mbhij28hy",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 51,
+      "title": "News.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921528-news?wvideo=q9y0q06rbo",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 52,
+      "title": "Listicles.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921529-listicles?wvideo=i5bsp1pacv",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 53,
+      "title": "Phase_6_-_1._Intro.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921533-intro-to-measurement?wvideo=cp668r8ewi",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 54,
+      "title": "Phase_6_-_2._Measurement_Myths.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921533-intro-to-measurement?wvideo=gbke1rgg4p",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 55,
+      "title": "Phase_6_-_3._Measurement_Basics.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921537-measurement-basics?wvideo=qjkhj4ks3m",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 56,
+      "title": "Phase_6_-_4._Measurement_System.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921541-measurement-system?wvideo=ibuoeaif87",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 57,
+      "title": "Learn_a_Lesson.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921543-how-to-learn-a-lesson?wvideo=2w1intfy72",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 58,
+      "title": "Measurement_30_Day.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67953961-channel-health-measurement?wvideo=6r79ikar23",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    },
+    {
+      "lesson_index": 59,
+      "title": "RevTrack_Measurment_.mp4",
+      "lesson_url": "https://ed-s-school-81f3.thinkific.com/courses/take/YTGS4/lessons/67921554-how-to-use-revtracks-data?wvideo=e9v5gu9k3h",
+      "status": "error",
+      "errors": [
+        "[Errno 2] No such file or directory: '/Users/romansergeev/Downloads/YTCG.docx'"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "version": "3.0",
+  "created_at": "2026-03-15T17:14:23Z",
+  "project": "Phase_4_-_Update_Synthia",
+  "total_duration": 160.427,
+  "num_speakers": 1,
+  "language": "en",
+  "clips": [
+    "Phase_4_-_Update_Synthia"
+  ],
+  "segments": [
+    {
+      "id": 0,
+      "clip_id": "Phase_4_-_Update_Synthia",
+      "local_start": 0.0,
+      "local_end": 159.98,
+      "global_start": 0.0,
+      "global_end": 159.98,
+      "speaker": "SPEAKER_00",
+      "text": "Okay, so right now you've researched the niche, you've got viewers, loves and hates, and title structures and formats they really seem to be into. What we need to do now is update Cynthia's brain. So what I want you to do is this. If you are a new or small channel, and you had no outliers when we originally built Cynthia's brain in phase one, you now have a big list of them. So I want you to double check that final list we made that took all of the channels you've been analysing and turned it into one databank. And just make sure the AI didn't write anything silly or weird in there. Then what we want to do is we want to take that list, and we want to make it 12 titles long. And we put them on a Google Doc, we make the text big like this, put some space between them, screenshot it, and load it into Cynthia's brain in the image section. Now there's a reason we use an image here, which I'm not going to bore you with, but please do it that way. Now what you have is an MVP brain, which we're going to build up over time as we learn more and more lessons from posting content and failing as fast as you can. I also want you to look at the top three problems. That this information brought up when we analysed it, and ask, is that similar to the ones I came up with originally when I was doing the business research? If it's very different, you might want to make a call. Go with what the research from YouTube told you, or go with the initial research you did. Again, don't worry or overthink this. Indecision right now is worse than no decision. The only way we can discover the right path is to take action. So you will refine this over time with our fail as fast as you can system, but you just need to make this call right now. Now if you're an experienced user, you might want to make a call to Cynthia. If you're an experienced business, I would go more by the business data you had. If you did the business research from Reddit or Google or blogs, I would go more by the YouTube data. Now, if you were an experienced YouTube channel and you had tons of outliers on your channel, which you put up that list of 12 with, what you could now do is pick and choose. Delete some of the titles from your list and add in some of the new ones from the outliers you researched, or just leave it the same. What we don't want to do is take away the things that grew your business. What we don't want to do is take away the things that grew your channel because leaving that is going to put viewers off. The only reason we do that is if we're repositioning. And now what you have is your version one of Cynthia's brain and guardrails set up. It's going to be like your avatar giving you feedback. And as you learn things over time, you'll update this. And as you have more of your own outliers, you'll add them to the list. So this list just continually evolves. In fact, in six months time, it shouldn't look the same as it now is. If it is, you're not learning enough. Now, one last thing to note. We don't want 100 titles on that list. I kept it to 12 for a reason. Don't go over. You can also fill out your avatar demographic information at the top now based on your dream buyer too, if you've not already done that. And then move on to the next video where you're going to start ideating.",
+      "avg_confidence": 0.9397
+    }
+  ],
+  "stats": {
+    "total_words": 650,
+    "total_segments": 1,
+    "speakers": {
+      "SPEAKER_00": {
+        "segments": 1,
+        "words": 650,
+        "duration": 159.98,
+        "avg_confidence": 0.9397
+      }
+    },
+    "avg_confidence": 0.9397,
+    "low_confidence_segments": 0
+  }
+}

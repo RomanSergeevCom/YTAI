@@ -1,0 +1,89 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 21:24:18
+============================================================
+
+=== Configuration ===
+Project:    Phase_4_-_5._Ideation
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_4_-_5._Ideation/Phase_4_-_5._Ideation.mp4
+Clips:      1
+Duration:   18:17 (1097.3s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_4_-_5._Ideation   18:17  3840×2160 25.0fps H264  2.5Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.33 GB
+    offset 0.000s  Phase_4_-_5._Ideation.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)   17:47  97.3%  32 segments
+  Gaps                       0:30  2.7%
+
+=== Transcription ===
+Total words:     3,743
+Total segments:  20
+Avg confidence:  0.8947
+Low confidence:  1 segments
+  Low confidence details:
+    [Phase_4_-_5._Ideation] seg 0: "All right, so now I'm going to show you how to turn all of t..." (conf=0.96)
+    [Phase_4_-_5._Ideation] seg 1: "So awesome. So I've got a little egg embrace up here and I'm..." (conf=0.17)
+    [Phase_4_-_5._Ideation] seg 2: "we're going to play a third one in a row. What's the time ce..." (conf=0.81)
+    [Phase_4_-_5._Ideation] seg 3: "every video I make, we can load three thumbnails in. And wha..." (conf=0.95)
+    [Phase_4_-_5._Ideation] seg 4: "you're gonna do it again, Posting one video a week, we could..." (conf=0.90)
+    [Phase_4_-_5._Ideation] seg 5: "Take this seriously. But look, it doesn't have to be that mu..." (conf=0.95)
+    [Phase_4_-_5._Ideation] seg 15: "And that's it. So we might give you a bit of feedback and sa..." (conf=0.96)
+    [Phase_4_-_5._Ideation] seg 16: "but that's it. And then you just repeat this. So really you ..." (conf=0.96)
+
+=== Per-Clip Details ===
+  Phase_4_-_5._Ideation:
+    Words: 3743  Segments: 20  Confidence: 0.9326  Low: 8
+    Speaker 1: 3743 words, 20 segs, 17:28
+
+=== Whisper Per-Clip ===
+  Phase_4_-_5._Ideation   18:17   3743 words   205 wpm    9m 05s  (2.01x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         2s        1s  -    1s    0.2%
+  Diarization          38s       35s  -    4s    5.9%
+  Whisper           10m 03s    9m 05s  -   58s   93.8%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              2s        0s  -    2s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             10m 48s    9m 41s  -1m 07s  100.0%
+  Speed:          1.9x realtime
+  Wall clock:     9m 41s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_4_-_5._Ideation_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           24.6 KB
+    diarization.json                                    2.9 KB
+    full_audio.wav                                  34289.4 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_4_-_5._Ideation/Phase_4_-_5._Ideation_audio.wav   34289.4 KB
+    per_clip/Phase_4_-_5._Ideation/Phase_4_-_5._Ideation_captions.srt      35.2 KB
+    per_clip/Phase_4_-_5._Ideation/Phase_4_-_5._Ideation_premiere_transcript.json     847.1 KB
+    per_clip/Phase_4_-_5._Ideation/Phase_4_-_5._Ideation_transcript.json     499.6 KB
+    per_clip/Phase_4_-_5._Ideation/Phase_4_-_5._Ideation_transcript.srt      19.9 KB
+    per_clip/Phase_4_-_5._Ideation/Phase_4_-_5._Ideation_transcript.txt      19.5 KB
+    per_clip/Phase_4_-_5._Ideation/Phase_4_-_5._Ideation_whisper_raw.json     494.5 KB
+  Phase_4_-_5._Ideation_transcript.xlsx  (16.0 KB)
+
+============================================================

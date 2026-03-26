@@ -1,0 +1,80 @@
+============================================================
+YTAI Transcribe v3.0
+Date: 2026-03-15 18:35:29
+============================================================
+
+=== Configuration ===
+Project:    Phase_1_-_9._Audit_V2
+Input:      file — /Users/romansergeev/YTAI/utils/thinkific_downloader/downloads/YTGS/Phase_1_-_9._Audit_V2/Phase_1_-_9._Audit_V2.mp4
+Clips:      1
+Duration:   9:25 (565.6s)
+Speakers:   1 (detected: 1)
+Model:      large-v3
+Language:   en (detected: en)
+Device:     mps
+Multicam:   no
+
+=== Clips ===
+  Phase_1_-_9._Audit_V2    9:25  3840×2160 25.0fps H264  3.8Mbps yuv420p
+    Color: bt709/bt709/bt709  Audio: aac 44100Hz stereo  Size: 0.26 GB
+    offset 0.000s  Phase_1_-_9._Audit_V2.mp4
+
+=== Diarization ===
+Speakers: 1
+  Speaker 1    (SPEAKER_00)    9:24  99.8%  6 segments
+  Gaps                       0:01  0.2%
+
+=== Transcription ===
+Total words:     2,190
+Total segments:  1
+Avg confidence:  0.9660
+Low confidence:  0 segments
+
+=== Per-Clip Details ===
+  Phase_1_-_9._Audit_V2:
+    Words: 2190  Segments: 1  Confidence: 0.9660  Low: 0
+    Speaker 1: 2190 words, 1 segs, 9:25
+
+=== Whisper Per-Clip ===
+  Phase_1_-_9._Audit_V2    9:25   2190 words   232 wpm    3m 54s  (2.42x)  en
+
+=== Timings (Plan vs Fact) ===
+  Stage                Est    Actual     Delta      %
+  ────────────────────────────────────────────────
+  Extract audio         1s        1s  -    0s    0.3%
+  Diarization          20s       21s  +    1s    8.0%
+  Whisper           5m 11s    3m 54s  -1m 16s   91.6%
+  Speaker map           1s        0s  -    1s    0.0%
+  Generate              1s        0s  -    1s    0.0%
+  Ingest JSON           1s        0s  -    1s    0.0%
+  ────────────────────────────────────────────────
+  Total             5m 34s    4m 15s  -1m 18s  100.0%
+  Speed:          2.2x realtime
+  Wall clock:     4m 15s
+
+=== Software ===
+Python:     3.11.14
+Torch:      2.8.0
+Whisper:    20250625
+Pyannote:   4.0.3
+Model:      large-v3
+Device:     mps
+
+=== Output Files ===
+  Phase_1_-_9._Audit_V2_transcription/
+    clip_offsets.json                                   0.2 KB
+    combined_transcript.json                           12.1 KB
+    diarization.json                                    0.6 KB
+    full_audio.wav                                  17674.8 KB
+    meta.json                                           0.8 KB
+    speakers.json                                       0.2 KB
+    per_clip/Phase_1_-_9._Audit_V2/Phase_1_-_9._Audit_V2_audio.wav   17674.8 KB
+    per_clip/Phase_1_-_9._Audit_V2/Phase_1_-_9._Audit_V2_captions.srt      20.6 KB
+    per_clip/Phase_1_-_9._Audit_V2/Phase_1_-_9._Audit_V2_premiere_transcript.json     488.3 KB
+    per_clip/Phase_1_-_9._Audit_V2/Phase_1_-_9._Audit_V2_transcript.json     288.3 KB
+    per_clip/Phase_1_-_9._Audit_V2/Phase_1_-_9._Audit_V2_transcript.srt      11.3 KB
+    per_clip/Phase_1_-_9._Audit_V2/Phase_1_-_9._Audit_V2_transcript.txt      11.3 KB
+    per_clip/Phase_1_-_9._Audit_V2/Phase_1_-_9._Audit_V2_whisper_raw.json     262.7 KB
+  Phase_1_-_9._Audit_V2_transcript.xlsx  (11.8 KB)
+
+============================================================
