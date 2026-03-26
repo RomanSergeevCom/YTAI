@@ -1,0 +1,8 @@
+{
+  "channels": [
+    {"code": "YTCR", "name": "Core Realty Dubai"},
+    {"code": "YTCG", "name": "Connect Group"},
+    {"code": "YTRF", "name": "Рефлюкс"},
+    {"code": "YTXX", "name": "Test/Dev"}
+  ]
+}
