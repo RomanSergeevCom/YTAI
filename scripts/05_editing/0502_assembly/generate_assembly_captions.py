@@ -286,10 +286,15 @@ def find_per_clip_dir(brief_path: str, transcription_dir: str, project_name: str
     """
     brief_dir = Path(brief_path).parent
 
-    # Option 0: v3.0 structure (brief in Setup/, per_clip in Transcription/)
-    candidate = brief_dir.parent / "Transcription" / "per_clip"
-    if candidate.is_dir():
-        return candidate
+    # Option 0: v3.0 structure (brief in Setup/ or Setup/Assembly/ or Setup/Pre-Edit/)
+    # per_clip is sibling of Setup under Source/
+    for levels_up in range(1, 4):  # parent, grandparent, great-grandparent
+        ancestor = brief_dir
+        for _ in range(levels_up):
+            ancestor = ancestor.parent
+        candidate = ancestor / "Transcription" / "per_clip"
+        if candidate.is_dir():
+            return candidate
 
     # Option 1: sibling of brief
     candidate = brief_dir / transcription_dir / "per_clip"

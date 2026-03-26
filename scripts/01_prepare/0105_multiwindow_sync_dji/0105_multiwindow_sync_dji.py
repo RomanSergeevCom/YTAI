@@ -148,11 +148,16 @@ def extract_cam_8k(video_path: Path) -> np.ndarray:
 
 
 def get_duration(filepath: Path) -> float:
+    if filepath.name.startswith("._"):
+        return 0.0
     r = subprocess.run(
         ["ffprobe", "-v", "quiet", "-print_format", "json",
          "-show_format", str(filepath)],
         capture_output=True, text=True)
-    return float(json.loads(r.stdout)["format"]["duration"])
+    try:
+        return float(json.loads(r.stdout)["format"]["duration"])
+    except (KeyError, ValueError, json.JSONDecodeError):
+        return 0.0
 
 
 def envelope(sig: np.ndarray, win: float = 0.1) -> np.ndarray:

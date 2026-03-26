@@ -115,6 +115,52 @@ def lookup_full_text(tx_lookup: dict, source_file: str, tc_in_sec: float, tc_out
     return full_text, avg_conf, has_low
 
 
+def compute_timeline_positions(segments: list) -> dict:
+    """Return {segment_id: position_sec} for used segments in assembly order."""
+    used = [s for s in segments
+            if s.get("use", "").upper() == "TRUE" and s.get("block", 99) != 99]
+    used.sort(key=lambda s: (s.get("block", 0), segments.index(s)))
+    pos = {}
+    t = 0.0
+    for s in used:
+        pos[s["segment_id"]] = t
+        t += parse_timecode(s.get("tc_out", "0")) - parse_timecode(s.get("tc_in", "0"))
+    return pos
+
+
+def compute_block_durations(segments: list) -> list:
+    """Return [(block_num, block_name, color, duration)] for used segments."""
+    used = [s for s in segments
+            if s.get("use", "").upper() == "TRUE" and s.get("block", 99) != 99]
+    blocks = {}
+    for s in used:
+        b = s.get("block", 0)
+        if b not in blocks:
+            blocks[b] = {"name": s.get("block_name", f"Block {b}"),
+                         "color": s.get("color", "Cyan"), "dur": 0.0}
+        dur = parse_timecode(s.get("tc_out", "0")) - parse_timecode(s.get("tc_in", "0"))
+        blocks[b]["dur"] += dur
+    return [(b, blocks[b]["name"], blocks[b]["color"], blocks[b]["dur"])
+            for b in sorted(blocks)]
+
+
+def render_timeline_bar(block_durs: list, total_dur: float) -> str:
+    """Render a colored timeline bar with block segments."""
+    if total_dur <= 0:
+        return ""
+    parts = ['<div class="timeline-bar">']
+    for block_num, block_name, color, dur in block_durs:
+        pct = dur / total_dur * 100
+        if pct < 1:
+            continue
+        hex_c = COLOR_HEX_DARK.get(color, "#2a2a4a")
+        label = f"B{block_num}" if pct > 4 else ""
+        title = f"Block {block_num}: {block_name} ({format_duration(dur)})"
+        parts.append(f'<div class="tl-block" style="width:{pct:.1f}%;background:{hex_c}" title="{escape_html(title)}">{label}</div>')
+    parts.append('</div>')
+    return "\n".join(parts)
+
+
 def generate_html(brief: dict, transcript_data: dict = None) -> str:
     """Generate HTML review document from {project}_pre_edit_brief.json.
 
@@ -162,6 +208,10 @@ def generate_html(brief: dict, transcript_data: dict = None) -> str:
             })
         dur = parse_timecode(seg.get("tc_out", "0")) - parse_timecode(seg.get("tc_in", "0"))
         timeline_pos += dur
+
+    # Timeline positions and block durations
+    tl_positions = compute_timeline_positions(segments)
+    block_durs = compute_block_durations(segments)
 
     # --- Build HTML ---
     html_parts = []
@@ -258,8 +308,18 @@ details[open] summary::before {{ transform: rotate(90deg); }}
 .badge-priority {{ background: #4a3a1a; color: #EDA63B; }}
 .seg-text {{
     color: #bbb; font-size: 0.85em; font-style: italic;
-    max-height: 3em; overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.6;
+}}
+.seg-tl-pos {{ color: #4A90D9; font-family: monospace; font-size: 0.8em; }}
+.timeline-bar {{
+    display: flex; height: 32px; border-radius: 6px; overflow: hidden;
+    margin-bottom: 20px; position: relative; background: #111;
+}}
+.tl-block {{
+    position: relative; display: flex; align-items: center;
+    justify-content: center; font-size: 0.65em; font-weight: bold;
+    color: rgba(255,255,255,0.8); overflow: hidden; white-space: nowrap;
+    border-right: 1px solid #1a1a2e; cursor: default;
 }}
 .seg-meta {{ display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.8em; }}
 .meta-broll {{ color: #EDA63B; }}
@@ -342,6 +402,10 @@ details[open] summary::before {{ transform: rotate(90deg); }}
 </div>
 """)
 
+    # Timeline bar
+    if block_durs:
+        html_parts.append(render_timeline_bar(block_durs, selected_duration))
+
     # YouTube Chapters
     if chapters:
         html_parts.append('<div class="chapters"><h2>YouTube Chapters</h2>')
@@ -408,6 +472,10 @@ details[open] summary::before {{ transform: rotate(90deg); }}
             chapter_badge = ' <span class="badge badge-chapter">CHAPTER</span>' if is_chapter else ''
             priority_badge = f' <span class="badge badge-priority">ALT {priority}</span>' if priority > 1 else ''
 
+            # Timeline position badge
+            tl_pos = tl_positions.get(seg_id)
+            tl_badge = f' <span class="seg-tl-pos">@ {format_duration(tl_pos)}</span>' if tl_pos is not None else ''
+
             opacity = "1" if is_used else "0.5"
 
             html_parts.append(f"""
@@ -420,11 +488,11 @@ details[open] summary::before {{ transform: rotate(90deg); }}
                     <span class="seg-speaker">{escape_html(speaker)}</span>
                     <span class="seg-time">{escape_html(tc_in)} → {escape_html(tc_out)}</span>
                     <span class="seg-duration">{dur:.0f}s</span>
-                    {use_badge}{chapter_badge}{priority_badge}{conf_badge}
+                    {tl_badge}{use_badge}{chapter_badge}{priority_badge}{conf_badge}
                 </div>
 """)
             if display_text:
-                html_parts.append(f'                <div class="seg-text">"{escape_html(display_text)}"</div>')
+                html_parts.append(f'                <div class="seg-text">{escape_html(display_text)}</div>')
 
             if broll or notes:
                 html_parts.append('                <div class="seg-meta">')

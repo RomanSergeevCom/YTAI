@@ -114,6 +114,7 @@ V3_MANAGED_DIRS = {
 SYSTEM_DIRS = {
     '.Spotlight-V100', '.fseventsd', '.Trashes',
     '.TemporaryItems', '__MACOSX', '.DocumentRevisions-V100',
+    '_discovery',
 }
 
 # Archive/old dirs to skip (case-insensitive prefix match)
@@ -1357,7 +1358,17 @@ def print_project_tree(project: Path, log: PipelineLogger):
     logs_dir = setup_dir / "logs"
     log_count = len(list(logs_dir.glob("*.log"))) if logs_dir.is_dir() else 0
     log_info = f"{log_count} logs" if log_count else f"{C.DIM}—{C.RESET}"
-    log.info(f"{src_p}{L}Setup/logs/  {C.DIM}{log_info}{C.RESET}")
+    log.info(f"{src_p}├──Setup/logs/  {C.DIM}{log_info}{C.RESET}")
+
+    assembly_dir = setup_dir / "Assembly"
+    asm_count = len(list(assembly_dir.glob("*.json"))) if assembly_dir.is_dir() else 0
+    asm_info = f"{asm_count} briefs" if asm_count else f"{C.DIM}—{C.RESET}"
+    log.info(f"{src_p}├──Setup/Assembly/  {C.DIM}{asm_info}{C.RESET}")
+
+    pre_edit_dir = setup_dir / "Pre-Edit"
+    pe_count = len(list(pre_edit_dir.iterdir())) if pre_edit_dir.is_dir() else 0
+    pe_info = f"{pe_count} items" if pe_count else f"{C.DIM}—{C.RESET}"
+    log.info(f"{src_p}{L}Setup/Pre-Edit/  {C.DIM}{pe_info}{C.RESET}")
 
     # 99_Pipeline/
     log.info(f"  │")
