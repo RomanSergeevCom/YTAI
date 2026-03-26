@@ -7,7 +7,9 @@ Python-скрипт для генерации Assembly captions SRT с тайм�
 - `per_clip/{clip_id}/{clip_id}_transcript.json` (из 020101_transcribe, word-level timing)
 
 **Выход:**
-- `{project}_2_Assembly_captions.srt` — word-level субтитры с таймкодами Assembly таймлайна
+- `{CODE}_2_Assembly_v{N}_captions.srt` — word-level субтитры с таймкодами Assembly таймлайна (имя = имя таймлайна)
+
+> **Примечание:** UXP плагин теперь генерирует transcript + captions SRT автоматически при сборке Assembly/Review (Step 6). Python скрипт используется как fallback для более точного word-level timing.
 
 ---
 

@@ -12,8 +12,8 @@ UXP-плагин для Adobe Premiere Pro: **Ingest** + **Assembly** + **Review
 - INGEST: бины `00_Source/` (clips + DJI), `01_Transcripts/` (per-scene transcript sub-bins), секвенция `{project}_1_Ingest`
 - SCREEN CUES: бин `01_ScreenCues/` (PNG оверлеи)
 - **Sequences at project root** — Premiere UXP API limitation: sequences cannot be moved into bins
-- ASSEMBLY: секвенция `{project}_2_Assembly` (V1: trimmed, colored clips + markers)
-- REVIEW: секвенция `{project}_3_Review` (V1 only, unused segments, colored by cut category)
+- ASSEMBLY: секвенция `{project}_2_Assembly_v{N}` (V1: trimmed, colored clips + markers)
+- REVIEW: секвенция `{project}_3_Review_v{N}` (V1 only, unused segments, colored by cut category)
 - SCREEN CUES: секвенция `{project}_4_ScreenCues` (V1: Assembly copy, V2: PNG overlays, markers, SRT)
 
 ---
@@ -140,7 +140,7 @@ Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегмен�
 3. **Build** — `buildAssemblySequence()` (V1 only, USE=TRUE, block≠99, pre-trimmed, per-segment colors)
 4. **Markers** — маркеры в 4 транзакциях: создание → покраска → смена типа на Chapter
 5. **Activate** — открытие секвенции + сохранение + валидация
-6. **Captions** — `importCaptionsSrt()` — import `{project}_2_Assembly_captions.srt` в 01_Transcripts
+6. **Captions** — генерация `{CODE}_2_Assembly_v{N}_transcript.srt` + `{CODE}_2_Assembly_v{N}_captions.srt` → запись в `Transcription/` → `importCaptionsSrt()` → import в `01_Transcripts/{CODE}_2_Assembly_v{N}/`
 
 > **Screen Cues** — отдельный pipeline (v1.9.3+), не часть Assembly. См. секцию ниже.
 
@@ -203,7 +203,7 @@ Screen Cues: V1 = Assembly copy,     A2 = DJI тримменные сегмен�
 3. **Build** — `buildReviewSequence()` (V1 only, complement approach: Ingest минус Assembly, sorted by sourceFile + tc_in, colored by category)
 4. **Markers** — Chapter маркеры по границам source files + per-segment маркеры с [CUT]/[ALT]/[SKIP] prefix
 5. **Activate** — открытие секвенции + сохранение + валидация
-6. **Captions** — `importCaptionsSrt()` — import `{project}_3_Review_captions.srt` в 01_Transcripts
+6. **Captions** — генерация `{CODE}_3_Review_v{N}_transcript.srt` + `{CODE}_3_Review_v{N}_captions.srt` → запись в `Transcription/` → `importCaptionsSrt()` → import в `01_Transcripts/{CODE}_3_Review_v{N}/`
 
 ### REVIEW — Ingest минус Assembly (complement approach)
 
@@ -494,10 +494,11 @@ buildAssembly() [index.js]
 │
 ├─ Step 5: setActiveSequence() + save() + validateAssemblyBuild()
 │
-└─ Step 6: importCaptionsSrt() [index.js]
-   ├─ Ищет {CODE}_2_Assembly_captions.srt в Transcription/captions/ (или рядом с brief как fallback)
-   ├─ Если найден → project.importFiles([srtPath], true, transcriptsBin, false)
-   └─ SRT появляется в 01_Transcripts bin → editor перетаскивает на Caption track
+└─ Step 6: Assembly Captions [index.js]
+   ├─ generateTranscriptSrt() → {CODE}_2_Assembly_v{N}_transcript.srt → Transcription/transcripts/
+   ├─ generateCaptionsSrt()   → {CODE}_2_Assembly_v{N}_captions.srt  → Transcription/captions/
+   ├─ importCaptionsSrt() × 2 → import оба SRT в 01_Transcripts/{CODE}_2_Assembly_v{N}/
+   └─ Имя SRT файла = имя таймлайна (включает версию brief)
 ```
 
 ### Внутри Step 4: маркеры (порядок критически важен!)
@@ -559,10 +560,11 @@ buildReview() [index.js]
 │
 ├─ Step 5: setActiveSequence() + save() + validateReviewBuild()
 │
-└─ Step 6: importCaptionsSrt() [index.js]
-   ├─ Ищет {CODE}_3_Review_captions.srt в Transcription/captions/ (или рядом с brief как fallback)
-   ├─ Если найден → project.importFiles([srtPath], true, transcriptsBin, false)
-   └─ SRT появляется в 01_Transcripts bin → editor перетаскивает на Caption track
+└─ Step 6: Review Captions [index.js]
+   ├─ generateTranscriptSrt() → {CODE}_3_Review_v{N}_transcript.srt → Transcription/transcripts/
+   ├─ generateCaptionsSrt()   → {CODE}_3_Review_v{N}_captions.srt  → Transcription/captions/
+   ├─ importCaptionsSrt() × 2 → import оба SRT в 01_Transcripts/{CODE}_3_Review_v{N}/
+   └─ Имя SRT файла = имя таймлайна (включает версию brief)
 ```
 
 ### Внутри SCREEN CUES Pipeline

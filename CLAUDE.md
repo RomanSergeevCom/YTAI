@@ -93,6 +93,8 @@ python ~/YTAI/scripts/05_editing/0506_marker_export/export_markers_from_prproj.p
 │       ├── Audio/{scene}/*_TX*.wav
 │       ├── Transcription/
 │       │   ├── {CODE}_transcript.json
+│       │   ├── transcripts/{CODE}_2_Assembly_v{N}_transcript.srt
+│       │   ├── captions/{CODE}_2_Assembly_v{N}_captions.srt
 │       │   ├── per_clip/
 │       │   └── {scene}/
 │       └── Setup/
