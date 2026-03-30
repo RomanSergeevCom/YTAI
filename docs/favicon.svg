@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-<rect width="32" height="32" rx="6" fill="#0D1526"/>
-<text x="16" y="22" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="900" font-size="14" fill="#D4E44B" letter-spacing="0.5">RYA</text>
+<rect width="32" height="32" fill="#0B1120"/>
+<circle cx="16" cy="16" r="13" fill="#D4E44B"/>
+<polygon points="13,9 13,23 24,16" fill="#0B1120"/>
 </svg>
