@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YTAI Pipeline — Full Process</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0D1526;--panel:#121E33;--lime:#D4E44B;--white:#FFF;--blue:#7BA4D4;--card:#1C2D42;--muted:#8899AA;--border:rgba(123,164,212,.15);--err:#E05555;--warn:#F59E0B;--ok:#4ADE80;--purple:#6B5CE7;--teal:#01E8AB;--cyan:#29A6CB;--mono:'SF Mono','Fira Code','JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Montserrat',system-ui,sans-serif;background:var(--bg);color:var(--white);font-size:15px;line-height:1.7}
+
+/* ── Header ── */
+.hdr{position:sticky;top:0;z-index:100;background:var(--panel);border-bottom:1px solid var(--border);padding:14px 40px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:var(--lime);letter-spacing:2px}
+.hdr-t{font-size:16px;font-weight:300;color:var(--muted);margin-left:20px;padding-left:20px;border-left:1px solid var(--border)}
+.hdr-r{font-size:12px;color:var(--white);font-weight:300}
+.hdr-r a{color:var(--white);font-weight:700;text-decoration:none}
+
+.wrap{padding:48px 40px;max-width:1200px;margin:0 auto}
+h1{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;color:var(--lime);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.sub{font-size:16px;color:var(--muted);font-weight:300;margin-bottom:40px}
+
+/* ── Actor badges ── */
+.actors{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0}
+.actor{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:4px}
+.a-claude{background:rgba(107,92,231,.15);color:var(--purple);border:1px solid rgba(107,92,231,.3)}
+.a-python{background:rgba(74,222,128,.1);color:var(--ok);border:1px solid rgba(74,222,128,.2)}
+.a-uxp{background:rgba(212,228,75,.1);color:var(--lime);border:1px solid rgba(212,228,75,.2)}
+.a-editor{background:rgba(123,164,212,.1);color:var(--blue);border:1px solid rgba(123,164,212,.2)}
+.a-gemini{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.2)}
+
+/* ── Stage card ── */
+.stage{margin-bottom:16px;scroll-margin-top:80px}
+.stage-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .2s}
+.stage-card:hover{border-color:rgba(212,228,75,.3)}
+.stage-top{display:flex;align-items:center;gap:16px;padding:18px 24px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.1)}
+.stage-num{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;color:var(--lime);opacity:.4;width:50px;text-align:center;flex-shrink:0}
+.stage-info{flex:1}
+.stage-name{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.stage-desc{font-size:13px;color:var(--muted);font-weight:300;margin-top:2px}
+.stage-scripts{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px;opacity:.7}
+.stage-body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
+.stage-col{padding:16px 20px;font-size:13px}
+.stage-col:not(:last-child){border-right:1px solid var(--border)}
+.col-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.col-in .col-lbl{color:var(--teal)}
+.col-out .col-lbl{color:var(--warn)}
+.col-cmd .col-lbl{color:var(--blue)}
+.file{font-family:var(--mono);font-size:12px;background:var(--card);padding:2px 6px;border-radius:4px;color:var(--blue);display:inline-block;margin:2px 0}
+.stage-col p{color:rgba(255,255,255,.8);line-height:1.6;margin-bottom:4px}
+.cmd{font-family:var(--mono);font-size:11px;background:rgba(0,0,0,.2);padding:6px 10px;border-radius:6px;color:var(--ok);display:block;margin:4px 0;word-break:break-all}
+
+/* ── Arrow between stages ── */
+.arrow{text-align:center;padding:4px 0;color:var(--lime);font-size:20px;opacity:.4}
+
+/* ── Detail blocks ── */
+.claude-detail{background:rgba(107,92,231,.05);border:1px solid rgba(107,92,231,.2);border-radius:10px;padding:14px 18px;margin-top:10px}
+.claude-detail::before{content:"CLAUDE";display:block;font-size:9px;font-weight:700;color:var(--purple);letter-spacing:1px;margin-bottom:6px}
+.claude-detail p{font-size:12px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:4px}
+
+.uxp-detail{background:rgba(212,228,75,.05);border:1px solid rgba(212,228,75,.15);border-radius:10px;padding:14px 18px;margin-top:10px}
+.uxp-detail::before{content:"UXP PANEL";display:block;font-size:9px;font-weight:700;color:var(--lime);letter-spacing:1px;margin-bottom:6px}
+.uxp-detail p{font-size:12px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:4px}
+
+.review-detail{background:rgba(41,166,203,.05);border:1px solid rgba(41,166,203,.2);border-radius:10px;padding:14px 18px;margin-top:10px}
+.review-detail::before{content:"REVIEW PIPELINE";display:block;font-size:9px;font-weight:700;color:var(--cyan);letter-spacing:1px;margin-bottom:6px}
+.review-detail p{font-size:12px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:4px}
+
+.loop{background:rgba(245,158,11,.06);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;font-size:12px;color:rgba(255,255,255,.75)}
+
+/* ── Folder tree ── */
+.tree{background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-top:10px;font-family:var(--mono);font-size:11px;line-height:1.8;color:rgba(255,255,255,.6);white-space:pre;overflow-x:auto}
+.tree .new{color:var(--ok);font-weight:700}
+.tree .changed{color:var(--warn);font-weight:600}
+.tree-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;font-family:'Montserrat',sans-serif}
+
+/* ── Overview flow ── */
+.flow-overview{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:28px 32px;margin-bottom:40px;overflow-x:auto}
+.flow-row{display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.flow-box{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);white-space:nowrap;text-align:center}
+.flow-box.active{border-color:var(--ok);color:var(--ok)}
+.flow-box.claude{border-color:var(--purple);color:var(--purple)}
+.flow-box.uxp{border-color:var(--lime);color:var(--lime)}
+.flow-box.editor{border-color:var(--blue);color:var(--blue)}
+.flow-box.gemini{border-color:var(--warn);color:var(--warn)}
+.flow-box.review{border-color:var(--cyan);color:var(--cyan)}
+.flow-arr{color:var(--lime);font-size:16px;font-weight:700}
+
+/* ── Section divider ── */
+.section-div{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:24px 0 8px;border-bottom:1px solid var(--border);margin-bottom:16px}
+
+/* ── Environment section ── */
+.env-section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px 28px;margin-bottom:40px}
+.env-section h3{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+.env-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.env-item{background:var(--card);border-radius:10px;padding:14px 18px}
+.env-name{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.env-name.py{color:var(--ok)}
+.env-name.uxp{color:var(--lime)}
+.env-name.claude{color:var(--purple)}
+.env-desc{font-size:12px;color:var(--muted);margin-bottom:6px}
+.env-cmd{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.5);background:rgba(0,0,0,.2);padding:4px 8px;border-radius:4px;display:block}
+.env-stages{font-size:10px;color:rgba(255,255,255,.35);margin-top:4px}
+
+.footer{text-align:center;padding:32px 40px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)}
+.footer a{color:var(--white);font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;">
+    <div class="logo">YTAI</div>
+    <div class="hdr-t">Pipeline &mdash; Full Process</div>
+  </div>
+  <div class="hdr-r">v2.2 &middot; 2026-03-29 &middot; powered by <a href="https://rya.ae/">RYA.AE</a></div>
+</div>
+
+<div class="wrap">
+
+<h1>YTAI Pipeline</h1>
+<p class="sub">Полный процесс от сырого материала до YouTube &mdash; 15 этапов в хронологическом порядке.<br>Участники: Python, Claude, UXP Panel, монтажёр, Gemini.</p>
+
+<!-- ═══════════════════════════════════════
+     OVERVIEW FLOW
+     ═══════════════════════════════════════ -->
+<div class="flow-overview">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:16px;font-weight:600;">ПОТОК ДАННЫХ (ХРОНОЛОГИЯ)</div>
+  <div class="flow-row">
+    <div class="flow-box">КАМЕРА</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box active">00 INGEST</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box active">01 PREPARE</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box active">02 TRANSCRIBE</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box claude">03 ASSEMBLY BRIEF</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box uxp">04 UXP INGEST</div>
+  </div>
+  <div class="flow-row" style="padding-left:40px;">
+    <div class="flow-arr">&darr;</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-box uxp">05 UXP ASSEMBLY</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box uxp">06 DELETED SCENE</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box editor">07 BRIEF UPDATE</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box claude">08 SCREEN PLAN</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box gemini">09 АССЕТЫ</div>
+  </div>
+  <div class="flow-row" style="padding-left:40px;">
+    <div class="flow-arr">&darr;</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-box uxp">10 SCREEN CUES</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box editor">11 МОНТАЖ</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box review">12 REVIEW</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box gemini">13 THUMBNAIL</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box active">14 ПУБЛИКАЦИЯ</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box">YOUTUBE</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ENVIRONMENT
+     ═══════════════════════════════════════ -->
+<div class="env-section">
+  <h3>Окружение</h3>
+  <div class="env-grid">
+    <div class="env-item">
+      <div class="env-name py">.venv_transcribe</div>
+      <div class="env-desc">Whisper large-v3 + Pyannote (speaker diarization) + torch</div>
+      <code class="env-cmd">source ~/YTAI/environment/.venv_transcribe/bin/activate</code>
+      <div class="env-stages">Этапы: 02 Transcribe, 12 Review</div>
+    </div>
+    <div class="env-item">
+      <div class="env-name py">.venv_ytai-prod</div>
+      <div class="env-desc">Production pipeline: file ops, FFmpeg, marker export, screen cues</div>
+      <code class="env-cmd">source ~/YTAI/environment/.venv_ytai-prod/bin/activate</code>
+      <div class="env-stages">Этапы: 00 Ingest, 01 Prepare, 07 Brief Update, 10 Screen Cues</div>
+    </div>
+    <div class="env-item">
+      <div class="env-name uxp">UXP Panel (Premiere Pro)</div>
+      <div class="env-desc">Adobe UXP plugin &mdash; JavaScript, запускается внутри Premiere</div>
+      <code class="env-cmd">scripts/05_editing/0500_uxp/</code>
+      <div class="env-stages">Этапы: 04 Ingest, 05 Assembly, 06 Deleted Scene, 10 Screen Cues, 12 Review</div>
+    </div>
+    <div class="env-item">
+      <div class="env-name claude">Claude Code</div>
+      <div class="env-desc">AI-генерация: brief, screen plan, publication, round-trip updates</div>
+      <code class="env-cmd">~/YTAI/ working directory</code>
+      <div class="env-stages">Этапы: 03 Assembly Brief, 07 Brief Update, 08 Screen Plan, 14 Publication</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     00 INGEST
+     ═══════════════════════════════════════ -->
+<div class="section-div">Pre-production (автоматика)</div>
+
+<div class="stage" id="s00">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">00</div>
+    <div class="stage-info">
+      <div class="stage-name">Ingest</div>
+      <div class="stage-desc">Обнаружение сырых файлов, создание структуры папок v3.0, маппинг DJI аудио</div>
+      <div class="stage-scripts">scripts/00_ingest/ + scripts/01_prepare/0101_init_folders/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Python</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p>Сырые файлы с камер и микрофонов</p>
+      <p><span class="file">*.MP4</span> (Sony FX3, GoPro)</p>
+      <p><span class="file">*.WAV</span> (DJI Mic 2 wireless)</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p><span class="file">Setup/{CODE}_ingest.json</span></p>
+      <p>Метаданные: клипы, пути, сцены, длительности, DJI audio mapping</p>
+      <p>Структура папок v3.0 (см. ниже)</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Команда</div>
+      <span class="cmd">python ~/YTAI/scripts/run_pipeline.py "$PROJECT"</span>
+      <p>Автоматически: создаёт папки, обнаруживает сцены (<span class="file">^\d{2}_</span>), маппит DJI TX файлы к клипам</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="tree-label">Структура папок после Ingest</div>
+    <div class="tree"><span class="new">{project}/</span>
+├── <span class="new">01_Media/</span>
+│   └── <span class="new">Source/</span>
+│       ├── <span class="new">Video/{scene}/*.MP4</span>
+│       ├── <span class="new">Audio/{scene}/*.WAV</span>       ← DJI wireless
+│       ├── <span class="new">LUT/*.cube</span>
+│       ├── <span class="new">Transcription/</span>
+│       │   └── <span class="new">per_clip/{clip}/</span>
+│       └── <span class="new">Setup/</span>
+│           ├── <span class="new">{CODE}_ingest.json</span>
+│           └── <span class="new">logs/</span>
+├── <span class="new">02_Exports/</span>
+├── <span class="new">03_Shorts/</span>
+├── <span class="new">04_Thumbnail/</span>
+├── <span class="new">YouTube/</span>
+└── <span class="new">99_Pipeline/DJI_Audio/</span></div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     01 PREPARE
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s01">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">01</div>
+    <div class="stage-info">
+      <div class="stage-name">Prepare</div>
+      <div class="stage-desc">Извлечение аудио из видеоклипов, синхронизация DJI wireless микрофонов</div>
+      <div class="stage-scripts">scripts/01_prepare/0102_extract_audio/ + 0105_multiwindow_sync_dji/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Python</span><span class="actor a-python">FFmpeg</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p><span class="file">Setup/{CODE}_ingest.json</span></p>
+      <p><span class="file">Video/{scene}/*.MP4</span></p>
+      <p><span class="file">Audio/{scene}/*.WAV</span> (DJI Mic 2)</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p><span class="file">per_clip/{clip}/{clip}_AUDIO.wav</span></p>
+      <p><span class="file">per_clip/{clip}/{clip}M01.XML</span></p>
+      <p><span class="file">Transcription/{CODE}_FULL_AUDIO.wav</span></p>
+      <p><span class="file">99_Pipeline/DJI_Audio/{clip}_TX01.wav</span></p>
+      <p><span class="file">99_Pipeline/DJI_Audio/{clip}_TX02.wav</span></p>
+      <p><span class="file">{CODE}_ingest.json</span> (обновлён: dji_audio[])</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Команда</div>
+      <span class="cmd">python ~/YTAI/scripts/run_pipeline.py "$PROJECT"</span>
+      <p><b>Алгоритм DJI sync:</b></p>
+      <p>FFmpeg extract audio &rarr; multi-window waveform cross-correlation &rarr; trim TX to clip boundaries</p>
+      <p>Поддержка spanning (DJI авто-разрезает на ~30 мин)</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="tree-label">Новые файлы после Prepare</div>
+    <div class="tree">{project}/01_Media/Source/
+├── Transcription/
+│   ├── <span class="new">{CODE}_FULL_AUDIO.wav</span>        ← concat всех клипов
+│   └── per_clip/{clip}/
+│       ├── <span class="new">{clip}_AUDIO.wav</span>          ← camera audio
+│       └── <span class="new">{clip}M01.XML</span>             ← Premiere XML marker
+└── ...
+<span class="new">99_Pipeline/DJI_Audio/</span>
+├── <span class="new">{clip}_TX01.wav</span>                   ← mic 1, synced &amp; trimmed
+└── <span class="new">{clip}_TX02.wav</span>                   ← mic 2, synced &amp; trimmed</div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     02 TRANSCRIBE
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s02">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">02</div>
+    <div class="stage-info">
+      <div class="stage-name">Transcribe</div>
+      <div class="stage-desc">Распознавание речи (Whisper large-v3) + определение спикеров (Pyannote)</div>
+      <div class="stage-scripts">scripts/02_transcribe/020101_transcribe/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Whisper</span><span class="actor a-python">Pyannote</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p><span class="file">{CODE}_FULL_AUDIO.wav</span></p>
+      <p>или <span class="file">per_clip/{clip}_AUDIO.wav</span></p>
+      <p>Параметры: --language, --speakers N</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p><span class="file">Setup/{CODE}_Claude4_assembly.json</span></p>
+      <p>Сегменты: text, speaker, start/end (ms)</p>
+      <p>Per-word timestamps: <span class="file">{w, s, e}</span></p>
+      <p><span class="file">{CODE}_transcript.json</span></p>
+      <p><span class="file">{CODE}_transcript.xlsx</span></p>
+      <p><span class="file">Transcription/{scene}/*.srt</span></p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Команда</div>
+      <span class="cmd">source ~/YTAI/environment/.venv_transcribe/bin/activate</span>
+      <span class="cmd">python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --all --language ru --no-pause</span>
+      <p>Или только транскрипт:</p>
+      <span class="cmd">python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only transcribe --speakers 2</span>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="tree-label">Новые файлы после Transcribe</div>
+    <div class="tree">{project}/01_Media/Source/
+├── Setup/
+│   ├── <span class="new">{CODE}_Claude4_assembly.json</span>  ← для Claude (word-level)
+│   ├── <span class="new">{CODE}_transcript.json</span>        ← полный транскрипт
+│   └── <span class="new">{CODE}_transcript.xlsx</span>        ← Excel export
+└── Transcription/
+    ├── <span class="new">{scene}/*.srt</span>                 ← SRT по сценам
+    └── per_clip/{clip}/
+        └── <span class="new">{clip}.srt</span>                ← SRT per clip</div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     03 ASSEMBLY BRIEF
+     ═══════════════════════════════════════ -->
+<div class="section-div">Assembly (Claude + UXP)</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s03">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">03</div>
+    <div class="stage-info">
+      <div class="stage-name">Assembly Brief</div>
+      <div class="stage-desc">Claude анализирует транскрипт и создаёт сборочный бриф</div>
+      <div class="stage-scripts">scripts/05_editing/0501_brief/ (Claude knowledge base)</div>
+    </div>
+    <div class="actors"><span class="actor a-claude">Claude Code</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход (Claude читает)</div>
+      <p><span class="file">Setup/{CODE}_Claude4_assembly.json</span></p>
+      <p><span class="file">INSTRUCTIONS.md</span> &mdash; workflow + алгоритм</p>
+      <p><span class="file">editing_rules.md</span> &mdash; структура видео, правила монтажа</p>
+      <p><span class="file">output_format.md</span> &mdash; JSON-схема выхода</p>
+      <p><span class="file">YTs/{CHANNEL}/{CHANNEL}.md</span> &mdash; профиль канала</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход (Claude генерирует)</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v1_in.json</span></p>
+      <p>Сегменты: segment_id, source_file, tc_in/out, block, block_name, use, speaker, transcript, color, notes, screen cues</p>
+      <p><span class="file">Assembly/{CODE}_review_v1.html</span></p>
+      <p>Визуальный обзор: таблица блоков, YouTube chapters</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Как запустить</div>
+      <p>Claude Code:</p>
+      <p>"Создай Assembly brief для YTCR01, проект /Volumes/RYA T7 Black/YTCR01_Arty_Dzis"</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="claude-detail">
+      <p><b>Что делает Claude:</b></p>
+      <p>1. Читает транскрипт с word-level таймкодами (words[]: {w, s, e})</p>
+      <p>2. Определяет блоки: Hook, Intro, Content_1&hellip;N, CTA по editing_rules</p>
+      <p>3. Размечает сегменты: USE=TRUE (в видео) / USE=FALSE (вырезать)</p>
+      <p>4. Назначает цвета по блокам, приоритеты, screen cues</p>
+      <p>5. Генерирует JSON brief + HTML review</p>
+      <p><b>Правило:</b> Каждое слово попадает ровно в один сегмент. transcript = полный текст tc_in&rarr;tc_out. Нет пропусков.</p>
+      <p><b>Word-level tc:</b> tc_in = first_word.s, tc_out = last_word.e + smart_padding (min(gap_to_next, 0.3))</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">Новые файлы после Assembly Brief</div>
+    <div class="tree">{project}/01_Media/Source/Setup/
+└── <span class="new">Assembly/</span>
+    ├── <span class="new">{CODE}_Assembly_v1_in.json</span>    ← brief для UXP
+    └── <span class="new">{CODE}_review_v1.html</span>        ← визуальный обзор</div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     04 UXP INGEST
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s04">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">04</div>
+    <div class="stage-info">
+      <div class="stage-name">UXP Ingest</div>
+      <div class="stage-desc">Импорт всех клипов + DJI аудио в Premiere Pro, создание bin-структуры</div>
+      <div class="stage-scripts">scripts/05_editing/0500_uxp/src/ingest/</div>
+    </div>
+    <div class="actors"><span class="actor a-uxp">UXP Panel</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p><span class="file">Setup/{CODE}_ingest.json</span></p>
+      <p>Медиа-файлы на диске (MP4 + WAV)</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход (в Premiere)</div>
+      <p>Bins: <span class="file">00_Source/{CODE}_{scene}/</span></p>
+      <p>Bin: <span class="file">01_Transcripts/{scene}/</span></p>
+      <p>Sequence: <span class="file">{project}_1_Ingest</span></p>
+      <p>&nbsp;&nbsp;V1: все клипы последовательно</p>
+      <p>&nbsp;&nbsp;A1: camera audio (stereo)</p>
+      <p>&nbsp;&nbsp;A2: TX01 (mono), A3: TX02 (mono)</p>
+      <p>Per-scene SRT на таймлайне</p>
+      <p>LUTs скопированы и применены</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">UI</div>
+      <p>UXP Panel &rarr; <b>PROJECT</b> &rarr; выбрать папку</p>
+      <p>UXP Panel &rarr; <b>INGEST</b> &rarr; Load JSON &rarr; Create</p>
+      <p><b>6 шагов:</b> Clean &rarr; Bins &rarr; Sequence &rarr; Transcripts &rarr; LUTs &rarr; Activate</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="uxp-detail">
+      <p>Создаёт bin-структуру по сценам, импортирует все клипы + DJI аудио.</p>
+      <p>Строит Ingest sequence: все клипы на V1 в полную длину, DJI на A2/A3.</p>
+      <p>Multi-scene: отдельная sequence на каждую сцену (<span class="file">{project}_1_{sceneName}</span>).</p>
+    </div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     05 UXP ASSEMBLY
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s05">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">05</div>
+    <div class="stage-info">
+      <div class="stage-name">UXP Assembly</div>
+      <div class="stage-desc">Автоматическая сборка sequence из Assembly brief (USE=TRUE сегменты)</div>
+      <div class="stage-scripts">scripts/05_editing/0500_uxp/src/assembly/ + scripts/05_editing/0502_assembly/</div>
+    </div>
+    <div class="actors"><span class="actor a-uxp">UXP Panel</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{N}_in.json</span></p>
+      <p>Клипы в bin <span class="file">00_Source/</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход (в Premiere)</div>
+      <p>Sequence: <span class="file">{project}_2_Assembly_v{N}</span></p>
+      <p>&nbsp;&nbsp;V1: USE=TRUE сегменты, trimmed по tc_in/tc_out</p>
+      <p>&nbsp;&nbsp;Цвета клипов по блокам</p>
+      <p>&nbsp;&nbsp;Маркеры: chapter boundaries + per-segment (транскрипт)</p>
+      <p>&nbsp;&nbsp;A2/A3: DJI audio synced</p>
+      <p><span class="file">transcripts/{CODE}_2_Assembly_v{N}_transcript.srt</span></p>
+      <p><span class="file">transcripts/{CODE}_2_Assembly_v{N}_captions.srt</span></p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">UI</div>
+      <p>UXP Panel &rarr; <b>ASSEMBLY</b> &rarr; Load JSON &rarr; Build</p>
+      <p><b>6 шагов:</b> Backup &rarr; Scan &rarr; Build &rarr; Markers &rarr; Activate &rarr; Captions</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="uxp-detail">
+      <p>Читает brief JSON, фильтрует use=TRUE + block!=99.</p>
+      <p>Сортирует: block ASC, сохраняет порядок внутри блока.</p>
+      <p>Находит клипы в 00_Source по source_file, ставит source in/out.</p>
+      <p>Красит клипы по block color, создаёт chapter маркеры.</p>
+      <p>Генерирует SRT: transcript (полный) + captions (субтитры).</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">Новые файлы после UXP Assembly</div>
+    <div class="tree">{project}/01_Media/Source/Transcription/
+├── <span class="new">transcripts/</span>
+│   ├── <span class="new">{CODE}_2_Assembly_v{N}_transcript.srt</span>
+│   └── <span class="new">{CODE}_2_Assembly_v{N}_captions.srt</span>
+└── ...</div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     06 DELETED SCENE
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s06">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">06</div>
+    <div class="stage-info">
+      <div class="stage-name">Deleted Scene</div>
+      <div class="stage-desc">Sequence с неиспользованными сегментами (USE=FALSE) для ревизии вырезанного</div>
+      <div class="stage-scripts">scripts/05_editing/0500_uxp/src/deletedScene/</div>
+    </div>
+    <div class="actors"><span class="actor a-uxp">UXP Panel</span><span class="actor a-editor">Монтажёр</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{N}_in.json</span></p>
+      <p>Тот же brief, что и для Assembly</p>
+      <p>Клипы в bin <span class="file">00_Source/</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход (в Premiere)</div>
+      <p>Sequence: <span class="file">{project}_3_DeletedScene</span></p>
+      <p>&nbsp;&nbsp;V1: USE=FALSE сегменты (вырезанный материал)</p>
+      <p>&nbsp;&nbsp;Цвета по cut-категориям (SKIP, ALT, CUT)</p>
+      <p>&nbsp;&nbsp;Маркеры с транскриптом + причиной вырезки</p>
+      <p>&nbsp;&nbsp;A2/A3: DJI audio</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">UI</div>
+      <p>UXP Panel &rarr; <b>DELETED SCENE</b> &rarr; Load JSON &rarr; Build</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="uxp-detail">
+      <p><b>Зачем:</b> Монтажёр просматривает вырезанные сегменты и решает, нужно ли что-то вернуть.</p>
+      <p>Complement от Assembly &mdash; всё, что Claude пометил USE=FALSE.</p>
+      <p>Сортировка: по блокам + порядок из brief. Цвета по категориям вырезки.</p>
+      <p>Монтажёр ставит маркеры на сегменты, которые хочет вернуть &rarr; feedback в round-trip.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     07 BRIEF UPDATE (Round-trip)
+     ═══════════════════════════════════════ -->
+<div class="section-div">Round-trip (итерации с монтажёром)</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s07">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">07</div>
+    <div class="stage-info">
+      <div class="stage-name">Brief Update</div>
+      <div class="stage-desc">Монтажёр комментирует в Premiere &rarr; export маркеров &rarr; Claude обновляет brief</div>
+      <div class="stage-scripts">scripts/05_editing/0506_marker_export/</div>
+    </div>
+    <div class="actors"><span class="actor a-editor">Монтажёр</span><span class="actor a-python">Python</span><span class="actor a-claude">Claude</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p>Premiere <span class="file">.prproj</span> с маркерами</p>
+      <p>Монтажёр пишет комментарии в маркеры Assembly sequence</p>
+      <p>Формат: <span class="file">Speaker: X | text | B-roll: Y | Notes: Z</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{N}_out.json</span> &mdash; export маркеров</p>
+      <p>&darr; Claude обрабатывает &darr;</p>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{N+1}_in.json</span> &mdash; обновлённый brief</p>
+      <p><span class="file">Assembly/{CODE}_review_v{N+1}.html</span> &mdash; review с changelog</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Команды</div>
+      <p><b>Шаг 1:</b> Export маркеров из Premiere:</p>
+      <span class="cmd">python ~/YTAI/scripts/05_editing/0506_marker_export/export_markers_from_prproj.py --project "$PROJECT"</span>
+      <p><b>Шаг 2:</b> Claude обновляет brief:</p>
+      <p>"Обнови brief из _out.json для YTCR01"</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="loop"><b>Цикл:</b> Brief v1 &rarr; UXP Assembly &rarr; монтажёр комментирует &rarr; export _out.json &rarr; Claude &rarr; Brief v2 &rarr; UXP перезагружает &rarr; &hellip; &rarr; Brief v{final} (заблокирован)</div>
+    <div class="claude-detail" style="margin-top:10px;">
+      <p><b>Что делает Claude при обновлении:</b></p>
+      <p>1. Читает _out.json (комментарии монтажёра из маркеров Premiere)</p>
+      <p>2. Читает предыдущий _in.json (текущая версия brief)</p>
+      <p>3. Парсит editor notes: "Speaker: X | text | B-roll: Y | Notes: Z. EDITOR NOTES"</p>
+      <p>4. Применяет изменения, генерирует changelog</p>
+      <p>5. HTML review: жёлтые highlights на изменённых сегментах, CHANGED бейджи, strikethrough на удалённых</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">Файлы после round-trip итераций</div>
+    <div class="tree">{project}/01_Media/Source/Setup/Assembly/
+├── {CODE}_Assembly_v1_in.json
+├── <span class="new">{CODE}_Assembly_v1_out.json</span>     ← export маркеров
+├── <span class="new">{CODE}_Assembly_v2_in.json</span>      ← обновлённый brief
+├── <span class="new">{CODE}_review_v2.html</span>           ← review с changelog
+├── ...
+├── <span class="new">{CODE}_Assembly_v{N}_in.json</span>    ← финальная версия
+└── <span class="new">{CODE}_review_v{N}.html</span></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     08 SCREEN PLAN
+     ═══════════════════════════════════════ -->
+<div class="section-div">Визуальное планирование</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s08">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">08</div>
+    <div class="stage-info">
+      <div class="stage-name">Screen Plan</div>
+      <div class="stage-desc">Claude создаёт визуальный бриф для монтажа (HTML, 3 колонки)</div>
+      <div class="stage-scripts">Claude Code (no script folder)</div>
+    </div>
+    <div class="actors"><span class="actor a-claude">Claude Code</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход (Claude читает)</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span></p>
+      <p>Channel DNA &mdash; палитра, шрифты, типы экранов</p>
+      <p><span class="file">screen_types.json</span> &mdash; каталог типов экранов</p>
+      <p><span class="file">ref_images/</span> &mdash; тематические референсы</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p><span class="file">Setup/{CODE}_screen_plan_v{N}.html</span></p>
+      <p>3 колонки: Транскрипт | Экран (мок) | Производство</p>
+      <p>CSS-моки (16:9), промпты Gemini, раскадровки</p>
+      <p>Варианты A/B с отдельными промптами</p>
+      <p>Step Cards, Speaker Intro, Disclaimer</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Как запустить</div>
+      <p>Claude Code:</p>
+      <p>"Создай screen plan для YTRF02"</p>
+      <p>Стиль документа: RYA DNA</p>
+      <p>Стиль моков: Channel DNA</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="claude-detail">
+      <p><b>8 этапов создания Screen Plan:</b></p>
+      <p>1. Читает Assembly brief (все USE=TRUE сегменты)</p>
+      <p>2. Для каждого сегмента: выбирает тип экрана из screen_types</p>
+      <p>3. Пишет полный транскрипт с метками тайминга (колонка 1)</p>
+      <p>4. Создаёт CSS-мок 16:9 с текстом/графикой (колонка 2)</p>
+      <p>5. Для мед. схем: раскадровка (кадры привязаны к словам)</p>
+      <p>6. Для каждого кадра: промпт = РЕФЕРЕНС + КАК ИСПОЛЬЗОВАТЬ + ЗАДАНИЕ (колонка 3)</p>
+      <p>7. Добавляет Step Cards (прогресс), Speaker Intro, Disclaimer</p>
+      <p>8. Генерирует HTML с RYA DNA стилем</p>
+    </div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     10 ASSET GENERATION
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s09">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">09</div>
+    <div class="stage-info">
+      <div class="stage-name">Генерация ассетов</div>
+      <div class="stage-desc">Gemini (иллюстрации) + Kling (анимации) + After Effects (пресеты, оверлеи)</div>
+      <div class="stage-scripts">manual (Gemini / Kling / After Effects)</div>
+    </div>
+    <div class="actors"><span class="actor a-gemini">Gemini</span><span class="actor a-gemini">Kling</span><span class="actor a-editor">After Effects</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p>Промпты из Screen Plan (колонка 3)</p>
+      <p><span class="file">ref_images/</span> &mdash; тематические референсы</p>
+      <p>AE пресеты: Side Slide, 2 Points, Visual Demo, Lower Third</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p><span class="file">Pre-Edit/visuals/*.png</span> (3840&times;2160)</p>
+      <p><span class="file">Pre-Edit/visuals/*.mp4</span> (Kling анимации, 4-5 сек)</p>
+      <p>AE compositions (PNG/ProRes)</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Workflow</div>
+      <p><b>Gemini:</b> Промпт из screen plan &rarr; загрузить ref &rarr; generate &rarr; PNG</p>
+      <p><b>Kling:</b> Кадры 1&rarr;N &rarr; image-to-video &rarr; MP4</p>
+      <p><b>AE:</b> Открыть пресет &rarr; заменить текст/цвета из screen plan &rarr; Render</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     11 UXP SCREEN CUES
+     ═══════════════════════════════════════ -->
+<div class="section-div">Финализация</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s10">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">10</div>
+    <div class="stage-info">
+      <div class="stage-name">UXP Screen Cues</div>
+      <div class="stage-desc">Автоматическое наложение PNG оверлеев на таймлайн по screen plan</div>
+      <div class="stage-scripts">scripts/05_editing/0504_screen_cues/ + 0500_uxp/src/screens/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Python</span><span class="actor a-uxp">UXP Panel</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span> (screens[])</p>
+      <p><span class="file">screen_cues/*.png</span> &mdash; сгенерированные PNG</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход (в Premiere)</div>
+      <p>Sequence: <span class="file">{project}_4_ScreenCues</span></p>
+      <p>&nbsp;&nbsp;V1: копия Assembly sequence</p>
+      <p>&nbsp;&nbsp;V2: PNG overlays (3840&times;2160 transparent)</p>
+      <p>&nbsp;&nbsp;Orange маркеры с описанием screen cue</p>
+      <p>&nbsp;&nbsp;SRT субтитры</p>
+      <p>Bin: <span class="file">01_ScreenCues/</span></p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Команды</div>
+      <p><b>Шаг 1:</b> Генерация PNG (Python):</p>
+      <span class="cmd">python ~/YTAI/scripts/05_editing/0504_screen_cues/generate_screen_cues_png.py --brief path/to/brief.json</span>
+      <p><b>Шаг 2:</b> Наложение на таймлайн:</p>
+      <p>UXP Panel &rarr; <b>SCREENS</b> &rarr; Load &rarr; Build</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="uxp-detail">
+      <p>Типы экранов: chapter_title, half_overlay, three_fifths_overlay, lower_third, product_shot, list, info_graphic</p>
+      <p>Python генерирует PNG (<span class="file">screen_cues/scr_XXX_{type}.png</span>), UXP размещает на V2 поверх Assembly.</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">Новые файлы после Screen Cues</div>
+    <div class="tree">{project}/01_Media/Source/Setup/
+└── <span class="new">screen_cues/</span>
+    ├── <span class="new">scr_001_chapter_title.png</span>
+    ├── <span class="new">scr_002_half_overlay.png</span>
+    └── <span class="new">...</span></div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     12 МОНТАЖ
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s11">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">11</div>
+    <div class="stage-info">
+      <div class="stage-name">Монтаж</div>
+      <div class="stage-desc">Финальная сборка в Premiere Pro: B-roll, музыка, цветокоррекция</div>
+      <div class="stage-scripts">manual (Premiere Pro)</div>
+    </div>
+    <div class="actors"><span class="actor a-editor">Монтажёр</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p>Assembly sequence (этап 05)</p>
+      <p>Screen Plan HTML (этап 08)</p>
+      <p>Визуалы PNG/MP4 (этап 09)</p>
+      <p>Screen Cues sequence (этап 10)</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p>Финальный видеофайл</p>
+      <p><span class="file">02_Exports/{CODE}_final.mp4</span> (H.264)</p>
+      <p><span class="file">02_Exports/{CODE}_final.mov</span> (ProRes)</p>
+      <p>Locked edit</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Workflow</div>
+      <p>1. Assembly sequence &rarr; добавить визуалы по screen plan</p>
+      <p>2. B-roll вставки</p>
+      <p>3. Музыка + sound design</p>
+      <p>4. Цветокоррекция (LUTs + manual)</p>
+      <p>5. Export (H.264 / ProRes)</p>
+    </div>
+  </div>
+</div>
+</div>
+<!-- ═══════════════════════════════════════
+     12 POST-EDIT REVIEW
+     ═══════════════════════════════════════ -->
+<div class="section-div">Post-production</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s12">
+<div class="stage-card" style="border-color:rgba(41,166,203,.3);">
+  <div class="stage-top">
+    <div class="stage-num">12</div>
+    <div class="stage-info">
+      <div class="stage-name">Post-Edit Review</div>
+      <div class="stage-desc">Сравнение смонтированного видео с Assembly brief &mdash; что вошло, что нет, что вернуть</div>
+      <div class="stage-scripts">scripts/05_editing/0508_review/ + 0500_uxp/src/review/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Python</span><span class="actor a-uxp">UXP Panel</span><span class="actor a-editor">Монтажёр</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p><span class="file">edited_video.mp4</span> &mdash; экспорт из Premiere (этап 11)</p>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p><span class="file">Review/{CODE}_review_transcript.json</span></p>
+      <p><span class="file">Review/{CODE}_review_v1.docx</span></p>
+      <p><span class="file">Review/{CODE}_review_brief.json</span></p>
+      <p><span class="file">Review/{CODE}_review_v1.html</span> &mdash; interactive</p>
+      <p><span class="file">captions/{CODE}_5_Review_v1_captions.srt</span></p>
+      <p><span class="file">transcripts/{CODE}_5_Review_v1_transcript.srt</span></p>
+      <p>Sequence: <span class="file">{project}_5_Review_v{N}</span></p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Команды</div>
+      <p><b>UXP:</b> Panel &rarr; <b>REVIEW</b> &rarr; Process Review</p>
+      <p><b>Или CLI (5 шагов):</b></p>
+      <span class="cmd">source ~/YTAI/environment/.venv_transcribe/bin/activate</span>
+      <span class="cmd">python 0508_review/transcribe_review_video.py --video "$VIDEO" --output "$OUTPUT"</span>
+      <span class="cmd">python 0508_review/export_review_docx.py --transcript "$TRANSCRIPT" --brief "$BRIEF"</span>
+      <span class="cmd">python 0508_review/compare_review.py --brief "$BRIEF" --transcript "$TRANSCRIPT"</span>
+      <span class="cmd">python 0508_review/generate_review_html.py --brief "$REVIEW_BRIEF"</span>
+      <p>Затем UXP: <b>Load Review Brief</b> &rarr; <b>Build Review</b></p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="review-detail">
+      <p><b>5 Python-шагов:</b></p>
+      <p>1. <b>transcribe_review_video.py</b> &mdash; Whisper транскрибирует экспорт видео (word-level timestamps)</p>
+      <p>2. <b>export_review_docx.py</b> &mdash; DOCX таблица для ручного ревью (5 колонок: #, TC, текст, блок, комментарий)</p>
+      <p>3. <b>generate_review_captions.py</b> &mdash; SRT субтитры + transcript для Premiere</p>
+      <p>4. <b>compare_review.py</b> &mdash; SequenceMatcher сопоставляет edited видео с Assembly brief &rarr; review_brief.json</p>
+      <p>5. <b>generate_review_html.py</b> &mdash; интерактивный HTML: 3 таблицы (Edited / Unused / Final Timeline), radio buttons Keep/Cut/Insert</p>
+    </div>
+    <div class="uxp-detail" style="margin-top:10px;">
+      <p><b>UXP Review tab:</b></p>
+      <p><b>Process Review</b> &mdash; запускает все 5 Python-шагов через run_review.command</p>
+      <p><b>Load Review Brief</b> &mdash; парсит review_brief.json (reviewBriefParser.js)</p>
+      <p><b>Build Review</b> &mdash; создаёт sequence _5_Review (reviewAssembler.js):</p>
+      <p>&nbsp;&nbsp;Edited сегменты = Cyan, Inserted сегменты = Green</p>
+      <p>&nbsp;&nbsp;DJI audio для insertions, маркеры с комментариями</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">Новые файлы после Post-Edit Review</div>
+    <div class="tree">{project}/01_Media/Source/Setup/
+└── <span class="new">Review/</span>
+    ├── <span class="new">{CODE}_review_transcript.json</span>   ← Whisper output
+    ├── <span class="new">{CODE}_review_v1.docx</span>           ← таблица для ревью
+    ├── <span class="new">{CODE}_review_brief.json</span>        ← matched/unused segments
+    └── <span class="new">{CODE}_review_v1.html</span>           ← interactive review
+{project}/01_Media/Source/Transcription/
+├── captions/<span class="new">{CODE}_5_Review_v1_captions.srt</span>
+└── transcripts/<span class="new">{CODE}_5_Review_v1_transcript.srt</span></div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     13 THUMBNAIL
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s13">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">13</div>
+    <div class="stage-info">
+      <div class="stage-name">Thumbnail</div>
+      <div class="stage-desc">Генерация обложки: промпт из screen plan, Gemini/Midjourney, композиция в Photoshop/Figma</div>
+      <div class="stage-scripts">scripts/06_thumbnails/ (stubs)</div>
+    </div>
+    <div class="actors"><span class="actor a-claude">Claude</span><span class="actor a-gemini">Gemini</span><span class="actor a-editor">Photoshop</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span></p>
+      <p>Screen Plan (для тем и ключевых кадров)</p>
+      <p>Channel DNA (палитра, шрифты, стиль)</p>
+      <p>Кадры из финального видео</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p><span class="file">04_Thumbnail/{CODE}_thumb_v{N}.png</span> (1280&times;720)</p>
+      <p><span class="file">04_Thumbnail/{CODE}_thumb_brief.json</span></p>
+      <p>Варианты A/B/C с промптами</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Workflow</div>
+      <p><b>Шаг 1:</b> Claude генерирует thumbnail brief (3 варианта)</p>
+      <p><b>Шаг 2:</b> Gemini/Midjourney генерирует фон + элементы</p>
+      <p><b>Шаг 3:</b> Photoshop/Figma &mdash; финальная композиция, текст, лицо</p>
+    </div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     14 ПУБЛИКАЦИЯ
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s14">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">14</div>
+    <div class="stage-info">
+      <div class="stage-name">Публикация</div>
+      <div class="stage-desc">YouTube метаданные: title, description, chapters, tags</div>
+      <div class="stage-scripts">scripts/08_youtube/ (stubs)</div>
+    </div>
+    <div class="actors"><span class="actor a-claude">Claude</span><span class="actor a-python">Python</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Вход</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span></p>
+      <p>Транскрипт (для ключевых слов)</p>
+      <p><span class="file">{CHANNEL}.md</span> &mdash; профиль канала</p>
+      <p><span class="file">04_Thumbnail/{CODE}_thumb_v{N}.png</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Выход</div>
+      <p><span class="file">YouTube/{CODE}_youtube.json</span></p>
+      <p>Title (SEO-оптимизирован)</p>
+      <p>Description с ключевыми словами</p>
+      <p>Chapters из Assembly blocks (с таймкодами)</p>
+      <p>Tags + hashtags</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Как запустить</div>
+      <p>Claude: "Сгенерируй YouTube метаданные для YTRF02"</p>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- .wrap -->
+
+<div class="footer">
+  powered by <a href="https://rya.ae/">RYA.AE</a>
+  <div style="margin-top:12px;font-size:12px;">
+    <span style="color:var(--white);font-weight:600;">Roman Sergeev</span> &middot; Producer<br>
+    <a href="https://t.me/sergeevr" style="color:var(--blue);font-size:12px;">Telegram</a> &middot;
+    <a href="https://wa.me/971569399953" style="color:var(--blue);font-size:12px;">WhatsApp</a> &middot;
+    <a href="mailto:rs@rya.ae?subject=YTAI%20Pipeline%20Process" style="color:var(--blue);font-size:12px;">rs@rya.ae</a>
+  </div>
+</div>
+
+</body>
+</html>

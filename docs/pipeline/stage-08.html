@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YTAI Pipeline — Stage 08: Screen Plan Process</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── Stage-08 specific styles ── */
+.content{padding:48px 40px;max-width:1100px;margin:0 auto}
+h1{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;color:var(--lime);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.subtitle{font-size:16px;color:var(--muted);font-weight:300;margin-bottom:16px}
+.pipeline-ctx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:40px;padding:14px 20px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+.ctx-step{color:var(--muted);text-decoration:none;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;padding:5px 10px;border-radius:6px;border:1px solid var(--border);white-space:nowrap}
+.ctx-step:hover{border-color:var(--blue);color:var(--blue)}
+.ctx-step.active{border-color:var(--purple);color:var(--purple);background:rgba(107,92,231,.1)}
+.ctx-step.done{opacity:.4}
+.ctx-arr{color:var(--lime);font-size:12px;font-weight:700}
+.io-summary{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;margin-bottom:40px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px 24px}
+.io-col{font-size:13px}
+.io-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.io-lbl.in{color:var(--teal)}
+.io-lbl.out{color:var(--warn)}
+.io-arrow{display:flex;align-items:center;color:var(--muted);font-size:24px}
+.stage{margin-bottom:48px;scroll-margin-top:120px}
+.stage-hdr{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid var(--lime)}
+.stage-num{font-family:'Orbitron',sans-serif;font-size:36px;font-weight:900;color:var(--lime);opacity:.35}
+.stage-title{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.stage-sub{font-size:14px;color:var(--muted);font-weight:300}
+.stage-body{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px 28px}
+.stage-body p{margin-bottom:12px;font-size:14px;color:rgba(255,255,255,.85)}
+.stage-body b{color:var(--lime)}
+.stage-body ul{list-style:none;padding:0;margin-bottom:16px}
+.stage-body li{font-size:14px;padding:4px 0;color:rgba(255,255,255,.8)}
+.stage-body li::before{content:"— ";color:var(--lime);font-weight:700}
+.flow{display:flex;flex-direction:column;gap:0;margin:24px 0}
+.flow-step{display:grid;grid-template-columns:60px 1fr;gap:0;min-height:80px}
+.flow-line{display:flex;flex-direction:column;align-items:center}
+.flow-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:900;flex-shrink:0}
+.flow-bar{width:3px;flex:1;background:var(--border);margin:4px 0}
+.flow-content{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:12px}
+.flow-content h3{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.flow-content p{font-size:13px;color:rgba(255,255,255,.7);line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;">
+    <a href="index.html" class="logo">YTAI</a>
+    <div class="hdr-title">Stage 08 &mdash; Screen Plan Process</div>
+  </div>
+  <div class="hdr-right" style="text-align:right;line-height:1.6">v2.1 &middot; <span id="hdr-date"></span> Dubai (GMT+4)<br>powered by <a href="https://rya.ae/" target="_blank" style="font-weight:900;font-size:14px">RYA.AE</a></div>
+</div>
+
+<div class="breadcrumb-bar">
+  <a href="index.html#s08" class="breadcrumb-back">&larr; Pipeline</a>
+  <div class="breadcrumb-nav">
+    <a href="index.html#s07" class="breadcrumb-step">07 Brief Update</a>
+    <span class="breadcrumb-arr">&rarr;</span>
+    <span class="breadcrumb-step active">08 Screen Plan</span>
+    <span class="breadcrumb-arr">&rarr;</span>
+    <a href="index.html#s09" class="breadcrumb-step">09 Assets</a>
+  </div>
+</div>
+
+<div class="content">
+
+<h1>Stage 08: Screen Plan</h1>
+<p class="subtitle">Детальный процесс создания визуального брифа для монтажа. От транскрипта до готового HTML-документа с раскадровкой, промптами и референсами.</p>
+
+<!-- ═══════════ Pipeline context ═══════════ -->
+<div class="pipeline-ctx">
+  <div class="ctx-step done">07 Brief Update</div><div class="ctx-arr">&rarr;</div>
+  <div class="ctx-step active">08 Screen Plan</div><div class="ctx-arr">&rarr;</div>
+  <div class="ctx-step">09 Assets</div><div class="ctx-arr">&rarr;</div>
+  <div class="ctx-step">10 Screen Cues</div><div class="ctx-arr">&rarr;</div>
+  <div class="ctx-step">11 Montage</div>
+  <div style="margin-left:auto;"><span class="actor a-claude">Claude Code</span></div>
+</div>
+
+<!-- ═══════════ IO Summary ═══════════ -->
+<div class="io-summary">
+  <div class="io-col">
+    <div class="io-lbl in">Вход (Claude читает)</div>
+    <p style="margin-bottom:4px"><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span></p>
+    <p style="margin-bottom:4px"><span class="file">screen_types.json</span> &mdash; каталог типов</p>
+    <p style="margin-bottom:4px">Channel DNA &mdash; палитра, шрифты</p>
+    <p><span class="file">ref_images/</span> &mdash; тематические референсы</p>
+  </div>
+  <div class="io-arrow">&rarr;</div>
+  <div class="io-col">
+    <div class="io-lbl out">Выход</div>
+    <p style="margin-bottom:4px"><span class="file">Pre-Edit/{CODE}_screen_plan_v{N}.html</span></p>
+    <p style="margin-bottom:4px">3 колонки: Транскрипт | Экран (мок) | Производство</p>
+    <p style="margin-bottom:4px">CSS-моки (16:9), промпты Gemini, раскадровки</p>
+    <p>Варианты A/B, Step Cards, Speaker Intro, Disclaimer</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- OVERVIEW FLOW (8 sub-stages)               -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="flow">
+  <div class="flow-step">
+    <div class="flow-line"><div class="flow-dot" style="background:var(--lime);color:var(--bg);">1</div><div class="flow-bar"></div></div>
+    <div class="flow-content"><h3>Сборка данных</h3><p>Assembly JSON + Pre-edit export + Channel DNA + Screen Types каталог</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-line"><div class="flow-dot" style="background:var(--lime);color:var(--bg);">2</div><div class="flow-bar"></div></div>
+    <div class="flow-content"><h3>HTML структура</h3><p>3 колонки: Транскрипт | Экран | Производство. Единый шаблон для всех сегментов.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-line"><div class="flow-dot" style="background:var(--lime);color:var(--bg);">3</div><div class="flow-bar"></div></div>
+    <div class="flow-content"><h3>Типы экранов</h3><p>Выбор визуального формата для каждого сегмента: Talking Head, Side Slide, Visual Demo, B-roll...</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-line"><div class="flow-dot" style="background:var(--lime);color:var(--bg);">4</div><div class="flow-bar"></div></div>
+    <div class="flow-content"><h3>Варианты A/B</h3><p>Для ключевых экранов &mdash; 2 варианта визуализации. Каждый со своим моком и промптом.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-line"><div class="flow-dot" style="background:var(--lime);color:var(--bg);">5</div><div class="flow-bar"></div></div>
+    <div class="flow-content"><h3>Раскадровка (Gemini)</h3><p>Только для мед. иллюстраций. Серия кадров, привязанных к словам спикера. Промпт: РЕФЕРЕНС &rarr; КАК ИСПОЛЬЗОВАТЬ &rarr; ЗАДАНИЕ.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-line"><div class="flow-dot" style="background:var(--lime);color:var(--bg);">6</div><div class="flow-bar"></div></div>
+    <div class="flow-content"><h3>Терминология</h3><p>Крупно &mdash; понятные слова ("Воспаление"). Мелко &mdash; мед. термины ("эзофагит"). Двойной уровень.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-line"><div class="flow-dot" style="background:var(--lime);color:var(--bg);">7</div><div class="flow-bar"></div></div>
+    <div class="flow-content"><h3>Стили</h3><p>Документ = RYA DNA. Моки (колонка 2) = Channel DNA (напр. YTRF DNA). Версия + Dubai GMT+4 + контакты.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-line"><div class="flow-dot" style="background:var(--lime);color:var(--bg);">8</div><div class="flow-bar"></div></div>
+    <div class="flow-content"><h3>Чеклист итерации</h3><p>12 пунктов проверки перед финализацией документа.</p></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STAGE 1: СБОРКА ДАННЫХ                      -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="stage1">
+  <div class="stage-hdr">
+    <div class="stage-num">01</div>
+    <div><div class="stage-title">Сборка данных</div><div class="stage-sub">Что нужно до начала работы</div></div>
+  </div>
+  <div class="stage-body">
+    <div class="info-grid">
+      <div class="info-box">
+        <div class="info-lbl">Обязательно</div>
+        <div class="info-txt">
+          <b>Assembly brief</b> &mdash; последняя версия <code>{CODE}_Assembly_v{N}_in.json</code><br>
+          Содержит: сегменты, транскрипт, таймкоды, блоки, speaker, broll_note
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">Если есть</div>
+        <div class="info-txt">
+          <b>Pre-edit export</b> &mdash; <code>_pre_edit_out.json</code><br>
+          Содержит: редакторские правки, visual_type, visual_file
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">Стиль канала</div>
+        <div class="info-txt">
+          <b>Channel DNA</b> &mdash; палитра, шрифты, типы экранов. У каждого канала свой DNA.<br>
+          Пример: <a href="https://romansergeevcom.github.io/ytrf-dna/" target="_blank" style="color:var(--blue);">YTRF DNA</a>
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">Каталог экранов</div>
+        <div class="info-txt">
+          <b>Screen Types</b> &mdash; <code>screen_types.json</code><br>
+          22 типа экранов с описанием, keywords, примерами
+        </div>
+      </div>
+    </div>
+    <div class="note">Путь к файлам определяется автоматически из project path. Код канала извлекается из имени проекта (YTRF02 &rarr; YTRF).</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STAGE 2: СТРУКТУРА                          -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="stage2">
+  <div class="stage-hdr">
+    <div class="stage-num">02</div>
+    <div><div class="stage-title">HTML структура</div><div class="stage-sub">Три колонки &mdash; единый формат для всех сегментов</div></div>
+  </div>
+  <div class="stage-body">
+    <div class="col-diagram">
+      <div class="col">
+        <div class="col-title">Колонка 1: Транскрипт</div>
+        <div class="col-item">seg_id + блок + таймкоды</div>
+        <div class="col-item"><b>Полный</b> текст из Assembly</div>
+        <div class="col-item">Метки тайминга:</div>
+        <div class="col-item" style="color:var(--teal);">&rarr; ЭКРАН &mdash; показать</div>
+        <div class="col-item" style="color:var(--cyan);">+ элемент &mdash; добавить</div>
+        <div class="col-item" style="color:var(--err);">&times; ЧИСТЫЙ КАДР &mdash; убрать</div>
+        <div class="col-item" style="margin-top:8px;color:var(--muted);font-size:11px;">Ничего кроме транскрипта и меток. Комментарии &rarr; колонка 3.</div>
+      </div>
+      <div class="col">
+        <div class="col-title">Колонка 2: Экран (финал)</div>
+        <div class="col-item">Тип экрана + ссылка-якорь</div>
+        <div class="col-item">CSS-мок (16:9, Channel DNA цвета)</div>
+        <div class="col-item">Текст на экране (что увидит зритель)</div>
+        <div class="col-item">Варианты A/B (табы с моками)</div>
+        <div class="col-item" style="margin-top:8px;color:var(--muted);font-size:11px;">Только то, что зритель увидит в итоговом видео.</div>
+      </div>
+      <div class="col">
+        <div class="col-title">Колонка 3: Производство</div>
+        <div class="col-item">Комментарии монтажёру (тайминг)</div>
+        <div class="col-item">Референсы (drag / click)</div>
+        <div class="col-item"><b>1 Gemini промпт на вариант</b> + Copy</div>
+        <div class="col-item">Текст НЕ в промпте &mdash; ниже для AE</div>
+        <div class="col-item">Kling подсказки (опц.)</div>
+        <div class="col-item" style="margin-top:8px;color:var(--muted);font-size:11px;">Промпт = полный контекст, одна кнопка Copy. Текст добавляет монтажёр в AE.</div>
+      </div>
+    </div>
+    <div class="note">max-width документа: <b>1600px</b>. Три колонки <b>одинаковой ширины</b> (<code>1fr 1fr 1fr</code>).</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STAGE 3: ТИПЫ ЭКРАНОВ                       -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="stage3">
+  <div class="stage-hdr">
+    <div class="stage-num">03</div>
+    <div><div class="stage-title">Типы экранов</div><div class="stage-sub">Визуальный формат для каждого сегмента</div></div>
+  </div>
+  <div class="stage-body">
+    <table class="tbl">
+      <tr><th>Тип</th><th>Когда использовать</th><th>Спикер</th><th>Генерация</th></tr>
+      <tr><td><b>Talking Head</b></td><td>Hook, эмоциональные моменты, сильный текст</td><td>100% кадра</td><td>AE (нет)</td></tr>
+      <tr><td><b>Speaker Intro</b></td><td>Первое появление эксперта</td><td>100% + плашка внизу</td><td>AE (flat bar)</td></tr>
+      <tr><td><b>Side Slide</b></td><td>Тезисы, списки, механизмы</td><td>50% справа</td><td>AE preset</td></tr>
+      <tr><td><b>Fullscreen 2 Points</b></td><td>Сравнение (A vs B)</td><td>Нет (или PIP*)</td><td>AE preset / Gemini</td></tr>
+      <tr><td><b>Visual Demo</b></td><td>Цепочки, схемы, маршруты</td><td>Нет (или PIP*)</td><td>Gemini + AE</td></tr>
+      <tr><td><b>B-roll / Фото</b></td><td>Визуальная метафора, конкретный объект</td><td>Нет</td><td>Gemini / сток</td></tr>
+      <tr><td><b>Step Cards</b></td><td>Прогресс (3 ошибки, 5 шагов)</td><td>100% + lower third</td><td>AE preset</td></tr>
+      <tr><td><b>Disclaimer</b></td><td>Мед. дисклеймер (после представления)</td><td>Размытый фон</td><td>AE text</td></tr>
+    </table>
+    <div class="note note-warn"><b>Важно:</b> PIP спикера (picture-in-picture) не добавлять &mdash; визуально плохо перекрывает контент. Step Cards = lower third (3-4 сек поверх спикера), НЕ отдельный полноэкранный слайд.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STAGE 4: ВАРИАНТЫ                           -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="stage4">
+  <div class="stage-hdr">
+    <div class="stage-num">04</div>
+    <div><div class="stage-title">Варианты A/B</div><div class="stage-sub">Два варианта визуализации для ключевых экранов</div></div>
+  </div>
+  <div class="stage-body">
+    <p>Для сегментов, где визуальное решение неочевидно, создаём <b>два варианта</b> с переключением табами.</p>
+    <div class="info-grid">
+      <div class="info-box">
+        <div class="info-lbl">Колонка 2 (Экран)</div>
+        <div class="info-txt">Табы A/B. Каждый таб = свой CSS-мок (16:9). Переключаются JS onclick.</div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">Колонка 3 (Производство)</div>
+        <div class="info-txt">Каждый вариант &mdash; <b>один самодостаточный промпт</b> с полным контекстом + кнопка Copy. Бейдж <code>gemini-var-a</code> / <code>gemini-var-b</code>. Текст НЕ в промпте &mdash; отдельным <code>editor-note</code> ниже.</div>
+      </div>
+    </div>
+    <p>Примеры вариантов:</p>
+    <ul>
+      <li><b>Цепочка</b> (горизонтальная) vs <b>Лестница</b> (вертикальная) &mdash; для прогрессий</li>
+      <li><b>2 Points</b> (два столбца) vs <b>Side Slide</b> (тезисы + спикер) &mdash; для сравнений</li>
+      <li><b>Split-screen фото</b> vs <b>Talking Head + текст</b> &mdash; для контрастов</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STAGE 5: РАСКАДРОВКА                        -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="stage5">
+  <div class="stage-hdr">
+    <div class="stage-num">05</div>
+    <div><div class="stage-title">Раскадровка для Gemini</div><div class="stage-sub">Последовательность кадров для медицинских иллюстраций</div></div>
+  </div>
+  <div class="stage-body">
+    <p><b>Когда нужна раскадровка:</b> только для реалистичных анатомических/медицинских схем, которые нельзя сделать в AE пресетами.</p>
+
+    <p><b>Ключевые принципы промптов:</b></p>
+    <div class="info-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="info-box">
+        <div class="info-lbl">1 промпт = 1 вариант (все кадры)</div>
+        <div class="info-txt">Все кадры раскадровки объединены в <b>один промпт</b> с полным контекстом. Одна кнопка Copy. Не разбивать на отдельные куски.</div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">Без текста в промпте</div>
+        <div class="info-txt">Gemini генерирует <b>только иллюстрацию</b>. Заканчивай: "Без текста на изображении. 3840x2160." Текст добавляет монтажёр в AE.</div>
+      </div>
+    </div>
+
+    <p><b>Структура промпта:</b></p>
+    <div class="info-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+      <div class="info-box">
+        <div class="info-lbl">Контекст</div>
+        <div class="info-txt">Что за видео, что показываем, зачем</div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">Референс</div>
+        <div class="info-txt">Что на прикладываемом файле, как использовать</div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">Стиль</div>
+        <div class="info-txt">Минимализм / фото, фон #hex, без текста</div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">Кадры 1..N</div>
+        <div class="info-txt">Каждый: слова спикера + что нарисовать + "приложи Кадр N-1"</div>
+      </div>
+    </div>
+
+    <p><b>Текст для AE (отдельный блок после промпта):</b></p>
+    <table class="tbl">
+      <tr><th>Кадр</th><th>Слова спикера</th><th>Текст на экране</th><th>Цвет / шрифт</th></tr>
+      <tr><td>1</td><td>"приводит к осложнениям"</td><td>"Изжога"</td><td>#4ADE80 Bold 48px</td></tr>
+      <tr><td>2</td><td>"язвенного поражения"</td><td>"Воспаление и язвы" + мелко "(эзофагит)"</td><td>#F59E0B Bold 48px</td></tr>
+      <tr><td>...</td><td>...</td><td>...</td><td>Raleway, поверх иллюстрации</td></tr>
+    </table>
+
+    <p><b>Workflow:</b></p>
+    <ul>
+      <li>Открыть screen plan через <code>open_screen_plan.command</code> (localhost, для скачивания)</li>
+      <li>Drag референс из ref-block в Gemini (или click &rarr; new tab &rarr; Cmd+S)</li>
+      <li>Клик "Copy" на промпте &rarr; весь контекст в буфере</li>
+      <li>Gemini: загрузить референс + вставить промпт &rarr; генерация Кадра 1</li>
+      <li>Для Кадра 2+: приложить предыдущий результат + тот же промпт (Gemini видит секцию нужного кадра)</li>
+    </ul>
+
+    <div class="note"><b>Kling (опционально):</b> загрузить кадры 1&rarr;N в Kling, image-to-video, 4-5 сек. Камера неподвижна, элементы появляются / морфинг между стадиями.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STAGE 6: ТЕРМИНОЛОГИЯ                       -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="stage6">
+  <div class="stage-hdr">
+    <div class="stage-num">06</div>
+    <div><div class="stage-title">Терминология</div><div class="stage-sub">Двойной уровень: понятно + профессионально</div></div>
+  </div>
+  <div class="stage-body">
+    <div class="info-grid">
+      <div class="info-box">
+        <div class="info-lbl">На экране (колонка 2)</div>
+        <div class="info-txt">
+          <span style="font-size:20px;font-weight:700;">Воспаление и язвы</span><br>
+          <span style="font-size:12px;color:var(--muted);">(эзофагит)</span><br><br>
+          Крупно &mdash; понятное слово. Мелко &mdash; мед. термин. Зритель понимает суть, врач видит точность.
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">В транскрипте (колонка 1)</div>
+        <div class="info-txt">
+          Медицинские термины выделены <span style="color:var(--cyan);font-weight:600;border-bottom:1px dotted rgba(41,166,203,.4);">подсветкой</span> с tooltip при наведении.<br><br>
+          Tooltip показывает краткое определение термина.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STAGE 7: СТИЛИ                              -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="stage7">
+  <div class="stage-hdr">
+    <div class="stage-num">07</div>
+    <div><div class="stage-title">Стили</div><div class="stage-sub">Два DNA: документ и визуализация канала</div></div>
+  </div>
+  <div class="stage-body">
+    <div class="info-grid">
+      <div class="info-box">
+        <div class="info-lbl">Документ = RYA DNA</div>
+        <div class="info-txt">
+          Хедер, футер, блоки, текст, таблицы.<br>
+          <a href="https://romansergeevcom.github.io/ytrya-dna/" target="_blank" style="color:var(--blue);">romansergeevcom.github.io/ytrya-dna</a>
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">Моки (колонка 2) = Channel DNA</div>
+        <div class="info-txt">
+          CSS override на <code>.seg-right</code>: цвета канала. Каждый канал &mdash; свой DNA.<br>
+          Пример: <a href="https://romansergeevcom.github.io/ytrf-dna/" target="_blank" style="color:var(--blue);">YTRF DNA</a>
+        </div>
+      </div>
+    </div>
+
+    <p><b>RYA DNA палитра (документ):</b></p>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch-color" style="background:#0D1526;"></div><div class="swatch-label">Background</div><div class="swatch-hex">#0D1526</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#121E33;"></div><div class="swatch-label">Panel</div><div class="swatch-hex">#121E33</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#D4E44B;"></div><div class="swatch-label">Lime</div><div class="swatch-hex">#D4E44B</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#7BA4D4;"></div><div class="swatch-label">Blue</div><div class="swatch-hex">#7BA4D4</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#1C2D42;"></div><div class="swatch-label">Card</div><div class="swatch-hex">#1C2D42</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#8899AA;"></div><div class="swatch-label">Muted</div><div class="swatch-hex">#8899AA</div></div>
+    </div>
+
+    <p><b>Channel DNA палитра (пример &mdash; YTRF):</b></p>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch-color" style="background:#0A1520;"></div><div class="swatch-label">Background</div><div class="swatch-hex">#0A1520</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#0F1F2D;"></div><div class="swatch-label">Panel</div><div class="swatch-hex">#0F1F2D</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#142836;"></div><div class="swatch-label">Card</div><div class="swatch-hex">#142836</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#01E8AB;"></div><div class="swatch-label">Teal (accent)</div><div class="swatch-hex">#01E8AB</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#29A6CB;"></div><div class="swatch-label">Cyan (accent2)</div><div class="swatch-hex">#29A6CB</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#5BC4D6;"></div><div class="swatch-label">Bright Blue</div><div class="swatch-hex">#5BC4D6</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#7E99A8;"></div><div class="swatch-label">Muted</div><div class="swatch-hex">#7E99A8</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#E05555;"></div><div class="swatch-label">Error</div><div class="swatch-hex">#E05555</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#4ADE80;"></div><div class="swatch-label">Success</div><div class="swatch-hex">#4ADE80</div></div>
+    </div>
+    <div class="note note-warn"><b>Важно:</b> CSS override на <code>.seg-right</code> должен переопределять ВСЕ переменные: <code>--bg, --panel, --card, --accent, --accent2, --blue, --muted, --border, --err, --ok</code>. Шрифт моков: <code>font-family:'Raleway'</code>.</div>
+
+    <p><b>Шрифты:</b></p>
+    <table class="tbl">
+      <tr><th>Шрифт</th><th>Где используется</th><th>Веса</th></tr>
+      <tr><td><b>Orbitron</b></td><td>Заголовки разделов, лого, номера этапов</td><td>700, 900</td></tr>
+      <tr><td><b>Montserrat</b></td><td>Текст документа, таблицы, подписи</td><td>300, 400, 600, 700, 800</td></tr>
+      <tr><td><b>Raleway</b></td><td>Текст на экране (в моках, Channel DNA)</td><td>300, 400, 600, 700, 800</td></tr>
+    </table>
+
+    <p><b>Обязательные элементы документа:</b></p>
+    <ul>
+      <li>Хедер: лого канала + название + версия + дата/время (Dubai, GMT+4) + powered by RYA.AE</li>
+      <li>Info-блок: проект, видео, стадия</li>
+      <li>Summary cards: количество экранов по типам</li>
+      <li>Timeline bar: визуальная полоса сегментов</li>
+      <li>Футер: powered by RYA.AE + контакты продюсера (Telegram, WhatsApp, Email с mailto subject)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STAGE 8: ЧЕКЛИСТ                            -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="stage8">
+  <div class="stage-hdr">
+    <div class="stage-num">08</div>
+    <div><div class="stage-title">Чеклист итерации</div><div class="stage-sub">Проверить перед финализацией</div></div>
+  </div>
+  <div class="stage-body">
+    <ul class="checklist">
+      <li>Полный транскрипт в колонке 1 (не сокращённый, все слова из Assembly)</li>
+      <li>Метки тайминга привязаны к конкретным словам спикера</li>
+      <li>PIP спикера НЕ добавлен (визуально перекрывает контент)</li>
+      <li>Step Cards = lower third поверх спикера (3-4 сек), не отдельный экран</li>
+      <li>Дисклеймер расположен после Представления (не в начале)</li>
+      <li>CTA-экран отсутствует (видео просто заканчивается)</li>
+      <li>Колонка 2: ВСЕ CSS переменные переопределены на Channel DNA (#0A1520, #01E8AB и т.д.)</li>
+      <li>Gemini промпт: один блок на вариант, полный контекст, одна кнопка Copy</li>
+      <li>Gemini промпт заканчивается "Без текста на изображении. 3840x2160."</li>
+      <li>Текст для AE &mdash; отдельный editor-note с шрифтами, цветами, позицией</li>
+      <li>Ref images: draggable + click открывает в новой вкладке</li>
+      <li><code>open_screen_plan.command</code> создан (localhost для скачивания)</li>
+      <li>Версия и время (Dubai GMT+4) обновлены</li>
+      <li>Футер: RYA.AE + Telegram + WhatsApp + Email (с mailto subject)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STRUCTURE OF A SEGMENT                      -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="structure">
+  <div class="stage-hdr">
+    <div class="stage-num">&#x2699;</div>
+    <div><div class="stage-title">Структура сегмента</div><div class="stage-sub">Порядок элементов в каждом блоке</div></div>
+  </div>
+  <div class="stage-body">
+    <div class="col-diagram">
+      <div class="col">
+        <div class="col-title">seg-left</div>
+        <div class="col-item">1. <code>seg-meta</code>: seg_id + badge + tc + dur</div>
+        <div class="col-item">2. <code>seg-title</code>: заголовок сегмента</div>
+        <div class="col-item">3. <code>seg-transcript</code>: полный текст</div>
+        <div class="col-item" style="padding-left:12px;font-size:11px;">+ <code>.cue</code> метки</div>
+        <div class="col-item" style="padding-left:12px;font-size:11px;">+ <code>.med-term</code> подсветка</div>
+      </div>
+      <div class="col">
+        <div class="col-title">seg-right</div>
+        <div class="col-item">1. <code>scr-label</code> + тип + ссылка</div>
+        <div class="col-item">2. <code>scr-preset</code>: пресет AE</div>
+        <div class="col-item">3. <code>variants</code> (табы A/B)</div>
+        <div class="col-item" style="padding-left:12px;font-size:11px;">3a. <code>mock</code> (16:9 CSS)</div>
+        <div class="col-item">4. <code>screen-text</code>: текст на экране</div>
+      </div>
+      <div class="col">
+        <div class="col-title">seg-prod</div>
+        <div class="col-item">1. <code>prod-label</code>: ПРОИЗВОДСТВО</div>
+        <div class="col-item">2. <code>editor-note</code>: тайминг, chapter bar</div>
+        <div class="col-item">3. <code>ref-block</code>: референсы (draggable img)</div>
+        <div class="col-item">4. <code>gemini</code>: 1 промпт на вариант</div>
+        <div class="col-item" style="padding-left:12px;font-size:11px;">4a. <code>gemini-var</code> бейдж (A/B)</div>
+        <div class="col-item" style="padding-left:12px;font-size:11px;">4b. <code>sb-copy-btn</code> Copy</div>
+        <div class="col-item" style="padding-left:12px;font-size:11px;">4c. <code>sb-prompt</code> (hidden, полный контекст)</div>
+        <div class="col-item">5. <code>editor-note</code>: текст для AE</div>
+        <div class="col-item">6. <code>sb-kling</code>: подсказка Kling</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- NEXT STEPS                                  -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="stage" id="next">
+  <div class="stage-hdr">
+    <div class="stage-num">&rarr;</div>
+    <div><div class="stage-title">Следующие этапы</div><div class="stage-sub">Что происходит после Screen Plan</div></div>
+  </div>
+  <div class="stage-body">
+    <div class="info-grid" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="info-box">
+        <div class="info-lbl">09 Генерация ассетов</div>
+        <div class="info-txt">
+          Промпты из колонки 3 &rarr; Gemini / Midjourney<br>
+          Раскадровки &rarr; серия PNG<br>
+          AE пресеты &rarr; Render<br>
+          Kling &rarr; анимации MP4
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">10 UXP Screen Cues</div>
+        <div class="info-txt">
+          Python генерирует PNG оверлеи<br>
+          UXP наложит на V2 таймлайна<br>
+          Orange маркеры + SRT
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-lbl">11 Монтаж</div>
+        <div class="info-txt">
+          Монтажёр открывает Screen Plan HTML<br>
+          Вставляет визуалы по плану<br>
+          B-roll + музыка + цвет &rarr; финал
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  powered by <a href="https://rya.ae/" target="_blank">RYA.AE</a>
+  <div style="margin-top:12px;font-size:12px;">
+    <span style="color:var(--white);font-weight:600;">Roman Sergeev</span> &middot; Producer<br>
+    <a href="https://t.me/sergeevr" target="_blank" style="color:var(--blue);font-size:12px;">Telegram</a> &middot;
+    <a href="https://wa.me/971569399953" target="_blank" style="color:var(--blue);font-size:12px;">WhatsApp</a> &middot;
+    <a href="mailto:rs@rya.ae?subject=Screen%20Plan%20Process" style="color:var(--blue);font-size:12px;">rs@rya.ae</a>
+  </div>
+</div>
+
+<script>
+function setDubaiDate(){var d=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var hh=String(d.getHours()).padStart(2,'0');var mm=String(d.getMinutes()).padStart(2,'0');document.querySelectorAll('[id=hdr-date]').forEach(function(el){el.textContent=d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear()+' '+hh+':'+mm})}
+setDubaiDate()
+</script>
+</body>
+</html>

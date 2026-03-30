@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YTAI Pipeline — Full Process</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── Index-specific styles ── */
+.wrap{padding:48px 40px;max-width:1200px;margin:0 auto}
+h1{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;color:var(--lime);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.sub{font-size:16px;color:var(--muted);font-weight:300;margin-bottom:40px}
+.stage{margin-bottom:16px;scroll-margin-top:80px}
+.stage-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .2s}
+.stage-card:hover{border-color:rgba(212,228,75,.3)}
+.stage-card.has-detail:hover{border-color:rgba(107,92,231,.5)}
+.stage-top{display:flex;align-items:center;gap:16px;padding:18px 24px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.1)}
+.stage-num{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;color:var(--lime);opacity:.4;width:50px;text-align:center;flex-shrink:0}
+.stage-info{flex:1}
+.stage-name{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.stage-desc{font-size:13px;color:var(--muted);font-weight:300;margin-top:2px}
+.stage-scripts{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px;opacity:.7}
+.stage-body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
+.stage-col{padding:16px 20px;font-size:13px}
+.stage-col:not(:last-child){border-right:1px solid var(--border)}
+.col-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.col-in .col-lbl{color:var(--teal)}
+.col-out .col-lbl{color:var(--warn)}
+.col-cmd .col-lbl{color:var(--blue)}
+.stage-col p{color:rgba(255,255,255,.8);line-height:1.6;margin-bottom:4px}
+.arrow{text-align:center;padding:4px 0;color:var(--lime);font-size:20px;opacity:.4}
+.flow-overview{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:28px 32px;margin-bottom:40px;overflow-x:auto}
+.flow-row{display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.flow-box{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);white-space:nowrap;text-align:center;text-decoration:none;display:inline-flex}
+a.flow-box{cursor:pointer;transition:all .15s}
+a.flow-box:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.flow-box.active{border-color:var(--ok);color:var(--ok)}
+.flow-box.claude{border-color:var(--purple);color:var(--purple)}
+.flow-box.uxp{border-color:var(--lime);color:var(--lime)}
+.flow-box.editor{border-color:var(--blue);color:var(--blue)}
+.flow-box.gemini{border-color:var(--warn);color:var(--warn)}
+.flow-box.review{border-color:var(--cyan);color:var(--cyan)}
+.flow-arr{color:var(--lime);font-size:16px;font-weight:700}
+.section-div{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:24px 0 8px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.env-section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px 28px;margin-bottom:40px}
+.env-section h3{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+.env-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.env-item{background:var(--card);border-radius:10px;padding:14px 18px}
+.env-name{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.env-name.py{color:var(--ok)}
+.env-name.uxp{color:var(--lime)}
+.env-name.claude{color:var(--purple)}
+.env-desc{font-size:12px;color:var(--muted);margin-bottom:6px}
+.env-cmd{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.5);background:rgba(0,0,0,.2);padding:4px 8px;border-radius:4px;display:block}
+.env-stages{font-size:10px;color:rgba(255,255,255,.35);margin-top:4px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;">
+    <div class="logo">YTAI</div>
+    <div class="hdr-t">Pipeline &mdash; Full Process</div>
+  </div>
+  <div class="hdr-r" style="text-align:right;line-height:1.6">v2.2 &middot; <span id="hdr-date"></span> Dubai (GMT+4)<br>powered by <a href="https://rya.ae/" style="font-weight:900;font-size:14px">RYA.AE</a></div>
+</div>
+
+<div class="wrap">
+
+<h1>YTAI Pipeline</h1>
+<p class="sub">Complete process from raw footage to YouTube &mdash; 15 stages in chronological order.<br>Actors: Python, Claude, UXP Panel, Editor, Gemini.</p>
+
+<!-- ═══════════════════════════════════════
+     OVERVIEW FLOW
+     ═══════════════════════════════════════ -->
+<div class="flow-overview">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:16px;font-weight:600;">DATA FLOW (CHRONOLOGY)</div>
+  <div class="flow-row">
+    <div class="flow-box claude">DNA</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box">CAMERA</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box active">00 INGEST</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box active">01 PREPARE</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box active">02 TRANSCRIBE</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box claude">03 ASSEMBLY BRIEF</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box uxp">04 UXP INGEST</div>
+  </div>
+  <div class="flow-row" style="padding-left:40px;">
+    <div class="flow-arr">&darr;</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-box uxp">05 UXP ASSEMBLY</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box uxp">06 DELETED SCENE</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box editor">07 BRIEF UPDATE</div><div class="flow-arr">&rarr;</div>
+    <a href="stage-08.html" class="flow-box claude">08 SCREEN PLAN</a><div class="flow-arr">&rarr;</div>
+    <div class="flow-box gemini">09 ASSETS</div>
+  </div>
+  <div class="flow-row" style="padding-left:40px;">
+    <div class="flow-arr">&darr;</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-box uxp">10 SCREEN CUES</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box editor">11 EDITING</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box review">12 REVIEW</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box gemini">13 THUMBNAIL</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box active">14 PUBLISH</div><div class="flow-arr">&rarr;</div>
+    <div class="flow-box">YOUTUBE</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ENVIRONMENT
+     ═══════════════════════════════════════ -->
+<div class="env-section">
+  <h3>Environment</h3>
+  <div class="env-grid">
+    <div class="env-item">
+      <div class="env-name py">.venv_transcribe</div>
+      <div class="env-desc">Whisper large-v3 + Pyannote (speaker diarization) + torch</div>
+      <code class="env-cmd">source ~/YTAI/environment/.venv_transcribe/bin/activate</code>
+      <div class="env-stages">Stages: 02 Transcribe, 12 Review</div>
+    </div>
+    <div class="env-item">
+      <div class="env-name py">.venv_ytai-prod</div>
+      <div class="env-desc">Production pipeline: file ops, FFmpeg, marker export, screen cues</div>
+      <code class="env-cmd">source ~/YTAI/environment/.venv_ytai-prod/bin/activate</code>
+      <div class="env-stages">Stages: 00 Ingest, 01 Prepare, 07 Brief Update, 10 Screen Cues</div>
+    </div>
+    <div class="env-item">
+      <div class="env-name uxp">UXP Panel (Premiere Pro)</div>
+      <div class="env-desc">Adobe UXP plugin &mdash; JavaScript, runs inside Premiere</div>
+      <code class="env-cmd">scripts/05_editing/0500_uxp/</code>
+      <div class="env-stages">Stages: 04 Ingest, 05 Assembly, 06 Deleted Scene, 10 Screen Cues, 12 Review</div>
+    </div>
+    <div class="env-item">
+      <div class="env-name claude">Claude Code</div>
+      <div class="env-desc">AI generation: brief, screen plan, publication, round-trip updates</div>
+      <code class="env-cmd">~/YTAI/ working directory</code>
+      <div class="env-stages">Stages: 03 Assembly Brief, 07 Brief Update, 08 Screen Plan, 14 Publication</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     DNA GUIDELINE
+     ═══════════════════════════════════════ -->
+<div class="section-div">Channel Setup (one-time)</div>
+
+<div class="stage" id="s-dna">
+<div class="stage-card has-detail">
+  <div class="stage-top">
+    <div class="stage-num" style="font-size:20px">DNA</div>
+    <div class="stage-info">
+      <div class="stage-name">Channel DNA Guideline</div>
+      <div class="stage-desc">Channel visual guideline: palette, fonts, screen types, resources. Created once, updated as the channel evolves.</div>
+    </div>
+    <div class="actors"><span class="actor a-claude">Claude Code</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p>Brand book / PDF with screens</p>
+      <p>Company website (palette, fonts)</p>
+      <p>Channel profile <span class="file">YTs/{CH}/{CH}.md</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">{ch}_screen_types.json</span></p>
+      <p><span class="file">index.html</span> (GitHub Pages)</p>
+      <p>Links: Drive, Sheets, YouTube</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Examples</div>
+      <p><a href="https://romansergeevcom.github.io/ytrya-dna/" target="_blank" style="color:var(--lime);text-decoration:none">YTRYA DNA</a> (RYA.AE)</p>
+      <p><a href="https://romansergeevcom.github.io/ytrf-dna/" target="_blank" style="color:var(--lime);text-decoration:none">YTRF DNA</a> (Reflux Control)</p>
+      <p><a href="https://romansergeevcom.github.io/ytcr-dna/" target="_blank" style="color:var(--lime);text-decoration:none">YTCR DNA</a> (Core Realty)</p>
+    </div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     00 INGEST
+     ═══════════════════════════════════════ -->
+<div class="section-div">Pre-production (automated)</div>
+
+<div class="stage" id="s00">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">00</div>
+    <div class="stage-info">
+      <div class="stage-name">Ingest</div>
+      <div class="stage-desc">Raw file discovery, folder structure v3.0 creation, DJI audio mapping</div>
+      <div class="stage-scripts">scripts/00_ingest/ + scripts/01_prepare/0101_init_folders/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Python</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p>Raw files from cameras and microphones</p>
+      <p><span class="file">*.MP4</span> (Sony FX3, GoPro)</p>
+      <p><span class="file">*.WAV</span> (DJI Mic 2 wireless)</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">Setup/{CODE}_ingest.json</span></p>
+      <p>Metadata: clips, paths, scenes, durations, DJI audio mapping</p>
+      <p>Folder structure v3.0 (see below)</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Command</div>
+      <span class="cmd">python ~/YTAI/scripts/run_pipeline.py "$PROJECT"</span>
+      <p>Automatically: creates folders, discovers scenes (<span class="file">^\d{2}_</span>), maps DJI TX files to clips</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="tree-label">Folder structure after Ingest</div>
+    <div class="tree"><span class="new">{project}/</span>
+├── <span class="new">01_Media/</span>
+│   └── <span class="new">Source/</span>
+│       ├── <span class="new">Video/{scene}/*.MP4</span>
+│       ├── <span class="new">Audio/{scene}/*.WAV</span>       ← DJI wireless
+│       ├── <span class="new">LUT/*.cube</span>
+│       ├── <span class="new">Transcription/</span>
+│       │   └── <span class="new">per_clip/{clip}/</span>
+│       └── <span class="new">Setup/</span>
+│           ├── <span class="new">{CODE}_ingest.json</span>
+│           └── <span class="new">logs/</span>
+├── <span class="new">02_Exports/</span>
+├── <span class="new">03_Shorts/</span>
+├── <span class="new">04_Thumbnail/</span>
+├── <span class="new">YouTube/</span>
+└── <span class="new">99_Pipeline/DJI_Audio/</span></div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     01 PREPARE
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s01">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">01</div>
+    <div class="stage-info">
+      <div class="stage-name">Prepare</div>
+      <div class="stage-desc">Audio extraction from video clips, DJI wireless microphone synchronization</div>
+      <div class="stage-scripts">scripts/01_prepare/0102_extract_audio/ + 0105_multiwindow_sync_dji/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Python</span><span class="actor a-python">FFmpeg</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p><span class="file">Setup/{CODE}_ingest.json</span></p>
+      <p><span class="file">Video/{scene}/*.MP4</span></p>
+      <p><span class="file">Audio/{scene}/*.WAV</span> (DJI Mic 2)</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">per_clip/{clip}/{clip}_AUDIO.wav</span></p>
+      <p><span class="file">per_clip/{clip}/{clip}M01.XML</span></p>
+      <p><span class="file">Transcription/{CODE}_FULL_AUDIO.wav</span></p>
+      <p><span class="file">99_Pipeline/DJI_Audio/{clip}_TX01.wav</span></p>
+      <p><span class="file">99_Pipeline/DJI_Audio/{clip}_TX02.wav</span></p>
+      <p><span class="file">{CODE}_ingest.json</span> (updated: dji_audio[])</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Command</div>
+      <span class="cmd">python ~/YTAI/scripts/run_pipeline.py "$PROJECT"</span>
+      <p><b>DJI sync algorithm:</b></p>
+      <p>FFmpeg extract audio &rarr; multi-window waveform cross-correlation &rarr; trim TX to clip boundaries</p>
+      <p>Spanning support (DJI auto-splits at ~30 min)</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="tree-label">New files after Prepare</div>
+    <div class="tree">{project}/01_Media/Source/
+├── Transcription/
+│   ├── <span class="new">{CODE}_FULL_AUDIO.wav</span>        ← concat of all clips
+│   └── per_clip/{clip}/
+│       ├── <span class="new">{clip}_AUDIO.wav</span>          ← camera audio
+│       └── <span class="new">{clip}M01.XML</span>             ← Premiere XML marker
+└── ...
+<span class="new">99_Pipeline/DJI_Audio/</span>
+├── <span class="new">{clip}_TX01.wav</span>                   ← mic 1, synced &amp; trimmed
+└── <span class="new">{clip}_TX02.wav</span>                   ← mic 2, synced &amp; trimmed</div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     02 TRANSCRIBE
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s02">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">02</div>
+    <div class="stage-info">
+      <div class="stage-name">Transcribe</div>
+      <div class="stage-desc">Speech recognition (Whisper large-v3) + speaker diarization (Pyannote)</div>
+      <div class="stage-scripts">scripts/02_transcribe/020101_transcribe/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Whisper</span><span class="actor a-python">Pyannote</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p><span class="file">{CODE}_FULL_AUDIO.wav</span></p>
+      <p>or <span class="file">per_clip/{clip}_AUDIO.wav</span></p>
+      <p>Parameters: --language, --speakers N</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">Setup/{CODE}_Claude4_assembly.json</span></p>
+      <p>Segments: text, speaker, start/end (ms)</p>
+      <p>Per-word timestamps: <span class="file">{w, s, e}</span></p>
+      <p><span class="file">{CODE}_transcript.json</span></p>
+      <p><span class="file">{CODE}_transcript.xlsx</span></p>
+      <p><span class="file">Transcription/{scene}/*.srt</span></p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Command</div>
+      <span class="cmd">source ~/YTAI/environment/.venv_transcribe/bin/activate</span>
+      <span class="cmd">python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --all --language ru --no-pause</span>
+      <p>Or transcript only:</p>
+      <span class="cmd">python ~/YTAI/scripts/run_pipeline.py "$PROJECT" --only transcribe --speakers 2</span>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="tree-label">New files after Transcribe</div>
+    <div class="tree">{project}/01_Media/Source/
+├── Setup/
+│   ├── <span class="new">{CODE}_Claude4_assembly.json</span>  ← for Claude (word-level)
+│   ├── <span class="new">{CODE}_transcript.json</span>        ← full transcript
+│   └── <span class="new">{CODE}_transcript.xlsx</span>        ← Excel export
+└── Transcription/
+    ├── <span class="new">{scene}/*.srt</span>                 ← SRT per scene
+    └── per_clip/{clip}/
+        └── <span class="new">{clip}.srt</span>                ← SRT per clip</div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     03 ASSEMBLY BRIEF
+     ═══════════════════════════════════════ -->
+<div class="section-div">Assembly (Claude + UXP)</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s03">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">03</div>
+    <div class="stage-info">
+      <div class="stage-name">Assembly Brief</div>
+      <div class="stage-desc">Claude analyzes the transcript and creates an assembly brief</div>
+      <div class="stage-scripts">scripts/05_editing/0501_brief/ (Claude knowledge base)</div>
+    </div>
+    <div class="actors"><span class="actor a-claude">Claude Code</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input (Claude reads)</div>
+      <p><span class="file">Setup/{CODE}_Claude4_assembly.json</span></p>
+      <p><span class="file">INSTRUCTIONS.md</span> &mdash; workflow + algorithm</p>
+      <p><span class="file">editing_rules.md</span> &mdash; video structure, editing rules</p>
+      <p><span class="file">output_format.md</span> &mdash; output JSON schema</p>
+      <p><span class="file">YTs/{CHANNEL}/{CHANNEL}.md</span> &mdash; channel profile</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output (Claude generates)</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v1_in.json</span></p>
+      <p>Segments: segment_id, source_file, tc_in/out, block, block_name, use, speaker, transcript, color, notes, screen cues</p>
+      <p><span class="file">Assembly/{CODE}_review_v1.html</span></p>
+      <p>Visual overview: block table, YouTube chapters</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">How to run</div>
+      <p>Claude Code:</p>
+      <p>"Create Assembly brief for YTCR01, project /Volumes/RYA T7 Black/YTCR01_Arty_Dzis"</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="claude-detail">
+      <p><b>What Claude does:</b></p>
+      <p>1. Reads transcript with word-level timecodes (words[]: {w, s, e})</p>
+      <p>2. Identifies blocks: Hook, Intro, Content_1&hellip;N, CTA per editing_rules</p>
+      <p>3. Labels segments: USE=TRUE (keep) / USE=FALSE (cut)</p>
+      <p>4. Assigns colors by block, priorities, screen cues</p>
+      <p>5. Generates JSON brief + HTML review</p>
+      <p><b>Rule:</b> Every word lands in exactly one segment. transcript = full text of tc_in&rarr;tc_out. No gaps.</p>
+      <p><b>Word-level tc:</b> tc_in = first_word.s, tc_out = last_word.e + smart_padding (min(gap_to_next, 0.3))</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">New files after Assembly Brief</div>
+    <div class="tree">{project}/01_Media/Source/Setup/
+└── <span class="new">Assembly/</span>
+    ├── <span class="new">{CODE}_Assembly_v1_in.json</span>    ← brief for UXP
+    └── <span class="new">{CODE}_review_v1.html</span>        ← visual overview</div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     04 UXP INGEST
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s04">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">04</div>
+    <div class="stage-info">
+      <div class="stage-name">UXP Ingest</div>
+      <div class="stage-desc">Import all clips + DJI audio into Premiere Pro, create bin structure</div>
+      <div class="stage-scripts">scripts/05_editing/0500_uxp/src/ingest/</div>
+    </div>
+    <div class="actors"><span class="actor a-uxp">UXP Panel</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p><span class="file">Setup/{CODE}_ingest.json</span></p>
+      <p>Media files on disk (MP4 + WAV)</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output (in Premiere)</div>
+      <p>Bins: <span class="file">00_Source/{CODE}_{scene}/</span></p>
+      <p>Bin: <span class="file">01_Transcripts/{scene}/</span></p>
+      <p>Sequence: <span class="file">{project}_1_Ingest</span></p>
+      <p>&nbsp;&nbsp;V1: all clips sequentially</p>
+      <p>&nbsp;&nbsp;A1: camera audio (stereo)</p>
+      <p>&nbsp;&nbsp;A2: TX01 (mono), A3: TX02 (mono)</p>
+      <p>Per-scene SRT on timeline</p>
+      <p>LUTs copied and applied</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">UI</div>
+      <p>UXP Panel &rarr; <b>PROJECT</b> &rarr; select folder</p>
+      <p>UXP Panel &rarr; <b>INGEST</b> &rarr; Load JSON &rarr; Create</p>
+      <p><b>6 steps:</b> Clean &rarr; Bins &rarr; Sequence &rarr; Transcripts &rarr; LUTs &rarr; Activate</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="uxp-detail">
+      <p>Creates bin structure by scene, imports all clips + DJI audio.</p>
+      <p>Builds Ingest sequence: all clips on V1 at full length, DJI on A2/A3.</p>
+      <p>Multi-scene: separate sequence per scene (<span class="file">{project}_1_{sceneName}</span>).</p>
+    </div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     05 UXP ASSEMBLY
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s05">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">05</div>
+    <div class="stage-info">
+      <div class="stage-name">UXP Assembly</div>
+      <div class="stage-desc">Automatic sequence assembly from Assembly brief (USE=TRUE segments)</div>
+      <div class="stage-scripts">scripts/05_editing/0500_uxp/src/assembly/ + scripts/05_editing/0502_assembly/</div>
+    </div>
+    <div class="actors"><span class="actor a-uxp">UXP Panel</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{N}_in.json</span></p>
+      <p>Clips in bin <span class="file">00_Source/</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output (in Premiere)</div>
+      <p>Sequence: <span class="file">{project}_2_Assembly_v{N}</span></p>
+      <p>&nbsp;&nbsp;V1: USE=TRUE segments, trimmed by tc_in/tc_out</p>
+      <p>&nbsp;&nbsp;Clip colors by block</p>
+      <p>&nbsp;&nbsp;Markers: chapter boundaries + per-segment (transcript)</p>
+      <p>&nbsp;&nbsp;A2/A3: DJI audio synced</p>
+      <p><span class="file">transcripts/{CODE}_2_Assembly_v{N}_transcript.srt</span></p>
+      <p><span class="file">transcripts/{CODE}_2_Assembly_v{N}_captions.srt</span></p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">UI</div>
+      <p>UXP Panel &rarr; <b>ASSEMBLY</b> &rarr; Load JSON &rarr; Build</p>
+      <p><b>6 steps:</b> Backup &rarr; Scan &rarr; Build &rarr; Markers &rarr; Activate &rarr; Captions</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="uxp-detail">
+      <p>Reads brief JSON, filters use=TRUE + block!=99.</p>
+      <p>Sorts: block ASC, preserves order within block.</p>
+      <p>Finds clips in 00_Source by source_file, sets source in/out.</p>
+      <p>Colors clips by block color, creates chapter markers.</p>
+      <p>Generates SRT: transcript (full) + captions (subtitles).</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">New files after UXP Assembly</div>
+    <div class="tree">{project}/01_Media/Source/Transcription/
+├── <span class="new">transcripts/</span>
+│   ├── <span class="new">{CODE}_2_Assembly_v{N}_transcript.srt</span>
+│   └── <span class="new">{CODE}_2_Assembly_v{N}_captions.srt</span>
+└── ...</div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     06 DELETED SCENE
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s06">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">06</div>
+    <div class="stage-info">
+      <div class="stage-name">Deleted Scene</div>
+      <div class="stage-desc">Sequence with unused segments (USE=FALSE) for reviewing cut material</div>
+      <div class="stage-scripts">scripts/05_editing/0500_uxp/src/deletedScene/</div>
+    </div>
+    <div class="actors"><span class="actor a-uxp">UXP Panel</span><span class="actor a-editor">Editor</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{N}_in.json</span></p>
+      <p>Same brief as for Assembly</p>
+      <p>Clips in bin <span class="file">00_Source/</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output (in Premiere)</div>
+      <p>Sequence: <span class="file">{project}_3_DeletedScene</span></p>
+      <p>&nbsp;&nbsp;V1: USE=FALSE segments (cut material)</p>
+      <p>&nbsp;&nbsp;Colors by cut category (SKIP, ALT, CUT)</p>
+      <p>&nbsp;&nbsp;Markers with transcript + cut reason</p>
+      <p>&nbsp;&nbsp;A2/A3: DJI audio</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">UI</div>
+      <p>UXP Panel &rarr; <b>DELETED SCENE</b> &rarr; Load JSON &rarr; Build</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="uxp-detail">
+      <p><b>Purpose:</b> Editor reviews cut segments and decides whether to restore any.</p>
+      <p>Complement to Assembly &mdash; everything Claude marked USE=FALSE.</p>
+      <p>Sort: by block + order from brief. Colors by cut category.</p>
+      <p>Editor places markers on segments to restore &rarr; feedback in round-trip.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     07 BRIEF UPDATE (Round-trip)
+     ═══════════════════════════════════════ -->
+<div class="section-div">Round-trip (iterations with editor)</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s07">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">07</div>
+    <div class="stage-info">
+      <div class="stage-name">Brief Update</div>
+      <div class="stage-desc">Editor comments in Premiere &rarr; marker export &rarr; Claude updates brief</div>
+      <div class="stage-scripts">scripts/05_editing/0506_marker_export/</div>
+    </div>
+    <div class="actors"><span class="actor a-editor">Editor</span><span class="actor a-python">Python</span><span class="actor a-claude">Claude</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p>Premiere <span class="file">.prproj</span> with markers</p>
+      <p>Editor writes comments in Assembly sequence markers</p>
+      <p>Format: <span class="file">Speaker: X | text | B-roll: Y | Notes: Z</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{N}_out.json</span> &mdash; marker export</p>
+      <p>&darr; Claude processes &darr;</p>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{N+1}_in.json</span> &mdash; updated brief</p>
+      <p><span class="file">Assembly/{CODE}_review_v{N+1}.html</span> &mdash; review with changelog</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Commands</div>
+      <p><b>Step 1:</b> Export markers from Premiere:</p>
+      <span class="cmd">python ~/YTAI/scripts/05_editing/0506_marker_export/export_markers_from_prproj.py --project "$PROJECT"</span>
+      <p><b>Step 2:</b> Claude updates brief:</p>
+      <p>"Update brief from _out.json for YTCR01"</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="loop"><b>Loop:</b> Brief v1 &rarr; UXP Assembly &rarr; editor comments &rarr; export _out.json &rarr; Claude &rarr; Brief v2 &rarr; UXP reloads &rarr; &hellip; &rarr; Brief v{final} (locked)</div>
+    <div class="claude-detail" style="margin-top:10px;">
+      <p><b>What Claude does during update:</b></p>
+      <p>1. Reads _out.json (editor comments from Premiere markers)</p>
+      <p>2. Reads previous _in.json (current brief version)</p>
+      <p>3. Parses editor notes: "Speaker: X | text | B-roll: Y | Notes: Z. EDITOR NOTES"</p>
+      <p>4. Applies changes, generates changelog</p>
+      <p>5. HTML review: yellow highlights on changed segments, CHANGED badges, strikethrough on removed</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">Files after round-trip iterations</div>
+    <div class="tree">{project}/01_Media/Source/Setup/Assembly/
+├── {CODE}_Assembly_v1_in.json
+├── <span class="new">{CODE}_Assembly_v1_out.json</span>     ← marker export
+├── <span class="new">{CODE}_Assembly_v2_in.json</span>      ← updated brief
+├── <span class="new">{CODE}_review_v2.html</span>           ← review with changelog
+├── ...
+├── <span class="new">{CODE}_Assembly_v{N}_in.json</span>    ← final version
+└── <span class="new">{CODE}_review_v{N}.html</span></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     08 SCREEN PLAN
+     ═══════════════════════════════════════ -->
+<div class="section-div">Visual Planning</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s08">
+<div class="stage-card has-detail">
+  <div class="stage-top">
+    <div class="stage-num">08</div>
+    <div class="stage-info">
+      <div class="stage-name">Screen Plan</div>
+      <div class="stage-desc">Claude creates a visual editing brief (HTML, 3 columns)</div>
+      <div class="stage-scripts">Claude Code (no script folder)</div>
+    </div>
+    <div class="actors"><span class="actor a-claude">Claude Code</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input (Claude reads)</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span></p>
+      <p>Channel DNA &mdash; palette, fonts, screen types</p>
+      <p><span class="file">screen_types.json</span> &mdash; screen type catalog</p>
+      <p><span class="file">ref_images/</span> &mdash; thematic references</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">Setup/{CODE}_screen_plan_v{N}.html</span></p>
+      <p>3 columns: Transcript | Screen (mockup) | Production</p>
+      <p>CSS mockups (16:9), Gemini prompts, storyboards</p>
+      <p>A/B variants with separate prompts</p>
+      <p>Step Cards, Speaker Intro, Disclaimer</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">How to run</div>
+      <p>Claude Code:</p>
+      <p>"Create screen plan for YTRF02"</p>
+      <p>Document style: RYA DNA</p>
+      <p>Mockup style: Channel DNA</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="claude-detail">
+      <p><b>8 steps of Screen Plan creation:</b></p>
+      <p>1. Reads Assembly brief (all USE=TRUE segments)</p>
+      <p>2. For each segment: selects screen type from screen_types</p>
+      <p>3. Writes full transcript with timing marks (column 1)</p>
+      <p>4. Creates CSS mockup 16:9 with text/graphics (column 2)</p>
+      <p>5. For medical diagrams: storyboard (frames tied to words)</p>
+      <p>6. For each frame: prompt = REFERENCE + HOW TO USE + TASK (column 3)</p>
+      <p>7. Adds Step Cards (progress), Speaker Intro, Disclaimer</p>
+      <p>8. Generates HTML with RYA DNA style</p>
+    </div>
+  </div>
+  <div class="stage-more"><a href="stage-08.html">Details &rarr;</a></div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     10 ASSET GENERATION
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s09">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">09</div>
+    <div class="stage-info">
+      <div class="stage-name">Asset Generation</div>
+      <div class="stage-desc">Gemini (illustrations) + Kling (animations) + After Effects (presets, overlays)</div>
+      <div class="stage-scripts">manual (Gemini / Kling / After Effects)</div>
+    </div>
+    <div class="actors"><span class="actor a-gemini">Gemini</span><span class="actor a-gemini">Kling</span><span class="actor a-editor">After Effects</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p>Prompts from Screen Plan (column 3)</p>
+      <p><span class="file">ref_images/</span> &mdash; thematic references</p>
+      <p>AE presets: Side Slide, 2 Points, Visual Demo, Lower Third</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">Pre-Edit/visuals/*.png</span> (3840&times;2160)</p>
+      <p><span class="file">Pre-Edit/visuals/*.mp4</span> (Kling animations, 4-5 sec)</p>
+      <p>AE compositions (PNG/ProRes)</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Workflow</div>
+      <p><b>Gemini:</b> Prompt from screen plan &rarr; upload ref &rarr; generate &rarr; PNG</p>
+      <p><b>Kling:</b> Frames 1&rarr;N &rarr; image-to-video &rarr; MP4</p>
+      <p><b>AE:</b> Open preset &rarr; replace text/colors from screen plan &rarr; Render</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     11 UXP SCREEN CUES
+     ═══════════════════════════════════════ -->
+<div class="section-div">Finalization</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s10">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">10</div>
+    <div class="stage-info">
+      <div class="stage-name">UXP Screen Cues</div>
+      <div class="stage-desc">Automatic PNG overlay placement on timeline from screen plan</div>
+      <div class="stage-scripts">scripts/05_editing/0504_screen_cues/ + 0500_uxp/src/screens/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Python</span><span class="actor a-uxp">UXP Panel</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span> (screens[])</p>
+      <p><span class="file">screen_cues/*.png</span> &mdash; generated PNGs</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output (in Premiere)</div>
+      <p>Sequence: <span class="file">{project}_4_ScreenCues</span></p>
+      <p>&nbsp;&nbsp;V1: copy of Assembly sequence</p>
+      <p>&nbsp;&nbsp;V2: PNG overlays (3840&times;2160 transparent)</p>
+      <p>&nbsp;&nbsp;Orange markers with screen cue description</p>
+      <p>&nbsp;&nbsp;SRT subtitles</p>
+      <p>Bin: <span class="file">01_ScreenCues/</span></p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Commands</div>
+      <p><b>Step 1:</b> Generate PNGs (Python):</p>
+      <span class="cmd">python ~/YTAI/scripts/05_editing/0504_screen_cues/generate_screen_cues_png.py --brief path/to/brief.json</span>
+      <p><b>Step 2:</b> Place on timeline:</p>
+      <p>UXP Panel &rarr; <b>SCREENS</b> &rarr; Load &rarr; Build</p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="uxp-detail">
+      <p>Screen types: chapter_title, half_overlay, three_fifths_overlay, lower_third, product_shot, list, info_graphic</p>
+      <p>Python generates PNGs (<span class="file">screen_cues/scr_XXX_{type}.png</span>), UXP places on V2 above Assembly.</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">New files after Screen Cues</div>
+    <div class="tree">{project}/01_Media/Source/Setup/
+└── <span class="new">screen_cues/</span>
+    ├── <span class="new">scr_001_chapter_title.png</span>
+    ├── <span class="new">scr_002_half_overlay.png</span>
+    └── <span class="new">...</span></div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     12 EDITING
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s11">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">11</div>
+    <div class="stage-info">
+      <div class="stage-name">Editing</div>
+      <div class="stage-desc">Final assembly in Premiere Pro: B-roll, music, color correction</div>
+      <div class="stage-scripts">manual (Premiere Pro)</div>
+    </div>
+    <div class="actors"><span class="actor a-editor">Editor</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p>Assembly sequence (stage 05)</p>
+      <p>Screen Plan HTML (stage 08)</p>
+      <p>Visuals PNG/MP4 (stage 09)</p>
+      <p>Screen Cues sequence (stage 10)</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p>Final video file</p>
+      <p><span class="file">02_Exports/{CODE}_final.mp4</span> (H.264)</p>
+      <p><span class="file">02_Exports/{CODE}_final.mov</span> (ProRes)</p>
+      <p>Locked edit</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Workflow</div>
+      <p>1. Assembly sequence &rarr; add visuals per screen plan</p>
+      <p>2. B-roll inserts</p>
+      <p>3. Music + sound design</p>
+      <p>4. Color correction (LUTs + manual)</p>
+      <p>5. Export (H.264 / ProRes)</p>
+    </div>
+  </div>
+</div>
+</div>
+<!-- ═══════════════════════════════════════
+     12 POST-EDIT REVIEW
+     ═══════════════════════════════════════ -->
+<div class="section-div">Post-production</div>
+<div class="arrow">&darr;</div>
+
+<div class="stage" id="s12">
+<div class="stage-card" style="border-color:rgba(41,166,203,.3);">
+  <div class="stage-top">
+    <div class="stage-num">12</div>
+    <div class="stage-info">
+      <div class="stage-name">Post-Edit Review</div>
+      <div class="stage-desc">Compare edited video against Assembly brief &mdash; what's in, what's out, what to restore</div>
+      <div class="stage-scripts">scripts/05_editing/0508_review/ + 0500_uxp/src/review/</div>
+    </div>
+    <div class="actors"><span class="actor a-python">Python</span><span class="actor a-uxp">UXP Panel</span><span class="actor a-editor">Editor</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p><span class="file">edited_video.mp4</span> &mdash; export from Premiere (stage 11)</p>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">Review/{CODE}_review_transcript.json</span></p>
+      <p><span class="file">Review/{CODE}_review_v1.docx</span></p>
+      <p><span class="file">Review/{CODE}_review_brief.json</span></p>
+      <p><span class="file">Review/{CODE}_review_v1.html</span> &mdash; interactive</p>
+      <p><span class="file">captions/{CODE}_5_Review_v1_captions.srt</span></p>
+      <p><span class="file">transcripts/{CODE}_5_Review_v1_transcript.srt</span></p>
+      <p>Sequence: <span class="file">{project}_5_Review_v{N}</span></p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Commands</div>
+      <p><b>UXP:</b> Panel &rarr; <b>REVIEW</b> &rarr; Process Review</p>
+      <p><b>Or CLI (5 steps):</b></p>
+      <span class="cmd">source ~/YTAI/environment/.venv_transcribe/bin/activate</span>
+      <span class="cmd">python 0508_review/transcribe_review_video.py --video "$VIDEO" --output "$OUTPUT"</span>
+      <span class="cmd">python 0508_review/export_review_docx.py --transcript "$TRANSCRIPT" --brief "$BRIEF"</span>
+      <span class="cmd">python 0508_review/compare_review.py --brief "$BRIEF" --transcript "$TRANSCRIPT"</span>
+      <span class="cmd">python 0508_review/generate_review_html.py --brief "$REVIEW_BRIEF"</span>
+      <p>Then UXP: <b>Load Review Brief</b> &rarr; <b>Build Review</b></p>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;">
+    <div class="review-detail">
+      <p><b>5 Python steps:</b></p>
+      <p>1. <b>transcribe_review_video.py</b> &mdash; Whisper transcribes the video export (word-level timestamps)</p>
+      <p>2. <b>export_review_docx.py</b> &mdash; DOCX table for manual review (5 columns: #, TC, text, block, comment)</p>
+      <p>3. <b>generate_review_captions.py</b> &mdash; SRT subtitles + transcript for Premiere</p>
+      <p>4. <b>compare_review.py</b> &mdash; SequenceMatcher matches edited video against Assembly brief &rarr; review_brief.json</p>
+      <p>5. <b>generate_review_html.py</b> &mdash; interactive HTML: 3 tables (Edited / Unused / Final Timeline), radio buttons Keep/Cut/Insert</p>
+    </div>
+    <div class="uxp-detail" style="margin-top:10px;">
+      <p><b>UXP Review tab:</b></p>
+      <p><b>Process Review</b> &mdash; runs all 5 Python steps via run_review.command</p>
+      <p><b>Load Review Brief</b> &mdash; parses review_brief.json (reviewBriefParser.js)</p>
+      <p><b>Build Review</b> &mdash; creates _5_Review sequence (reviewAssembler.js):</p>
+      <p>&nbsp;&nbsp;Edited segments = Cyan, Inserted segments = Green</p>
+      <p>&nbsp;&nbsp;DJI audio for insertions, markers with comments</p>
+    </div>
+    <div class="tree-label" style="margin-top:12px;">New files after Post-Edit Review</div>
+    <div class="tree">{project}/01_Media/Source/Setup/
+└── <span class="new">Review/</span>
+    ├── <span class="new">{CODE}_review_transcript.json</span>   ← Whisper output
+    ├── <span class="new">{CODE}_review_v1.docx</span>           ← review table
+    ├── <span class="new">{CODE}_review_brief.json</span>        ← matched/unused segments
+    └── <span class="new">{CODE}_review_v1.html</span>           ← interactive review
+{project}/01_Media/Source/Transcription/
+├── captions/<span class="new">{CODE}_5_Review_v1_captions.srt</span>
+└── transcripts/<span class="new">{CODE}_5_Review_v1_transcript.srt</span></div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     13 THUMBNAIL
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s13">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">13</div>
+    <div class="stage-info">
+      <div class="stage-name">Thumbnail</div>
+      <div class="stage-desc">Thumbnail generation: prompt from screen plan, Gemini/Midjourney, composition in Photoshop/Figma</div>
+      <div class="stage-scripts">scripts/06_thumbnails/ (stubs)</div>
+    </div>
+    <div class="actors"><span class="actor a-claude">Claude</span><span class="actor a-gemini">Gemini</span><span class="actor a-editor">Photoshop</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span></p>
+      <p>Screen Plan (for themes and key frames)</p>
+      <p>Channel DNA (palette, fonts, style)</p>
+      <p>Frames from final video</p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">04_Thumbnail/{CODE}_thumb_v{N}.png</span> (1280&times;720)</p>
+      <p><span class="file">04_Thumbnail/{CODE}_thumb_brief.json</span></p>
+      <p>A/B/C variants with prompts</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">Workflow</div>
+      <p><b>Step 1:</b> Claude generates thumbnail brief (3 variants)</p>
+      <p><b>Step 2:</b> Gemini/Midjourney generates background + elements</p>
+      <p><b>Step 3:</b> Photoshop/Figma &mdash; final composition, text, face</p>
+    </div>
+  </div>
+</div>
+</div>
+<div class="arrow">&darr;</div>
+
+<!-- ═══════════════════════════════════════
+     14 PUBLICATION
+     ═══════════════════════════════════════ -->
+<div class="stage" id="s14">
+<div class="stage-card">
+  <div class="stage-top">
+    <div class="stage-num">14</div>
+    <div class="stage-info">
+      <div class="stage-name">Publication</div>
+      <div class="stage-desc">YouTube metadata: title, description, chapters, tags</div>
+      <div class="stage-scripts">scripts/08_youtube/ (stubs)</div>
+    </div>
+    <div class="actors"><span class="actor a-claude">Claude</span><span class="actor a-python">Python</span></div>
+  </div>
+  <div class="stage-body">
+    <div class="stage-col col-in"><div class="col-lbl">Input</div>
+      <p><span class="file">Assembly/{CODE}_Assembly_v{final}_in.json</span></p>
+      <p>Transcript (for keywords)</p>
+      <p><span class="file">{CHANNEL}.md</span> &mdash; channel profile</p>
+      <p><span class="file">04_Thumbnail/{CODE}_thumb_v{N}.png</span></p>
+    </div>
+    <div class="stage-col col-out"><div class="col-lbl">Output</div>
+      <p><span class="file">YouTube/{CODE}_youtube.json</span></p>
+      <p>Title (SEO-optimized)</p>
+      <p>Description with keywords</p>
+      <p>Chapters from Assembly blocks (with timecodes)</p>
+      <p>Tags + hashtags</p>
+    </div>
+    <div class="stage-col col-cmd"><div class="col-lbl">How to run</div>
+      <p>Claude: "Generate YouTube metadata for YTRF02"</p>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- .wrap -->
+
+<div class="footer">
+  powered by <a href="https://rya.ae/">RYA.AE</a>
+  <div style="margin-top:12px;font-size:12px;">
+    <span style="color:var(--white);font-weight:600;">Roman Sergeev</span> &middot; Producer<br>
+    <a href="https://t.me/sergeevr" style="color:var(--blue);font-size:12px;">Telegram</a> &middot;
+    <a href="https://wa.me/971569399953" style="color:var(--blue);font-size:12px;">WhatsApp</a> &middot;
+    <a href="mailto:rs@rya.ae?subject=YTAI%20Pipeline%20Process" style="color:var(--blue);font-size:12px;">rs@rya.ae</a>
+  </div>
+</div>
+
+<script>
+function setDubaiDate(){var d=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var hh=String(d.getHours()).padStart(2,'0');var mm=String(d.getMinutes()).padStart(2,'0');document.querySelectorAll('[id=hdr-date]').forEach(function(el){el.textContent=d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear()+' '+hh+':'+mm})}
+setDubaiDate()
+</script>
+</body>
+</html>
