@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YTCR Guideline — Core Realty Dubai</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#101010;--panel:#1A1A1A;--accent:#F0FF02;--accent2:#FFD700;--white:#EFEFEF;--blue:#F0FF02;--card:#1E1E1E;--muted:#888;--border:rgba(240,255,2,.12);--accent-grad:linear-gradient(135deg,#F0FF02,#FFD700);--error:#FF0000;--success:#4ADE80;--purple:#6B5CE7}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--white);font-size:16px;line-height:1.6}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:100;background:var(--panel);border-bottom:1px solid var(--border);padding:14px 40px;display:flex;align-items:center;justify-content:space-between}
+.hdr-left{display:flex;align-items:center;gap:20px}
+.logo{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:2px;text-transform:uppercase;text-decoration:none}
+.hdr-title{font-size:18px;font-weight:300;color:var(--muted);border-left:1px solid var(--border);padding-left:20px}
+.hdr-right{font-size:12px;color:var(--white);font-weight:300}
+.hdr-right a{color:var(--white);font-weight:700;text-decoration:none}
+.hdr-right a:hover{opacity:.8}
+.hdr-nav{display:flex;align-items:center;gap:16px;margin-top:4px}
+.hdr-link{font-size:14px;color:var(--muted);text-decoration:none;transition:color .2s}
+.hdr-link:hover{color:var(--accent)}
+.hdr-badge{font-size:13px;font-weight:700;color:var(--bg);background:var(--accent-grad);padding:5px 14px;border-radius:14px}
+
+/* FILTERS */
+.filters{position:sticky;top:57px;z-index:99;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 40px;display:flex;gap:10px;flex-wrap:wrap}
+a.fbtn{text-decoration:none;color:inherit}
+.fbtn{background:var(--card);color:var(--muted);border:1px solid var(--border);padding:10px 22px;border-radius:22px;font-size:15px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit;display:inline-block}
+.fbtn:hover{border-color:var(--accent);color:var(--white)}
+.fbtn.on{background:var(--accent-grad);color:var(--bg);border-color:var(--accent)}
+
+/* CONTENT */
+.content{padding:40px;max-width:1100px;margin:0 auto}
+
+/* CATEGORY */
+.cat{margin-bottom:56px;scroll-margin-top:120px}
+.cat-hdr{display:flex;align-items:center;gap:14px;margin-bottom:28px;padding-bottom:14px;border-bottom:2px solid var(--accent)}
+.cat-letter{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--accent);opacity:.35}
+.cat-title{font-size:22px;font-weight:700}
+.cat-desc{font-size:15px;color:var(--muted);font-weight:300}
+.cat-count{margin-left:auto;font-size:14px;color:var(--muted);background:var(--card);padding:5px 14px;border-radius:14px;white-space:nowrap}
+
+/* TYPE CARD */
+.tc{background:var(--panel);border:1px solid var(--border);border-radius:14px;margin-bottom:32px;overflow:hidden;transition:border-color .2s}
+.tc:hover{border-color:rgba(240,255,2,.3)}
+.tc-hdr{display:flex;align-items:center;gap:14px;padding:18px 24px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.15)}
+.tc-id{font-size:14px;font-weight:700;color:var(--accent);background:rgba(240,255,2,.1);padding:4px 12px;border-radius:5px;letter-spacing:.5px;font-family:monospace}
+.tc-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700}
+.tc-copy{margin-left:auto;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;gap:6px}
+.tc-copy:hover{border-color:var(--accent);color:var(--accent)}
+.tc-copy.copied{border-color:var(--success);color:var(--success)}
+.tc-mock-wrap{padding:24px;display:flex;justify-content:center}
+.mock{width:100%;max-width:840px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;border:1px solid var(--border);position:relative}
+.tc-info{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;padding:0 24px 20px}
+.info-box{background:rgba(0,0,0,.12);border-radius:8px;padding:14px 16px}
+.info-lbl{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.info-txt{font-size:15px;color:rgba(239,239,239,.85);line-height:1.6}
+.info-accent{font-size:15px;color:var(--accent);background:rgba(240,255,2,.08);padding:10px 14px;border-radius:6px;border-left:3px solid var(--accent)}
+.kw-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.kw{font-size:13px;color:var(--muted);background:var(--card);padding:4px 12px;border-radius:12px}
+
+/* SPEAKER ZONE */
+.spk{background:repeating-conic-gradient(#444 0% 25%,#555 0% 50%) 0 0/16px 16px;display:flex;align-items:center;justify-content:center;position:relative}
+.spk::after{content:'SPEAKER';font-size:16px;font-weight:700;color:rgba(255,255,255,.75);letter-spacing:4px;background:rgba(0,0,0,.6);padding:8px 24px;border-radius:8px;position:absolute}
+
+/* ═══ MOCKS ═══ */
+
+/* talking_head */
+.m-th{height:100%}.m-th .spk{height:100%}
+
+/* section_title — over speaker */
+.m-st{height:100%;position:relative}
+.m-st .spk{height:100%;position:absolute;inset:0}
+.m-st::after{content:'';position:absolute;inset:0;background:rgba(16,16,16,.4)}
+.m-st h2{position:absolute;z-index:1;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Playfair Display',serif;font-size:clamp(24px,5vw,42px);font-weight:900;text-transform:uppercase;letter-spacing:4px;text-align:center;color:var(--white);text-shadow:0 2px 20px rgba(0,0,0,.6)}
+
+/* section_title_centered — no speaker */
+.m-stc{background:radial-gradient(ellipse at center,#1E1E1E,#0a0a0a);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:8%}
+.m-stc h2{font-family:'Playfair Display',serif;font-size:clamp(18px,4vw,36px);font-weight:900;color:var(--white);text-transform:uppercase;letter-spacing:2px;text-align:center}
+.m-stc h2 .hl{color:var(--accent)}
+.m-stc p{font-size:clamp(10px,1.5vw,16px);color:var(--muted);margin-top:2%}
+
+/* lower_third */
+.m-lt{display:flex;flex-direction:column;height:100%}
+.m-lt .spk{flex:1}
+.m-lt-bar{background:rgba(26,26,26,.92);border-top:3px solid var(--accent);padding:16px 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.m-lt-bar h3{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;text-transform:uppercase;letter-spacing:2px}
+.m-lt-bar p{font-size:16px;font-weight:300;color:var(--muted)}
+
+/* step_cards */
+.m-sc{background:var(--bg);display:flex;align-items:center;justify-content:center;gap:14px;padding:28px;height:100%}
+.sc-card{background:var(--card);border-radius:14px;padding:16px;flex:1;max-width:170px;height:130px;display:flex;flex-direction:column;border:1px solid var(--border)}
+.sc-card.on{border-color:rgba(240,255,2,.4)}
+.sc-card.off{opacity:.3}
+.sc-lbl{font-size:16px;font-weight:700;color:var(--accent);margin-bottom:6px}
+hr.sc-sep{width:100%;height:0;border:none;border-top:2px solid rgba(255,255,255,.25);margin:6px 0}
+.sc-txt{font-size:15px;color:var(--white);font-weight:600}
+
+/* side_slide_text */
+.m-ss{display:grid;grid-template-columns:55% 45%;height:100%}
+.m-ss-l{background:var(--panel);padding:32px 28px 32px 48px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.m-ss-l h3{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;margin-bottom:16px;color:var(--accent)}
+.m-ss-l ul{list-style:none}
+.m-ss-l li{font-size:20px;padding:6px 0;color:rgba(239,239,239,.85)}
+.m-ss-l li::before{content:"\2713 ";color:var(--accent);font-weight:700}
+.m-ss-l .add{font-size:16px;color:var(--muted);margin-top:14px}
+
+/* side_slide_pills */
+.m-sp{display:grid;grid-template-columns:50% 50%;height:100%}
+.m-sp-l{background:var(--panel);padding:32px;display:flex;flex-direction:column;justify-content:center;gap:14px}
+.pill{display:inline-block;background:var(--accent-grad);color:var(--bg);padding:12px 22px;border-radius:24px;font-size:16px;font-weight:600;align-self:flex-start}
+
+/* numbered_list */
+.m-nl{background:var(--bg);padding:28px 40px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%}
+.nl-col{display:flex;flex-direction:column;gap:12px}
+.nl-item{display:flex;align-items:center;gap:18px}
+.nl-badge{width:44px;height:44px;background:var(--accent-grad);color:var(--bg);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex-shrink:0}
+.nl-txt{font-size:22px;font-weight:600}
+
+/* speaker_intro */
+.m-si{height:100%;position:relative}
+.m-si .spk{height:100%}
+.m-si-bar{position:absolute;bottom:0;left:0;width:55%;background:rgba(26,26,26,.88);padding:16px 24px;border-top:3px solid var(--accent)}
+.m-si-bar h3{font-family:'Playfair Display',serif;font-size:clamp(14px,2.5vw,20px);font-weight:900;text-transform:uppercase;letter-spacing:1px}
+.m-si-bar p{font-size:clamp(10px,1.2vw,14px);font-weight:300;color:var(--muted)}
+
+/* icon_grid */
+.m-ig{background:linear-gradient(180deg,#101010,#1A1A1A);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:28px;padding:32px;position:relative}
+.ig-pip{position:absolute;bottom:10px;right:10px;width:140px;height:190px;border-radius:16px;overflow:hidden;border:2px solid rgba(255,255,255,.15)}
+.ig-pip .spk{width:100%;height:100%}
+.ig-pip .spk::after{font-size:10px;padding:4px 10px;letter-spacing:1px}
+.ig-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700}
+.ig-row{display:flex;gap:24px}
+.ig-card{display:flex;flex-direction:column;align-items:center;gap:10px}
+.ig-box{width:120px;height:100px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:16px;display:flex;align-items:center;justify-content:center}
+.ig-icon{font-size:32px;opacity:.8}
+.ig-label{font-size:17px;font-weight:600;text-align:center;color:var(--white);line-height:1.3}
+
+/* disclaimer */
+.m-disc{background:radial-gradient(ellipse at center,rgba(60,50,30,.5),#0a0a0a);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6% 10%;height:100%}
+.m-disc h2{font-family:'Playfair Display',serif;font-size:clamp(16px,3vw,28px);font-weight:900;text-transform:uppercase;letter-spacing:2px;margin-bottom:5%}
+.m-disc .hl{font-size:clamp(9px,1.4vw,14px);color:var(--accent);line-height:1.6;text-align:center;margin-bottom:4%}
+.m-disc .body{font-size:clamp(8px,1.2vw,13px);color:rgba(239,239,239,.7);line-height:1.6;text-align:center}
+
+/* circle_diagram */
+.m-cd{background:var(--bg);display:flex;align-items:center;justify-content:center;height:100%;padding:28px;position:relative;gap:28px}
+.cd-area{position:relative;width:180px;height:180px;flex-shrink:0}
+.cd-big{width:180px;height:180px;border:2px solid var(--white);border-radius:50%;position:absolute;top:0;left:0}
+.cd-sm{width:65px;height:65px;border:2px solid var(--accent);border-radius:50%;position:absolute;bottom:14px;left:20px;background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(240,255,2,.2) 4px,rgba(240,255,2,.2) 8px)}
+.cd-labels{display:flex;flex-direction:column;gap:28px}
+.cd-lbl{display:flex;align-items:center;gap:12px}
+.cd-line{width:40px;height:1px;background:var(--muted)}
+.cd-txt{font-size:18px;font-weight:600}
+.cd-txt.acc{color:var(--accent)}
+.cd-pip{position:absolute;bottom:10px;right:10px;width:120px;height:160px;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,.15)}
+.cd-pip .spk{width:100%;height:100%}
+.cd-pip .spk::after{font-size:10px;padding:4px 10px;letter-spacing:1px}
+
+/* flow_process */
+.m-fp{background:var(--bg);display:flex;align-items:center;justify-content:center;gap:18px;height:100%;padding:32px}
+.fp-node{width:145px;height:95px;border:2px solid var(--white);border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:20px;font-weight:600;line-height:1.3}
+.fp-node.bad{border-color:var(--error);color:var(--error);font-size:36px}
+.fp-arrow{font-size:32px;color:var(--accent);font-weight:700}
+
+/* chart_curve */
+.m-cc{background:var(--bg);padding:18px 28px;height:100%;display:flex;flex-direction:column}
+.cc-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;text-align:center;margin-bottom:8px}
+.cc-stats{display:flex;gap:12px;justify-content:center;margin-bottom:8px}
+.cc-stat{display:flex;flex-direction:column;align-items:center}
+.cc-stat-val{font-size:18px;font-weight:800;color:var(--accent)}
+.cc-stat-lbl{font-size:10px;color:var(--muted)}
+.cc-area{flex:1;position:relative;border-left:2px solid rgba(255,255,255,.2);border-bottom:2px solid rgba(255,255,255,.2);margin:0 16px 8px 28px}
+.cc-area svg{position:absolute;bottom:0;left:0;width:100%;height:100%}
+.cc-ylabel{position:absolute;left:-22px;top:2px;font-size:16px;font-weight:700}
+.cc-peak{position:absolute;top:6px;right:12px;font-size:16px;font-weight:700;color:var(--accent);background:rgba(16,16,16,.85);padding:4px 10px;border-radius:5px}
+.cc-labels{display:flex;justify-content:space-between;margin:0 16px 6px 28px;font-size:14px;font-weight:600;color:var(--muted)}
+.cc-legend{display:flex;gap:16px;justify-content:center;font-size:11px;color:var(--muted)}
+.cc-leg{display:flex;align-items:center;gap:5px}
+.cc-leg i{display:inline-block;width:12px;height:4px;border-radius:2px}
+
+/* chart_bars */
+.m-cb{background:var(--bg);padding:24px 28px;height:100%;display:flex;flex-direction:column;position:relative}
+.cb-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;text-align:center;margin-bottom:12px}
+.cb-area{flex:1;display:flex;align-items:flex-end;gap:6px;border-left:2px solid rgba(255,255,255,.2);border-bottom:2px solid rgba(255,255,255,.2);padding:20px 8px 0 12px;margin-bottom:12px}
+.bar{flex:1;background:var(--accent-grad);border-radius:3px 3px 0 0;min-height:4px}
+.cb-labels{display:flex;justify-content:space-between;margin-left:14px;font-size:15px;color:var(--muted);font-weight:600}
+
+/* comparison */
+.m-cmp{background:var(--bg);display:flex;align-items:flex-end;justify-content:center;gap:48px;height:100%;padding:32px 40px 40px}
+.cmp-item{display:flex;flex-direction:column;align-items:center}
+.cmp-bar-wrap{width:120px;height:220px;border:1px solid rgba(255,255,255,.1);border-radius:10px;display:flex;align-items:flex-end;overflow:hidden;margin-bottom:12px}
+.cmp-bar-fill{width:100%;border-radius:0 0 8px 8px;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.cmp-bar-fill.a{background:var(--purple)}
+.cmp-bar-fill.b{background:var(--accent-grad);color:var(--bg)}
+.cmp-val{font-size:36px;font-weight:800}
+.cmp-sub{font-size:12px;font-weight:300;opacity:.8}
+.cmp-name{font-size:20px;font-weight:700}
+.cmp-desc{font-size:14px;color:var(--muted)}
+
+/* math_equation */
+.m-math{background:var(--bg);display:flex;align-items:center;justify-content:center;gap:24px;height:100%;padding:28px}
+.math-stack{display:flex;flex-direction:column;gap:6px}
+.math-item{background:var(--card);padding:12px 22px;border-radius:8px;font-size:17px;font-weight:700;border:1px solid var(--border);text-align:center;min-width:180px}
+.math-eq{font-size:36px;font-weight:300;color:var(--white)}
+.math-res{background:var(--card);padding:24px 32px;border-radius:12px;text-align:center;border:1px solid var(--border)}
+.math-res .big{font-size:36px;font-weight:800;display:block;color:var(--accent)}
+.math-res .sub{font-size:14px;font-weight:300;color:var(--muted)}
+
+/* video_map */
+.m-vm{background:var(--bg);display:flex;align-items:center;justify-content:center;height:100%;gap:28px;padding:36px}
+.vm-main{width:180px;height:110px;background:var(--card);border:3px solid var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;text-align:center;flex-shrink:0}
+.vm-branches{display:flex;flex-direction:column;gap:14px}
+.vm-branch{display:flex;align-items:center;gap:14px}
+.vm-arrow{color:var(--accent);font-size:22px;font-weight:700}
+.vm-thumb{width:145px;height:80px;background:var(--card);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);font-weight:600}
+
+/* cta_qr */
+.m-cta-qr{height:100%;position:relative}
+.m-cta-qr .spk{height:100%}
+.cta-qr-overlay{position:absolute;top:0;left:0;bottom:0;width:100%;display:flex;align-items:center;padding:0 40px;gap:32px}
+.cta-qr-box{width:200px;height:200px;background:var(--white);border-radius:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.cta-qr-inner{width:160px;height:160px;background:var(--bg);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--white);font-weight:700}
+.cta-qr-text-wrap{display:flex;flex-direction:column;gap:12px}
+.cta-qr-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;text-shadow:0 2px 10px rgba(0,0,0,.7);line-height:1.3}
+.cta-qr-sub{font-size:20px;font-weight:600;text-shadow:0 2px 10px rgba(0,0,0,.7);color:var(--accent)}
+
+/* ctv — end screen */
+.m-ctv{display:grid;grid-template-columns:1fr 1fr;height:100%}
+.m-ctv-overlay{background:linear-gradient(135deg,var(--panel) 0%,var(--bg) 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:20px}
+.ctv-vid{width:80%;aspect-ratio:16/9;border:2px dashed var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--accent);font-weight:600;text-align:center;opacity:.7}
+.ctv-label{font-size:14px;color:var(--muted);font-weight:300;text-align:center}
+
+/* DESIGN SYSTEM */
+.ds-colors{display:flex;gap:14px;flex-wrap:wrap}
+.ds-color{display:flex;flex-direction:column;align-items:center;gap:8px;width:120px}
+.ds-swatch{width:100%;height:70px;border-radius:10px;border:1px solid var(--border)}
+.ds-color-name{font-size:13px;font-weight:600;text-align:center}
+.ds-color-hex{font-size:12px;font-family:monospace;color:var(--muted);letter-spacing:.5px}
+.ds-color-role{font-size:10px;color:var(--muted);text-align:center;font-weight:300}
+
+/* font samples */
+.ds-fonts{display:flex;flex-direction:column;gap:20px}
+.ds-font-card{background:rgba(0,0,0,.12);border-radius:10px;padding:20px 24px;display:flex;align-items:center;gap:24px}
+.ds-font-sample{flex:1}
+.ds-font-name{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:6px}
+.ds-font-meta{font-size:12px;color:var(--muted)}
+.ds-font-info{width:200px;flex-shrink:0}
+.ds-font-use{font-size:13px;color:rgba(239,239,239,.8);line-height:1.5}
+.ds-font-weights{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* TOC */
+.toc-btn{position:fixed;top:74px;right:20px;z-index:101;width:40px;height:40px;background:var(--card);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--white);transition:.2s}
+.toc-btn:hover{background:var(--accent);color:var(--bg)}
+.toc-panel{position:fixed;top:0;right:-360px;width:340px;height:100%;background:var(--bg);border-left:1px solid var(--border);z-index:200;transition:right .3s;overflow-y:auto;padding:24px;box-shadow:-4px 0 24px rgba(0,0,0,.4)}
+.toc-panel.open{right:0}
+.toc-close{position:absolute;top:16px;right:16px;font-size:22px;color:var(--muted);cursor:pointer;background:none;border:none}
+.toc-close:hover{color:var(--white)}
+.toc-title{font-size:18px;font-weight:700;color:var(--accent);margin-bottom:20px}
+.toc-section{margin-bottom:16px}
+.toc-section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;padding-left:4px}
+.toc-link{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;text-decoration:none;color:rgba(239,239,239,.75);font-size:14px;transition:.15s}
+.toc-link:hover{background:var(--card);color:var(--white)}
+.toc-link .toc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.toc-link .toc-id{font-size:11px;color:var(--muted);font-family:monospace;margin-left:auto}
+
+.footer{text-align:center;padding:48px 40px;color:var(--muted);font-size:14px;border-top:1px solid var(--border)}
+.footer a{color:var(--accent);text-decoration:none}
+.footer a{color:var(--white);font-weight:700;text-decoration:none}
+.footer a:hover{opacity:.8}
+
+@media(max-width:768px){
+  .hdr{padding:14px 20px}.filters{padding:14px 20px}.content{padding:20px}
+  .tc-info{grid-template-columns:1fr}.m-ss,.m-sp{grid-template-columns:1fr}
+  .m-sc{flex-wrap:wrap}.toc-btn{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left"><a href="./" class="logo">Core Realty</a><div class="hdr-title">YTCR Guideline</div></div>
+  <div class="hdr-right" style="text-align:right;line-height:1.6">v1.0 &middot; <span id="hdr-date"></span> Dubai (GMT+4)<br>powered by <a href="https://rya.ae" target="_blank" style="font-weight:900;font-size:14px">RYA.AE</a></div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <a class="fbtn on" href="#c-guide">Guideline</a>
+  <a class="fbtn" href="#c-titles">A. Titles</a>
+  <a class="fbtn" href="#c-text">B. Text</a>
+  <a class="fbtn" href="#c-diagrams">C. Diagrams</a>
+  <a class="fbtn" href="#c-data">D. Data</a>
+  <a class="fbtn" href="#c-rich">E. Multimedia</a>
+  <a class="fbtn" href="#c-ui">F. UI</a>
+</div>
+
+<!-- TOC BUTTON -->
+<div class="toc-btn" onclick="document.getElementById('toc').classList.toggle('open')">&#x2630;</div>
+
+<!-- TOC PANEL -->
+<div class="toc-panel" id="toc">
+  <button class="toc-close" onclick="closeToc()">&times;</button>
+  <div class="toc-title">Contents</div>
+
+  <div class="toc-section"><div class="toc-section-title">Guideline</div>
+    <a href="#s-about" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>About this guideline</a>
+    <a href="#s-colors" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>Color palette</a>
+    <a href="#s-fonts" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>Typography</a>
+    <a href="#s-brand" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>Brand assets</a>
+  </div>
+
+  <div class="toc-section"><div class="toc-section-title">A. Titles & Navigation</div>
+    <a href="#s-section_title" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent2)"></span>Section Title<span class="toc-id">section_title</span></a>
+    <a href="#s-section_title_centered" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent2)"></span>Section Title Centered<span class="toc-id">section_title_centered</span></a>
+    <a href="#s-lower_third" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent2)"></span>Lower Third Title<span class="toc-id">lower_third</span></a>
+    <a href="#s-step_cards" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent2)"></span>Step Cards<span class="toc-id">step_cards</span></a>
+  </div>
+
+  <div class="toc-section"><div class="toc-section-title">B. Text Screens</div>
+    <a href="#s-talking_head" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:#F0FF02"></span>Talking Head<span class="toc-id">talking_head</span></a>
+    <a href="#s-side_slide_text" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:#F0FF02"></span>Side Slide — Text<span class="toc-id">side_slide_text</span></a>
+    <a href="#s-side_slide_pills" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:#F0FF02"></span>Side Slide — Pills<span class="toc-id">side_slide_pills</span></a>
+    <a href="#s-numbered_list" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:#F0FF02"></span>Numbered List<span class="toc-id">numbered_list</span></a>
+    <a href="#s-speaker_intro" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:#F0FF02"></span>Speaker Intro<span class="toc-id">speaker_intro</span></a>
+    <a href="#s-icon_grid" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:#F0FF02"></span>Icon Grid<span class="toc-id">icon_grid</span></a>
+    <a href="#s-disclaimer" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:#F0FF02"></span>Disclaimer<span class="toc-id">disclaimer</span></a>
+  </div>
+
+  <div class="toc-section"><div class="toc-section-title">C. Diagrams</div>
+    <a href="#s-circle_diagram" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent2)"></span>Circle / Venn<span class="toc-id">circle_diagram</span></a>
+    <a href="#s-flow_process" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent2)"></span>Flow / Process<span class="toc-id">flow_process</span></a>
+  </div>
+
+  <div class="toc-section"><div class="toc-section-title">D. Data & Charts</div>
+    <a href="#s-chart_curve" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>Chart — Curve<span class="toc-id">chart_curve</span></a>
+    <a href="#s-chart_bars" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>Chart — Bars<span class="toc-id">chart_bars</span></a>
+    <a href="#s-comparison" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>Comparison<span class="toc-id">comparison</span></a>
+    <a href="#s-math_equation" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>Math / Equation<span class="toc-id">math_equation</span></a>
+  </div>
+
+  <div class="toc-section"><div class="toc-section-title">E. Multimedia</div>
+    <a href="#s-video_map" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent2)"></span>Video Map<span class="toc-id">video_map</span></a>
+  </div>
+
+  <div class="toc-section"><div class="toc-section-title">F. UI Elements</div>
+    <a href="#s-cta_qr" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>CTA / QR Code<span class="toc-id">cta_qr</span></a>
+    <a href="#s-ctv" class="toc-link" onclick="closeToc()"><span class="toc-dot" style="background:var(--accent)"></span>CTV / End Screen<span class="toc-id">ctv</span></a>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ═══ GUIDELINE ═══ -->
+<div class="cat" id="c-guide">
+  <div class="cat-hdr"><span class="cat-letter">G</span><div><div class="cat-title">Guideline</div><div class="cat-desc">Design system, colors, typography, brand assets</div></div></div>
+
+  <!-- About -->
+  <div class="tc" id="s-about"><div class="tc-hdr"><span class="tc-id">about</span><span class="tc-name">About This Guideline</span></div>
+    <div style="padding:24px">
+      <p style="font-size:17px;color:rgba(239,239,239,.85);line-height:1.8;margin-bottom:16px"><strong>Core Realty Dubai</strong> — educational and lifestyle YouTube channel focused on Dubai real estate for high-performing brokers and international property investors. Founded to support <a href="https://corerealty.ae" target="_blank" style="color:var(--accent);text-decoration:none">Core Realty</a> — an international club of elite real estate brokers operating since 2022 under the license of INTRUST Real Estate L.L.C.</p>
+      <p style="font-size:15px;color:var(--muted);line-height:1.8">This catalog defines <strong style="color:var(--white)">20 screen types in 6 categories</strong> &middot; 2 fonts (Playfair Display + Inter) &middot; 10 colors. It serves as the Pre-Edit visual system for YTCR video production, ensuring consistency across all videos on the channel.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">
+        <a href="https://drive.google.com/drive/folders/0AOZhISXlHpqhUk9PVA" target="_blank" style="font-size:13px;font-weight:600;color:var(--bg);background:var(--accent-grad);padding:8px 18px;border-radius:20px;text-decoration:none">Files & Assets (Google Drive)</a>
+        <a href="https://docs.google.com/spreadsheets/d/1i5y283O66IsP4LksvbnATTmGK-TCpUJyF-bIOTvmIfs/edit" target="_blank" style="font-size:13px;font-weight:600;color:var(--bg);background:var(--accent-grad);padding:8px 18px;border-radius:20px;text-decoration:none">Video Tracker (Google Sheets)</a>
+        <a href="https://www.figma.com/design/zIENUgwzr7EKbvdU2qGWkG/YTCR?node-id=0-1&p=f&t=DFV1sPN4NVdK7ZzK-0" target="_blank" style="font-size:13px;font-weight:600;color:var(--bg);background:var(--accent-grad);padding:8px 18px;border-radius:20px;text-decoration:none">Design (Figma)</a>
+        <span style="font-size:13px;font-weight:600;color:var(--muted);background:var(--card);padding:8px 18px;border-radius:20px;border:1px solid var(--border)">YouTube Channel (coming soon)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Colors -->
+  <div class="tc" id="s-colors"><div class="tc-hdr"><span class="tc-id">colors</span><span class="tc-name">Color Palette</span></div>
+    <div style="padding:24px">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:20px">Primary + accents + functional</p>
+      <div class="ds-colors">
+        <div class="ds-color"><div class="ds-swatch" style="background:#101010"></div><div class="ds-color-name">Background</div><div class="ds-color-hex">#101010</div><div class="ds-color-role">Main background</div></div>
+        <div class="ds-color"><div class="ds-swatch" style="background:#1A1A1A"></div><div class="ds-color-name">Panel</div><div class="ds-color-hex">#1A1A1A</div><div class="ds-color-role">Cards, header</div></div>
+        <div class="ds-color"><div class="ds-swatch" style="background:linear-gradient(135deg,#F0FF02,#FFD700)"></div><div class="ds-color-name">Brand Gradient</div><div class="ds-color-hex">#F0FF02 → #FFD700</div><div class="ds-color-role">Logo, badges, pills</div></div>
+        <div class="ds-color"><div class="ds-swatch" style="background:#F0FF02"></div><div class="ds-color-name">Accent</div><div class="ds-color-hex">#F0FF02</div><div class="ds-color-role">Highlights, links</div></div>
+        <div class="ds-color"><div class="ds-swatch" style="background:#FFD700"></div><div class="ds-color-name">Gold</div><div class="ds-color-hex">#FFD700</div><div class="ds-color-role">Secondary accent</div></div>
+        <div class="ds-color"><div class="ds-swatch" style="background:#EFEFEF"></div><div class="ds-color-name">White</div><div class="ds-color-hex">#EFEFEF</div><div class="ds-color-role">Primary text</div></div>
+        <div class="ds-color"><div class="ds-swatch" style="background:#1E1E1E"></div><div class="ds-color-name">Card</div><div class="ds-color-hex">#1E1E1E</div><div class="ds-color-role">Card backgrounds</div></div>
+        <div class="ds-color"><div class="ds-swatch" style="background:#888"></div><div class="ds-color-name">Muted</div><div class="ds-color-hex">#888888</div><div class="ds-color-role">Secondary text</div></div>
+        <div class="ds-color"><div class="ds-swatch" style="background:#FF0000"></div><div class="ds-color-name">Error / Alert</div><div class="ds-color-hex">#FF0000</div><div class="ds-color-role">Warnings, negatives</div></div>
+        <div class="ds-color"><div class="ds-swatch" style="background:#4ADE80"></div><div class="ds-color-name">Success</div><div class="ds-color-hex">#4ADE80</div><div class="ds-color-role">Checkmarks, positive</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Typography -->
+  <div class="tc" id="s-fonts"><div class="tc-hdr"><span class="tc-id">fonts</span><span class="tc-name">Typography</span></div>
+    <div style="padding:24px">
+      <div class="ds-fonts">
+        <div class="ds-font-card">
+          <div class="ds-font-sample"><div class="ds-font-name">Playfair Display — Headlines</div><div class="ds-font-preview" style="font-family:'Playfair Display',serif;font-size:32px;font-weight:900;text-transform:uppercase;letter-spacing:2px">GOLDEN VISA</div><div class="ds-font-meta">Serif &middot; <a href="https://fonts.google.com/specimen/Playfair+Display" target="_blank" style="color:var(--accent);text-decoration:none">Google Fonts &nearr;</a></div></div>
+          <div class="ds-font-info"><div class="ds-font-use">Titles, section headings, speaker names, hero text</div><div class="ds-font-weights">Weights: 700 (Bold), 900 (Black)</div></div>
+        </div>
+        <div class="ds-font-card">
+          <div class="ds-font-sample"><div class="ds-font-name">Inter — Body Text</div><div class="ds-font-preview" style="font-size:22px;font-weight:400">Dubai Marina rental yield: 6.2%</div><div class="ds-font-meta">Sans-serif &middot; <a href="https://fonts.google.com/specimen/Inter" target="_blank" style="color:var(--accent);text-decoration:none">Google Fonts &nearr;</a></div></div>
+          <div class="ds-font-info"><div class="ds-font-use">Body text, descriptions, bullets, subtitles, captions</div><div class="ds-font-weights">Weights: 300, 400, 500, 600, 700, 800</div></div>
+        </div>
+      </div>
+      <div style="margin-top:20px;background:rgba(0,0,0,.12);border-radius:8px;padding:16px 20px">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">Typographic Scale</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;text-transform:uppercase">HEADLINE</span><span style="font-size:12px;color:var(--muted)">36-42px &middot; Black &middot; Playfair Display</span></div>
+          <div style="display:flex;align-items:baseline;gap:16px"><span style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;text-transform:uppercase">SUBHEADING</span><span style="font-size:12px;color:var(--muted)">20-24px &middot; Bold &middot; Playfair Display</span></div>
+          <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:20px;font-weight:700">Key point text</span><span style="font-size:12px;color:var(--muted)">20-22px &middot; Bold &middot; Inter</span></div>
+          <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:16px;font-weight:400">Body text paragraph</span><span style="font-size:12px;color:var(--muted)">16-18px &middot; Regular &middot; Inter</span></div>
+          <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:13px;font-weight:300;color:var(--muted)">Caption / hint text</span><span style="font-size:12px;color:var(--muted)">12-14px &middot; Light &middot; Inter</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Brand -->
+  <div class="tc" id="s-brand"><div class="tc-hdr"><span class="tc-id">brand</span><span class="tc-name">Brand Assets</span></div>
+    <div style="padding:24px">
+      <p style="font-size:15px;color:rgba(239,239,239,.85);line-height:1.8;margin-bottom:16px">Core Realty brand assets — logo variants, fonts, and style guides. Website: <a href="https://corerealty.ae" target="_blank" style="color:var(--accent);text-decoration:none">corerealty.ae</a></p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+        <div style="background:rgba(0,0,0,.12);border-radius:8px;padding:12px 16px"><div style="font-size:13px;font-weight:600;margin-bottom:4px">Logo Variants</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Primary (horizontal)<br>Icon / monogram<br>Extended (full)</div></div>
+        <div style="background:rgba(0,0,0,.12);border-radius:8px;padding:12px 16px"><div style="font-size:13px;font-weight:600;margin-bottom:4px">Color Versions</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Color (on dark)<br>White (on dark)<br>Black (on light)<br>Inverted</div></div>
+        <div style="background:rgba(0,0,0,.12);border-radius:8px;padding:12px 16px"><div style="font-size:13px;font-weight:600;margin-bottom:4px">Formats</div><div style="font-size:12px;color:var(--muted);line-height:1.6">SVG (vector)<br>PNG (raster)<br>AI source files</div></div>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">DNA Folder Structure</div>
+      <div style="background:rgba(0,0,0,.12);border-radius:8px;padding:16px 20px;font-family:monospace;font-size:13px;line-height:2;color:rgba(239,239,239,.8)">
+        YTCR_DNA/<br>
+        &nbsp;&nbsp;<span style="color:var(--accent)">Logos/</span> &mdash; SVG, PNG, AI source files<br>
+        &nbsp;&nbsp;<span style="color:var(--accent)">Fonts/</span> &mdash; Playfair Display + Inter (Google Fonts)<br>
+        &nbsp;&nbsp;<span style="color:var(--accent)">Screens/</span> &mdash; Screen types catalog (this file)<br>
+        &nbsp;&nbsp;<span style="color:var(--accent)">Channel/</span> &mdash; Channel profile YTCR
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ A. TITLES ═══ -->
+<div class="cat" data-c="titles" id="c-titles">
+  <div class="cat-hdr"><span class="cat-letter">A</span><div><div class="cat-title">Titles & Navigation</div><div class="cat-desc">Ways to show a heading/topic — pick one (sometimes two) per segment</div></div><span class="cat-count">4 types</span></div>
+
+  <!-- section_title -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-section_title">section_title</span><span class="tc-name">Section Title</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-st"><div class="spk"></div><h2>MARKET<br>OVERVIEW</h2></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Full speaker video with semi-transparent dark overlay. Large centered serif title in uppercase white. High-impact, cinematic feel.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Start of a new major section: Market Overview, Golden Visa, Broker Life, Investment Areas.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">2 lines, 4-5 words, ALL CAPS</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">market</span><span class="kw">investment</span><span class="kw">broker</span><span class="kw">Golden Visa</span><span class="kw">area</span></div></div>
+    </div>
+  </div>
+
+  <!-- section_title_centered -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-section_title_centered">section_title_centered</span><span class="tc-name">Section Title Centered</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-stc"><h2>Investment <span class="hl">Returns</span><br>Explained</h2><p>Understanding ROI in Dubai real estate</p></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Dark gradient background, no speaker. Centered serif title with one accent keyword in yellow. Muted subtitle below.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Lighter section transitions, sub-topics, thematic breaks. Less dramatic than full Section Title.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">2-4 words (1 highlighted) + subtitle</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">sub-topic</span><span class="kw">transition</span><span class="kw">theme</span><span class="kw">break</span></div></div>
+    </div>
+  </div>
+
+  <!-- lower_third -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-lower_third">lower_third</span><span class="tc-name">Lower Third Title</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-lt"><div class="spk"></div><div class="m-lt-bar"><h3>PART 3</h3><p>Why brokers choose Dubai over London</p></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Title bar at the bottom of speaker frame — dark panel with yellow accent border on top. Speaker stays on screen.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Topic heading over speaker. Softer transition than full section_title.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">2 lines (title + subtitle)</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">topic</span><span class="kw">section</span><span class="kw">chapter</span><span class="kw">part</span></div></div>
+    </div>
+  </div>
+
+  <!-- step_cards -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-step_cards">step_cards</span><span class="tc-name">Step Cards</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-sc"><div class="sc-card on"><div class="sc-lbl">STEP 1</div><hr class="sc-sep"><div class="sc-txt">Research</div></div><div class="sc-card on"><div class="sc-lbl">STEP 2</div><hr class="sc-sep"><div class="sc-txt">Due Diligence</div></div><div class="sc-card on"><div class="sc-lbl">STEP 3</div><hr class="sc-sep"><div class="sc-txt">Offer</div></div><div class="sc-card off"><div class="sc-lbl">STEP 4</div><hr class="sc-sep"></div><div class="sc-card off"><div class="sc-lbl">STEP 5</div><hr class="sc-sep"></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Progressive reveal cards — steps fill in as the video advances. Shows viewer where they are in the process.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Video broken into 3-7 steps: buying process, due diligence, RERA licensing, visa application.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">7 cards, 2-3 words each</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">step</span><span class="kw">process</span><span class="kw">buying</span><span class="kw">licensing</span><span class="kw">due diligence</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ B. TEXT ═══ -->
+<div class="cat" data-c="text" id="c-text">
+  <div class="cat-hdr"><span class="cat-letter">B</span><div><div class="cat-title">Text Screens</div><div class="cat-desc">Lists, key points, speaker intros, grids, disclaimers</div></div><span class="cat-count">7 types</span></div>
+
+  <!-- talking_head -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-talking_head">talking_head</span><span class="tc-name">Talking Head</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-th"><div class="spk" style="height:100%"></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Clean speaker shot without any overlays. Most powerful type for emotional impact and direct address.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Hook, personal broker stories, key insights, emotional moments, important warnings.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">0 — screen is completely clean</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">hook</span><span class="kw">story</span><span class="kw">important</span><span class="kw">listen</span><span class="kw">my experience</span></div></div>
+    </div>
+  </div>
+
+  <!-- side_slide_text -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-side_slide_text">side_slide_text</span><span class="tc-name">Side Slide — Text</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-ss"><div class="m-ss-l"><h3>Golden Visa</h3><ul><li>AED 2M minimum</li><li>Off-plan eligible</li><li>10-year residency</li><li>Family included</li></ul><div class="add">Processing: 30-60 days</div></div><div class="spk"></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Text/bullets left (55%), speaker video right (45%). Serif title in accent color.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Listing requirements, area features, ROI factors, commission structures, legal steps.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">Title + 5 bullet points + footnote</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">requirements</span><span class="kw">features</span><span class="kw">benefits</span><span class="kw">includes</span><span class="kw">factors</span></div></div>
+    </div>
+  </div>
+
+  <!-- side_slide_pills -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-side_slide_pills">side_slide_pills</span><span class="tc-name">Side Slide — Pills</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-sp"><div class="m-sp-l"><div class="pill">100% commission</div><div class="pill">AI-powered CRM</div><div class="pill">Monthly events</div></div><div class="spk"></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Colored pill tags on the left + speaker on the right. Gradient-filled pills.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Quick takeaways, key recommendations, do/don't lists, pros/cons.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">4 pills, up to 4 words each</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">do</span><span class="kw">don't</span><span class="kw">pro</span><span class="kw">con</span><span class="kw">tip</span><span class="kw">takeaway</span></div></div>
+    </div>
+  </div>
+
+  <!-- numbered_list -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-numbered_list">numbered_list</span><span class="tc-name">Numbered List</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-nl"><div class="nl-col"><div class="nl-item"><span class="nl-badge">1</span><span class="nl-txt">Dubai Marina</span></div><div class="nl-item"><span class="nl-badge">2</span><span class="nl-txt">Downtown</span></div><div class="nl-item"><span class="nl-badge">3</span><span class="nl-txt">Business Bay</span></div><div class="nl-item"><span class="nl-badge">4</span><span class="nl-txt">JVC</span></div><div class="nl-item"><span class="nl-badge">5</span><span class="nl-txt">Dubai Hills</span></div></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Vertical list with numbered gradient badges. No speaker visible.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Listing 3-8 items: top areas, common mistakes, broker tips, investment criteria.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">8 rows, up to 5 words each</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">top</span><span class="kw">mistakes</span><span class="kw">areas</span><span class="kw">steps</span><span class="kw">reasons</span></div></div>
+    </div>
+  </div>
+
+  <!-- speaker_intro -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-speaker_intro">speaker_intro</span><span class="tc-name">Speaker Intro</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-si"><div class="spk"></div><div class="m-si-bar"><h3>John Smithson</h3><p>Senior Broker &middot; Core Realty Dubai</p></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Dark lower-third overlay with yellow accent line. Name in uppercase serif, role in light sans-serif.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">First appearance of host, guest broker, investor, or industry expert.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">Name + title/company (2 lines)</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">broker</span><span class="kw">investor</span><span class="kw">expert</span><span class="kw">CEO</span><span class="kw">guest</span></div></div>
+    </div>
+  </div>
+
+  <!-- icon_grid -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-icon_grid">icon_grid</span><span class="tc-name">Icon Grid</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-ig"><div class="ig-title">Investment Types</div><div class="ig-row"><div class="ig-card"><div class="ig-box"><div class="ig-icon">&#x1F3E2;</div></div><div class="ig-label">Off-Plan</div></div><div class="ig-card"><div class="ig-box"><div class="ig-icon">&#x1F3E0;</div></div><div class="ig-label">Ready<br>Property</div></div><div class="ig-card"><div class="ig-box"><div class="ig-icon">&#x1F4B0;</div></div><div class="ig-label">Rental<br>Income</div></div></div><div class="ig-pip"><div class="spk"></div></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Title + 2-4 cards with icons in a row. Fullscreen with PIP speaker in corner.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Overview of investment types, property categories, service offerings, visa options.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">Title + 2-4 cards, 1-2 words each</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">types</span><span class="kw">categories</span><span class="kw">options</span><span class="kw">services</span><span class="kw">overview</span></div></div>
+    </div>
+  </div>
+
+  <!-- disclaimer -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-disclaimer">disclaimer</span><span class="tc-name">Disclaimer</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-disc"><h2>Disclaimer</h2><div class="hl">This video is for informational purposes only and does not constitute financial or investment advice.</div><div class="body">Consult a qualified professional before making any real estate investment decisions. Core Realty and its representatives assume no liability for actions taken based on the content of this video.</div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Full-screen legal text on dark blurred background. Serif title. First paragraph in yellow. Remaining in muted gray.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Opening of every video — legal and financial disclaimers for investment content.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">Title + 1-2 highlighted sentences + 2-3 body sentences</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">disclaimer</span><span class="kw">legal</span><span class="kw">not financial advice</span><span class="kw">risk</span><span class="kw">opening</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ C. DIAGRAMS ═══ -->
+<div class="cat" data-c="diagrams" id="c-diagrams">
+  <div class="cat-hdr"><span class="cat-letter">C</span><div><div class="cat-title">Diagrams</div><div class="cat-desc">Circle charts, flows, process diagrams</div></div><span class="cat-count">2 types</span></div>
+
+  <!-- circle_diagram -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-circle_diagram">circle_diagram</span><span class="tc-name">Circle / Venn</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-cd"><div class="cd-area"><div class="cd-big"></div><div class="cd-sm"></div></div><div class="cd-labels"><div class="cd-lbl"><div class="cd-line"></div><div class="cd-txt">All Investors</div></div><div class="cd-lbl"><div class="cd-line"></div><div class="cd-txt acc">Golden Visa Eligible</div></div></div><div class="cd-pip"><div class="spk"></div></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Nested or overlapping circles with labels + PIP speaker in corner.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Market share, investor segments, overlap between buyer types, part-whole relationships.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">2-3 circles, 1-2 word labels</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">market share</span><span class="kw">segment</span><span class="kw">investors</span><span class="kw">portion</span><span class="kw">overlap</span></div></div>
+    </div>
+  </div>
+
+  <!-- flow_process -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-flow_process">flow_process</span><span class="tc-name">Flow / Process</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-fp"><div class="fp-node">Select<br>Area</div><div class="fp-arrow">&rarr;</div><div class="fp-node">Due<br>Diligence</div><div class="fp-arrow">&rarr;</div><div class="fp-node">Make<br>Offer</div><div class="fp-arrow">&rarr;</div><div class="fp-node">Title<br>Deed</div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Blocks connected with arrows: A &rarr; B &rarr; C. Shows sequential process or cause-effect chains.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Property buying flow, visa application process, RERA licensing steps, investment funnel.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">3-5 blocks, 1-2 words each</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">process</span><span class="kw">flow</span><span class="kw">leads to</span><span class="kw">steps</span><span class="kw">funnel</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ D. DATA ═══ -->
+<div class="cat" data-c="data" id="c-data">
+  <div class="cat-hdr"><span class="cat-letter">D</span><div><div class="cat-title">Data & Charts</div><div class="cat-desc">Graphs, comparisons, calculations</div></div><span class="cat-count">4 types</span></div>
+
+  <!-- chart_curve -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-chart_curve">chart_curve</span><span class="tc-name">Chart — Curve</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-cc"><div class="cc-title">Dubai Property Price Index</div><div class="cc-stats"><div class="cc-stat"><div class="cc-stat-val">+18%</div><div class="cc-stat-lbl">YoY Growth</div></div><div class="cc-stat"><div class="cc-stat-val">2,100</div><div class="cc-stat-lbl">AED/sqft avg</div></div><div class="cc-stat"><div class="cc-stat-val">Q4</div><div class="cc-stat-lbl">Peak Quarter</div></div></div><div class="cc-area"><div class="cc-ylabel">&#x2191;</div><div class="cc-peak">+18%</div><svg viewBox="0 0 400 120" preserveAspectRatio="none"><defs><linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0FF02" stop-opacity=".3"/><stop offset="100%" stop-color="#F0FF02" stop-opacity="0"/></linearGradient></defs><path d="M0,100 C60,90 100,80 160,50 S280,10 400,5 L400,120 L0,120Z" fill="url(#gfill)"/><path d="M0,100 C60,90 100,80 160,50 S280,10 400,5" fill="none" stroke="#F0FF02" stroke-width="3"/></svg></div><div class="cc-labels"><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span></div><div class="cc-legend"><div class="cc-leg"><i style="background:var(--accent)"></i>Price Index</div></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Stats row at top + SVG line/area chart + axis labels + legend. For time-series data.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Price trends over time, market cycles, ROI progression, rental yield trends.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">Title + stats + axis labels + legend</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">trend</span><span class="kw">growth</span><span class="kw">over time</span><span class="kw">price</span><span class="kw">forecast</span></div></div>
+    </div>
+  </div>
+
+  <!-- chart_bars -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-chart_bars">chart_bars</span><span class="tc-name">Chart — Bars</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-cb"><div class="cb-title">Rental Yield by Area</div><div class="cb-area"><div class="bar" style="height:85%"></div><div class="bar" style="height:78%"></div><div class="bar" style="height:70%"></div><div class="bar" style="height:65%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:48%"></div><div class="bar" style="height:40%"></div></div><div class="cb-labels"><span>JVC</span><span>DSO</span><span>JVT</span><span>Marina</span><span>BBay</span><span>DXBHills</span><span>Dtown</span><span>Palm</span></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Column/bar chart with category labels. Gradient-filled bars.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Rental yields by area, commission comparison, price per sqft across communities.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">6-12 bars with labels</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">yield</span><span class="kw">comparison</span><span class="kw">per area</span><span class="kw">ranking</span><span class="kw">data</span></div></div>
+    </div>
+  </div>
+
+  <!-- comparison -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-comparison">comparison</span><span class="tc-name">Comparison</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-cmp"><div class="cmp-item"><div class="cmp-bar-wrap"><div class="cmp-bar-fill a" style="height:60%"><div class="cmp-val">3%</div><div class="cmp-sub">net yield</div></div></div><div class="cmp-name">London</div><div class="cmp-desc">High entry, low yield</div></div><div class="cmp-item"><div class="cmp-bar-wrap"><div class="cmp-bar-fill b" style="height:85%"><div class="cmp-val">7%</div><div class="cmp-sub">net yield</div></div></div><div class="cmp-name">Dubai</div><div class="cmp-desc">Tax-free, high yield</div></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Two items side by side with different colors. Vertical bars showing relative values.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Off-plan vs ready, Dubai vs London, before/after, two areas compared.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">2 items, 3-4 lines of text each</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">vs</span><span class="kw">comparison</span><span class="kw">off-plan</span><span class="kw">ready</span><span class="kw">before/after</span></div></div>
+    </div>
+  </div>
+
+  <!-- math_equation -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-math_equation">math_equation</span><span class="tc-name">Math / Equation</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-math"><div class="math-stack"><div class="math-item">AED 2,000,000</div><div class="math-item">&times; 7% yield</div><div class="math-item">&times; 5 years</div></div><div class="math-eq">=</div><div class="math-res"><span class="big">AED 700,000</span><span class="sub">Total rental income</span></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Visual arithmetic: stacked formula items + equals sign + result card.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">ROI calculations, investment returns, commission math, rental yield modeling.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">2-6 items + 1 result</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">equals</span><span class="kw">total</span><span class="kw">ROI</span><span class="kw">return</span><span class="kw">annually</span><span class="kw">per year</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ E. MULTIMEDIA ═══ -->
+<div class="cat" data-c="rich" id="c-rich">
+  <div class="cat-hdr"><span class="cat-letter">E</span><div><div class="cat-title">Multimedia</div><div class="cat-desc">Video maps, related content navigation</div></div><span class="cat-count">1 type</span></div>
+
+  <!-- video_map -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-video_map">video_map</span><span class="tc-name">Video Map</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-vm"><div class="vm-main">This<br>Video</div><div class="vm-branches"><div class="vm-branch"><div class="vm-arrow">&rarr;</div><div class="vm-thumb">Golden Visa</div></div><div class="vm-branch"><div class="vm-arrow">&rarr;</div><div class="vm-thumb">Broker Life</div></div><div class="vm-branch"><div class="vm-arrow">&rarr;</div><div class="vm-thumb">Market Update</div></div><div class="vm-branch"><div class="vm-arrow">&rarr;</div><div class="vm-thumb">Area Guide</div></div></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">Central video box branching to 3-5 related video thumbnails with arrows.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">CTA for related content, navigation across content pillars, series recommendations.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">1 central + 3-5 branches</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">watch next</span><span class="kw">related</span><span class="kw">series</span><span class="kw">playlist</span><span class="kw">more</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ F. UI ═══ -->
+<div class="cat" data-c="ui" id="c-ui">
+  <div class="cat-hdr"><span class="cat-letter">F</span><div><div class="cat-title">UI Elements</div><div class="cat-desc">CTAs, QR codes, end screen</div></div><span class="cat-count">2 types</span></div>
+
+  <!-- cta_qr -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-cta_qr">cta_qr</span><span class="tc-name">CTA / QR Code</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-cta-qr"><div class="spk"></div><div class="cta-qr-overlay"><div class="cta-qr-box"><div class="cta-qr-inner">QR CODE</div></div><div class="cta-qr-text-wrap"><div class="cta-qr-title">Book a Free<br>Consultation</div><div class="cta-qr-sub">Link in Description &darr;</div></div></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">QR code + headline + "Link in Description" over speaker video. Drives traffic to <a href="https://corerealty.ae" target="_blank" style="color:var(--accent)">corerealty.ae</a>.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">End of video or mid-roll CTA. Drive to website, WhatsApp, consultation booking.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">Title + QR + label (3 elements)</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">QR</span><span class="kw">consultation</span><span class="kw">booking</span><span class="kw">free</span><span class="kw">website</span><span class="kw">WhatsApp</span></div></div>
+    </div>
+  </div>
+
+  <!-- ctv -->
+  <div class="tc"><div class="tc-hdr"><span class="tc-id" id="s-ctv">ctv</span><span class="tc-name">CTV / End Screen</span><button class="tc-copy" onclick="copyLink(this)">&#x1F517; Copy link</button></div>
+    <div class="tc-mock-wrap"><div class="mock"><div class="m-ctv"><div class="m-ctv-overlay"><div class="ctv-vid">Next Video<br>Preview</div><div class="ctv-label">Watch next &rarr;</div></div><div class="spk"></div></div></div></div>
+    <div class="tc-info">
+      <div class="info-box"><div class="info-lbl">Description</div><div class="info-txt">End screen: gradient overlay left with YouTube video card + speaker right.</div></div>
+      <div class="info-box"><div class="info-lbl">When to Use</div><div class="info-txt">Last 20 seconds of video, prompt to watch next video or subscribe.</div></div>
+      <div class="info-box"><div class="info-lbl">Max Text</div><div class="info-accent">Video preview + title</div></div>
+      <div class="info-box"><div class="info-lbl">Keywords</div><div class="kw-wrap"><span class="kw">end</span><span class="kw">next video</span><span class="kw">end screen</span><span class="kw">subscribe</span></div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<div class="footer">
+  powered by <a href="https://rya.ae" target="_blank">RYA.AE</a>
+  <div style="margin-top:12px;font-size:12px;">
+    <span style="color:var(--white);font-weight:600;">Roman Sergeev</span> &middot; Producer<br>
+    <a href="https://t.me/romansergeev" target="_blank" style="color:var(--accent);font-size:12px;">Telegram</a> &middot;
+    <a href="https://wa.me/971569399953" target="_blank" style="color:var(--accent);font-size:12px;">WhatsApp</a> &middot;
+    <a href="mailto:rs@rya.ae" style="color:var(--accent);font-size:12px;">rs@rya.ae</a>
+  </div>
+</div>
+
+<script>
+function closeToc(){document.getElementById('toc').classList.remove('open')}
+function copyLink(btn){var id=btn.parentElement.querySelector('.tc-id').id;var url=location.origin+location.pathname+'#'+id;navigator.clipboard.writeText(url).then(function(){btn.textContent='Copied!';btn.classList.add('copied');setTimeout(function(){btn.innerHTML='&#x1F517; Copy link';btn.classList.remove('copied')},1500)})}
+document.querySelectorAll('.fbtn').forEach(b=>{b.addEventListener('click',function(){document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('on'));this.classList.add('on')})})
+// Dubai time (UTC+4) in header
+function setDubaiDate(){var d=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var hh=String(d.getHours()).padStart(2,'0');var mm=String(d.getMinutes()).padStart(2,'0');document.querySelectorAll('[id=hdr-date]').forEach(function(el){el.textContent=d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear()+' '+hh+':'+mm})}
+setDubaiDate()
+</script>
+</body>
+</html>

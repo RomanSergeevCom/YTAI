@@ -1,0 +1,209 @@
+{
+  "version": "1.0",
+  "channel": "YTCR",
+  "brand": "Core Realty Dubai",
+  "palette": {
+    "bg_dark": "#101010",
+    "bg_panel": "#1A1A1A",
+    "accent": "#F0FF02",
+    "accent_secondary": "#FFD700",
+    "white": "#EFEFEF",
+    "link_yellow": "#F0FF02",
+    "card_bg": "#1E1E1E",
+    "muted": "#888888",
+    "error": "#FF0000",
+    "success": "#4ADE80"
+  },
+  "font_headline": "Playfair Display",
+  "font_body": "Inter",
+  "categories": [
+    {"id": "titles", "name": "Titles & Navigation", "description": "Ways to show a heading/topic — pick one (sometimes two) per segment"},
+    {"id": "text", "name": "Text Screens", "description": "Lists, key points, speaker intros, grids, progress, disclaimers"},
+    {"id": "diagrams", "name": "Diagrams", "description": "Circle charts, flows, process diagrams"},
+    {"id": "data", "name": "Data & Charts", "description": "Graphs, comparisons, calculations"},
+    {"id": "rich", "name": "Multimedia", "description": "Video maps, related content navigation"},
+    {"id": "ui", "name": "UI Elements", "description": "CTAs, QR codes, end screen"}
+  ],
+  "types": [
+    {
+      "id": "section_title",
+      "name": "Section Title",
+      "category": "titles",
+      "description": "Full speaker video with semi-transparent dark overlay. Large centered serif title in uppercase white with text shadow.",
+      "when": "Start of a new major section: Market Overview, Golden Visa, Broker Life, Investment Areas",
+      "max_text": "2 lines, 4-5 words, ALL CAPS",
+      "keywords": ["market", "investment", "broker", "Golden Visa", "area", "guide"]
+    },
+    {
+      "id": "section_title_centered",
+      "name": "Section Title Centered",
+      "category": "titles",
+      "description": "Dark gradient background, no speaker. Centered serif title with one accent-colored keyword in yellow. Muted italic subtitle below.",
+      "when": "Lighter section transitions, sub-topics within a chapter, thematic breaks",
+      "max_text": "2-4 words (1 highlighted) + subtitle",
+      "keywords": ["sub-topic", "transition", "theme", "break", "next"]
+    },
+    {
+      "id": "lower_third",
+      "name": "Lower Third Title",
+      "category": "titles",
+      "description": "Title bar at the bottom of speaker frame — dark panel with yellow accent border on top. Title + subtitle.",
+      "when": "Topic heading over speaker, softer transition than full section_title",
+      "max_text": "2 lines (title + subtitle)",
+      "keywords": ["topic", "section", "chapter", "part", "lesson"]
+    },
+    {
+      "id": "step_cards",
+      "name": "Step Cards",
+      "category": "titles",
+      "description": "Progressive reveal cards — steps fill in as the video advances. Shows viewer where they are in the process.",
+      "when": "Video broken into 3-7 steps: buying process, due diligence, RERA licensing, visa application",
+      "max_text": "7 cards, 2-3 words each",
+      "keywords": ["step", "process", "buying", "licensing", "due diligence", "application"]
+    },
+    {
+      "id": "talking_head",
+      "name": "Talking Head",
+      "category": "text",
+      "description": "Clean speaker shot without any overlays. Most powerful type for emotional impact and direct address.",
+      "when": "Hook, personal broker stories, key insights, emotional moments, important warnings",
+      "max_text": "0 — screen is completely clean",
+      "keywords": ["hook", "story", "important", "listen", "my experience", "let me tell you"]
+    },
+    {
+      "id": "side_slide_text",
+      "name": "Side Slide — Text",
+      "category": "text",
+      "description": "Text/bullets left (55%), speaker video right (45%). Serif title in yellow, body text with highlighted keywords, muted footnote.",
+      "when": "Listing requirements, area features, ROI factors, commission structures, legal steps",
+      "max_text": "Title + 5 bullet points + footnote",
+      "keywords": ["requirements", "features", "factors", "benefits", "includes", "because"]
+    },
+    {
+      "id": "side_slide_pills",
+      "name": "Side Slide — Pills",
+      "category": "text",
+      "description": "Colored pill tags on the left + speaker on the right. Gradient background pills.",
+      "when": "Quick takeaways, key recommendations, do/don't, pros/cons",
+      "max_text": "4 pills, up to 4 words each",
+      "keywords": ["do", "don't", "pro", "con", "tip", "recommendation", "takeaway"]
+    },
+    {
+      "id": "numbered_list",
+      "name": "Numbered List",
+      "category": "text",
+      "description": "Vertical list with numbered gradient badges. No speaker visible.",
+      "when": "Listing 3-8 items: top areas, common mistakes, broker tips, investment criteria",
+      "max_text": "8 rows, up to 5 words each",
+      "keywords": ["top", "mistakes", "criteria", "areas", "steps", "types", "reasons"]
+    },
+    {
+      "id": "speaker_intro",
+      "name": "Speaker Intro",
+      "category": "text",
+      "description": "Dark lower-third overlay on speaker video with yellow accent line. Name in uppercase serif, role/company in light sans-serif.",
+      "when": "First appearance of host, guest broker, investor, or industry expert",
+      "max_text": "Name + title/company (2 lines)",
+      "keywords": ["broker", "investor", "expert", "CEO", "founder", "senior", "guest"]
+    },
+    {
+      "id": "icon_grid",
+      "name": "Icon Grid",
+      "category": "text",
+      "description": "Title + 2-4 cards with icons in a row. Fullscreen with PIP speaker in corner.",
+      "when": "Overview of investment types, property categories, service offerings, visa options",
+      "max_text": "Title + 2-4 cards, 1-2 words each",
+      "keywords": ["types", "categories", "options", "services", "methods", "overview"]
+    },
+    {
+      "id": "disclaimer",
+      "name": "Disclaimer",
+      "category": "text",
+      "description": "Full-screen legal text on dark blurred background. Serif title. First paragraph in yellow accent. Remaining text in muted gray.",
+      "when": "Opening of every video — legal and financial disclaimers for investment content",
+      "max_text": "Title + 1-2 highlighted sentences + 2-3 body sentences",
+      "keywords": ["disclaimer", "legal", "not financial advice", "risk", "consult", "opening"]
+    },
+    {
+      "id": "circle_diagram",
+      "name": "Circle / Venn",
+      "category": "diagrams",
+      "description": "Nested or overlapping circles with labels + PIP speaker in corner.",
+      "when": "Market share, investor segments, overlap between buyer types, part-whole relationships",
+      "max_text": "2-3 circles, 1-2 word labels",
+      "keywords": ["market share", "segment", "investors", "portion", "includes", "overlap"]
+    },
+    {
+      "id": "flow_process",
+      "name": "Flow / Process",
+      "category": "diagrams",
+      "description": "Blocks connected with arrows: A → B → C. Shows sequential process or cause-effect chains.",
+      "when": "Property buying flow, visa application process, RERA licensing steps, investment funnel",
+      "max_text": "3-5 blocks, 1-2 words each",
+      "keywords": ["process", "flow", "leads to", "results in", "steps", "funnel"]
+    },
+    {
+      "id": "chart_curve",
+      "name": "Chart — Curve",
+      "category": "data",
+      "description": "Stats row at top + SVG line/area chart + axis labels + legend at bottom.",
+      "when": "Price trends over time, market cycles, ROI progression, rental yield trends",
+      "max_text": "Title + stats + axis labels + legend",
+      "keywords": ["trend", "growth", "over time", "price", "data", "forecast", "year"]
+    },
+    {
+      "id": "chart_bars",
+      "name": "Chart — Bars",
+      "category": "data",
+      "description": "Column/bar chart with category labels on x-axis. Gradient-filled bars.",
+      "when": "Rental yields by area, commission comparison, price per sqft across communities",
+      "max_text": "6-12 bars with labels",
+      "keywords": ["yield", "comparison", "per area", "data", "percentage", "ranking"]
+    },
+    {
+      "id": "comparison",
+      "name": "Comparison",
+      "category": "data",
+      "description": "Two items side by side with different colors. Vertical bars showing relative values.",
+      "when": "Off-plan vs ready, Dubai vs London commissions, before/after, two areas compared",
+      "max_text": "2 items, 3-4 lines of text each",
+      "keywords": ["vs", "comparison", "off-plan", "ready", "before/after", "better"]
+    },
+    {
+      "id": "math_equation",
+      "name": "Math / Equation",
+      "category": "data",
+      "description": "Visual arithmetic: stacked formula items on the left, equals sign, result card on the right.",
+      "when": "ROI calculations, investment returns, commission math, rental yield modeling",
+      "max_text": "2-6 items + 1 result",
+      "keywords": ["equals", "total", "cost", "ROI", "return", "annually", "per year"]
+    },
+    {
+      "id": "video_map",
+      "name": "Video Map",
+      "category": "rich",
+      "description": "Central video box branching out to 3-5 related video thumbnails with arrows.",
+      "when": "CTA for related content, navigation across content pillars, series recommendations",
+      "max_text": "1 central + 3-5 branches",
+      "keywords": ["watch next", "related", "series", "playlist", "more on this"]
+    },
+    {
+      "id": "cta_qr",
+      "name": "CTA / QR Code",
+      "category": "ui",
+      "description": "Split: 45% dark panel with title, QR code, 'Link in Description' + yellow arrow; 55% speaker.",
+      "when": "End of video or mid-roll CTA. Drive to corerealty.ae, WhatsApp, booking page",
+      "max_text": "Title + QR + label (3 elements)",
+      "keywords": ["QR", "consultation", "booking", "free", "website", "WhatsApp"]
+    },
+    {
+      "id": "ctv",
+      "name": "CTV / End Screen",
+      "category": "ui",
+      "description": "End screen: gradient overlay left with YouTube video card + speaker right.",
+      "when": "Last 20 seconds of video, prompt to watch next video or subscribe",
+      "max_text": "Video preview + title",
+      "keywords": ["end", "next video", "end screen", "subscribe"]
+    }
+  ]
+}
