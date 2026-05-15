@@ -45,3 +45,8 @@ environment/
 
 # Config with API tokens
 config/
+
+# Bots data — binary inventory assets (kept on disk, backup via Drive)
+Bots/*/inventory_photos/
+# Bots data — generated prompt-packs (per-project, not for source repo)
+Bots/*/_prompts/
