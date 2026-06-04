@@ -1,0 +1,27 @@
+<!-- rya-card-nav v1 — whole-card navigation (review: click card = seek video · hub: click card = open page) -->
+<style>
+.ed{cursor:pointer;transition:border-color .12s,transform .08s}
+.ed:hover{border-color:var(--accent,#E4FF6E)}
+.ed:active{transform:scale(.996)}
+.ep{cursor:pointer}
+.player video{max-height:44vh}
+</style>
+<script>
+(function(){
+  var INT='a,button,textarea,input,select,details,summary,video,label,.cp,.lnk,.now';
+  function inter(t){return t&&t.closest&&t.closest(INT);}
+  // Seek: jump the video and smooth-scroll it into view (player is NOT pinned)
+  if(typeof window.seek==='function'){window.seek=function(t){var v=document.getElementById('vid');if(!v)return;try{v.currentTime=t;v.play();}catch(e){}var p=document.getElementById('player');if(p)p.scrollIntoView({behavior:'smooth',block:'start'});};}
+  // Review cards: click anywhere on the card -> jump the video to that screen's moment
+  document.querySelectorAll('.ed').forEach(function(c){
+    var m=c.innerHTML.match(/seek\((\d+(?:\.\d+)?)\)/);if(!m)return;var tc=parseFloat(m[1]);
+    c.addEventListener('click',function(e){if(inter(e.target))return;if(typeof seek==='function')seek(tc);});
+  });
+  // Episode cards: click anywhere on the card -> open the episode page (first in-portal link)
+  document.querySelectorAll('.ep').forEach(function(c){
+    var a=[].slice.call(c.querySelectorAll('a[href]')).find(function(x){var h=x.getAttribute('href')||'';return h&&!/^(https?:|file:|mailto:|tel:|#)/i.test(h)&&!x.classList.contains('disabled');});
+    if(!a)return;var href=a.getAttribute('href');
+    c.addEventListener('click',function(e){if(inter(e.target))return;location.href=href;});
+  });
+})();
+</script>
