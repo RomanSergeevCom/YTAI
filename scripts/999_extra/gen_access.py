@@ -117,8 +117,9 @@ def main():
         acc["pages"] = {}
 
     acc.setdefault("version", 1)
-    acc["_note"] = ("Soft sharing-gate. portal/bypass = SHA-256; channels/pages = plaintext "
-                    "(показываются для шеринга). Не настоящая защита — контент клиентский.")
+    acc["_note"] = ("Soft sharing-gate. ОДИН пароль на канал (plaintext, открывает все страницы канала, "
+                    "показывается для шеринга). portal/bypass = SHA-256. Страницы пароля НЕ имеют. "
+                    "Не настоящая защита — контент клиентский.")
 
     acc.setdefault("portal", {})
     acc["portal"]["label"] = "yt.rya.ae"
@@ -142,7 +143,7 @@ def main():
         if v.get("password"):
             used.add(v["password"])
 
-    added_ch, added_pg, kept = [], [], 0
+    added_ch, added_pg, kept, stripped = [], [], 0, 0
 
     for c in sorted(CH_CODES):
         if acc["channels"].get(c, {}).get("password"):
@@ -168,25 +169,27 @@ def main():
         if ch is None:
             acc["pages"].pop(key, None)  # портал-уровень (/, /channel.html, …) → только portal-пароль
             continue
-        if acc["pages"].get(key, {}).get("password"):
-            kept += 1
-            acc["pages"][key].setdefault("channel", ch)
-            continue
+        prev = acc["pages"].get(key, {})
         fb = ch.upper() + " · " + os.path.basename(rel).replace(".html", "")
-        acc["pages"][key] = {"title": title_of(f, fb), "channel": ch, "password": make_pw(ch, used)}
-        added_pg.append(key)
+        title = prev.get("title") or title_of(f, fb)
+        # ОДИН пароль на канал → у страниц пароля НЕТ, только title+channel (для оверлея и навигации)
+        if "password" in prev:
+            stripped += 1
+        acc["pages"][key] = {"title": title, "channel": ch}
+        if not prev:
+            added_pg.append(key)
 
     acc["pages"] = {k: acc["pages"][k] for k in sorted(acc["pages"])}
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
     json.dump(acc, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
-    print(f"access.json → {out}{'   [--force: пароли перегенерированы]' if force else ''}")
-    print(f"  channels: +{len(added_ch)} new ({', '.join(added_ch) or '—'})")
-    print(f"  pages:    +{len(added_pg)} new, {kept} kept, {len(acc['pages'])} total")
+    print(f"access.json → {out}{'   [--force: пароли каналов перегенерированы]' if force else ''}")
+    print(f"  channels: +{len(added_ch)} new ({', '.join(added_ch) or '—'}), {kept} kept — ОДИН пароль на канал")
+    print(f"  pages:    +{len(added_pg)} new, {stripped} стрипнуто page-паролей, {len(acc['pages'])} total (title+channel, без паролей)")
     print(f"  portal:   {', '.join(PORTAL_PWS)} (SHA-256)")
-    # коллизий быть не должно (дедуп), но проверим
-    allpw = [v['password'] for v in acc['channels'].values()] + [v['password'] for v in acc['pages'].values()]
+    # коллизии только среди паролей каналов
+    allpw = [v['password'] for v in acc['channels'].values() if v.get('password')]
     dups = {p for p in allpw if allpw.count(p) > 1}
     print(f"  collisions: {sorted(dups) if dups else 'нет'}")
     if new_bypass:
