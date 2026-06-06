@@ -27,6 +27,9 @@ from site_chrome import ASSET_V, MARK, head_block, body_script, html_attrs  # no
 CH_CODES = {"ytcr", "ytcg", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch"}
 ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
 EXCLUDE_SUBSTR = ("/_generated/deck/", "/thumbnail/")
+MARK_COMMENT = "<!-- " + MARK + " -->"  # детект по КОММЕНТАРИЮ, не по голой строке (иначе контент со словом rya-site-v1 ложно «уже пропатчен»)
+HTML_TAG_RE = re.compile(r"<html\b(?:\"[^\"]*\"|'[^']*'|[^>])*>", re.I)  # кавычко-устойчиво (атрибут со знаком > не ломает)
+ATTR_STRIP_RE = re.compile(r'\s+data-(channel|page|rya-theme|rya-haschrome)="[^"]*"')
 
 
 def channel_of(rel):
@@ -41,24 +44,27 @@ def url_key(rel):
 
 
 def classify(h):
-    core = ("#0A0D16" in h) or ("--bg-card" in h)
-    brand = ("Orbitron" in h) or ("Montserrat" in h) or ("data-theme=" in h) or ("#0A1420" in h)
-    return "brand" if (brand and not core) else "core"
+    # core = страница реально на канонической палитре портала (#0A0D16) → безопасно
+    # унифицировать токены. Всё остальное → brand: только навигация, палитру/шрифты
+    # НЕ трогаем (имя токена --bg-card встречается и у брендовых — не сигнал).
+    return "core" if "#0A0D16" in h else "brand"
 
 
 def has_chrome(h):
     return bool(re.search(r'class\s*=\s*["\'][^"\']*\b(topbar|hdr)\b', h))
 
 
+def _strip_html_attrs(tag):
+    inner = ATTR_STRIP_RE.sub("", tag[5:-1])  # без "<html" и ">"
+    return "<html" + inner + ">"
+
+
 def set_html_attrs(h, attrs):
     """Добавить attrs в первый тег <html …>, убрав прежние data-rya-*/data-channel/data-page."""
-    m = re.search(r"<html\b[^>]*>", h, re.I)
+    m = HTML_TAG_RE.search(h)
     if not m:
         return h, False
-    tag = m.group(0)
-    inner = tag[5:-1]  # без "<html" и ">"
-    inner = re.sub(r'\s+data-(channel|page|rya-theme|rya-haschrome)="[^"]*"', "", inner)
-    newtag = "<html" + inner + " " + attrs + ">"
+    newtag = "<html" + ATTR_STRIP_RE.sub("", m.group(0)[5:-1]) + " " + attrs + ">"
     return h[:m.start()] + newtag + h[m.end():], True
 
 
@@ -70,7 +76,10 @@ def revert(h):
     h = re.sub(r'\s*<!-- ' + re.escape(MARK) + r' -->.*?<link rel="stylesheet" href="/assets/site\.css\?v=\d+">\s*',
                "\n", h, flags=re.S)
     h = re.sub(r'\s*<script src="/assets/site\.js\?v=\d+" defer></script>\s*', "\n", h)
-    h = re.sub(r'\s+data-(channel|page|rya-theme|rya-haschrome)="[^"]*"', "", h)
+    # снятие data-rya-* атрибутов ТОЛЬКО в теге <html> (не по всему документу)
+    m = HTML_TAG_RE.search(h)
+    if m:
+        h = h[:m.start()] + _strip_html_attrs(m.group(0)) + h[m.end():]
     return h
 
 
@@ -79,10 +88,19 @@ def inject(h, rel):
     theme = classify(h)
     attrs = html_attrs(ch, url_key(rel), theme, has_chrome(h))
     h, ok = set_html_attrs(h, attrs)
-    # head
+    # head: перед </head>; фолбэки — после <head>, перед <body>, в начало
     i = h.lower().rfind("</head>")
     if i >= 0:
         h = h[:i] + head_block(ASSET_V) + h[i:]
+    else:
+        mh = re.search(r"<head\b[^>]*>", h, re.I)
+        mb = re.search(r"<body\b[^>]*>", h, re.I)
+        if mh:
+            h = h[:mh.end()] + head_block(ASSET_V) + h[mh.end():]
+        elif mb:
+            h = h[:mb.start()] + head_block(ASSET_V) + h[mb.start():]
+        else:
+            h = head_block(ASSET_V) + h
     # body
     j = h.lower().rfind("</body>")
     if j < 0:
@@ -98,6 +116,10 @@ def main():
     args = sys.argv[1:]
     dry = "--dry-run" in args
     do_revert = "--revert" in args
+    # --only=SUBSTR — ограничить и patch, и revert файлами, чей относительный путь
+    # содержит SUBSTR (защита: `--revert --only=ytrf/05/index.html` снимет только её,
+    # а не все страницы).
+    only = next((a.split("=", 1)[1] for a in args if a.startswith("--only=")), None)
     pos = [a for a in args if not a.startswith("--")]
     web = pos[0] if pos else os.path.expanduser("~/RYA/yt-rya-ae/web")
 
@@ -106,6 +128,8 @@ def main():
 
     for f in sorted(glob.glob(os.path.join(web, "**", "*.html"), recursive=True)):
         relu = "/" + rel(f).replace(os.sep, "/")
+        if only and only not in relu:
+            continue
         try:
             h = open(f, encoding="utf-8").read()
         except Exception as e:
@@ -115,22 +139,25 @@ def main():
             excluded.append(f); continue
 
         if do_revert:
-            if MARK in h:
+            if MARK_COMMENT in h:
                 nh = revert(h)
                 if not dry:
                     open(f, "w", encoding="utf-8").write(nh)
                 reverted.append(f)
             continue
 
-        if MARK in h:
+        if MARK_COMMENT in h:
             m = re.search(r"/assets/site\.css\?v=(\d+)", h)
-            cur = int(m.group(1)) if m else -1
-            if cur == ASSET_V:
-                already.append(f); continue
-            nh = reset_versions(h, ASSET_V)
-            if not dry:
-                open(f, "w", encoding="utf-8").write(nh)
-            updated.append((f, cur)); continue
+            if m:
+                cur = int(m.group(1))
+                if cur == ASSET_V:
+                    already.append(f); continue
+                nh = reset_versions(h, ASSET_V)
+                if not dry:
+                    open(f, "w", encoding="utf-8").write(nh)
+                updated.append((f, cur)); continue
+            # маркер есть, но css-ссылка отсутствует → битая инъекция: снять остатки и заново
+            h = revert(h)
 
         nh, ch, theme = inject(h, rel(f))
         if not dry:

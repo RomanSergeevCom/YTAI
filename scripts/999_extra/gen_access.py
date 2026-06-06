@@ -2,18 +2,18 @@
 """
 gen_access.py — сидер web/_data/access.json (клиент-гейт yt.rya.ae).
 
+Пароли ЧЕЛОВЕКОЧИТАЕМЫЕ: `<словоканала>-<слово>` (напр. reflux-otter, realty-harbor) —
+легко прочитать, запомнить, продиктовать, пошарить. Каналы и страницы группируются по
+префиксу канала.
+
 Идемпотентно:
-  • portal.hashes  = SHA-256 от 'rs' и 'winston' (не показываются на сайте);
-  • personalBypass = SHA-256 от длинного случайного секрета (печатается ОДИН раз
-    при первом создании — сохрани его; вводится на каждом устройстве Романа,
-    переживает ротацию паролей);
-  • channels[<code>].password = plaintext (показывается в share-bar, по решению);
-  • pages[<url>].password      = plaintext, авто-короткий код (можно вручную править).
+  • существующие пароли НЕ перезаписываются (можно гонять после добавления страниц);
+  • `--force` — перегенерировать ВСЕ пароли каналов/страниц заново (portal + bypass сохраняются);
+  • portal (rs/winston) и personalBypass — SHA-256 (не показываются); каналы/страницы — plaintext
+    (показываются в share-bar для шеринга, по решению);
+  • при битом access.json — АВАРИЯ (не перезаписываю, чтобы не потерять кастомные пароли).
 
-Существующие записи НИКОГДА не перезаписываются — можно безопасно гонять после
-добавления новых страниц. Ключи pages — нормализованный URL (как в site.js).
-
-Запуск:  python3 gen_access.py [WEB_DIR=~/RYA/yt-rya-ae/web]
+Запуск:  python3 gen_access.py [WEB_DIR=~/RYA/yt-rya-ae/web] [--force]
 """
 import glob
 import hashlib
@@ -23,26 +23,34 @@ import re
 import secrets
 import sys
 
-ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz"  # без 0/o/1/l/i
 CH_CODES = {"ytcr", "ytcg", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch"}
 ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
 EXCLUDE_SUBSTR = ("/_generated/deck/", "/thumbnail/")
 PORTAL_PWS = ["rs", "winston"]
+
+# человекочитаемый префикс на канал (группирует пароли)
+CHWORD = {
+    "ytcr": "realty", "ytcg": "connect", "ytrf": "reflux", "ytfp": "pravmir",
+    "ytuvi": "gems", "ytmsen": "neuro", "ytciv": "civ", "ytagefree": "elders", "ytch": "burodd",
+}
+# простые запоминающиеся слова (без двусмысленностей)
+NOUNS = [
+    "harbor", "otter", "cedar", "falcon", "anchor", "comet", "willow", "ember", "maple", "river",
+    "raven", "lotus", "onyx", "quartz", "basalt", "cobalt", "indigo", "saffron", "amber", "jade",
+    "cobra", "delta", "pine", "fjord", "tundra", "meadow", "canyon", "summit", "lagoon", "aurora",
+    "zephyr", "cinder", "marble", "copper", "ivory", "coral", "topaz", "garnet", "opal", "beacon",
+    "compass", "lantern", "harvest", "orchard", "thistle", "juniper", "spruce", "birch", "alder", "heron",
+    "kestrel", "marlin", "walrus", "badger", "lynx", "ibex", "marten", "puffin", "narwhal", "axiom",
+]
 
 
 def sha256(s):
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
 
-def code(n=4):
-    return "".join(secrets.choice(ALPHABET) for _ in range(n))
-
-
 def url_key(rel):
-    """web-относительный путь файла → нормализованный URL (как site.js normPath)."""
     p = "/" + rel.replace(os.sep, "/")
-    p = re.sub(r"index\.html?$", "", p, flags=re.I)
-    return p
+    return re.sub(r"index\.html?$", "", p, flags=re.I)
 
 
 def channel_of(rel):
@@ -51,13 +59,28 @@ def channel_of(rel):
     return seg if seg in CH_CODES else None
 
 
+def make_pw(ch, used):
+    """`<chword>-<noun>`, уникальный среди used; при исчерпании — суффикс-цифра."""
+    slug = CHWORD.get(ch, (ch or "page").replace("yt", "") or "page")
+    pool = list(NOUNS)
+    secrets.SystemRandom().shuffle(pool)
+    for n in pool:
+        pw = f"{slug}-{n}"
+        if pw not in used:
+            used.add(pw); return pw
+    # пул исчерпан — добавляем цифры
+    while True:
+        pw = f"{slug}-{secrets.choice(NOUNS)}{secrets.randbelow(90) + 10}"
+        if pw not in used:
+            used.add(pw); return pw
+
+
 def title_of(path, fallback):
     try:
         h = open(path, encoding="utf-8", errors="ignore").read(4000)
         m = re.search(r"<title>(.*?)</title>", h, re.I | re.S)
         if m:
             t = re.sub(r"\s+", " ", m.group(1)).strip()
-            # отрезать хвосты "· yt.rya.ae", "— yt.rya.ae"
             t = re.split(r"\s*[·—|]\s*yt\.rya\.ae", t, flags=re.I)[0].strip()
             return t or fallback
     except Exception:
@@ -74,49 +97,62 @@ def load_channels_json(web):
 
 
 def main():
-    web = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser("~/RYA/yt-rya-ae/web")
+    args = sys.argv[1:]
+    force = "--force" in args
+    pos = [a for a in args if not a.startswith("--")]
+    web = pos[0] if pos else os.path.expanduser("~/RYA/yt-rya-ae/web")
     out = os.path.join(web, "_data", "access.json")
 
-    # существующий конфиг (для идемпотентности)
     acc = {}
     if os.path.exists(out):
         try:
             acc = json.load(open(out, encoding="utf-8"))
-        except Exception:
-            acc = {}
+        except Exception as e:
+            print(f"АВАРИЯ: {out} повреждён ({e}). НЕ перезаписываю, чтобы не потерять пароли.")
+            print("Почини JSON вручную или удали файл, затем запусти снова.")
+            sys.exit(1)
+
+    if force:
+        acc["channels"] = {}
+        acc["pages"] = {}
 
     acc.setdefault("version", 1)
     acc["_note"] = ("Soft sharing-gate. portal/bypass = SHA-256; channels/pages = plaintext "
                     "(показываются для шеринга). Не настоящая защита — контент клиентский.")
 
-    # portal
     acc.setdefault("portal", {})
     acc["portal"]["label"] = "yt.rya.ae"
     acc["portal"]["hashes"] = [sha256(p) for p in PORTAL_PWS]
 
-    # personal bypass — создаём один раз
     new_bypass = None
     if not (acc.get("personalBypass") or {}).get("hash"):
         new_bypass = secrets.token_urlsafe(18)
         acc["personalBypass"] = {"hash": sha256(new_bypass)}
 
     names = load_channels_json(web)
+    acc.setdefault("channels", {})
+    acc.setdefault("pages", {})
+
+    # used = все уже существующие пароли (для дедупа коллизий)
+    used = set()
+    for v in acc["channels"].values():
+        if v.get("password"):
+            used.add(v["password"])
+    for v in acc["pages"].values():
+        if v.get("password"):
+            used.add(v["password"])
+
     added_ch, added_pg, kept = [], [], 0
 
-    # channels
-    acc.setdefault("channels", {})
     for c in sorted(CH_CODES):
-        if c in acc["channels"] and acc["channels"][c].get("password"):
+        if acc["channels"].get(c, {}).get("password"):
             kept += 1
             acc["channels"][c]["label"] = names.get(c, acc["channels"][c].get("label", c.upper()))
             continue
-        acc["channels"][c] = {"label": names.get(c, c.upper()), "password": f"{c.replace('yt','')}-{code()}"}
+        acc["channels"][c] = {"label": names.get(c, c.upper()), "password": make_pw(c, used)}
         added_ch.append(c)
 
-    # pages
-    acc.setdefault("pages", {})
-    files = sorted(glob.glob(os.path.join(web, "**", "*.html"), recursive=True))
-    for f in files:
+    for f in sorted(glob.glob(os.path.join(web, "**", "*.html"), recursive=True)):
         rel = os.path.relpath(f, web)
         relu = "/" + rel.replace(os.sep, "/")
         if any(s in relu for s in EXCLUDE_SUBSTR):
@@ -130,43 +166,38 @@ def main():
         key = url_key(rel)
         ch = channel_of(rel)
         if ch is None:
-            # портал-уровень (/, /channel.html, /production.html) — только portal-пароль (rs/winston)
-            acc["pages"].pop(key, None)
+            acc["pages"].pop(key, None)  # портал-уровень (/, /channel.html, …) → только portal-пароль
             continue
-        if key in acc["pages"] and acc["pages"][key].get("password"):
+        if acc["pages"].get(key, {}).get("password"):
             kept += 1
-            # обновить title/channel мягко
             acc["pages"][key].setdefault("channel", ch)
             continue
-        seg0 = rel.replace(os.sep, "/").split("/")[0].lower()
-        slug = (ch or ALIAS.get(seg0, seg0) or "page").replace("yt", "") or "page"
-        fb = (ch.upper() if ch else seg0.upper()) + " · " + os.path.basename(rel).replace(".html", "")
-        acc["pages"][key] = {
-            "title": title_of(f, fb),
-            "channel": ch,
-            "password": f"{slug}-{code()}",
-        }
+        fb = ch.upper() + " · " + os.path.basename(rel).replace(".html", "")
+        acc["pages"][key] = {"title": title_of(f, fb), "channel": ch, "password": make_pw(ch, used)}
         added_pg.append(key)
 
-    # стабильная сортировка ключей pages
     acc["pages"] = {k: acc["pages"][k] for k in sorted(acc["pages"])}
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
     json.dump(acc, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
-    print(f"access.json → {out}")
-    print(f"  channels: +{len(added_ch)} new  ({', '.join(added_ch) or '—'})")
+    print(f"access.json → {out}{'   [--force: пароли перегенерированы]' if force else ''}")
+    print(f"  channels: +{len(added_ch)} new ({', '.join(added_ch) or '—'})")
     print(f"  pages:    +{len(added_pg)} new, {kept} kept, {len(acc['pages'])} total")
-    print(f"  portal:   {', '.join(PORTAL_PWS)}  (SHA-256)")
+    print(f"  portal:   {', '.join(PORTAL_PWS)} (SHA-256)")
+    # коллизий быть не должно (дедуп), но проверим
+    allpw = [v['password'] for v in acc['channels'].values()] + [v['password'] for v in acc['pages'].values()]
+    dups = {p for p in allpw if allpw.count(p) > 1}
+    print(f"  collisions: {sorted(dups) if dups else 'нет'}")
     if new_bypass:
         print("\n  ╔══════════════════════════════════════════════════════════════╗")
         print("  ║  PERSONAL BYPASS SECRET (показывается ОДИН раз — сохрани!)   ║")
         print(f"  ║   {new_bypass}")
-        print("  ║  Вводи как пароль на каждом своём устройстве → больше не    ║")
+        print("  ║  Вводи как пароль на любом своём устройстве → больше не     ║")
         print("  ║  спросит никогда (переживает ротацию паролей).              ║")
         print("  ╚══════════════════════════════════════════════════════════════╝")
     else:
-        print("  bypass:   kept existing hash")
+        print("  bypass:   сохранён существующий hash")
 
 
 if __name__ == "__main__":
