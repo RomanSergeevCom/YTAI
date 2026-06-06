@@ -14,7 +14,7 @@ Cache-busting: бампнуть ASSET_V → заново прогнать patch_
 
 # ──────────────────────────────────────────────────────────────────────
 # Единственное место с версией ассетов. patch_site_chrome.py импортит её.
-ASSET_V = 2
+ASSET_V = 5
 MARK = "rya-site-v1"
 # ──────────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ def body_script(v: int = ASSET_V) -> str:
     return f'<script src="/assets/site.js?v={v}" defer></script>\n'
 
 
-def html_attrs(channel=None, page=None, theme="core", haschrome=False) -> str:
+def html_attrs(channel=None, page=None, theme="core", haschrome=False, hub=False) -> str:
     """Строка атрибутов для тега <html …> (без ведущего пробела добавляйте сами)."""
     a = []
     if channel:
@@ -53,6 +53,8 @@ def html_attrs(channel=None, page=None, theme="core", haschrome=False) -> str:
     a.append(f'data-rya-theme="{theme}"')
     if haschrome:
         a.append('data-rya-haschrome="1"')
+    if hub:
+        a.append('data-rya-hub="1"')  # корень канала → акцент = цвет канала (site.css)
     return " ".join(a)
 
 

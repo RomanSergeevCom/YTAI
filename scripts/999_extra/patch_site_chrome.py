@@ -29,7 +29,7 @@ ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
 EXCLUDE_SUBSTR = ("/_generated/deck/", "/thumbnail/")
 MARK_COMMENT = "<!-- " + MARK + " -->"  # детект по КОММЕНТАРИЮ, не по голой строке (иначе контент со словом rya-site-v1 ложно «уже пропатчен»)
 HTML_TAG_RE = re.compile(r"<html\b(?:\"[^\"]*\"|'[^']*'|[^>])*>", re.I)  # кавычко-устойчиво (атрибут со знаком > не ломает)
-ATTR_STRIP_RE = re.compile(r'\s+data-(channel|page|rya-theme|rya-haschrome)="[^"]*"')
+ATTR_STRIP_RE = re.compile(r'\s+data-(channel|page|rya-theme|rya-haschrome|rya-hub)="[^"]*"')
 
 
 def channel_of(rel):
@@ -83,10 +83,17 @@ def revert(h):
     return h
 
 
+def is_hub(key):
+    # корень канала: путь ровно "/<код-канала>/" (один сегмент, и это канал, не алиас-редирект)
+    m = re.fullmatch(r"/([A-Za-z0-9]+)/", key)
+    return bool(m) and m.group(1).lower() in CH_CODES
+
+
 def inject(h, rel):
     ch = channel_of(rel)
     theme = classify(h)
-    attrs = html_attrs(ch, url_key(rel), theme, has_chrome(h))
+    key = url_key(rel)
+    attrs = html_attrs(ch, key, theme, has_chrome(h), is_hub(key))
     h, ok = set_html_attrs(h, attrs)
     # head: перед </head>; фолбэки — после <head>, перед <body>, в начало
     i = h.lower().rfind("</head>")
