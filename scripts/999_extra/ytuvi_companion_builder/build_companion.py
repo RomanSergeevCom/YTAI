@@ -263,7 +263,11 @@ def render_cheatsheet(ann):
     if ea:
         items = "".join(f"<li>{rich(x)}</li>" for x in ea)
         cols.append(f'<div class="csc csc-exp"><h4>💎 Где нужна экспертиза Натальи</h4><ul>{items}</ul></div>')
-    return f'<div class="cheat">{"".join(cols)}</div>'
+    total = len(mc) + len(da) + len(ea)
+    grid = f'<div class="cheat">{"".join(cols)}</div>'
+    # collapsed by default — the top fact-check panel now covers «проверить» / «не утверждать»
+    return (f'<details class="sec-box"><summary>🧭 Шпаргалка ведущего ({total}) — '
+            f'проверить · не утверждать как факт · где нужна экспертиза</summary>{grid}</details>')
 
 def render_glossary(ann):
     g = ann.get("glossary") or []
@@ -291,7 +295,7 @@ def render_sources(ann, meta):
         if who:
             head += f'<span class="sm-w">{esc(who)}{(" · "+esc(tc)) if tc else ""}</span>'
         rows.append(f'<div class="sm"><div class="sm-h">{head}</div><blockquote>{rich(q)}</blockquote></div>')
-    return (f'<details class="sec-box" open><summary>🎙 Прошлые источники — что говорил эксперт на kickoff ({len(sm)})</summary>'
+    return (f'<details class="sec-box"><summary>🎙 Прошлые источники — что говорил эксперт на kickoff ({len(sm)})</summary>'
             f'<div class="smwrap">{"".join(rows)}</div></details>')
 
 # ---------- page ----------
@@ -528,13 +532,7 @@ def build_page(code):
     # fact-check panel (top — red burning first, numbered, deep-linkable)
     P.append(render_fc_panel(fcs))
 
-    # cheat sheet
-    P.append(render_cheatsheet(ann))
-    # glossary + sources (top, collapsible)
-    P.append(render_glossary(ann))
-    P.append(render_sources(ann, meta))
-
-    # script
+    # script — THE main content, directly under the fact-check panel
     P.append('<div class="sec-h">📜 Сценарий с факт-чеком и комментариями</div>')
     legend = (blocks or {}).get("legend")
     if legend:
@@ -548,6 +546,13 @@ def build_page(code):
         emap.setdefault(e.get("block_idx"), []).append(e)
     for b in (blocks.get("blocks") or []):
         P.append(render_block(b, fmap, mmap, emap))
+
+    # appendix — reference material AFTER the script (like end-of-video material):
+    # glossary (kept open — Роман: «супер») · past kickoff sources · cheat-sheet (collapsed)
+    appendix = "".join([render_glossary(ann), render_sources(ann, meta), render_cheatsheet(ann)])
+    if appendix:
+        P.append('<div class="sec-h">📎 Справочно — глоссарий, источники, шпаргалка</div>')
+        P.append(appendix)
 
     P.append('</div>')  # wrap
     P.append(footer())
