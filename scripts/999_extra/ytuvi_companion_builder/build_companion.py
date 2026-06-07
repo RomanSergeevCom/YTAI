@@ -112,11 +112,15 @@ def load(code):
 # ---------- components ----------
 def fc_card(fc):
     v = VERDICT.get(fc.get("verdict", "unverified"), VERDICT["unverified"])
-    parts = [f'<div class="fc fc-{fc.get("verdict","unverified")}">']
+    n = fc.get("_num")
+    parts = [f'<div class="fc fc-{fc.get("verdict","unverified")}" id="fc-{n}">']
     parts.append(f'<div class="fc-h"><span class="fc-b" style="--vc:{v["c"]}">{v["icon"]} {v["label"]}</span>')
     conf = fc.get("confidence")
     if conf:
         parts.append(f'<span class="fc-conf">{esc({"high":"высокая","med":"средняя","low":"низкая"}.get(conf,conf))}</span>')
+    # citable number + shareable deep-link (значок), right-aligned
+    parts.append(f'<span class="fc-act" style="--vc:{v["c"]}"><a class="fc-num" href="#fc-{n}">FC&nbsp;{n}</a>'
+                 f'<button class="fc-cp" data-cp="fc-{n}" title="скопировать ссылку на проверку">🔗</button></span>')
     parts.append("</div>")
     claim = fc.get("claim")
     if claim:
@@ -176,6 +180,71 @@ def render_block(b, fmap, mmap, emap):
         out.append(fc_card(f))
     out.append("</div></div>")
     return "".join(out)
+
+# severity order: red burning first
+SEV_PRIMARY = ("wrong", "check", "unverified")   # shown expanded at top — "что проверять"
+SEV_RANK = {"wrong": 0, "check": 1, "unverified": 2, "metaphor": 3, "solid": 4}
+
+def fcp_row(f, compact=False):
+    """One row in the top fact-check panel: number + verdict + claim (+ correction)."""
+    n = f.get("_num")
+    vk = f.get("verdict", "unverified")
+    v = VERDICT.get(vk, VERDICT["unverified"])
+    claim = f.get("claim") or f.get("note") or ""
+    out = [f'<li class="fcp-row{" compact" if compact else ""}" data-v="{vk}" data-go="fc-{n}" style="--vc:{v["c"]}">']
+    out.append(f'<span class="fcp-n">FC&nbsp;{n}</span>')
+    out.append(f'<span class="fcp-ic" title="{esc(v["label"])}">{v["icon"]}</span>')
+    out.append('<span class="fcp-tx">')
+    out.append(f'<div class="fcp-claim">{esc(claim)}</div>')
+    if not compact:
+        corr = f.get("correction") or f.get("note")
+        if corr:
+            out.append(f'<div class="fcp-corr"><b>→ как правильно:</b> {rich(corr)}</div>')
+    out.append('</span>')
+    out.append(f'<span class="fcp-act"><button class="fcp-cp" data-cp="fc-{n}" '
+               f'title="скопировать ссылку на проверку">🔗</button></span>')
+    out.append('</li>')
+    return "".join(out)
+
+def render_fc_panel(fcs):
+    """Top-of-page fact-check dashboard: errors + to-verify expanded (red on top),
+    verified + metaphors collapsed. Every row numbered, deep-linkable, copy-able."""
+    if not fcs:
+        return ""
+    cnt = {}
+    for f in fcs:
+        cnt[f.get("verdict")] = cnt.get(f.get("verdict"), 0) + 1
+    primary = sorted((f for f in fcs if f.get("verdict") in SEV_PRIMARY),
+                     key=lambda f: (SEV_RANK.get(f.get("verdict"), 9), f.get("_num") or 0))
+    secondary = sorted((f for f in fcs if f.get("verdict") not in SEV_PRIMARY),
+                       key=lambda f: f.get("_num") or 0)
+    P = ['<section class="fcp" id="fcpanel">']
+    P.append('<div class="fcp-h"><h2>🔍 Факт-чек — что проверить перед камерой</h2>')
+    P.append('<div class="fcp-chips">')
+    for k in ("wrong", "check", "metaphor", "solid", "unverified"):
+        if cnt.get(k):
+            P.append(f'<button class="fcp-chip" data-v="{k}" style="--vc:{VERDICT[k]["c"]}">'
+                     f'<i class="d"></i>{VERDICT[k]["icon"]} {cnt[k]}</button>')
+    P.append('</div>')
+    P.append('<p class="fcp-sub">Клик по строке — перейти к месту в сценарии · '
+             '🔗 — скопировать ссылку на конкретную проверку · чипы фильтруют список.</p>')
+    P.append('</div>')
+    P.append('<ul class="fcp-list">')
+    for f in primary:
+        P.append(fcp_row(f))
+    P.append('</ul>')
+    if secondary:
+        ns = cnt.get("solid", 0)
+        nm = cnt.get("metaphor", 0)
+        lbl = " · ".join(x for x in (f'✅ проверено {ns}' if ns else '',
+                                     f'🎭 метафоры {nm}' if nm else '') if x)
+        P.append(f'<details class="fcp-more"><summary>{lbl} — показать</summary>'
+                 '<ul class="fcp-list">')
+        for f in secondary:
+            P.append(fcp_row(f, compact=True))
+        P.append('</ul></details>')
+    P.append('</section>')
+    return "".join(P)
 
 def render_cheatsheet(ann):
     cs = ann.get("cheatsheet") or {}
@@ -313,6 +382,46 @@ h1{font-size:1.85rem;line-height:1.18;margin:7px 0 8px}
 .fc-src{font-size:.76rem;color:var(--muted);margin-top:6px}
 .exp{font-size:.93rem;background:rgba(34,199,199,.08);border-radius:8px;padding:8px 12px;margin:9px 0 0}
 .meta-m{font-size:.93rem;background:rgba(196,181,253,.1);border-radius:8px;padding:8px 12px;margin:9px 0 0}
+/* fact-check panel (top dashboard) */
+.fcp{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin:16px 0 8px}
+.fcp-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fcp-h h2{font-family:'Space Grotesk';font-size:1.06rem}
+.fcp-chips{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.fcp-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 11px;font-size:.78rem;cursor:pointer;font-family:inherit}
+.fcp-chip .d{width:9px;height:9px;border-radius:50%;background:var(--vc)}
+.fcp-chip:hover{border-color:var(--vc)}
+.fcp-chip.off{opacity:.32;text-decoration:line-through}
+.fcp-sub{flex-basis:100%;font-size:.78rem;color:var(--muted);margin:8px 0 2px}
+.fcp-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.fcp-row{display:grid;grid-template-columns:auto auto 1fr auto;align-items:start;gap:10px;border:1px solid var(--line);border-left:4px solid var(--vc,var(--muted));border-radius:9px;padding:8px 11px;background:var(--bg);cursor:pointer;scroll-margin-top:120px}
+.fcp-row:hover{border-color:var(--vc)}
+.fcp-n{font-family:'Space Grotesk';font-weight:700;font-size:.74rem;color:var(--vc);background:var(--tcbg);border-radius:6px;padding:3px 7px;white-space:nowrap;align-self:start;line-height:1.4}
+.fcp-ic{font-size:.96rem;line-height:1.5}
+.fcp-tx{min-width:0}
+.fcp-claim{font-size:.92rem;font-weight:600;line-height:1.45}
+.fcp-corr{font-size:.85rem;color:var(--muted);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fcp-corr b{color:var(--vc);font-weight:600}
+.fcp-row.compact .fcp-claim{font-weight:500;color:var(--muted)}
+.fcp-act{align-self:start}
+.fcp-cp,.fc-cp{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.95rem;border-radius:6px;padding:3px 5px;line-height:1;font-family:inherit}
+.fcp-cp:hover,.fc-cp:hover{background:var(--tcbg);color:var(--accent)}
+.fcp-more{margin-top:9px}
+.fcp-more>summary{cursor:pointer;font-size:.82rem;color:var(--muted);list-style:none}
+.fcp-more>summary::-webkit-details-marker{display:none}
+.fcp-more>summary::before{content:"▸ ";color:var(--accent)}
+.fcp-more[open]>summary::before{content:"▾ "}
+.fcp.hide-wrong .fcp-row[data-v="wrong"],.fcp.hide-check .fcp-row[data-v="check"],.fcp.hide-metaphor .fcp-row[data-v="metaphor"],.fcp.hide-solid .fcp-row[data-v="solid"],.fcp.hide-unverified .fcp-row[data-v="unverified"]{display:none}
+/* fc card number + copy-link (значок) */
+.fc{scroll-margin-top:120px}
+.fc-act{margin-left:auto;display:flex;align-items:center;gap:4px}
+.fc-num{font-family:'Space Grotesk';font-weight:700;font-size:.7rem;color:var(--vc);background:var(--tcbg);border-radius:6px;padding:3px 7px;text-decoration:none;white-space:nowrap}
+.fc:target,.fcp-row:target{outline:2px solid var(--vc);outline-offset:3px}
+.fc.flash,.fcp-row.flash{animation:fcflash 1.5s ease}
+@keyframes fcflash{0%,28%{box-shadow:0 0 0 3px var(--vc) inset}100%{box-shadow:none}}
+/* copy toast */
+.fctoast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(18px);background:var(--accent);color:#04222a;font-weight:600;font-size:.85rem;padding:9px 16px;border-radius:10px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.24s;z-index:200}
+.fctoast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:600px){.fcp-corr{-webkit-line-clamp:3}}
 body.only-fc .blk[data-fc="0"]{display:none}
 body.only-fc .anote{display:none}
 footer{max-width:920px;margin:0 auto;padding:24px 20px 70px;color:var(--muted);font-size:.78rem;border-top:1px solid var(--line)}
@@ -338,6 +447,23 @@ SCRIPT_JS = """
  var f=document.getElementById('onlyfc');var bar=document.getElementById('barfc');
  function tog(){document.body.classList.toggle('only-fc');var on=document.body.classList.contains('only-fc');f.classList.toggle('on',on);if(bar){bar.classList.toggle('on',on);}}
  f.onclick=tog; if(bar)bar.onclick=tog;
+})();
+// fact-check panel: jump · copy deep-link · flash · chip filter
+(function(){
+ var toast=document.createElement('div');toast.className='fctoast';document.body.appendChild(toast);var tt;
+ function say(m){toast.textContent=m;toast.classList.add('on');clearTimeout(tt);tt=setTimeout(function(){toast.classList.remove('on');},1600);}
+ function flash(el){if(!el)return;el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');el.scrollIntoView({behavior:'smooth',block:'start'});}
+ function fallback(txt){var t=document.createElement('textarea');t.value=txt;t.style.position='fixed';t.style.opacity=0;document.body.appendChild(t);t.focus();t.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(t);}
+ function copyLink(id){var url=location.origin+location.pathname+'#'+id;function done(){if(history.replaceState)history.replaceState(null,'','#'+id);say('🔗 ссылка на '+id.toUpperCase().replace('-',' ')+' скопирована');}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(done,function(){fallback(url);done();});}else{fallback(url);done();}}
+ document.addEventListener('click',function(e){
+  var cp=e.target.closest&&e.target.closest('[data-cp]');
+  if(cp){e.preventDefault();e.stopPropagation();copyLink(cp.getAttribute('data-cp'));return;}
+  var chip=e.target.closest&&e.target.closest('.fcp-chip[data-v]');
+  if(chip){var p=document.getElementById('fcpanel');if(p){chip.classList.toggle('off');p.classList.toggle('hide-'+chip.getAttribute('data-v'));}return;}
+  var row=e.target.closest&&e.target.closest('.fcp-row[data-go]');
+  if(row){var id=row.getAttribute('data-go');flash(document.getElementById(id));if(history.replaceState)history.replaceState(null,'','#'+id);return;}
+ });
+ window.addEventListener('load',function(){if(/^#fc-\\d+$/.test(location.hash)){var el=document.querySelector(location.hash);if(el)setTimeout(function(){flash(el);},140);}});
 })();
 </script></body></html>
 """
@@ -388,12 +514,19 @@ def build_page(code):
         P.append(SCRIPT_JS)
         return "".join(P)
 
+    # number every fact-check in document order (shared by panel + inline cards)
+    for i, f in enumerate(fcs):
+        f["_num"] = i + 1
+
     # filter bar + legend
     P.append('<div class="bar">')
     for k in ("solid", "check", "wrong", "metaphor", "unverified"):
         P.append(f'<span class="lg"><i style="background:{VERDICT[k]["c"]}"></i>{VERDICT[k]["label"]}</span>')
     P.append('<button class="flt" id="barfc">показать только блоки с проверками</button>')
     P.append('</div>')
+
+    # fact-check panel (top — red burning first, numbered, deep-linkable)
+    P.append(render_fc_panel(fcs))
 
     # cheat sheet
     P.append(render_cheatsheet(ann))
