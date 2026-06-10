@@ -24,7 +24,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from site_chrome import ASSET_V, MARK, head_block, body_script, html_attrs  # noqa: E402
 
-CH_CODES = {"ytcr", "ytcg", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch"}
+CH_CODES = {"ytcr", "ytcg", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "analiz", "tools"}
 ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
 EXCLUDE_SUBSTR = ("/_generated/deck/", "/thumbnail/")
 MARK_COMMENT = "<!-- " + MARK + " -->"  # детект по КОММЕНТАРИЮ, не по голой строке (иначе контент со словом rya-site-v1 ложно «уже пропатчен»)

@@ -23,7 +23,7 @@ import re
 import secrets
 import sys
 
-CH_CODES = {"ytcr", "ytcg", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch"}
+CH_CODES = {"ytcr", "ytcg", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "analiz", "tools"}
 ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
 EXCLUDE_SUBSTR = ("/_generated/deck/", "/thumbnail/")
 PORTAL_PWS = ["rs", "winston"]
@@ -32,6 +32,7 @@ PORTAL_PWS = ["rs", "winston"]
 CHWORD = {
     "ytcr": "realty", "ytcg": "connect", "ytrf": "reflux", "ytfp": "pravmir",
     "ytuvi": "gems", "ytmsen": "neuro", "ytciv": "civ", "ytagefree": "elders", "ytch": "burodd",
+    "analiz": "analiz", "tools": "ops",
 }
 # простые запоминающиеся слова (без двусмысленностей)
 NOUNS = [
