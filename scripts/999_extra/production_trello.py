@@ -2,10 +2,12 @@
 """
 production_trello.py — anti-drag production scoreboard feed, sourced from TRELLO.
 
-Trello is where Roman actually runs production. One board per channel (board name =
-channel code, e.g. YTCR). Lists = pipeline stages, unified across boards:
+Trello is where Roman actually runs production. One board per channel — board name
+STARTS with the channel code ("YTCR — Core Realty Dubai", reform 2026-06-12); the code
+is extracted via CH_RE. Lists = playbook §2 numbered statuses, unified across boards:
 
-    Start → Script → Editing → Ready → YT → Source → Archive
+    01Created → 02Script → 03Shooting → 04PreEditing → 05Editing → 06Review
+    → 07Revisions → 08Gate → 09Ready → 10Published → 11Archived
 
 Cards = projects; card name carries the project code (regex ^(YT[A-Z]{2,4}\\d+)_),
 same as the YTAI pipeline. "Days in stage" is REAL: taken from the card's last move
@@ -34,6 +36,7 @@ from pathlib import Path
 API = "https://api.trello.com/1"
 CODE_RE = re.compile(r"^(YT[A-Z]{2,4}\d+)_")
 BOARD_RE = re.compile(r"^YT[A-Z]")            # real YT channel boards only
+CH_RE = re.compile(r"^(YT[A-Za-z]+)")         # channel code = leading token of board name
 ENV_PATH = Path.home() / ".config/rya/trello.env"
 DEFAULT_STUCK_DAYS = 14
 
@@ -162,19 +165,21 @@ def main() -> int:
 
     boards = api_get("members/me/boards", key, token, filter="open", fields="name,closed")
     boards = [b for b in boards if not b.get("closed") and BOARD_RE.match(b.get("name", ""))]
+    for b in boards:                    # channel code = leading token ("YTCR — …" → YTCR)
+        b["ch"] = CH_RE.match(b["name"]).group(1).upper()
     if allow:
-        boards = [b for b in boards if b["name"].upper() in allow]
-    # dedupe by name (keep first open)
+        boards = [b for b in boards if b["ch"] in allow]
+    # dedupe by channel code (keep first open)
     seen, uniq = set(), []
     for b in sorted(boards, key=lambda b: b["name"]):
-        if b["name"].upper() in seen:
+        if b["ch"] in seen:
             continue
-        seen.add(b["name"].upper()); uniq.append(b)
+        seen.add(b["ch"]); uniq.append(b)
     boards = uniq
 
     projects, skipped_service, skipped_booking, skipped_closed = [], 0, 0, 0
     for b in boards:
-        ch = b["name"].upper()
+        ch = b["ch"]
         lists = api_get(f"boards/{b['id']}/lists", key, token, filter="all",
                         fields="name,pos,closed")
         lname = {l["id"]: l["name"] for l in lists}
