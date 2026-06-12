@@ -14,7 +14,7 @@ same as the YTAI pipeline. "Days in stage" is REAL: taken from the card's last m
 into its current list (updateCard action with data.listAfter), so STUCK detection works.
 
 Emits the same contract as production_board.py:  <repo>/web/_data/production.json
-Consumed by /production.html (RYA-bot wires it) and Rearden /roster + weekly nudge.
+Consumed by /production/ (RYA-bot wires it) and Rearden /roster + weekly nudge.
 
 Creds (read-only) come from an env file Winston provisioned — NEVER hardcode:
     ~/.config/rya/trello.env   →   TRELLO_KEY, TRELLO_TOKEN   (chmod 600)
@@ -58,34 +58,37 @@ def channel_color(ch: str, colors: dict) -> str:
 
 # Trello list name (lowercased) → (scoreboard label, order, class)
 # class: "flight" = in production · "done" = published · "service"/"booking" = hidden by default
+# Labels = EXACT Trello list names (playbook §2 tokens) — доска и кокпит говорят одним языком.
 STAGE_MAP = {
-    "start":              ("Очередь",            10, "flight"),
-    "script":             ("Сценарий",           20, "flight"),
-    "script approved":    ("Сценарий",           20, "flight"),  # YTGOLD variant
-    "editing":            ("Монтаж",             50, "flight"),
-    "ready":              ("К публикации",       70, "flight"),
-    "yt":                 ("Опубликовано",       90, "done"),
-    "youtube":            ("Опубликовано",       90, "done"),    # actual list name
-    "end":                ("Опубликовано",       90, "done"),    # YTCH separator
-    "vk":                 ("Опубликовано · VK",  91, "done"),    # YTGOLD/YTLM/YTMS
-    "source":             ("Source",             95, "service"),
-    "archive":            ("Архив",              99, "service"),
-    "archived":           ("Архив",              99, "service"),  # actual list name
-    "tentatively agreed": ("Бронь · предв.",      2, "booking"),
-    "under review":       ("Бронь · рассмотр.",   3, "booking"),
-    "not booked yet":     ("Бронь · не забр.",    1, "booking"),
-    # YTRF numbered scheme (board lists renamed 2026-06-11)
-    "01created":          ("Очередь",            10, "flight"),
-    "02script":           ("Сценарий",           20, "flight"),
-    "03shooting":         ("Съёмка",             30, "flight"),
-    "04preediting":       ("Pre-Edit",           40, "flight"),
-    "05editing":          ("Монтаж",             50, "flight"),
-    "06review":           ("Ревью",              60, "flight"),
-    "07revisions":        ("Правки",             65, "flight"),
-    "08gate":             ("QC-гейт",            68, "flight"),
-    "09ready":            ("К публикации",       70, "flight"),
-    "10published":        ("Опубликовано",       90, "done"),
-    "11archived":         ("Архив",              99, "service"),
+    # numbered playbook scheme (reform 2026-06-12, все доски)
+    "01created":          ("01Created",          10, "flight"),
+    "02script":           ("02Script",           20, "flight"),
+    "03shooting":         ("03Shooting",         30, "flight"),
+    "04preediting":       ("04PreEditing",       40, "flight"),
+    "05editing":          ("05Editing",          50, "flight"),
+    "06review":           ("06Review",           60, "flight"),
+    "07revisions":        ("07Revisions",        65, "flight"),
+    "08gate":             ("08Gate",             68, "flight"),
+    "09ready":            ("09Ready",            70, "flight"),
+    "10published":        ("10Published",        90, "done"),
+    "11archived":         ("11Archived",         99, "service"),
+    # booking-воронка YTCR (pre-pipeline, до 01Created)
+    "not booked yet":     ("Not booked yet",      1, "booking"),
+    "tentatively agreed": ("Tentatively agreed",  2, "booking"),
+    "under review":       ("Under review",        3, "booking"),
+    # legacy aliases (имена списков до реформы) — на случай отката/новой сырой доски
+    "start":              ("01Created",          10, "flight"),
+    "script":             ("02Script",           20, "flight"),
+    "script approved":    ("02Script",           20, "flight"),  # YTGOLD variant
+    "source":             ("03Shooting",         30, "flight"),
+    "editing":            ("05Editing",          50, "flight"),
+    "ready":              ("09Ready",            70, "flight"),
+    "yt":                 ("10Published",        90, "done"),
+    "youtube":            ("10Published",        90, "done"),
+    "end":                ("10Published",        90, "done"),    # YTCH separator
+    "vk":                 ("10Published",        91, "done"),    # YTGOLD/YTLM/YTMS
+    "archive":            ("11Archived",         99, "service"),
+    "archived":           ("11Archived",         99, "service"),
 }
 
 
@@ -163,7 +166,8 @@ def main() -> int:
     except Exception:
         pass
 
-    boards = api_get("members/me/boards", key, token, filter="open", fields="name,closed")
+    boards = api_get("members/me/boards", key, token, filter="open",
+                     fields="name,closed,shortUrl")
     boards = [b for b in boards if not b.get("closed") and BOARD_RE.match(b.get("name", ""))]
     for b in boards:                    # channel code = leading token ("YTCR — …" → YTCR)
         b["ch"] = CH_RE.match(b["name"]).group(1).upper()
@@ -209,6 +213,7 @@ def main() -> int:
                 "code": code,
                 "title": c["name"],
                 "board": b["name"],
+                "board_url": b.get("shortUrl"),
                 "list": raw_list,
                 "stage_label": label,
                 "stage_order": order,
@@ -233,6 +238,8 @@ def main() -> int:
         "generated": now.isoformat(timespec="seconds"),
         "source": "trello",
         "boards": [b["name"] for b in boards],
+        "board_links": [{"code": b["ch"], "name": b["name"], "url": b.get("shortUrl"),
+                         "color": channel_color(b["ch"], colors)} for b in boards],
         "stuck_days_threshold": args.stuck_days,
         "summary": {
             "total": len(projects),

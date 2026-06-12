@@ -66,6 +66,7 @@ BOARD_NAMES = {
     "YTGOLD":    "YTGOLD — Инвестиции в золото",
     "YTLM":      "YTLM — Лейкемия",
     "YTUAE":     "YTUAE — Интервью UAE",
+    "YTRSCEN":   "YTRSCEN — RomanSergeevCom EN",   # создана 2026-06-12 из YT Template
 }
 CLOSE_BOARDS = {"YT Demo", "YT Test"}
 SKIP_BOARDS = {"RomanSergeevCom"}
