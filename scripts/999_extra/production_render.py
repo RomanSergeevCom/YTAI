@@ -26,6 +26,12 @@ import re
 from pathlib import Path
 
 ANCHOR = '<main class="main">'   # stable: lives in preserved prefix, never regenerated
+# Роман 2026-07-03: 08Gate и 10Published на кокпите НЕ показывать — «не накапливать
+# списки того, что уже особо не изменить». Карточки остаются в фиде/Trello; скрыто
+# только на рендере (+ пометка в футере, чтобы не искать «куда делись»).
+HIDDEN_STAGES = {"08Gate", "10Published"}
+# Сервисные карточки-заглушки hub.rya.ae («Это название папки в гугл диске») — не работа.
+NOISE_TITLE_RE = re.compile(r"название\s+папки", re.I)
 CODE_RE = re.compile(r"^(YT[A-Z]{2,4}\d+)[_ ]+")
 TRELLO_HOME = "https://trello.com/u/romansergeevcom/boards"
 
@@ -103,9 +109,20 @@ def main() -> int:
     s = feed.get("summary", {})
     gen = (feed.get("generated") or "")[:16].replace("T", " ")
 
+    # видимое = всё, кроме HIDDEN_STAGES; счётчики страницы считаем по видимому
+    def stage_of(p):
+        return p.get("stage_label") or p.get("list") or "?"
+    visible = [p for p in projects if stage_of(p) not in HIDDEN_STAGES
+               and not NOISE_TITLE_RE.search(p.get("title") or "")]
+    hidden = [p for p in projects if stage_of(p) in HIDDEN_STAGES]
+    n_hidden_gate = sum(1 for p in hidden if stage_of(p) == "08Gate")
+    n_hidden_pub = sum(1 for p in hidden if stage_of(p) == "10Published")
+    n_vis_inflight = sum(1 for p in visible if p.get("in_flight"))
+    n_vis_stuck = sum(1 for p in visible if p.get("stuck"))
+
     # ---- columns: group in-flight + done by stage, ordered by stage_order ----
     stages: dict[tuple, dict] = {}
-    for p in projects:
+    for p in visible:
         if p.get("stage_class") in ("service",) and False:
             continue
         key = (p.get("stage_order", 0), p.get("stage_label", p.get("list", "?")))
@@ -132,7 +149,7 @@ def main() -> int:
     board_links = feed.get("board_links") or []
     blmap = {b.get("code"): b for b in board_links}
     ch_counts: dict[str, dict] = {}
-    for p in projects:
+    for p in visible:
         c = ch_counts.setdefault(p["channel_id"], {"n": 0, "color": p.get("channel_color") or "#8A92A8"})
         if p.get("in_flight"):
             c["n"] += 1
@@ -149,8 +166,8 @@ def main() -> int:
             f'{esc(k)} <span class="cnt">{v["n"]}</span>{tr}</span>')
     pills = ('        <span class="flt-pill active" data-ch="*" title="Показать все каналы">Все</span>\n'
              + "\n".join(pill_rows))
-    n_booking = sum(1 for p in projects if p.get("stage_class") == "booking")
-    n_service = sum(1 for p in projects if p.get("stage_class") == "service")
+    n_booking = sum(1 for p in visible if p.get("stage_class") == "booking")
+    n_service = sum(1 for p in visible if p.get("stage_class") == "service")
 
     # ---- drawer: Trello boards quick-links section ----
     if board_links:
@@ -174,7 +191,7 @@ def main() -> int:
         boards_section = ""
 
     # ---- drawer: top-stuck action list ----
-    stuck = sorted([p for p in projects if p.get("stuck")],
+    stuck = sorted([p for p in visible if p.get("stuck")],
                    key=lambda p: (p.get("days_since_update") or 0), reverse=True)[:12]
     if stuck:
         rows = "\n".join(
@@ -190,10 +207,10 @@ def main() -> int:
             '  <aside class="drawer">\n'
             '    <div class="drw-head">\n'
             '      <div class="breadcrumb"><b>Анти-drag</b> › добей в первую очередь</div>\n'
-            f'      <h2>🔴 Дольше всех висят — {len(stuck)} из {s.get("stuck", 0)}</h2>\n'
+            f'      <h2>🔴 Дольше всех висят — {len(stuck)} из {n_vis_stuck}</h2>\n'
             '      <div class="meta-row">\n'
-            f'        <span class="chip stage">● {s.get("in_flight", 0)} в работе</span>\n'
-            f'        <span class="chip due-warn">⏱ {s.get("stuck", 0)} застряли &gt;{feed.get("stuck_days_threshold", 14)}д</span>\n'
+            f'        <span class="chip stage">● {n_vis_inflight} в работе</span>\n'
+            f'        <span class="chip due-warn">⏱ {n_vis_stuck} застряли &gt;{feed.get("stuck_days_threshold", 14)}д</span>\n'
             '      </div>\n'
             '    </div>\n'
             '    <div class="drw-section">\n'
@@ -236,7 +253,7 @@ def main() -> int:
     <div class="toolbar">
       <div class="toolbar-left">
         <h1>Production board</h1>
-        <span class="meta">{s.get('in_flight',0)} в работе · {s.get('stuck',0)} застряли &gt;{feed.get('stuck_days_threshold',14)}д · {esc(len(feed.get('boards',[])))} каналов · обновлено {esc(gen)} UTC</span>
+        <span class="meta">{n_vis_inflight} в работе · {n_vis_stuck} застряли &gt;{feed.get('stuck_days_threshold',14)}д · {esc(len(feed.get('boards',[])))} каналов · обновлено {esc(gen)} UTC</span>
       </div>
       <div class="toolbar-right" style="gap:8px">
         <a class="btn primary" href="{TRELLO_HOME}" target="_blank" rel="noopener">{TRELLO_ICO} Открыть Trello</a>
@@ -271,10 +288,10 @@ def main() -> int:
     <!-- FOOTER STATS (generated) -->
     <div class="foot-stats">
       <div class="group">
-        <span class="pill"><b style="color:var(--accent)">{s.get('in_flight',0)}</b> в работе</span>
-        <span class="pill"><b style="color:#FCA5A5">{s.get('stuck',0)}</b> застряли</span>
-        <span class="pill"><b>{s.get('done',0)}</b> опубликовано</span>
+        <span class="pill"><b style="color:var(--accent)">{n_vis_inflight}</b> в работе</span>
+        <span class="pill"><b style="color:#FCA5A5">{n_vis_stuck}</b> застряли</span>
         <span class="pill">{esc(len(feed.get('boards',[])))} каналов</span>
+        <span class="pill" style="opacity:.6" title="Скрыто с доски (Роман: не копить готовое) — живут в Trello">скрыто: 08Gate {n_hidden_gate} · 10Published {n_hidden_pub}</span>
       </div>
       <div class="group" style="color:var(--text-mute);font-size:11px">
         <span>Источник: <a href="{TRELLO_HOME}" target="_blank" rel="noopener" style="color:var(--text-dim);text-decoration:underline">Trello ↗</a></span>
