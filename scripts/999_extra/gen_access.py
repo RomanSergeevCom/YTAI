@@ -23,8 +23,11 @@ import re
 import secrets
 import sys
 
-CH_CODES = {"ytcr", "ytcg", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "analiz", "tools"}
+CH_CODES = {"ytcr", "ytcg", "ytcgru", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "ytaz", "ytlab", "ytuae", "ytrscen", "analiz", "playbook", "method", "wvp", "kb"}
 ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
+# Под-зоны со СВОИМ паролем, вложенные в путь другого канала: точный url-ключ → код под-зоны.
+# /ytciv/worldviewprojection/ физически под ytciv, но имеет отдельный пароль (под-зона wvp).
+PAGE_CHANNEL_OVERRIDE = {"/ytciv/worldviewprojection/": "wvp"}
 EXCLUDE_SUBSTR = ("/_generated/deck/", "/thumbnail/")
 PORTAL_PWS = ["rs", "winston"]
 
@@ -32,7 +35,9 @@ PORTAL_PWS = ["rs", "winston"]
 CHWORD = {
     "ytcr": "realty", "ytcg": "connect", "ytrf": "reflux", "ytfp": "pravmir",
     "ytuvi": "gems", "ytmsen": "neuro", "ytciv": "civ", "ytagefree": "elders", "ytch": "burodd",
-    "analiz": "analiz", "tools": "ops",
+    "ytaz": "nezabudka", "analiz": "analiz", "playbook": "ops", "method": "method",
+    "wvp": "worldview", "ytlab": "lab", "ytuae": "uae", "ytrscen": "books",
+    "ytcgru": "connectru", "ytep": "burma",
 }
 # простые запоминающиеся слова (без двусмысленностей)
 NOUNS = [
@@ -54,9 +59,17 @@ def url_key(rel):
     return re.sub(r"index\.html?$", "", p, flags=re.I)
 
 
+KB_GATED = {"playbook": "playbook", "method": "method", "yt-upload": "kb"}
+
+
 def channel_of(rel):
-    seg = rel.replace(os.sep, "/").split("/")[0].lower()
+    parts = rel.replace(os.sep, "/").split("/")
+    seg = parts[0].lower()
     seg = ALIAS.get(seg, seg)
+    if seg == "kb":
+        if len(parts) >= 2 and parts[1] and not parts[1].lower().startswith("index.htm"):
+            return KB_GATED.get(parts[1].lower())
+        return "kb"
     return seg if seg in CH_CODES else None
 
 
@@ -166,7 +179,7 @@ def main():
         except Exception:
             pass
         key = url_key(rel)
-        ch = channel_of(rel)
+        ch = PAGE_CHANNEL_OVERRIDE.get(key) or channel_of(rel)
         if ch is None:
             acc["pages"].pop(key, None)  # портал-уровень (/, /channel.html, …) → только portal-пароль
             continue

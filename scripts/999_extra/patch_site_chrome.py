@@ -24,17 +24,29 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from site_chrome import ASSET_V, MARK, head_block, body_script, html_attrs  # noqa: E402
 
-CH_CODES = {"ytcr", "ytcg", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "analiz", "tools"}
+CH_CODES = {"ytcr", "ytcg", "ytcgru", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "ytaz", "ytlab", "ytuae", "ytrscen", "ytep", "analiz", "playbook", "method", "wvp", "kb"}
 ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
+# Под-зоны со СВОИМ паролем, физически вложенные в путь другого канала:
+# точный url-ключ страницы → код под-зоны (перебивает channel_of по первому сегменту).
+# /ytciv/worldviewprojection/ живёт под ytciv, но гейтится отдельным паролем wvp.
+PAGE_CHANNEL_OVERRIDE = {"/ytciv/worldviewprojection/": "wvp"}
 EXCLUDE_SUBSTR = ("/_generated/deck/", "/thumbnail/")
 MARK_COMMENT = "<!-- " + MARK + " -->"  # детект по КОММЕНТАРИЮ, не по голой строке (иначе контент со словом rya-site-v1 ложно «уже пропатчен»)
 HTML_TAG_RE = re.compile(r"<html\b(?:\"[^\"]*\"|'[^']*'|[^>])*>", re.I)  # кавычко-устойчиво (атрибут со знаком > не ломает)
 ATTR_STRIP_RE = re.compile(r'\s+data-(channel|page|rya-theme|rya-haschrome|rya-hub)="[^"]*"')
 
 
+KB_GATED = {"playbook": "playbook", "method": "method", "yt-upload": "kb", "channel-launch": "playbook"}
+
+
 def channel_of(rel):
-    seg = rel.replace(os.sep, "/").split("/")[0].lower()
+    parts = rel.replace(os.sep, "/").split("/")
+    seg = parts[0].lower()
     seg = ALIAS.get(seg, seg)
+    if seg == "kb":
+        if len(parts) >= 2 and parts[1] and not parts[1].lower().startswith("index.htm"):
+            return KB_GATED.get(parts[1].lower())
+        return "kb"
     return seg if seg in CH_CODES else None
 
 
@@ -90,9 +102,9 @@ def is_hub(key):
 
 
 def inject(h, rel):
-    ch = channel_of(rel)
-    theme = classify(h)
     key = url_key(rel)
+    ch = PAGE_CHANNEL_OVERRIDE.get(key) or channel_of(rel)
+    theme = classify(h)
     attrs = html_attrs(ch, key, theme, has_chrome(h), is_hub(key))
     h, ok = set_html_attrs(h, attrs)
     # head: перед </head>; фолбэки — после <head>, перед <body>, в начало
