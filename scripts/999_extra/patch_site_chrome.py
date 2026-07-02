@@ -24,7 +24,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from site_chrome import ASSET_V, MARK, head_block, body_script, html_attrs  # noqa: E402
 
-CH_CODES = {"ytcr", "ytcg", "ytcgru", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "ytaz", "ytlab", "ytuae", "ytrscen", "ytep", "analiz", "playbook", "method", "wvp", "kb"}
+CH_CODES = {"ytcr", "ytcg", "ytcgru", "ytcn", "ytgold", "ytlm", "ytms", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "ytaz", "ytlab", "ytuae", "ytrscen", "ytep", "analiz", "playbook", "method", "wvp", "kb"}
 ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
 # Под-зоны со СВОИМ паролем, физически вложенные в путь другого канала:
 # точный url-ключ страницы → код под-зоны (перебивает channel_of по первому сегменту).
