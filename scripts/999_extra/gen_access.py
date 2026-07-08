@@ -23,7 +23,7 @@ import re
 import secrets
 import sys
 
-CH_CODES = {"ytcr", "ytcg", "ytcgru", "ytcn", "ytgold", "ytlm", "ytms", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "ytaz", "ytlab", "ytuae", "ytrscen", "analiz", "playbook", "method", "wvp", "kb"}
+CH_CODES = {"ytcr", "ytcg", "ytcgru", "ytcn", "ytgold", "ytlm", "ytms", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "ytaz", "ytlab", "ytuae", "ytrscen", "ytep", "rsc", "analiz", "playbook", "method", "wvp", "kb"}
 ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
 # Под-зоны со СВОИМ паролем, вложенные в путь другого канала: точный url-ключ → код под-зоны.
 # /ytciv/worldviewprojection/ физически под ytciv, но имеет отдельный пароль (под-зона wvp).
@@ -38,6 +38,7 @@ CHWORD = {
     "ytaz": "nezabudka", "analiz": "analiz", "playbook": "ops", "method": "method",
     "wvp": "worldview", "ytlab": "lab", "ytuae": "uae", "ytrscen": "books",
     "ytcgru": "connectru", "ytep": "burma", "ytcn": "nootro", "ytgold": "gold", "ytlm": "leikoz", "ytms": "ms",
+    "rsc": "prod",
 }
 # простые запоминающиеся слова (без двусмысленностей)
 NOUNS = [

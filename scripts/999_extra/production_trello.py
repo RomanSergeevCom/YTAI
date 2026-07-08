@@ -34,9 +34,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 API = "https://api.trello.com/1"
-CODE_RE = re.compile(r"^(YT[A-Z]{2,4}\d+)_")
-BOARD_RE = re.compile(r"^YT[A-Z]")            # real YT channel boards only
-CH_RE = re.compile(r"^(YT[A-Za-z]+)")         # channel code = leading token of board name
+# RSC = разовые продакшн-проекты (анимация), псевдо-канал в той же экосистеме (Hybrid:
+# стандартные YT-этапы). Регэкспы принимают и YT-каналы, и код RSC. \d+ = трёхзначная нумерация.
+CODE_RE = re.compile(r"^((?:YT[A-Z]{2,4}|RSC)\d+)_")
+BOARD_RE = re.compile(r"^(?:YT[A-Z]|RSC)")    # real YT channel boards + RSC production board
+CH_RE = re.compile(r"^(YT[A-Za-z]+|RSC)")     # channel code = leading token of board name
 ENV_PATH = Path.home() / ".config/rya/trello.env"
 DEFAULT_STUCK_DAYS = 14
 
@@ -48,6 +50,7 @@ FALLBACK_COLORS = {
     "YTLM":   "#A3E635",
     "YTMS":   "#38BDF8",   # kin to YTMSEN #4EA8DE
     "YTUAE":  "#34D399",
+    "RSC":    "#F59E0B",   # янтарь — разовые продакшн-проекты (не YouTube-канал)
 }
 FALLBACK_PALETTE = ["#60A5FA", "#FB923C", "#E879F9", "#F472B6", "#2DD4BF", "#FACC15"]
 
