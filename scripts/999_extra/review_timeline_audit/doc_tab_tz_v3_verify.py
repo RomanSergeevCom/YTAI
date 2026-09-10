@@ -18,7 +18,7 @@ DOC_ID = DOCS['01']
 TAB_TITLE = 'ТЗ монтажёру · v3'
 N_CH = 9                                   # 09.09: глава «Техпаспорт» снята Романом
 MIN_IMG_W = 250
-TC_RE = re.compile(r'(?<![\d:])\d{1,2}:\d{2}(?:\s*[–-]\s*\d{1,2}:\d{2})?(?![\d:])')
+TC_RE = re.compile(r'(?<![\d:])~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?(?![\d:])')  # доли секунды: «2:46.0–2:48.6» — один таймкод
 
 pravki = json.load(open(M / 'pravki_v2.json'))['all']
 shots = json.load(open(M / 'shots_ids.json'))
