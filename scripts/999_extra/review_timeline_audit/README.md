@@ -1,0 +1,67 @@
+# review_timeline_audit — 6-слойный ревью-таймлайн ката + аудит экранов
+
+KB-страница метода: https://yt.rya.ae/kb/review-timeline/ (4.6). Эталон: YTUVI01 Review_v6 (08–09.09.2026),
+рабочая копия с данными — `~/Downloads/YTUVI01_Sonya_cut/work/v6/` (+ `../montage/` — pravki_v2.json, лист, док).
+Канон слоёв — память `feedback_review_6layer_timeline`: V1 оригинал · V2 футажи · V3 инфографика · V4 ТЗ · V5 стрелки · V6 структура.
+
+## v7 (10.09.2026) — ТЗ «как карта структуры», крупные превью, суммы цифрами, выделение правок
+Запрос Романа (тикет Review v7): сплошной текст не читается → каждый таймкод отдельной строкой («таймкод ▸ пункт»,
+эталон — кадр карты структуры); картинки справа — крупные, «про что говоришь»; суммы цифрами; в опечатках выделять
+исправленное. Скрипты `doc_tab_tz_v3*.py` и `tz_sheet.py` живут в `montage/` рядом с pravki (здесь — копии).
+
+| Шаг | Скрипт | Что делает |
+|---|---|---|
+| 0 | `s13_doc_edits.py` | правки заказчика во вкладке ДО регенерации: вкладка против `build_rows()` сборщика → пропавшие строки (`status: rejected`), дописки (`roman_comment`), Drive-комменты; `--bk <снимок>` — против чистой части старого сборщика |
+| 1 | `s10_format_tz.py` | parts → nado: элемент блока = строка или `{"h","items"}`; пункт «M:SS ▸ …» (выравнивание U+2007 после чистки); `@prog:NN`; списки структура/термины/локации — из данных графики; `typo` → «было «…» → стало «…»»; lint `lint_v7.json` |
+| 2 | `s11_apply_sources.py` | источники (у драфтов — коротко; старые авто-тексты перезаписываются) |
+| 3 | `make_infographics_v6.py C G H` | fix-драфты: изменённые буквы цветом с подчёркиванием, многострочные, `font:sans`, `badge:above`; цены `_A/_B` |
+| 4 | `make_review_v6.py` + `mockbuild_v6.js` | варианты А/Б встык на V3; `NO_ARROW` (снятые находки без стрелок V5); `SUB_DODGE` |
+| 5 | `s12_doc_previews.py --render/--upload/--apply` | превью для дока/листа: оверлей на кадре + кроп по альфе (без полосы водяного знака), БЫЛО/СТАЛО, кроп кадра со стрелкой, кадр ТЗ без картинки; поправки `previews_v7.json`; `--apply` — после каждого s10+s11 |
+| 6–8 | `s9_materials_drive.py` → `tz_sheet.py` → `doc_tab_tz_v3.py` + `_verify.py` | Drive (md5-пропуск, варианты fix), лист (превью в =IMAGE), док (картинка в своём абзаце 262pt, подпись, моно-таймкоды, красные буквы, backoff) |
+| — | `run_v7.sh [--from STEP] [--until STEP]` | всё по порядку с логом `v7.log` |
+
+`v7_tools/` — доводка агентами: `listify_rules.md` + `guard_v7.py` (кодовый страж: таймкоды/ссылки/слова, ≤1 таймкода в строке),
+`wf_listify_v7.js` (переписать ТЗ, которые ловит lint, → скептик), `merge_listify.py` (в `tz_overrides.json` через страж),
+`wf_preview_qa_v7.js` (QA превью: пробный кроп, подпись «таймкод · что видно») + `apply_qa.py` (в `previews_v7.json`),
+`export_tab_pdf.py` (вкладка → PDF → PNG для глазной проверки). Общий модуль диффа — `typo_diff.py`.
+
+## Как повторить на новом проекте
+1. Скопировать папку в `{project}/…/work/v6/` рядом с `montage/` (нужны `pravki_v2.json`, `shots_ids.json`,
+   `proj_material_ids.json`, `drive_clips.json`, `notes_sheet.json`).
+2. Поправить константы в скриптах: `PROJECT`, `RENDER` (рендер монтажёра, 25p), `WORDS` (words.json транскрипта),
+   `CHAPTERS` (главы: сек, цвет, имя) в `make_review_v6.py`/`s1_screens.py`/`s6_pack_chapters.py`,
+   `SUB`/`PROG`/`CH_NAME` в `make_infographics_v6_data.py`, `TERMS`/`LOCS` в `terms_catalog.py`,
+   `MATERIALS_ID` (Drive-папка Review_materials) и `SHOTS_REMOTE` в `s9_materials_drive.py`.
+3. `./run_prep.sh` — ночь, автономно: кадры → OCR (vision_ocr_ru) → Qwen2.5-VL-7B → Qwen3-8B, селфчеки `s5_selfcheck.py`, TG.
+4. `python3 s6_pack_chapters.py` → `audit_pack/`; аудит: `Workflow({scriptPath: wf_audit_v6.js, args: {packs, existing_tz_file, inventory_file, inventory_count}})`,
+   результат → `audit_findings_v6.json` (поле `confirmed`).
+5. `python3 s10_format_tz.py && python3 s11_apply_sources.py` — ТЗ блоками + источники картинок.
+6. `./run_post.sh` — s8 (находки → ТЗ) → рендер G → JSON → превью → мок-сборка → Drive → лист → док + verify.
+7. Панель UXP → Review → выбрать `{CODE}_review_v6.json` → секвенция `{CODE}_5_Review_v6_tz_v{N}`.
+
+## Скрипты
+| файл | роль |
+|---|---|
+| run_prep.sh / s1–s5 | кадры 1 fps 1080p, OCR с bbox, инвентарь экранов, VLM-транскрипция, LLM-корректор, селфчеки |
+| s6_pack_chapters.py | пакеты для агентов по главам |
+| wf_audit_v6.js | Workflow: аудиторы по главам → 3 скептика на находку → критик полноты |
+| s8_apply_audit.py | находки → pravki (ТЗ-N+, `source: audit_v6`) + audit_v6.json (стрелки/исправления) |
+| s11_apply_sources.py | источник каждой картинки-материала → строка «📚 источник»: книга/журнал, страница, ссылка на сам PDF в Drive-зеркале архива (сверка md5 с Digital_Originals — библиограф-агент) |
+| s10_format_tz.py | ТЗ в читаемый вид: блоки ❌ СЕЙЧАС · ✅ СДЕЛАТЬ · 📋 СПИСОК · 📍 ГДЕ · 📚 ИСТОЧНИК · 🎬 НА ТАЙМЛАЙНЕ · 💬 РОМА (фиолетовым). Источник истины — `p['parts']`, ручные правки — `tz_overrides.json` |
+| make_infographics_v6.py стадия H | карта структуры одним кадром (главы+подглавы) + «карта выпуска» с «ВЫ ЗДЕСЬ» на каждую главу |
+| make_infographics_v6.py (+_data, terms_catalog, terms_index) | PNG 4K: термины, мини-карты (Natural Earth `geo/ne_50m_countries.geojson` — скачать), подглавы, прогресс, прозрачные панели, стрелки, fix-патчи, LT |
+| make_review_v6.py | раскладка ytai-part-v1 по 6 трекам, арбитраж наездов, сетка 25p |
+| s7_preview_sheet.py / preview.py | композиты оверлеев на кадрах для самопроверки |
+| mockbuild_v6.js | прогон JSON через partsBuilder на mock-ppro (0 ошибок = можно строить) |
+| s9_materials_drive.py | Drive Review_materials/v6_* + коммент на каждом файле; кадры → shots для =IMAGE |
+| tz_sheet.py / doc_tab_tz_v3.py + _verify.py | лист «ТЗ монтажёру», вкладка дока (ALL PASS) |
+
+Статусы в pravki: `status: rejected` (Роман снял строку в доке — номер сохранён, строка исчезает везде),
+`decision` (⏳ решение Романа), `source: audit_v6 | structure_v6`.
+
+## Грабли
+- alpha-рендер: `html,body{background:transparent}`; chrome-headless-shell (GUI-Chrome в headless виснет).
+- Стиллы ≤4,8 с; tc на сетке 25p; `sequence_name` не кончать на `_v\d`.
+- OCR путает Й/И — якоря селфчека нормализовать; стрелку ставить на секунду ДОПИСАННОГО титра.
+- Session limit агентов (сброс 10:00 МСК) — аудиторов первыми, верификация pipeline'ом, результат сохранять сразу; недопроверенное — своими глазами по кадрам.
+- Верх кадра занят титрами ката: подглавы/прогресс слева-посередине, термины/карты справа-посередине.
