@@ -408,6 +408,7 @@ FIX_CSS = f"""
 .fixpatch {{ position:absolute; background:rgba(10,10,14,.94); border-radius:18px; }}
 .fixtxt {{ position:absolute; font-family:Georgia,'Times New Roman',serif; font-weight:bold; color:#C1272D;
   white-space:nowrap; letter-spacing:.02em; line-height:1; }}
+.fixtxt sub, .fixtxt sup {{ font-size:.6em; line-height:0; }}
 .fixbadge {{ position:absolute; background:#2E8B3E; color:#fff; font-family:Helvetica,Arial,sans-serif;
   font-size:30px; font-weight:bold; padding:10px 22px; border-radius:12px; letter-spacing:.08em; }}
 """
@@ -491,14 +492,24 @@ def fix_spans(num, frag):
     return sorted(set(spans))
 
 
+_SUB = str.maketrans('₀₁₂₃₄₅₆₇₈₉', '0123456789')
+_SUP = str.maketrans('⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻', '0123456789+−')
+
+
+def subsup(s):
+    """индексы формул настоящими <sub>/<sup> (в Georgia «₂₃» падали на базовую линию — QA 10.09, ТЗ-34)"""
+    s = re.sub('[₀-₉]+', lambda m: '<sub>' + m.group(0).translate(_SUB) + '</sub>', s)
+    return re.sub('[⁰¹²³⁴-⁹⁺⁻]+', lambda m: '<sup>' + m.group(0).translate(_SUP) + '</sup>', s)
+
+
 def hl_html(text, spans, col):
     out, k = [], 0
     for s, e in spans:
-        out.append(esc(text[k:s]))
+        out.append(subsup(esc(text[k:s])))
         out.append(f'<span style="color:{col}; text-decoration:underline; text-decoration-thickness:.07em; '
-                   f'text-underline-offset:.12em">{esc(text[s:e])}</span>')
+                   f'text-underline-offset:.12em">{subsup(esc(text[s:e]))}</span>')
         k = e
-    out.append(esc(text[k:]))
+    out.append(subsup(esc(text[k:])))
     return ''.join(out)
 
 
@@ -546,7 +557,7 @@ if want('G'):
             if fx and fx.get('text'):
                 fh = h * 2160
                 fs = max(48, min(fh * 0.78, 420))
-                pad = 40
+                pad = fx.get('pad', 40)                           # fix.pad — узкая заплатка, чтобы не резать соседние буквы
                 try:
                     bgc, fgc = sample_colours(a['frame'], (x, y, w, h))
                 except Exception:

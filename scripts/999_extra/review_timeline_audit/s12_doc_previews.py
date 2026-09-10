@@ -334,9 +334,13 @@ def apply():
     man = json.load(open(OUT / 'manifest.json'))
     shots = json.load(open(M / 'shots_ids.json'))
     ovr = json.load(open(OVR)) if OVR.exists() else {}
-    n_prev = n_new = n_att = 0
+    seg_t = {}
+    for s in json.load(open(REVIEW))['segments']:
+        seg_t.setdefault(Path(s['source_path']).name, []).append(s['timeline_in_sec'])
+    n_prev = n_new = n_att = n_cap = 0
     for i, p in enumerate(d['all']):
         num = f'ТЗ-{i + 1:02d}'
+        tz_tc = tcs(tc_first(p.get('tc_range'))) if tc_first(p.get('tc_range')) is not None else ''
         mats = [mr for mr in (p.get('material_rich') or []) if mr.get('gen') != 's12']
         for mr in mats:
             for k in ('preview', 'cap', 'cap_replaces_t'):
@@ -355,13 +359,36 @@ def apply():
                 else:
                     mr['cap'], mr['cap_replaces_t'] = mk_cap(e, mr)
                 n_prev += 1
+            elif mr.get('img') and mr['img'] in shots:          # QA 10.09: подпись «таймкод · что видно» под КАЖДОЙ картинкой
+                o = ovr.get('img:' + mr['img'], {})
+                mr['cap'], mr['cap_replaces_t'] = (o['cap'], True) if o.get('cap') else auto_cap(mr, seg_t, tz_tc)
+                n_cap += 1
         for e in man['tz'].get(num, []):
             if e['preview'] in shots:
                 mats.append({'t': e['cap'], 'preview': e['preview'], 'cap': e['cap'], 'cap_replaces_t': True, 'gen': 's12'})
                 n_new += 1
         p['material_rich'] = mats
     json.dump(d, open(M / 'pravki_v2.json', 'w'), ensure_ascii=False, indent=1)
-    print(f'apply: превью у {n_prev} материалов · кадров ТЗ добавлено {n_new} · драфтов привязано {n_att}')
+    print(f'apply: превью у {n_prev} материалов · подписей у прочих картинок {n_cap} · кадров ТЗ добавлено {n_new} · '
+          f'драфтов привязано {n_att}')
+
+
+_TCX = re.compile(r'@?(\d{1,2}:\d{2}(?:–\d{1,2}:\d{2})?)')
+
+
+def auto_cap(mr, seg_t, tz_tc):
+    """подпись «таймкод · что видно» для картинок без превью (фото, рефы, непрозрачные драфты):
+    таймкод — из текста материала («Кадр @5:40 …»), иначе из раскладки таймлайна, иначе ТЗ"""
+    t = clean(mr.get('t'))
+    m = _TCX.search(t)
+    tc = m.group(1) if m else (tcs(seg_t[mr['img']][0]) if seg_t.get(mr.get('img')) else tz_tc)
+    what = _TCX.sub('', t, count=1) if m else t
+    what = re.sub(r'^\s*[•·—:-]*\s*(Драфт(?:-мокап)?|Мокап|Кадр(?: ката)?|Пример кадра|Реф)\b\s*[:—-]?\s*', '', what, flags=re.I)
+    what = clean(what).strip(' •·—-:')
+    cap = f'{tc} · {what}' if tc and what else (what or tc)
+    if len(cap) > 110:
+        cap = cap[:105].rsplit(' ', 1)[0] + '…'
+    return cap, len(t) <= 110
 
 
 if __name__ == '__main__':

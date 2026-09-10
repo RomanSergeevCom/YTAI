@@ -85,11 +85,34 @@ def anchor_words(t0, t1):
     return clean(' '.join(w for w, s in _ws if t0 - 2 <= s <= t1 + 2))[:160]
 
 
-def short_why(t, lim=160):
+ABBR = re.compile(r'(?:\b(?:англ|лат|ср|напр|см|рис|стр|г|гг|в|вв|др|пр|ок|т\.\s?е|т\.\s?ч|т\.\s?к|№)\.)$', re.I)
+
+
+def short_why(t, lim=220):
+    """«почему» одной строкой: целиком, если короткое; иначе первая фраза (не рвём на «англ.», «т. ч.»)"""
     t = clean(t)
-    m = re.match(r'(.+?[.!?])(\s|$)', t)
-    s = m.group(1) if m and len(m.group(1)) >= 25 else t
-    return s if len(s) <= lim else s[:lim - 1].rsplit(' ', 1)[0] + '…'
+    if len(t) <= lim:
+        return t
+    for m in re.finditer(r'[.!?](?=\s|$)', t):
+        head = t[:m.end()]
+        if len(head) >= 40 and not ABBR.search(head):
+            if len(head) <= lim:
+                return head
+            break
+    return t[:lim - 1].rsplit(' ', 1)[0] + '…'
+
+
+KIND_UP = {'typo': 'ОПЕЧАТКА', 'grammar': 'ГРАММАТИКА', 'fact': 'ФАКТ-ОШИБКА', 'currency': 'ФОРМАТ ВАЛЮТЫ/ЧИСЛА',
+           'language': 'АНГЛИЙСКИЙ БЕЗ ПЕРЕВОДА', 'mismatch': 'ЭКРАН ≠ ОЗВУЧКА', 'design': 'ВЁРСТКА', 'other': 'ПРАВКА'}
+
+
+def audit_title(f):
+    """заголовок аудит-ТЗ без обрыва посреди слова (было: первые 40 знаков + «»…»)"""
+    raw = re.sub(r'\s*\n\s*', ' / ', str(f.get('on_screen_text') or ''))
+    raw = clean(re.sub(r'\[([^\]]*)\]', r'\1', raw))
+    if len(raw) > 64:
+        raw = raw[:62].rsplit(' ', 1)[0].rstrip(' ,;:/·—') + '…'
+    return f"{KIND_UP.get(f.get('kind'), 'ПРАВКА')}: «{raw}»"
 
 
 def money(s):
@@ -101,12 +124,24 @@ def money(s):
 
 
 def split_src(ev):
-    """evidence → (текст без URL, [ссылки])"""
+    """evidence → (текст без URL, [ссылки]); без мусора «—;», «: ;» и точки на конце ссылки"""
     ev = clean(ev)
-    urls = URL_RE.findall(ev)
+    urls = [u.rstrip('.') for u in URL_RE.findall(ev)]
     txt = URL_RE.sub('', ev)
-    txt = re.sub(r'\s*[;·,]\s*(?=[;·,]|$)', '', txt).strip(' ;·,—-')
+    txt = re.sub(r'\s*—\s*;', ';', txt)
+    txt = re.sub(r':\s*;', ':', txt)
+    txt = re.sub(r'\s*[;·,]\s*(?=[;·,]|$)', '', txt).strip(' ;·,—-:')
     return txt, urls
+
+
+def src_el(t, urls):
+    """источник: по мысли на строку — «;» делит мысли, ссылки отдельными пунктами"""
+    chunks = [c.strip(' ;·') for c in re.split(r';\s+', t) if c.strip(' ;·')] if t else []
+    if not chunks and not urls:
+        return None
+    if len(chunks) <= 1 and not urls:
+        return chunks[0]
+    return {'h': chunks[0] if chunks else 'ссылки', 'items': chunks[1:] + urls}
 
 
 # ── генераторы списков из данных ──
@@ -144,20 +179,28 @@ def _grouped(entries):
     return sorted(by.items(), key=lambda kv: (-len(kv[1]), min(e['t'] for e in kv[1])))
 
 
+def hit_txt(e):
+    """фраза упоминания: озвучка — «…фраза…»; экранный титр (OCR) — помечен, «|» → «/»"""
+    h = clean(e['hit'])
+    if e.get('src') != 'vo':
+        return f"титр на экране: «{h.replace(' | ', ' / ').strip(' |/')}»"
+    return f'«…{h}…»'
+
+
 def gen_terms():
     meta = {t[0]: (t[2], t[3]) for t in TERMS}
     out = []
     for k, es in _grouped(TJ['terms']):
         title, sub = meta.get(k, (k.upper(), ''))
         out.append({'h': f'{title} ({sub}) — {len(es)}×' if sub else f'{title} — {len(es)}×',
-                    'items': [f"{e['tc']} ▸ «…{clean(e['hit'])}…»" for e in sorted(es, key=lambda e: e['t'])]})
+                    'items': [f"{e['tc']} ▸ {hit_txt(e)}" for e in sorted(es, key=lambda e: e['t'])]})
     return out
 
 
 def gen_locs():
     meta = {l[0]: l[4] for l in LOCS}
     return [{'h': f'{meta.get(k, k.upper())} — {len(es)}×',
-             'items': [f"{e['tc']} ▸ «…{clean(e['hit'])}…»" for e in sorted(es, key=lambda e: e['t'])]}
+             'items': [f"{e['tc']} ▸ {hit_txt(e)}" for e in sorted(es, key=lambda e: e['t'])]}
             for k, es in _grouped(TJ['locs'])]
 
 
@@ -187,11 +230,10 @@ def parts_from_audit(p):
             do.append(f'Заменить титр на «{fix}»' if len(fix) <= 70 and not fix[:1].islower()
                       and not fix.lower().startswith(('заменить', 'убрать', 'сдвинуть', 'перерисовать', 'добавить'))
                       else fix)
-        t, u = split_src(f.get('evidence'))
-        if u:
-            srcs.append({'h': t or 'ссылки', 'items': u})
-        elif t:
-            srcs.append(t)
+        el = src_el(*split_src(f.get('evidence')))
+        if el:
+            srcs.append(el)
+    p['title'] = audit_title(fs[0])
     t0 = min(int(float(f['t0'])) for f in fs)
     t1 = max(int(float(f['t1'])) for f in fs)
     a = anchor_words(t0, t1) or anchor_of(p)
@@ -238,7 +280,8 @@ def apply_typo(p):
         return bool(m) and any(m.group(1) in n or n in m.group(1) for n in nows)
     do = [v for v in do if not dup(v)]
     items = [f"{t['tc']} ▸ {typo_line(t['was'], t['now'])}" for t in ty]
-    do.insert(0, {'h': p.get('typo_h') or 'Исправить (изменённые знаки — красным):', 'items': items, '_typo': True})
+    do.insert(0, {'h': p.get('typo_h') or 'Исправить (в доке изменённые знаки выделены красным):', 'items': items,
+                  '_typo': True})
     p['parts']['do'] = do
 
 
