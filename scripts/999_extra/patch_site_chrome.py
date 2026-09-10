@@ -24,7 +24,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from site_chrome import ASSET_V, MARK, head_block, body_script, html_attrs  # noqa: E402
 
-CH_CODES = {"ytcr", "ytcg", "ytcgru", "ytcn", "ytgold", "ytlm", "ytms", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "ytaz", "ytlab", "ytuae", "ytrscen", "ytep", "rsc", "analiz", "playbook", "method", "wvp", "kb"}
+CH_CODES = {"ytcr", "ytcg", "ytcgru", "ytcn", "ytgold", "ytlm", "ytms", "ytrf", "ytfp", "ytuvi", "ytmsen", "ytciv", "ytagefree", "ytch", "ytevo", "ytaz", "ytlab", "ytuae", "ytrscen", "ytep", "rsc", "analiz", "playbook", "method", "wvp", "kb"}
 ALIAS = {"civ": "ytciv", "ytrf01": "ytrf", "ytagefree10": "ytagefree"}
 # Под-зоны со СВОИМ паролем, физически вложенные в путь другого канала:
 # точный url-ключ страницы → код под-зоны (перебивает channel_of по первому сегменту).
@@ -36,6 +36,7 @@ HTML_TAG_RE = re.compile(r"<html\b(?:\"[^\"]*\"|'[^']*'|[^>])*>", re.I)  # ка�
 ATTR_STRIP_RE = re.compile(r'\s+data-(channel|page|rya-theme|rya-haschrome|rya-hub)="[^"]*"')
 
 
+# /kb/<sub>/ под-зоны: 2-й сегмент пути → канал гейтинга. None = открытая страница.
 KB_GATED = {"playbook": "playbook", "method": "method", "yt-upload": "kb", "channel-launch": "playbook"}
 
 
@@ -44,6 +45,7 @@ def channel_of(rel):
     seg = parts[0].lower()
     seg = ALIAS.get(seg, seg)
     if seg == "kb":
+        # /kb/ корень → kb; /kb/<sub>/… → по карте (или None=открыто для manifest/gear/thumbnail/team)
         if len(parts) >= 2 and parts[1] and not parts[1].lower().startswith("index.htm"):
             return KB_GATED.get(parts[1].lower())
         return "kb"
@@ -120,7 +122,9 @@ def inject(h, rel):
             h = h[:mb.start()] + head_block(ASSET_V) + h[mb.start():]
         else:
             h = head_block(ASSET_V) + h
-    # body
+    # body: сначала снимаем уже вставленный скрипт — маркер живёт в <head>, и если head
+    # перегенерировали, а хвост остался, страница получала ВТОРОЕ подключение site.js
+    h = re.sub(r'\s*<script src="/assets/site\.js\?v=\d+" defer></script>\s*', "\n", h)
     j = h.lower().rfind("</body>")
     if j < 0:
         j = h.lower().rfind("</html>")
