@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <div class="header">
+      <span class="brand" id="brandToggle" title="Toggle debug log">RYA<span class="brand-dot">.</span>AE</span>
+      <span class="brand-sep"></span>
+      <span class="brand-sub">Video DL</span>
+      <span class="brand-ver" id="brandVer"></span>
+    </div>
+    <div id="debug" class="hidden">
+      <pre id="debugLog"></pre>
+    </div>
+    <div id="loading">
+      <div class="loader"></div>
+    </div>
+    <div id="error" class="hidden"></div>
+    <div id="content" class="hidden">
+      <div class="title" id="videoTitle"></div>
+      <div class="meta hidden" id="pageMeta"></div>
+
+      <div class="tabs" id="tabs">
+        <button class="tab" data-tab="video" data-mode="video">Video</button>
+        <button class="tab" data-tab="subs" data-mode="video">Subtitles</button>
+        <button class="tab" data-tab="comments" data-mode="video">Comments</button>
+        <button class="tab" data-tab="chanvideos" data-mode="channel">All videos</button>
+        <button class="tab" data-tab="chandata" data-mode="channel">Stats · CSV</button>
+      </div>
+
+      <!-- ===== One video: media ===== -->
+      <div id="panel-video" class="panel hidden">
+        <div class="controls">
+          <select id="qualitySelect">
+            <option value="max">Max quality (4K if available)</option>
+            <option value="audio">Audio only · M4A</option>
+          </select>
+          <button id="downloadVideoBtn">Download</button>
+        </div>
+        <div class="opts">
+          <label class="opt" title="Save the video and everything around it in one folder">
+            <input type="checkbox" id="optBundle" checked><span>Full package → folder</span>
+          </label>
+          <label class="opt" title="Fetch the comment tree into the .info.json — slow on big videos">
+            <input type="checkbox" id="optComments"><span>+ comments</span>
+          </label>
+        </div>
+        <div id="pkgHint" class="hint"></div>
+      </div>
+
+      <!-- ===== One video: subtitles ===== -->
+      <div id="panel-subs" class="panel hidden">
+        <div class="controls">
+          <select id="langSelect" disabled><option>Scanning subtitles…</option></select>
+          <button id="downloadBtn" disabled>JSON</button>
+        </div>
+        <div class="controls">
+          <button id="subsPackBtn" class="wide">All tracks → SRT + transcript.json</button>
+        </div>
+        <div id="status" class="hidden"></div>
+        <div class="hint">JSON = the selected track, straight from the page. All tracks = every
+          manual language plus auto captions, into the video's folder via yt-dlp.</div>
+      </div>
+
+      <!-- ===== One video: comments ===== -->
+      <div id="panel-comments" class="panel hidden">
+        <div class="controls">
+          <select id="commentCap">
+            <option value="500">Top 500 comments</option>
+            <option value="100">Top 100 comments</option>
+            <option value="all">All comments (slow)</option>
+          </select>
+          <button id="commentsBtn">Export CSV</button>
+        </div>
+        <div class="hint">Ranked by likes — most engaged first. CSV columns: likes, author,
+          reply/root, pinned, hearted by the owner, date, text, direct link.</div>
+      </div>
+
+      <!-- ===== Channel: download every video ===== -->
+      <div id="panel-chanvideos" class="panel hidden">
+        <div class="controls">
+          <select id="chanLimit">
+            <option value="10">Latest 10 videos</option>
+            <option value="25">Latest 25</option>
+            <option value="50">Latest 50</option>
+            <option value="100">Latest 100</option>
+            <option value="0">All videos</option>
+          </select>
+          <button id="chanDownloadBtn">Download</button>
+        </div>
+        <div class="controls">
+          <select id="chanQuality">
+            <option value="max">Max quality (4K if available)</option>
+            <option value="1080">1080p</option>
+            <option value="720">720p</option>
+            <option value="audio">Audio only · M4A</option>
+          </select>
+          <select id="chanSort">
+            <option value="popular">Most viewed</option>
+            <option value="latest">Newest first</option>
+          </select>
+        </div>
+        <div class="opts">
+          <label class="opt" title="Each video gets its own folder with cover, description, subtitles and metadata">
+            <input type="checkbox" id="chanBundle" checked><span>Full package per video</span>
+          </label>
+        </div>
+        <div id="chanHint" class="hint"></div>
+      </div>
+
+      <!-- ===== Channel: CSV export ===== -->
+      <div id="panel-chandata" class="panel hidden">
+        <div class="controls">
+          <select id="chanCsvLimit">
+            <option value="0">All videos</option>
+            <option value="25">Latest 25</option>
+            <option value="50">Latest 50</option>
+            <option value="100">Latest 100</option>
+          </select>
+          <button id="chanCsvBtn">Export CSV</button>
+        </div>
+        <div class="controls">
+          <select id="chanCsvComments">
+            <option value="none">Video stats only — fast</option>
+            <option value="100">+ top 100 comments per video</option>
+            <option value="500">+ top 500 comments per video</option>
+            <option value="all">+ all comments — slow</option>
+          </select>
+          <select id="chanCsvSort">
+            <option value="popular">Most viewed</option>
+            <option value="latest">Newest first</option>
+          </select>
+        </div>
+        <div id="chanCsvHint" class="hint"></div>
+      </div>
+
+      <!-- ===== Shared job area ===== -->
+      <div id="jobArea">
+        <div id="videoProgress" class="hidden">
+          <div class="bar"><div id="barFill"></div></div>
+          <div class="bar-meta"><span id="barStage">Starting…</span><span id="barInfo"></span></div>
+          <button id="cancelBtn" class="ghost">Cancel</button>
+        </div>
+        <div id="videoStatus" class="hidden"></div>
+        <div id="hostHint" class="hidden"></div>
+      </div>
+    </div>
+  </div>
+  <script src="common.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

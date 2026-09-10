@@ -1,0 +1,9 @@
+{
+  "name": "ae.rya.ytdl",
+  "description": "RYA.AE YT Downloader (yt-dlp bridge)",
+  "path": "/Users/romansergeev/YTAI/utils/video_downloader/native-host/ytdl_host_launcher.sh",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://ijmcfiafjlppldgcaldgdeffeanhnbgf/"
+  ]
+}

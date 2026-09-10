@@ -20,7 +20,8 @@ os.environ.setdefault('HF_HOME', str(Path.home() / 'YTAI/models/huggingface'))
 SP = Path('/private/tmp/claude-501/-Users-romansergeev-YTAI/aae3a644-669a-4ca9-a2f9-d03bb31a7715/scratchpad')
 MODEL = 'mlx-community/Qwen3-8B-4bit'
 TC = re.compile(r'(?<![\d:])~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?(?![\d:])')
-JUNK = [   # внутренний жаргон: имена кадров, ноты, комменты — вычищаем и после модели(re.compile(r'\s*\(\s*[hsf]\d{3,4}(?:\s*[–,-]\s*[hsf]?\d{3,4})*\s*\)'), ''),
+# внутренний жаргон: имена кадров, ноты, комменты — вычищаем и после модели
+JUNK = [(re.compile(r'\s*\(\s*[hsf]\d{3,4}(?:\s*[–,-]\s*[hsf]?\d{3,4})*\s*\)'), ''),
         (re.compile(r'\s*(?:в\s+)?кадр\w*\s+[hsf]\d{3,4}(?:\s*[–,-]\s*[hsf]?\d{3,4})*'), ''),
         (re.compile(r'\s*[hsf]\d{3,4}(?:\s*[–,-]\s*[hsf]?\d{3,4})*'), ''),
         (re.compile(r'\s*\(нот[аеы]\s*\d+\)|\s*нот[аеы]\s*\d+'), ''),

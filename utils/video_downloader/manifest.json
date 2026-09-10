@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "RYA.AE — Video Downloader",
+  "version": "2.6",
+  "description": "YouTube/VK/Rutube/OK: one video at max quality with its whole package, or a whole channel — every video, plus stats and comments as CSV",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1GphI4dtUy9UzIxBavAiWMBo/lHyfLiMsZ1vmyQ0KcQIOJWuS9c3VsYKiebHigpUSaKhM6XY1dI4mjC0QHIHdEo2puiWXiRQPRw5n+ZjDbS85qiUPnf0wwREN6dkxFK88I8hptH8H7OeIMLhotrYVfDHsjHnp0USNMIRDGW/OzwA8RmGU90SX41s7IXEWG2y7t0bMBcGq17Xed3fGwmDBBHT/NG2XJ2dMSfTIegT3kgsONi/SEv+n960RHXoZxwuWoWXvPOwI2KiSmkGSvQ9VgpNlnfhV4Hj+dEOVwweB3r4/mIT4dzhl6Tai2Yodj4l1n+K0zADnb9abOPyH06fwQIDAQAB",
+  "permissions": ["activeTab", "downloads", "scripting", "nativeMessaging", "storage", "contextMenus", "notifications"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
