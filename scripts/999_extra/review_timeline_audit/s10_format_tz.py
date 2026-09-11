@@ -28,7 +28,7 @@ M = W6.parent / 'montage'
 sys.path.insert(0, str(W6))
 from make_infographics_v6_data import (SUB, CH_NAME, CH_BOUNDS, NEW_CH, PROG, PROG_T,  # noqa: E402
                                        PROG_FINAL, PROG_NOTE)
-from terms_catalog import TERMS, LOCS  # noqa: E402
+from terms_catalog import TERMS, LOCS, PLACE, place_family  # noqa: E402
 from typo_diff import typo_line  # noqa: E402
 
 PRAVKI = M / 'pravki_v2.json'
@@ -39,7 +39,8 @@ ORDER = ['now', 'do', 'list', 'where', 'src', 'tl']
 IND = '     '           # продолжение блока
 IND2 = '        '       # пункт списка под заголовком
 FIG = ' '          # цифровой пробел: «0:57» выравнивается под «33:42»
-TC = r'\d{1,2}:\d{2}(?:\s*[–-]\s*\d{1,2}:\d{2})?'
+# дробные секунды — часть ОДНОГО таймкода: «2:46.0–2:48.6» это один, а не два (как в verify дока)
+TC = r'\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?'
 TC_RE = re.compile(rf'(?<![\d:]){TC}(?![\d:])')
 # пункт «TC ▸ …»: допускаем «@», «~» и дробные секунды (~2:47.4), чтобы хвост «.4» не уехал в текст
 ITEM_RE = re.compile(r'^@?(~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?)(?![\d:])\s*(?:▸|—|·|:|-)?\s*(.+)$')
@@ -197,15 +198,71 @@ def gen_terms():
     return out
 
 
+def _plural(n, one, few, many):
+    n10, n100 = n % 10, n % 100
+    return f'{n} ' + (one if n10 == 1 and n100 != 11 else
+                      few if 2 <= n10 <= 4 and not 12 <= n100 <= 14 else many)
+
+
+def _loc_head(k, n):
+    """Заголовок места: город всегда подписан своей страной, страна — по канону «МЬЯНМА (БИРМА)»."""
+    p = PLACE[k]
+    cnt = _plural(n, 'мини-карта', 'мини-карты', 'мини-карт')
+    if p.get('parent'):
+        return f"{PLACE[p['parent']]['ru']} · {p['role']} {p['ru']} — {cnt}"
+    kind = p.get('kind_label') or {'country': 'страна', 'region': 'горный район, не страна'}.get(p['kind'], '')
+    return f"{p['label']} · {kind} — {cnt}" if kind else f"{p['label']} — {cnt}"
+
+
 def gen_locs():
-    meta = {l[0]: l[4] for l in LOCS}
-    return [{'h': f'{meta.get(k, k.upper())} — {len(es)}×',
-             'items': [f"{e['tc']} ▸ {hit_txt(e)}" for e in sorted(es, key=lambda e: e['t'])]}
-            for k, es in _grouped(TJ['locs'])]
+    """Список мест для ТЗ-76: города идут сразу за своей страной (Роман 11.09 «люди путают
+    названия стран и городов»), а перечисление «пояса» — одним блоком, без мини-карт."""
+    by = {}
+    for e in TJ['locs']:
+        by.setdefault(e['key'], []).append(e)
+    fam = {}
+    for k in by:
+        fam.setdefault(place_family(k), []).append(k)
+    out, belt = [], []
+    # семьи — по суммарной частоте; внутри семьи сначала страна, потом её места по первому таймкоду
+    order = sorted(fam.items(), key=lambda kv: (-sum(len(by[k]) for k in kv[1]),
+                                                min(e['t'] for k in kv[1] for e in by[k])))
+    for _f, keys in order:
+        keys.sort(key=lambda k: (bool(PLACE[k].get('parent')), min(e['t'] for e in by[k])))
+        for k in keys:
+            own = [e for e in by[k] if not e.get('cover')]
+            belt += [(e['t'], e['tc'], PLACE[k]['ru']) for e in by[k] if e.get('cover')]
+            if not own:
+                continue
+            notes = [x for x in (PLACE[k].get('screen_note'), PLACE[k].get('read_note')) if x]
+            out.append({'h': _loc_head(k, len(own)),
+                        'items': notes + [f"{e['tc']} ▸ {hit_txt(e)}"
+                                          for e in sorted(own, key=lambda e: e['t'])]})
+    if belt:
+        out.append({'h': 'ПЕРЕЧИСЛЕНИЕ «РУБИНОВОГО ПОЯСА» · мини-карты не ставим, всё на большой карте',
+                    'items': [f'{tc} ▸ {ru}' for _t, tc, ru in sorted(belt)]})
+    return out
 
 
 GEN_LIST = {'ТЗ-30': lambda: gen_structure('map'), 'ТЗ-74': lambda: gen_structure('sub'),
             'ТЗ-75': gen_terms, 'ТЗ-76': gen_locs}
+
+
+def title_terms():
+    st = TJ['stats']['terms']
+    return (f"ТЕРМИНЫ: плашка-определение при каждом упоминании "
+            f"({len(st['by_key'])} терминов / {st['plates']} показов)")
+
+
+def title_locs():
+    st = TJ['stats']['locs']
+    mini = st['plates'] - st.get('covered', 0)
+    return (f"ЛОКАЦИИ НА КАРТЕ: канон названий мест ({len(st['by_key'])} мест / {st['plates']} упоминаний) — "
+            f"{mini} мини-карт + 4 большие карты")
+
+
+# счётчики в заголовке считаются из данных, иначе протухают при каждой пересборке
+GEN_TITLE = {'ТЗ-75': title_terms, 'ТЗ-76': title_locs}
 
 
 # ── сборка parts ──
@@ -388,6 +445,8 @@ LINT = {}
 for p in allp:
     if p['num'] in GEN_LIST:
         p['parts']['list'] = GEN_LIST[p['num']]()
+    if p['num'] in GEN_TITLE:
+        p['title'] = GEN_TITLE[p['num']]()
     apply_typo(p)
     p['nado'] = render(p)
     if p.get('status') != 'rejected':

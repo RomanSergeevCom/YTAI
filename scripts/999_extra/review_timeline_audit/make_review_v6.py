@@ -169,7 +169,11 @@ V3_INFO = [
     still('v3_mohs_b', MOCK / 'info_mohs_curve.png', 831.8, 'V3', 'Green', prio=3),
     still('v3_mohs_what', MOCK / 'info_mohs_what_t.png', 836.6, 'V3', 'Green', prio=3),        # → прозрачная
     still('v3_mogok_ru', MOCK / 'mapfull_burma.png', 1047.8, 'V3', 'Green', prio=3),      # реальная география
-    still('v3_deposits', MOCK / 'mapfull_belt.png', 1170.0, 'V3', 'Green', prio=3),       # пояс на реальной карте
+    # «рубиновый пояс» в три шага: страны загораются по мере перечисления (19:30–19:42),
+    # тайминги сверены по words.json; закрывает английский титр ката и стопку мини-карт на 19:40
+    still('v3_deposits', MOCK / 'mapfull_belt.png', 1169.8, 'V3', 'Green', dur=3.4, prio=3),
+    still('v3_deposits_2', MOCK / 'mapfull_belt_2.png', 1173.2, 'V3', 'Green', dur=4.0, prio=3),
+    still('v3_deposits_3', MOCK / 'mapfull_belt_3.png', 1177.2, 'V3', 'Green', prio=3),
     still('v3_card_auct', MOCK / 'card_auctions.png', 1558.0, 'V3', 'Green', prio=3),
     still('v3_synthesis', MOCK / 'info_synthesis_list_t.png', 1804.0, 'V3', 'Green', prio=3),  # → прозрачная
     still('v3_treat_scheme1', MOCK / 'info_treatments_scheme_t.png', 2025.0, 'V3', 'Green', prio=3),
@@ -194,8 +198,18 @@ V3_TERMS = [still(f'v3_term_{"_".join(g["keys"])}_{int(g["t"])}',
                   MOCK / (f'term_{g["keys"][0]}.png' if len(g['keys']) == 1 else 'termgrp_' + '_'.join(g['keys']) + '.png'),
                   dodge_title(g['t']), 'V3', 'Green', prio=6)
             for g in terms['term_groups']]
-V3_MAPS = [still(f'v3_map_{m["key"]}_{int(m["t"])}', MOCK / f'map_{m["key"]}.png', dodge_title(m['t']), 'V3', 'Green', prio=5)
-           for m in terms['locs']]
+
+
+def map_png(m):
+    """сноска «одна страна — два имени» — только на первом упоминании (terms_index ставит note)"""
+    if m.get('note') and (MOCK / f'map_{m["key"]}_note.png').exists():
+        return MOCK / f'map_{m["key"]}_note.png'
+    return MOCK / f'map_{m["key"]}.png'
+
+
+# m['cover'] — место попало в окно большой карты (перечисление «пояса»): мини-карту не ставим
+V3_MAPS = [still(f'v3_map_{m["key"]}_{int(m["t"])}', map_png(m), dodge_title(m['t']), 'V3', 'Green', prio=5)
+           for m in terms['locs'] if not m.get('cover')]
 # исправления из аудита (prio 1 — главнее всего на V3)
 # v7 (Роман 10.09 «суммы цифрами»): если у fix есть варианты оформления fix_*_A/_B.png (ТЗ-21 цены) —
 # на таймлайн идут ОБА встык, каждый полной длины: А, затем Б (Роман выбирает глазом)

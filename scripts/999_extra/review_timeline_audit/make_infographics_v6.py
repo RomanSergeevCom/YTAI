@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path.home() / 'YTAI/scripts/999_extra/infographic'))
 sys.path.insert(0, str(Path(__file__).parent))
 from render import render  # noqa: E402
-from terms_catalog import TERMS, LOCS  # noqa: E402
+from terms_catalog import TERMS, LOCS, PLACE  # noqa: E402
 from make_infographics_v6_data import SUB, CH_ACCENT, CH_NAME, PROG, CH_BOUNDS, NEW_CH  # noqa: E402
 from typo_diff import spans_for_fragment  # noqa: E402
 
@@ -109,7 +109,7 @@ POINTS = {
     'winza': (-7.02, 36.37, 'Винза'), 'longido': (-2.73, 36.70, 'Лонгидо'),
     'andilamena': (-17.02, 48.58, 'Андиламена'), 'mangare': (-3.86, 38.50, 'Мангаре'),
     'chimwadzulu': (-14.81, 34.63, 'Чимвадзулу'), 'aappaluttoq': (63.03, -50.30, 'Аппалутток'),
-    'kashmir': (34.20, 74.90, 'Кашмир'),
+    'kashmir': (34.20, 74.90, 'Кашмир'), 'songea': (-10.68, 35.65, 'Сунгеа'),
 }
 CITIES = {'sea': [('Янгон', 16.87, 96.20), ('Мандалай', 21.98, 96.08), ('Бангкок', 13.76, 100.50),
                   ('Коломбо', 6.93, 79.85), ('Ханой', 21.03, 105.85)],
@@ -127,7 +127,7 @@ REGIONS = {'sea': (76, 110, 3, 30), 'africa': (26, 54, -28, 2), 'world': (18, 11
            'moz': (30, 52, -28, -8), 'eafr': (28, 52, -20, 2), 'casia': (58, 82, 22, 42)}
 LOC_REGION = {'mogok': 'burma', 'monghsu': 'burma', 'burma': 'burma', 'thai': 'thai', 'srilanka': 'lanka',
               'vietnam': 'viet', 'mozambique': 'moz', 'malawi': 'moz', 'madagascar': 'moz', 'tanzania': 'eafr',
-              'kenya': 'eafr', 'afghan': 'casia', 'kashmir': 'casia', 'greenland': 'world'}
+              'kenya': 'eafr', 'afghan': 'casia', 'kashmir': 'casia'}
 # смещение подписи точки: (dx, dy, anchor)
 LABEL_OFF = {'monghsu': (30, 58, 'start'), 'mogok': (-30, -22, 'end'), 'pailin': (30, 58, 'start'),
              'chanthaburi': (-30, -22, 'end'), 'longido': (30, -14, 'start'), 'winza': (30, -14, 'start'),
@@ -157,7 +157,7 @@ def geo():
 HL = {'burma': ['Myanmar'], 'mogok': ['Myanmar'], 'monghsu': ['Myanmar'], 'thai': ['Thailand', 'Cambodia'],
       'srilanka': ['Sri Lanka'], 'vietnam': ['Vietnam'], 'mozambique': ['Mozambique'], 'tanzania': ['Tanzania'],
       'madagascar': ['Madagascar'], 'kenya': ['Kenya'], 'malawi': ['Malawi'],
-      'afghan': ['Afghanistan', 'Tajikistan', 'Pakistan'], 'kashmir': [], 'greenland': ['Greenland']}
+      'afghan': ['Afghanistan', 'Tajikistan', 'Pakistan'], 'kashmir': []}
 
 
 def make_map(region, pts, label, mw=1180, mh=760, facts=None, hl=(), nolabel=()):
@@ -255,7 +255,10 @@ MAP_CSS = f"""
 .mp {{ position:absolute; right:120px; top:560px; width:1280px; background:{PANEL};
   border-radius:28px; padding:36px 50px 44px 50px; border-left:16px solid {RED}; }}
 .mp .lbl {{ font-family:Helvetica,Arial,sans-serif; font-size:30px; letter-spacing:.22em; color:{MUT}; }}
-.mp .h {{ font-size:64px; font-weight:bold; margin:8px 0 22px; letter-spacing:.02em; }}
+.mp .h {{ font-size:64px; font-weight:bold; margin:8px 0 10px; letter-spacing:.02em; }}
+.mp .s {{ font-family:Helvetica,Arial,sans-serif; font-size:36px; line-height:1.3; color:{MUT}; margin:0 0 20px; }}
+.mp .n {{ font-size:34px; line-height:1.3; color:{IVORY}; margin:0 0 22px;
+  padding-left:22px; border-left:8px solid {RED}; }}
 """
 if want('B'):
     facts = None
@@ -267,12 +270,23 @@ if want('B'):
             facts = None
     for key, rx, region, pts, label in LOCS:
         region = LOC_REGION.get(key, region)
+        p = PLACE[key]
+        head = (f'<div class="lbl">ГДЕ ЭТО</div><div class="h">{label}</div>'
+                f'<div class="s">{p["sub"]}</div>')
+        svg = make_map(region, pts, label, facts=facts, hl=HL.get(key, ()))
         page(f'map_{key}', f"""
-<div class="mp"><div class="lbl">ГДЕ ЭТО</div><div class="h">{label}</div>
- {make_map(region, pts, label, facts=facts, hl=HL.get(key, ()))}</div>""", MAP_CSS)
+<div class="mp">{head}
+ {svg}</div>""", MAP_CSS)
+        # вариант со сноской «одна страна — два имени» — только для ПЕРВОГО упоминания (terms_index ставит note)
+        if p.get('note'):
+            page(f'map_{key}_note', f"""
+<div class="mp">{head}<div class="n">{p['note']}</div>
+ {svg}</div>""", MAP_CSS)
 
 FULL_CSS = f"""
-.mf {{ position:absolute; left:50%; transform:translateX(-50%); top:300px; width:3000px; background:{PANEL};
+/* большие карты ЗАМЕНЯЮТ кадр, поэтому подложка глухая: сквозь полупрозрачную просвечивали
+   английские подписи карты ката (проверено на превью 19:37) */
+.mf {{ position:absolute; left:50%; transform:translateX(-50%); top:300px; width:3000px; background:{BG};
   border-radius:32px; padding:50px 70px 60px 70px; border-top:14px solid {RED}; display:flex; gap:60px; }}
 .mf .side {{ width:900px; flex:none; }}
 .mf .lbl {{ font-family:Helvetica,Arial,sans-serif; font-size:32px; letter-spacing:.22em; color:{MUT}; }}
@@ -282,24 +296,43 @@ FULL_CSS = f"""
 .mf .n span {{ color:{MUT}; }}
 """
 if want('B'):
-    # полноразмерная карта Бирмы (замена рисованного блоба info_mogok_map, 052)
-    notes = ('<div class="n"><b>МОГОК</b><span>«голубиная кровь» — эталонный цвет; мраморные породы, мало железа</span></div>'
-             '<div class="n"><b>МОНГ СУ (Mong Hsu)</b><span>массовая добыча с 1990-х; почти весь материал — гретый, флюсовое залечивание</span></div>')
+    # полноразмерная карта Мьянмы (замена рисованного блоба info_mogok_map, 052)
+    notes = ('<div class="n"><b>МОГОК</b><span>долина в Мьянме — «голубиная кровь», эталонный цвет</span></div>'
+             '<div class="n"><b>МОНГ СУ (Mong Hsu)</b><span>месторождение в Мьянме — массовая добыча с 1990-х, почти всё гретое</span></div>')
     page('mapfull_burma', f"""
 <div class="mf"><div class="side"><div class="lbl">ГДЕ ЭТО</div><div class="h">МЬЯНМА <span style="color:{RED}">(БИРМА)</span></div>
- <div style="font-size:40px;color:{MUT}">две главные рубиновые земли</div>{notes}</div>
+ <div style="font-size:40px;color:{MUT}">одна страна — два разных месторождения</div>{notes}</div>
  {make_map('burma', ['mogok', 'monghsu'], '', mw=1900, mh=1150, hl=['Myanmar'])}</div>""", FULL_CSS)
-    # рубиновый пояс — все месторождения из озвучки на реальной карте (замена info_deposits_map, 053)
+    # рубиновый пояс В ТРИ ШАГА — страны загораются по мере перечисления в озвучке 19:30–19:40
+    # (замена английского титра ката 19:33–19:40 и стопки из 7 мини-карт на 19:40)
     belt_pts = ['mogok', 'monghsu', 'montepuez', 'chanthaburi', 'pailin', 'ratnapura', 'lucyen', 'jegdalek',
-                'pamir', 'hunza', 'winza', 'longido', 'andilamena', 'mangare', 'chimwadzulu', 'kashmir']
-    notes = ('<div class="n"><b>МЬЯНМА</b><span>Могок — «голубиная кровь» · Монг Су — грев</span></div>'
-             '<div class="n"><b>МОЗАМБИК</b><span>Монтепуэз — железистые, главный игрок с 2009</span></div>'
-             '<div class="n"><b>ТАИЛАНД · КАМБОДЖА</b><span>тёмные, почти всегда грев</span></div>'
-             '<div class="n"><b>ПОЯС</b><span>Вьетнам · Таджикистан · Афганистан · Пакистан · Шри-Ланка · Танзания · Мадагаскар · Кения · Малави</span></div>')
-    page('mapfull_belt', f"""
-<div class="mf" style="top:200px"><div class="side"><div class="lbl">ГДЕ ДОБЫВАЮТ</div><div class="h">РУБИНОВЫЙ <span style="color:{RED}">ПОЯС</span></div>{notes}</div>
- {make_map('world', belt_pts, '', mw=1900, mh=1300, hl=['Myanmar', 'Mozambique', 'Thailand', 'Cambodia', 'Sri Lanka', 'Vietnam', 'Tanzania', 'Madagascar', 'Kenya', 'Malawi', 'Afghanistan', 'Tajikistan', 'Pakistan'],
-           nolabel=['winza', 'longido', 'mangare', 'chimwadzulu', 'andilamena', 'pailin', 'chanthaburi', 'hunza', 'kashmir'])}</div>""", FULL_CSS)
+                'pamir', 'hunza', 'winza', 'longido', 'songea', 'andilamena', 'mangare', 'chimwadzulu', 'kashmir']
+    # на общей карте подписываем только опорные точки: остальные читаются по подсветке страны
+    belt_nolabel = ['winza', 'longido', 'songea', 'mangare', 'chimwadzulu', 'andilamena', 'pailin',
+                    'chanthaburi', 'hunza', 'kashmir', 'jegdalek', 'pamir']
+    BELT_STEPS = [
+        ('mapfull_belt', '1 из 3 · главные страны рынка',
+         ['Myanmar', 'Mozambique', 'Thailand', 'Cambodia'],
+         '<div class="n"><b>МЬЯНМА (БИРМА)</b><span>Могок — «голубиная кровь», Монг Су — гретые камни</span></div>'
+         '<div class="n"><b>МОЗАМБИК</b><span>Монтепуэз — железистые, главный игрок с 2009 года</span></div>'
+         '<div class="n"><b>ТАИЛАНД и КАМБОДЖА</b><span>тёмные камни, почти всегда с нагревом</span></div>'),
+        ('mapfull_belt_2', '2 из 3 · Азия',
+         ['Vietnam', 'Tajikistan', 'Afghanistan', 'Pakistan', 'Sri Lanka'],
+         '<div class="n"><b>ВЬЕТНАМ</b><span>Лук Йен</span></div>'
+         '<div class="n"><b>ТАДЖИКИСТАН · АФГАНИСТАН · ПАКИСТАН</b><span>горы Памира и Гиндукуша</span></div>'
+         '<div class="n"><b>ШРИ-ЛАНКА (ЦЕЙЛОН)</b><span>остров переименовали в 1972 — это одно место</span></div>'),
+        ('mapfull_belt_3', '3 из 3 · Африка',
+         ['Tanzania', 'Madagascar', 'Kenya', 'Malawi'],
+         '<div class="n"><b>ТАНЗАНИЯ</b><span>Винза, Лонгидо, Сунгеа</span></div>'
+         '<div class="n"><b>МАДАГАСКАР · КЕНИЯ · МАЛАВИ</b><span>молодые месторождения Восточной Африки</span></div>'
+         '<div class="n"><b>ИТОГО</b><span>рубин добывают на трёх континентах — это и есть «рубиновый пояс»</span></div>'),
+    ]
+    # панель шире обычной (3400 из 3840): под ней лежит английская карта ката — её надо перекрыть
+    for name, step, hl_step, notes in BELT_STEPS:
+        page(name, f"""
+<div class="mf" style="top:170px;width:3400px"><div class="side"><div class="lbl">ГДЕ ДОБЫВАЮТ</div><div class="h">РУБИНОВЫЙ <span style="color:{RED}">ПОЯС</span></div>
+ <div style="font-size:38px;color:{MUT};margin-bottom:6px">{step}</div>{notes}</div>
+ {make_map('world', belt_pts, '', mw=2300, mh=1450, hl=hl_step, nolabel=belt_nolabel)}</div>""", FULL_CSS)
 
 # ═══════════════════════════ C. подглавы (V6) ═══════════════════════════
 SUB_CSS = f"""

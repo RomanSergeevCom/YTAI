@@ -11,7 +11,7 @@ import json, re, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from terms_catalog import TERM_RX, LOC_RX  # noqa
+from terms_catalog import TERM_RX, LOC_RX, MAP_WINDOWS, PLACE  # noqa
 
 W6 = Path(__file__).parent
 WORDS = '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/YTUVI01_v1.words.json'
@@ -60,6 +60,21 @@ for kind in ('terms', 'locs'):
     for m in out[kind]:
         cnt[m['key']] = cnt.get(m['key'], 0) + 1
     out['stats'][kind] = {'raw': len(mentions[kind]), 'plates': len(out[kind]), 'by_key': cnt}
+# ── канон названий (Роман 11.09) ──────────────────────────────────────────────
+# cover: место попало в окно большой карты (перечисление «пояса») → мини-карту не ставим
+for m in out['locs']:
+    for a, b, name, _why in MAP_WINDOWS:
+        if a <= m['t'] <= b:
+            m['cover'] = name
+            break
+# note: сноска «одна страна — два имени» — ОДИН раз, на первом видимом упоминании места
+noted = set()
+for m in sorted(out['locs'], key=lambda x: x['t']):
+    if (PLACE.get(m['key']) or {}).get('note') and not m.get('cover') and m['key'] not in noted:
+        m['note'] = True
+        noted.add(m['key'])
+out['stats']['locs']['covered'] = sum(1 for m in out['locs'] if m.get('cover'))
+out['stats']['locs']['notes'] = sorted(noted)
 # ── группы: термины, упомянутые в одном окне (≤ GROUP_WIN с), идут ОДНОЙ плашкой (до 3 определений) ──
 GROUP_WIN = 5.0
 groups = []
