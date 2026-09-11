@@ -17,6 +17,7 @@ build_rows() — чистая функция без записи в док (её
 """
 import copy
 import json
+import os
 import re
 import sys
 import time
@@ -31,7 +32,10 @@ from doctab_lib import batch_update as _batch_update  # noqa: E402
 from typo_diff import diff_spans, typo_line, typo_offsets  # noqa: E402
 
 DOC_ID = DOCS['01']
-TAB_TITLE = 'ТЗ монтажёру · v3'
+# вкладка задаётся снаружи: TZ_TAB='ТЗ монтажёру · v4'. v3 ЗАМОРОЖЕНА — в ней правки Романа
+# (он удалял неактуальное руками 11.09), пересобирать её нельзя, иначе правки затрутся.
+TAB_TITLE = os.environ.get('TZ_TAB') or 'ТЗ монтажёру · v3'
+FROZEN = {'ТЗ монтажёру · v3'}
 SHEET_URL = 'https://docs.google.com/spreadsheets/d/1xeCzuOr_W-WuaeehgUOhTWHzYmsdvW7w0wYwT8XPejY/edit'
 WIDTHS = [34, 62, 22, 282, 276]          # v7: «Материал» шире; №/TC без переноса «ТЗ / -30», «9:32–10:1 / 0» (сумма 676pt)
 FONT = 9
@@ -161,7 +165,7 @@ def build_head(act, rejected):
     decisions = [p for p in act if p.get('decision')]
     li = lambda t: (0, '▸ ' + t, {})                                            # noqa: E731
     head = [
-        (1, 'YTUVI01 · ТЗ монтажёру v3 — по секвенции Review_v6_tz (формат 10.09)', {}),
+        (1, f'YTUVI01 · {TAB_TITLE} — по секвенции Review_v6_tz (формат 11.09)', {}),
         (0, 'Как читать:', {'bold': True}),
         li('каждый таймкод — отдельной строкой: «таймкод ▸ что там», как в карте структуры'),
         li('справа — крупное превью: наш драфт или стрелка на реальном кадре, кроп на то, о чём речь; под ним «таймкод · что видно»'),
@@ -264,7 +268,9 @@ def index_of(cell, pos):
     return last if pos == 0 else None
 
 
-def main():
+def main(force=False):
+    if TAB_TITLE in FROZEN and not force:
+        raise SystemExit(f'«{TAB_TITLE}» заморожена: там правки Романа. Запускай с TZ_TAB=«ТЗ монтажёру · v4».')
     import socket
     socket.setdefaulttimeout(300)                              # зависшее соединение не должно висеть вечно
     pravki, shots_ids, proj_ids, drive_clips = load()

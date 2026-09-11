@@ -151,6 +151,25 @@ def grid_sheet(secs, cols=2):
     return out
 
 
+def first_t_map():
+    """кадр для плашки, которой нет на таймлайне отдельно: берём первое упоминание ключа"""
+    f = W6 / 'terms_v6.json'
+    out = {}
+    if not f.exists():
+        return out
+    tj = json.load(open(f, encoding='utf-8'))
+    for m in tj.get('terms', []):
+        out.setdefault(f"term_{m['key']}.png", m['t'])
+    for m in tj.get('locs', []):
+        out.setdefault(f"map_{m['key']}.png", m['t'])
+        if m.get('note'):
+            out.setdefault(f"map_{m['key']}_note.png", m['t'])
+    return out
+
+
+FIRST_T = first_t_map()
+
+
 def load_common():
     pr = json.load(open(M / 'pravki_v2.json'))
     audit = json.load(open(W6 / 'audit_v6.json'))
@@ -187,7 +206,11 @@ def render():
             return None
         sec = o.get('t')
         if sec is None:
-            sec = seg_t[img][0] + 0.4 if seg_t.get(img) else tc_first(p.get('tc_range'))
+            # 1) где плашка стоит на таймлайне · 2) первое упоминание из terms_v6 (плашки,
+            #    которые живут только внутри групповых) · 3) таймкод самого ТЗ
+            sec = seg_t[img][0] + 0.4 if seg_t.get(img) else FIRST_T.get(img)
+        if sec is None:
+            sec = tc_first(p.get('tc_range'))
         if sec is None:
             return None
         im = comp(frame4k(sec), png)

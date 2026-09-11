@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path.home() / 'YTAI/scripts/999_extra/infographic'))
 sys.path.insert(0, str(Path(__file__).parent))
 from render import render  # noqa: E402
-from terms_catalog import TERMS, LOCS, PLACE  # noqa: E402
+from terms_catalog import TERMS, LOCS, PLACE, TERM_EXTRA  # noqa: E402
 from make_infographics_v6_data import SUB, CH_ACCENT, CH_NAME, PROG, CH_BOUNDS, NEW_CH  # noqa: E402
 from typo_diff import spans_for_fragment  # noqa: E402
 
@@ -64,6 +64,9 @@ TERM_CSS = f"""
 .tp .h {{ font-size:78px; font-weight:bold; line-height:1.08; margin-top:10px; letter-spacing:.02em; }}
 .tp .s {{ font-family:Helvetica,Arial,sans-serif; font-size:36px; color:{RED}; margin-top:12px; letter-spacing:.02em; }}
 .tp .d {{ font-size:42px; line-height:1.38; color:{IVORY}; margin-top:26px; }}
+/* перевод под оригиналом — когда надпись физически в кадре (часы, документ) и её не перерисовать */
+.tp .ru {{ font-size:60px; font-weight:bold; line-height:1.1; color:{IVORY}; margin-top:10px; }}
+.tp.grp .ru {{ font-size:48px; }}
 """
 TERM_BY_KEY = {t[0]: t for t in TERMS}
 GRP_CSS = TERM_CSS + f"""
@@ -74,16 +77,32 @@ GRP_CSS = TERM_CSS + f"""
 """
 
 
-def term_item(key):
+def term_body(key):
+    """Роман 11.09: если надпись видна в кадре по-английски — ведём оригиналом, перевод строкой ниже,
+    чтобы зритель сопоставил надпись, слова ведущей и смысл. Иначе канон ТЗ-14 (русское крупно)."""
     _, _, title, sub, definition = TERM_BY_KEY[key]
-    return f'<div class="item"><div class="h">{title}</div><div class="s">{sub}</div><div class="d">{definition}</div></div>'
+    x = TERM_EXTRA.get(key) or {}
+    if x.get('lead') == 'en' and x.get('en'):
+        lbl = x.get('lbl') or 'ТЕРМИН · ЧТО НАПИСАНО В КАДРЕ'
+        # оригинал уже стоит заголовком — во второй строке его не повторяем
+        sub_en = sub.split('·', 1)[-1].strip() if '·' in sub else sub
+        head = (f'<div class="h">{x["en"][0].upper()}</div><div class="ru">{title}</div>'
+                f'<div class="s">{sub_en}</div>')
+    else:
+        lbl = 'ТЕРМИН'
+        head = f'<div class="h">{title}</div><div class="s">{sub}</div>'
+    return lbl, f'{head}<div class="d">{definition}</div>'
+
+
+def term_item(key):
+    return f'<div class="item">{term_body(key)[1]}</div>'
 
 
 if want('A'):
     for key, rx, title, sub, definition in TERMS:
+        lbl, body = term_body(key)
         page(f'term_{key}', f"""
-<div class="tp"><div class="lbl">ТЕРМИН</div><div class="h">{title}</div>
- <div class="s">{sub}</div><div class="d">{definition}</div></div>""", TERM_CSS)
+<div class="tp"><div class="lbl">{lbl}</div>{body}</div>""", TERM_CSS)
     # группы (термины в одном окне ≤5 с) — одна плашка на 2–3 определения
     tj = W6 / 'terms_v6.json'
     if tj.exists():

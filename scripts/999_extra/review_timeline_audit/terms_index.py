@@ -11,7 +11,7 @@ import json, re, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from terms_catalog import TERM_RX, LOC_RX, MAP_WINDOWS, PLACE  # noqa
+from terms_catalog import TERM_RX, LOC_RX, MAP_WINDOWS, PLACE, TERM_EXTRA  # noqa
 
 W6 = Path(__file__).parent
 WORDS = '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/YTUVI01_v1.words.json'
@@ -34,7 +34,7 @@ for i, (w, t) in enumerate(words):
             key, rx = row[0], row[1]
             m = rx.search(win)
             if m and m.start() < len(first) + 1:      # матч начинается с текущего слова
-                mentions[kind].append({'key': key, 't': round(t, 2), 'tc': tc(t), 'src': 'vo', 'hit': win[:40]})
+                mentions[kind].append({'key': key, 't': round(t, 2), 'tc': tc(t), 'src': 'vo', 'hit': win})
 
 # экраны: английские/термин-титры без озвучки (Mong Hsu, pigeon blood, Iron-rich…)
 scr = W6 / 'screens_v6.json'
@@ -46,7 +46,7 @@ if scr.exists():
                 key, rx = row[0], row[1]
                 if rx.search(txt):
                     mentions[kind].append({'key': key, 't': float(e['t0']), 'tc': tc(e['t0']),
-                                           'src': 'screen', 'hit': e['text_best'][:40]})
+                                           'src': 'screen', 'hit': e['text_best'][:200], 'screen_id': e['id']})
 
 out = {'terms': [], 'locs': [], 'stats': {}}
 for kind in ('terms', 'locs'):
@@ -75,6 +75,71 @@ for m in sorted(out['locs'], key=lambda x: x['t']):
         noted.add(m['key'])
 out['stats']['locs']['covered'] = sum(1 for m in out['locs'] if m.get('cover'))
 out['stats']['locs']['notes'] = sorted(noted)
+
+# ── «английское слово ВИДНО в кадре» (Роман 11.09: «17 JEWELS вместе с переводом») ──
+# Не языковой детектор (OCR читает «НОРМА» как «HORMA», «ТЕМПЕРАТУРЫ» как «TEMP АТУРЫ»),
+# а сверка с формами из каталога: en=[...] у термина/места. Фразе достаточно VLM-текста
+# (он чище OCR), одиночному слову нужны оба источника.
+EN_WIN = 4.0
+EN_STOP = {'uvi', 'ntd', 'nid', 'kor', 'hun', 'isi', 'dar', 'mois', 'temp', 'temi'}
+HOMO = set('ABCEHKMOPTXYacehkmoprxy')
+EN = {'terms': {k: v['en'] for k, v in TERM_EXTRA.items() if v.get('en')},
+      'locs': {k: p['en'] for k, p in PLACE.items() if p.get('en')}}
+VLM = {}
+vp = W6 / 'vlm_v6.jsonl'
+if vp.exists():
+    for ln in open(vp, encoding='utf-8'):
+        try:
+            v = json.loads(ln)
+        except ValueError:
+            continue
+        VLM[v['id']] = v.get('vlm_text') or ''
+
+
+def _norm(s):
+    return re.sub(r'\s+', ' ', str(s or '').replace('’', "'").replace('|', ' ')).lower()
+
+
+def _seen(form, ocr, vlm):
+    core = re.sub(r"[^a-z]", '', form)
+    if core in EN_STOP or (core and all(c in HOMO for c in form if c.isalpha())):
+        return False
+    rx = re.compile(r'(?<![a-z])' + re.escape(form).replace('\\ ', r'[\s-]+').replace("'", "'?") + r'(?![a-z])')
+    return bool(rx.search(vlm)) and (' ' in form or bool(rx.search(ocr)))
+
+
+scr = json.load(open(W6 / 'screens_v6.json', encoding='utf-8')) if (W6 / 'screens_v6.json').exists() else []
+seen_pairs = set()
+for kind in ('terms', 'locs'):
+    for m in out[kind]:
+        for e in scr:
+            if not (float(e['t0']) - EN_WIN <= m['t'] <= float(e['t1']) + EN_WIN):
+                continue
+            ocr, vlm = _norm(e.get('text_best')), _norm(VLM.get(e['id']))
+            forms = [f for f in EN[kind].get(m['key'], []) if _seen(f, ocr, vlm)]
+            if forms:
+                m['en_on_screen'] = True
+                m['en_forms'] = sorted(set(m.get('en_forms', []) + forms), key=len, reverse=True)
+                m['screen_id'] = e['id']
+                m['screen_tc'] = tc(e['t0'])
+                m['screen_text'] = (VLM.get(e['id']) or e.get('text_best') or '')[:400]
+                seen_pairs.add((kind, m['key'], e['id']))
+
+# экраны, где английское имя видно, а своего упоминания рядом нет
+out['en_screens'] = []
+for e in scr:
+    ocr, vlm = _norm(e.get('text_best')), _norm(VLM.get(e['id']))
+    for kind in ('terms', 'locs'):
+        for key, forms in EN[kind].items():
+            hit = [f for f in forms if _seen(f, ocr, vlm)]
+            if hit and (kind, key, e['id']) not in seen_pairs:
+                out['en_screens'].append({'kind': kind, 'key': key, 'screen_id': e['id'],
+                                          't': float(e['t0']), 'tc': tc(e['t0']), 'forms': sorted(set(hit), key=len, reverse=True),
+                                          'text': (VLM.get(e['id']) or e.get('text_best') or '')[:400],
+                                          'faces': e.get('faces_avg')})
+out['stats']['en'] = {'on_screen_terms': sum(1 for m in out['terms'] if m.get('en_on_screen')),
+                      'on_screen_locs': sum(1 for m in out['locs'] if m.get('en_on_screen')),
+                      'screens_without_mention': len(out['en_screens'])}
 # ── группы: термины, упомянутые в одном окне (≤ GROUP_WIN с), идут ОДНОЙ плашкой (до 3 определений) ──
 GROUP_WIN = 5.0
 groups = []

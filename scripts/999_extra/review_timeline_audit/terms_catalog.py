@@ -100,6 +100,41 @@ TERMS = [
      'Определяет природность камня, обработку и происхождение.'),
 ]
 
+# ── ПЕРЕВОДЫ: как слово выглядит В КАДРЕ и как его подписывать ────────────────
+# Роман 11.09: «мы показываем на часах 17 JEWELS, надо использовать это вместе с переводом,
+# чтобы сопоставлять то, что она говорит, со смыслом».
+#   en          — формы, в которых слово реально видно в кадре (lower-case; сверяется с OCR+VLM)
+#   read        — как читается вслух (для трудных)
+#   lead='en'   — плашка ВЕДЁТ оригиналом: надпись на предмете/документе, её нельзя перерисовать
+#   screen_note — что именно писать на экране (иначе собирается из title+sub)
+#   why         — почему зритель спотыкается (идёт строкой «зачем» в ТЗ)
+# Отдельной таблицей, а не полями кортежа: TERMS распаковывают по позициям четыре скрипта.
+TERM_EXTRA = {
+    'jewels17': dict(en=['17 jewels'], read='севентин джуэлс', lead='en',
+                     screen_note='первой строкой «17 JEWELS» — точно как на часах, под ней крупно «17 КАМНЕЙ»',
+                     why='зритель читает надпись на циферблате и думает, что это марка или цена часов'),
+    'pigeon': dict(en=['pigeon blood', 'pigeon blood red'], read='пиджин блад',
+                   why='в кате титр только по-английски, а перевод звучит лишь в озвучке'),
+    'lab': dict(en=['ssef', 'gia', 'grs', 'gübelin', 'gubelin', 'gemmological institute'],
+                read='эс-эс-и-эф · джи-ай-эй · джи-ар-эс · Гюбелин',
+                why='в кадре сертификаты на английском, зритель не понимает, кто их выдал'),
+    'korund': dict(en=['corundum']),
+    'sapphire': dict(en=['sapphire']),
+    'carat': dict(en=['ct', 'cts', 'carat'], read='карат',
+                  why='в сертификатах вес пишут «ct», зритель читает это как размер'),
+    'heat': dict(en=['heating', 'no indications of heating', 'unheated'],
+                 why='«No indications of heating» в сертификате — это и есть «негретый»'),
+    'mohs': dict(en=["moh's scale", 'mohs scale', 'hardness'], read='шкала Мооса'),
+    'padparadscha': dict(read='падпараджа'),
+    'siamruby': dict(en=['siam'], read='сиамские'),
+    'verneuil': dict(read='огюст вернейль'),
+    'highjew': dict(en=['high jewelry', 'haute joaillerie'], read='хай джуэлри'),
+    'sothebys': dict(en=["sotheby's", 'sothebys'], read='сотбис'),
+    'christies': dict(en=["christie's", 'christies'], read='кристис'),
+    'cartier': dict(en=['cartier'], read='картье'),
+    'winston': dict(en=['harry winston'], read='гарри уинстон'),
+}
+
 # ── МЕСТА → мини-карта ────────────────────────────────────────────────────────
 # kind:   country | place (город/долина/месторождение внутри страны) | region (не страна)
 # parent: ключ страны, если это место внутри неё; role — чем оно является
@@ -108,48 +143,48 @@ TERMS = [
 # screen_note / read_note: строки-инструкции монтажёру в ТЗ-76 (без таймкодов!)
 # region: bbox проекции (см. LOC_REGION в make_infographics_v6.py); points: ключи POINTS
 PLACES = [
-    dict(key='mogok', kind='place', parent='burma', role='долина', rx=r'могок',
+    dict(key='mogok', en=['mogok', 'mogok valley', 'mogok stone tract'], kind='place', parent='burma', role='долина', rx=r'могок',
          ru='МОГОК', region='sea', points=['mogok'],
          sub='долина в Мьянме (Бирме) — отсюда самые дорогие рубины мира',
          screen_note='подпись на экране: «МОГОК», второй строкой мелко «долина в Мьянме (Бирме)»'),
-    dict(key='monghsu', kind='place', parent='burma', role='месторождение',
+    dict(key='monghsu', en=['mong hsu'], kind='place', parent='burma', role='месторождение',
          rx=r'монг ?су|мунг ?су|mong ?hsu', ru='МОНГ СУ', region='sea', points=['monghsu'],
          sub='месторождение в Мьянме (Бирме) — в отчётах пишут Mong Hsu',
          screen_note='подпись на экране: «МОНГ СУ», второй строкой мелко «месторождение в Мьянме (Бирме)»',
          read_note='в озвучке звучит «мунгсу», в отчётах пишут Mong Hsu — на экране пишем «МОНГ СУ»'),
-    dict(key='burma', kind='country', rx=r'\bбирм|берманск|мьянм|бурм|burma|myanmar',
+    dict(key='burma', en=['burma', 'myanmar'], kind='country', rx=r'\bбирм|берманск|мьянм|бурм|burma|myanmar',
          ru='МЬЯНМА', old='БИРМА', renamed=1989, region='sea', points=['mogok', 'monghsu'],
          sub='страна в Юго-Восточной Азии — главная рубиновая земля мира',
          note='Бирма и Мьянма — одна страна: в 1989 Бирму переименовали в Мьянму',
          screen_note='на экране всегда «МЬЯНМА (БИРМА)» — это одно и то же место'),
-    dict(key='mozambique', kind='country', rx=r'м[оа]замбик|монтепуэз|монтепуес',
+    dict(key='mozambique', en=['mozambique', 'montepuez'], kind='country', rx=r'м[оа]замбик|монтепуэз|монтепуес',
          ru='МОЗАМБИК', region='africa', points=['montepuez'],
          sub='страна в Восточной Африке — месторождение Монтепуэз (Montepuez)',
          screen_note='подпись на экране: «МОЗАМБИК», второй строкой мелко «месторождение Монтепуэз»'),
-    dict(key='thai', kind='country', kind_label='две соседние страны', rx=r'таиланд|тайланд|камбодж',
+    dict(key='thai', en=['thailand', 'cambodia', 'siam'], kind='country', kind_label='две соседние страны', rx=r'таиланд|тайланд|камбодж',
          ru='ТАИЛАНД и КАМБОДЖА', region='sea', points=['chanthaburi', 'pailin'],
          sub='две соседние страны — рубиновое поле лежит на их общей границе'),
-    dict(key='srilanka', kind='country', rx=r'шри\s*[- ]?\s*ланк|цейлон|sri ?lanka',
+    dict(key='srilanka', en=['sri lanka', 'ceylon'], kind='country', rx=r'шри\s*[- ]?\s*ланк|цейлон|sri ?lanka',
          ru='ШРИ-ЛАНКА', old='ЦЕЙЛОН', renamed=1972, region='sea', points=['ratnapura'],
          sub='остров у берегов Индии — родина сапфиров и падпараджи',
          note='Шри-Ланка и Цейлон — одно место: остров переименовали в 1972'),
-    dict(key='vietnam', kind='country', rx=r'вьетнам', ru='ВЬЕТНАМ', region='sea', points=['lucyen'],
+    dict(key='vietnam', en=['vietnam'], kind='country', rx=r'вьетнам', ru='ВЬЕТНАМ', region='sea', points=['lucyen'],
          sub='страна в Юго-Восточной Азии — месторождение Лук Йен'),
-    dict(key='tanzania', kind='country', rx=r'танзани(?:я|и|ю|ей|йск)|tanzania',
+    dict(key='tanzania', en=['tanzania'], kind='country', rx=r'танзани(?:я|и|ю|ей|йск)|tanzania',
          ru='ТАНЗАНИЯ', region='africa', points=['winza', 'longido', 'songea'],
          sub='страна в Восточной Африке: Винза, Лонгидо, Сунгеа'),
-    dict(key='madagascar', kind='country', rx=r'мадагаскар', ru='МАДАГАСКАР', region='africa',
+    dict(key='madagascar', en=['madagascar'], kind='country', rx=r'мадагаскар', ru='МАДАГАСКАР', region='africa',
          points=['andilamena'], sub='остров у берегов Африки'),
-    dict(key='kenya', kind='country', rx=r'\bкени', ru='КЕНИЯ', region='africa',
+    dict(key='kenya', en=['kenya'], kind='country', rx=r'\bкени', ru='КЕНИЯ', region='africa',
          points=['mangare'], sub='страна в Восточной Африке'),
-    dict(key='afghan', kind='country', kind_label='три соседние страны', rx=r'афган|тадж|пакист|памир',
+    dict(key='afghan', en=['afghanistan', 'tajikistan', 'pakistan'], kind='country', kind_label='три соседние страны', rx=r'афган|тадж|пакист|памир',
          ru='АФГАНИСТАН · ТАДЖИКИСТАН · ПАКИСТАН', region='world',
          points=['jegdalek', 'pamir', 'hunza'],
          sub='три соседние страны в горах Памира и Гиндукуша'),
-    dict(key='kashmir', kind='region', rx=r'кашмир', ru='КАШМИР', region='world', points=['kashmir'],
+    dict(key='kashmir', en=['kashmir'], kind='region', rx=r'кашмир', ru='КАШМИР', region='world', points=['kashmir'],
          sub='горный район в Гималаях — эталон сапфира, как Могок для рубина',
          screen_note='подпись на экране: «КАШМИР», второй строкой мелко «горный район в Гималаях»'),
-    dict(key='malawi', kind='country', rx=r'малави', ru='МАЛАВИ', region='africa',
+    dict(key='malawi', en=['malawi'], kind='country', rx=r'малави', ru='МАЛАВИ', region='africa',
          points=['chimwadzulu'], sub='страна в Восточной Африке'),
 ]
 

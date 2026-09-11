@@ -28,7 +28,7 @@ M = W6.parent / 'montage'
 sys.path.insert(0, str(W6))
 from make_infographics_v6_data import (SUB, CH_NAME, CH_BOUNDS, NEW_CH, PROG, PROG_T,  # noqa: E402
                                        PROG_FINAL, PROG_NOTE)
-from terms_catalog import TERMS, LOCS, PLACE, place_family  # noqa: E402
+from terms_catalog import TERMS, LOCS, PLACE, TERM_EXTRA, place_family  # noqa: E402
 from typo_diff import typo_line  # noqa: E402
 
 PRAVKI = M / 'pravki_v2.json'
@@ -180,21 +180,92 @@ def _grouped(entries):
     return sorted(by.items(), key=lambda kv: (-len(kv[1]), min(e['t'] for e in kv[1])))
 
 
-def hit_txt(e):
-    """фраза упоминания: озвучка — «…фраза…»; экранный титр (OCR) — помечен, «|» → «/»"""
-    h = clean(e['hit'])
-    if e.get('src') != 'vo':
-        return f"титр на экране: «{h.replace(' | ', ' / ').strip(' |/')}»"
-    return f'«…{h}…»'
+def hit_txt(e, lim=110):
+    """фраза упоминания: озвучка — «…фраза…»; экранный титр (OCR) — помечен и обрезан по границе слова"""
+    h = clean(e['hit']).replace(' | ', ' / ').strip(' |/')
+    if len(h) > lim:
+        h = h[:lim].rsplit(' ', 1)[0] + '…'
+    return f'титр на экране: «{h}»' if e.get('src') != 'vo' else f'«…{h}…»'
+
+
+def _forms(m):
+    """английские формы — в том написании, как они стоят в кадре («Burma», «Mogok Valley», «17 jewels»)"""
+    txt = m.get('screen_text') or m.get('text') or ''
+    out = []
+    for f in (m.get('en_forms') or m.get('forms') or [])[:2]:
+        hit = re.search(re.escape(f).replace(r'\ ', r'[\s-]+'), txt, re.I)
+        out.append(hit.group(0).replace('\n', ' ') if hit else f)
+    return ' и '.join(f'«{x}»' for x in out)
+
+
+def _said(e, win=10.0, lim=95):
+    """что звучит в этот момент — чтобы монтажёр сопоставил надпись в кадре со словами"""
+    t = float(e['t'])
+    said = clean(' '.join(w for w, s in _ws if t - 1.5 <= s <= t + win))
+    if len(said) > lim:
+        said = said[:lim].rsplit(' ', 1)[0]
+    return said.strip(' .,…')
+
+
+def _tc_line(m, what):
+    return f"{m['tc']} ▸ {what}"
+
+
+def _head_lines(key, meta_extra, title, sub, lead_en):
+    """шапка карточки: что писать на экране, как читается, как объясняем, зачем"""
+    x = meta_extra or {}
+    out = []
+    if x.get('screen_note'):
+        out.append('на экране: ' + x['screen_note'])
+    elif lead_en:
+        out.append(f'на экране: первой строкой «{(x.get("en") or [""])[0].upper()}» — как в кадре, под ней крупно «{title}»')
+    else:
+        out.append(f'на экране: крупно «{title}», под ней мелко «{sub}»' if sub else f'на экране: крупно «{title}»')
+    if x.get('read'):
+        out.append(f'читается «{x["read"]}»')
+    return out
 
 
 def gen_terms():
-    meta = {t[0]: (t[2], t[3]) for t in TERMS}
+    """ТЗ-75: по строке на каждый таймкод — что звучит, что видно в кадре, что пишем.
+    Роман 11.09: «мы показываем на часах 17 JEWELS, надо использовать это вместе с переводом»."""
+    meta = {t[0]: (t[2], t[3], t[4]) for t in TERMS}
+    by = {}
+    for e in TJ['terms']:
+        by.setdefault(e['key'], []).append(e)
+    extra_scr = {}
+    for e in TJ.get('en_screens', []):
+        if e['kind'] == 'terms':
+            extra_scr.setdefault(e['key'], []).append(e)
     out = []
-    for k, es in _grouped(TJ['terms']):
-        title, sub = meta.get(k, (k.upper(), ''))
-        out.append({'h': f'{title} ({sub}) — {len(es)}×' if sub else f'{title} — {len(es)}×',
-                    'items': [f"{e['tc']} ▸ {hit_txt(e)}" for e in sorted(es, key=lambda e: e['t'])]})
+    for k, es in sorted(by.items(), key=lambda kv: min(e['t'] for e in kv[1])):
+        title, sub, definition = meta.get(k, (k.upper(), '', ''))
+        x = TERM_EXTRA.get(k) or {}
+        lead_en = x.get('lead') == 'en'
+        en_here = [e for e in es if e.get('en_on_screen')] + extra_scr.get(k, [])
+        head = f'{title} ({sub})' if sub else title
+        head += f' — {_plural(len(es), "плашка", "плашки", "плашек")}'
+        if en_here:
+            head += ' · оригинал виден в кадре'
+        items = _head_lines(k, x, title, sub, lead_en)
+        items.append(f'объясняем так: {definition}')
+        if x.get('why'):
+            items.append(f'зачем: {x["why"]}')
+        if lead_en:
+            items.append('ведём оригиналом: надпись на предмете, её не перерисовать')
+        rows = []
+        for e in sorted(es, key=lambda e: e['t']):
+            if e.get('en_on_screen'):
+                rows.append((e['t'], _tc_line(e, f'в кадре по-английски {_forms(e)} — плашка повторяет надпись и переводит её')))
+                said = _said(e)                      # что она говорит в этот момент — ради сопоставления
+                if said:
+                    rows.append((e['t'] + 0.01, _tc_line(e, f'в озвучке: «…{said}…»')))
+            else:
+                rows.append((e['t'], _tc_line(e, hit_txt(e))))
+        for e in extra_scr.get(k, []):
+            rows.append((e['t'], _tc_line(e, f'в кадре по-английски {_forms(e)} — дать перевод на экране')))
+        items += [t for _, t in sorted(rows)]
+        out.append({'h': head, 'items': items})
     return out
 
 
@@ -205,28 +276,29 @@ def _plural(n, one, few, many):
 
 
 def _loc_head(k, n):
-    """Заголовок места: город всегда подписан своей страной, страна — по канону «МЬЯНМА (БИРМА)»."""
+    """Заголовок места: город подписан своей страной ПОЛНЫМ каноном «МЬЯНМА (БИРМА) · долина МОГОК»."""
     p = PLACE[k]
     cnt = _plural(n, 'мини-карта', 'мини-карты', 'мини-карт')
     if p.get('parent'):
-        return f"{PLACE[p['parent']]['ru']} · {p['role']} {p['ru']} — {cnt}"
+        return f"{PLACE[p['parent']]['label']} · {p['role']} {p['ru']} — {cnt}"
     kind = p.get('kind_label') or {'country': 'страна', 'region': 'горный район, не страна'}.get(p['kind'], '')
-    return f"{p['label']} · {kind} — {cnt}" if kind else f"{p['label']} — {cnt}"
+    return f'{p["label"]} · {kind} — {cnt}' if kind else f'{p["label"]} — {cnt}'
 
 
 def gen_locs():
-    """Список мест для ТЗ-76: города идут сразу за своей страной (Роман 11.09 «люди путают
-    названия стран и городов»), а перечисление «пояса» — одним блоком, без мини-карт."""
+    """ТЗ-76: места — города сразу за своей страной, по строке на каждый таймкод."""
     by = {}
     for e in TJ['locs']:
         by.setdefault(e['key'], []).append(e)
+    extra_scr = {}
+    for e in TJ.get('en_screens', []):
+        if e['kind'] == 'locs':
+            extra_scr.setdefault(e['key'], []).append(e)
     fam = {}
     for k in by:
         fam.setdefault(place_family(k), []).append(k)
     out, belt = [], []
-    # семьи — по суммарной частоте; внутри семьи сначала страна, потом её места по первому таймкоду
-    order = sorted(fam.items(), key=lambda kv: (-sum(len(by[k]) for k in kv[1]),
-                                                min(e['t'] for k in kv[1] for e in by[k])))
+    order = sorted(fam.items(), key=lambda kv: min(e['t'] for k in kv[1] for e in by[k]))
     for _f, keys in order:
         keys.sort(key=lambda k: (bool(PLACE[k].get('parent')), min(e['t'] for e in by[k])))
         for k in keys:
@@ -234,34 +306,103 @@ def gen_locs():
             belt += [(e['t'], e['tc'], PLACE[k]['ru']) for e in by[k] if e.get('cover')]
             if not own:
                 continue
-            notes = [x for x in (PLACE[k].get('screen_note'), PLACE[k].get('read_note')) if x]
-            out.append({'h': _loc_head(k, len(own)),
-                        'items': notes + [f"{e['tc']} ▸ {hit_txt(e)}"
-                                          for e in sorted(own, key=lambda e: e['t'])]})
+            p = PLACE[k]
+            en_here = [e for e in own if e.get('en_on_screen')] + extra_scr.get(k, [])
+            head = _loc_head(k, len(own))
+            if en_here:
+                head += ' · имя видно в кадре по-английски'
+            items = [x for x in (p.get('screen_note'), p.get('read_note')) if x]
+            if p.get('note'):
+                items.append('сноску про переименование даём один раз, на первом упоминании')
+            if p.get('parent'):
+                items.append(f'зачем: {p["ru"]} — это {p["role"]} ВНУТРИ страны {PLACE[p["parent"]]["ru"]}, а не отдельная страна')
+            rows = []
+            for e in sorted(own, key=lambda e: e['t']):
+                if e.get('en_on_screen'):
+                    rows.append((e['t'], _tc_line(e, f'в кадре по-английски {_forms(e)} — ставим подпись по-русски')))
+                    said = _said(e)
+                    if said:
+                        rows.append((e['t'] + 0.01, _tc_line(e, f'в озвучке: «…{said}…»')))
+                else:
+                    line = hit_txt(e)
+                    if e.get('note'):
+                        line += ' — здесь ставим сноску про переименование'
+                    rows.append((e['t'], _tc_line(e, line)))
+            for e in extra_scr.get(k, []):
+                what = f'в кадре по-английски {_forms(e)}'
+                if len(e.get('forms') or []) > 1 and k == 'burma':
+                    what = 'в кадре рядом стоят «Burma» и «Myanmar» — подписать «МЬЯНМА (БИРМА), это одна страна»'
+                else:
+                    what += ' — дать подпись по-русски'
+                rows.append((e['t'], _tc_line(e, what)))
+            items += [t for _, t in sorted(rows)]
+            out.append({'h': head, 'items': items})
     if belt:
         out.append({'h': 'ПЕРЕЧИСЛЕНИЕ «РУБИНОВОГО ПОЯСА» · мини-карты не ставим, всё на большой карте',
                     'items': [f'{tc} ▸ {ru}' for _t, tc, ru in sorted(belt)]})
     return out
 
 
-GEN_LIST = {'ТЗ-30': lambda: gen_structure('map'), 'ТЗ-74': lambda: gen_structure('sub'),
-            'ТЗ-75': gen_terms, 'ТЗ-76': gen_locs}
+GEN_LIST = {'ТЗ-30': lambda: gen_structure('sub'), 'ТЗ-75': gen_terms, 'ТЗ-76': gen_locs}
+
+
+def _card(img, t, title, n, what):
+    return {'t': f'{what} «{title}» — {_plural(n, "показ", "показа", "показов")}', 'img': img, '_t': t}
+
+
+def gen_term_cards():
+    """правый столбец ТЗ-75: карточка на каждый термин, по порядку появления в фильме"""
+    meta = {t[0]: t[2] for t in TERMS}
+    by = {}
+    for e in TJ['terms']:
+        by.setdefault(e['key'], []).append(e)
+    cards = [_card(f'term_{k}.png', min(e['t'] for e in es), meta.get(k, k.upper()), len(es), 'Плашка')
+             for k, es in by.items()]
+    cards.sort(key=lambda c: c.pop('_t'))
+    grp = 'termgrp_marble_iron_fluor.png'
+    cards.append({'t': 'Так выглядит общая плашка, когда 2–3 термина звучат подряд', 'img': grp})
+    return cards
+
+
+def gen_loc_cards():
+    """правый столбец ТЗ-76: мини-карта каждого места + большие карты"""
+    by = {}
+    for e in TJ['locs']:
+        by.setdefault(e['key'], []).append(e)
+    cards = []
+    for k, es in by.items():
+        own = [e for e in es if not e.get('cover')]
+        if not own:
+            continue
+        img = f'map_{k}_note.png' if any(e.get('note') for e in own) else f'map_{k}.png'
+        cards.append(_card(img, min(e['t'] for e in own), PLACE[k]['label'], len(own), 'Мини-карта'))
+    cards.sort(key=lambda c: c.pop('_t'))
+    return cards + [
+        {'t': 'Большая карта: одна страна — два разных месторождения', 'img': 'mapfull_burma.png'},
+        {'t': '«Рубиновый пояс», шаг 1 из 3', 'img': 'mapfull_belt.png'},
+        {'t': '«Рубиновый пояс», шаг 2 из 3', 'img': 'mapfull_belt_2.png'},
+        {'t': '«Рубиновый пояс», шаг 3 из 3', 'img': 'mapfull_belt_3.png'},
+    ]
+
+
+GEN_MAT = {'ТЗ-75': gen_term_cards, 'ТЗ-76': gen_loc_cards}
 
 
 def title_terms():
     st = TJ['stats']['terms']
-    return (f"ТЕРМИНЫ: плашка-определение при каждом упоминании "
-            f"({len(st['by_key'])} терминов / {st['plates']} показов)")
+    en = TJ['stats'].get('en', {}).get('on_screen_terms', 0)
+    return (f'ТЕРМИНЫ: перевод и объяснение при каждом упоминании '
+            f'({len(st["by_key"])} терминов / {st["plates"]} показов; у {en} оригинал виден в кадре)')
 
 
 def title_locs():
     st = TJ['stats']['locs']
+    en = TJ['stats'].get('en', {}).get('on_screen_locs', 0)
     mini = st['plates'] - st.get('covered', 0)
-    return (f"ЛОКАЦИИ НА КАРТЕ: канон названий мест ({len(st['by_key'])} мест / {st['plates']} упоминаний) — "
-            f"{mini} мини-карт + 4 большие карты")
+    return (f'ЛОКАЦИИ НА КАРТЕ: канон названий мест ({len(st["by_key"])} мест / {st["plates"]} упоминаний) — '
+            f'{mini} мини-карт и 4 большие карты; у {en} имя видно в кадре по-английски')
 
 
-# счётчики в заголовке считаются из данных, иначе протухают при каждой пересборке
 GEN_TITLE = {'ТЗ-75': title_terms, 'ТЗ-76': title_locs}
 
 
@@ -447,6 +588,8 @@ for p in allp:
         p['parts']['list'] = GEN_LIST[p['num']]()
     if p['num'] in GEN_TITLE:
         p['title'] = GEN_TITLE[p['num']]()
+    if p['num'] in GEN_MAT:                       # правый столбец: карточка на каждый термин/место
+        p['material_rich'] = GEN_MAT[p['num']]()
     apply_typo(p)
     p['nado'] = render(p)
     if p.get('status') != 'rejected':

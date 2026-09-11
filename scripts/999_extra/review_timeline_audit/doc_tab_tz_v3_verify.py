@@ -4,6 +4,7 @@
 (ширина, свой абзац), списки без строк с ≥2 таймкодами, красные буквы в опечатках, суммы цифрами,
 ссылки, решения, без дублей 💬."""
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -15,7 +16,7 @@ from doctab_lib import DOCS, get_doc, iter_tabs  # noqa: E402
 from typo_diff import diff_spans, typo_line, typo_offsets  # noqa: E402
 
 DOC_ID = DOCS['01']
-TAB_TITLE = 'ТЗ монтажёру · v3'
+TAB_TITLE = os.environ.get('TZ_TAB') or 'ТЗ монтажёру · v3'
 N_CH = 9                                   # 09.09: глава «Техпаспорт» снята Романом
 MIN_IMG_W = 250
 TC_RE = re.compile(r'(?<![\d:])~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?(?![\d:])')  # доли секунды: «2:46.0–2:48.6» — один таймкод
@@ -142,6 +143,21 @@ for n, p in act:
         if not (okn and okw and red_total == exp_total):
             bad_typo.append(f'{n}: красных {red_total} из {exp_total}')
 ck(f'опечатки: изменённые знаки красным ({n_typo} правок)', n_typo > 0 and not bad_typo, '; '.join(bad_typo))
+
+# ── v8 (Роман 11.09): карточка на каждый термин/место + канон названий ──
+for num in ('ТЗ-75', 'ТЗ-76'):
+    if num not in row_of:
+        continue
+    p_ = dict(act)[num]
+    exp = len(p_.get('material_rich') or [])
+    got = len(imgs_in(row_of[num]['tableCells'][4]))
+    ck(f'{num}: карточка на каждый пункт ({exp})', got == exp, f'в доке {got}')
+bad_canon = [ln for ln in t3.get('ТЗ-76', '').split('\n')
+             if re.match(r'^\s*МЬЯНМА\s·', ln) and 'БИРМА' not in ln]
+ck('ТЗ-76: страна везде «МЬЯНМА (БИРМА)»', not bad_canon, f'{bad_canon[:2]}' if bad_canon else '')
+no_orig = [ln for ln in (t3.get('ТЗ-75', '') + t3.get('ТЗ-76', '')).split('\n')
+           if re.search(r'\d{1,2}:\d{2}.*в кадре по-английски', ln) and '«' not in ln]
+ck('строки «в кадре по-английски» показывают оригинал', not no_orig, f'{no_orig[:2]}' if no_orig else '')
 
 ck('ТЗ-21: суммы цифрами', '$30 300 000' in t3.get('ТЗ-21', '') and '$34 800 000' in t3.get('ТЗ-21', ''))
 dups = [n for n, p in act if p.get('roman_comment') and t3[n].count('💬') != len(p['roman_comment'])]
