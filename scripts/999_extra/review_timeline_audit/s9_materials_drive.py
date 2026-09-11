@@ -193,6 +193,12 @@ if ONLY in ('all', 'graphics'):
                       ('info_treatments_scheme_t.png', 'V3 · «Обработка рубинов: 6 способов» — прозрачная панель @33:45 и @38:20.')):
         if (MOCK / name).exists():
             jobs.append(('v6_graphics', MOCK / name, name, txt, False))
+    # сводные карты названий — нужны и в доке, поэтому also_shots=True (в док картинка идёт из shots_ids)
+    for name, txt in (('info_namemap_places.png', 'Справочник монтажёру · КАРТА НАЗВАНИЙ: места — что звучит в озвучке и что ставим на экран (ТЗ-76).'),
+                      ('info_namemap_terms.png', 'Справочник монтажёру · КАРТА НАЗВАНИЙ: термины, часть 1 (ТЗ-75).'),
+                      ('info_namemap_terms_2.png', 'Справочник монтажёру · КАРТА НАЗВАНИЙ: термины, часть 2 (ТЗ-75).')):
+        if (MOCK / name).exists():
+            jobs.append(('v6_graphics', MOCK / name, name, txt, True))
     for i, (sec, ch, label) in enumerate(SUB):
         p = MOCK / f'sub_{i + 1:02d}.png'
         if p.exists():

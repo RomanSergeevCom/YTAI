@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path.home() / 'YTAI/scripts/999_extra/infographic'))
 sys.path.insert(0, str(Path(__file__).parent))
 from render import render  # noqa: E402
-from terms_catalog import TERMS, LOCS, PLACE, TERM_EXTRA  # noqa: E402
+from terms_catalog import TERMS, LOCS, PLACE, PLACES, TERM_EXTRA, place_family  # noqa: E402
 from make_infographics_v6_data import SUB, CH_ACCENT, CH_NAME, PROG, CH_BOUNDS, NEW_CH  # noqa: E402
 from typo_diff import spans_for_fragment  # noqa: E402
 
@@ -608,16 +608,27 @@ if want('G'):
             fx = a.get('fix')
             if fx and fx.get('text'):
                 fh = h * 2160
-                fs = max(48, min(fh * 0.78, 420))
                 pad = fx.get('pad', 40)                           # fix.pad — узкая заплатка, чтобы не резать соседние буквы
+                fx_lines = fx['text'].split('\n')                 # многострочный титр (ТЗ-32b: 2 строки плашки)
+                # кегль считаем И по высоте, И по ширине: иначе длинная замена («1000 ЛЕТ» → «ТЫСЯЧИ ЛЕТ»)
+                # вылезает за заплатку. Заплатке разрешаем подрасти до 1.35 ширины рамки.
+                maxlen = max(len(x) for x in fx_lines) or 1
+                fs = max(40, min(fh * (0.78 if len(fx_lines) == 1 else 0.90 / len(fx_lines)),
+                                 w * 3840 * 1.35 / (maxlen * 0.62), 420))
+                txt_h = fs * len(fx_lines)
+                pw = max(w * 3840, maxlen * fs * 0.62)            # заплатка закрывает старый текст целиком
                 try:
                     bgc, fgc = sample_colours(a['frame'], (x, y, w, h))
                 except Exception:
                     bgc, fgc = '#101014', '#C1272D'
                 col_t = fx.get('color', fgc)
+                # контраст: сэмплер иногда берёт цвет, почти совпадающий с фоном заплатки —
+                # тогда драфт нечитаем (ТЗ-68: светло-серое по бежевому). Подменяем на чёрный/слоновую кость.
+                if abs(_lum(col_t) - _lum(bgc)) < 0.30:
+                    col_t = '#101014' if _lum(bgc) > 0.5 else '#F2EAD8'
                 L, T = x * 3840, y * 2160
                 patch = (f'<div class="fixpatch" style="left:{L - pad:.0f}px; top:{T - pad:.0f}px; '
-                         f'width:{w * 3840 + 2 * pad:.0f}px; height:{fh + 2 * pad:.0f}px; background:{bgc}; border-radius:8px"></div>')
+                         f'width:{pw + 2 * pad:.0f}px; height:{max(fh, txt_h) + 2 * pad:.0f}px; background:{bgc}; border-radius:8px"></div>')
 
                 def badge(extra=''):          # fix.badge='above' — плашка над заплаткой (если снизу идёт другой текст)
                     top = T - pad - 16 - 56 if fx.get('badge') == 'above' else T + fh + pad + 16
@@ -625,10 +636,6 @@ if want('G'):
                             f'✔ ИСПРАВЛЕНО · {num}{extra} · драфт</div>')
                 spans = fix_spans(num, fx['text'])
                 hl_col = '#1F4FD1' if _lum(bgc) > 0.55 else '#FFD23F'
-                fx_lines = fx['text'].split('\n')                 # многострочный титр (ТЗ-32b: 2 строки плашки)
-                if len(fx_lines) > 1:
-                    fs = max(40, min(fh * 0.90 / len(fx_lines), w * 3840 / (max(map(len, fx_lines)) * 0.62), 420))
-                txt_h = fs * len(fx_lines)
                 # fix.font='sans' — плашки ката в гротеске (белые подписи), чтобы драфт не выглядел сменой шрифта
                 ff = "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; " if fx.get('font') == 'sans' else ''
                 body = (patch + f'<div class="fixtxt" style="{ff}left:{L:.0f}px; top:{T + (fh - txt_h) / 2:.0f}px; '
@@ -792,5 +799,105 @@ if want('H'):
              '<div class="foot2"><span>ТЗ-30 · пример «вы здесь» на главе %02d</span>'
              '<span>DRAFT · ПЕРЕРИСОВАТЬ В СТИЛЕ КАНАЛА</span></div>'
              % (rows, hn), VM_CSS, draft=False)
+
+
+# ═══════════ I. КАРТА НАЗВАНИЙ: что звучит → как подписываем (Роман 11.09) ═══════════
+# «нужны рендеры, тоже название, чтобы видеть, когда она называется, как их показывать…
+#  иначе очень легко путаться в местах, сопоставлениях, забываешь быстро»
+NAME_CSS = STRUCT_CSS + f"""
+.nr {{ display:flex; gap:30px; align-items:flex-start; margin-top:22px; }}
+.nr .said {{ min-width:760px; max-width:760px; font-size:50px; font-weight:bold; color:{IVORY}; line-height:1.2; }}
+.nr .said i {{ display:block; font-family:Helvetica,Arial,sans-serif; font-size:29px; font-style:normal;
+  color:{MUT}; letter-spacing:.04em; margin-top:4px; }}
+.nr .arr {{ color:{RED}; font-size:34px; padding-top:4px; }}
+.nr .scr {{ flex:1; font-size:46px; color:{IVORY}; line-height:1.25; }}
+.nr .scr i {{ display:block; font-family:Helvetica,Arial,sans-serif; font-size:29px; font-style:normal;
+  color:{MUT}; margin-top:4px; }}
+.hdr2 {{ display:flex; gap:30px; font-family:Helvetica,Arial,sans-serif; font-size:25px;
+  letter-spacing:.2em; color:{RED}; font-weight:bold; border-bottom:2px solid rgba(242,234,216,.22);
+  padding-bottom:12px; }}
+.hdr2 .a {{ min-width:790px; }}
+"""
+
+
+def _nrow(said, sub_said, screen, sub_scr):
+    return ('<div class="nr"><div class="said">%s%s</div><div class="arr">→</div>'
+            '<div class="scr">%s%s</div></div>'
+            % (said, f'<i>{sub_said}</i>' if sub_said else '',
+               screen, f'<i>{sub_scr}</i>' if sub_scr else ''))
+
+
+def _namecard(name, title, rows, note, foot):
+    half = (len(rows) + 1) // 2
+    head = '<div class="hdr2"><span class="a">ЧТО ЗВУЧИТ В ОЗВУЧКЕ</span><span>ЧТО СТАВИМ НА ЭКРАН</span></div>'
+    page(name,
+         '<div class="sm"><div class="hd"><h1>КАРТА <span class="r">НАЗВАНИЙ</span></h1>'
+         f'<div class="s">{title}</div></div>'
+         f'<div class="cols"><div class="col">{head}{"".join(rows[:half])}'
+         f'<div class="lg"><div class="lgh">ПРАВИЛО</div><div class="lgi">{note}</div></div></div>'
+         f'<div class="col">{head}{"".join(rows[half:])}</div></div>'
+         f'<div class="foot2"><span>{foot}</span>'
+         '<span>DRAFT · ПЕРЕРИСОВАТЬ В СТИЛЕ КАНАЛА</span></div></div>', NAME_CSS, draft=False)
+
+
+if want('I'):
+    tj = json.load(open(W6 / 'terms_v6.json')) if (W6 / 'terms_v6.json').exists() else {'terms': [], 'locs': []}
+    cnt_l, cnt_t = {}, {}
+    for m in tj.get('locs', []):
+        cnt_l[m['key']] = cnt_l.get(m['key'], 0) + 1
+    for m in tj.get('terms', []):
+        cnt_t[m['key']] = cnt_t.get(m['key'], 0) + 1
+    first_l, first_sec = {}, {}
+    for m in sorted(tj.get('locs', []), key=lambda m: m['t']):
+        first_l.setdefault(m['key'], m['tc'])
+        first_sec.setdefault(m['key'], m['t'])
+    first_t = {}
+    for m in sorted(tj.get('terms', []), key=lambda m: m['t']):
+        first_t.setdefault(m['key'], m['tc'])
+
+    rows = []
+    fam_order = sorted({place_family(k) for k in cnt_l},
+                       key=lambda f: min(first_sec[k] for k in cnt_l if place_family(k) == f))
+    seq = [k for f in fam_order
+           for k in sorted((k for k in cnt_l if place_family(k) == f),
+                           key=lambda k: (bool(PLACE[k].get('parent')), first_sec[k]))]
+    for k in seq:
+        pl = PLACE[k]
+        said = pl['ru'] + (f' / {pl["old"]}' if pl.get('old') else '')
+        n = cnt_l[k]
+        sub_said = f'с {first_l[k]} · {n} раз' + ('а' if 2 <= n % 10 <= 4 and n not in (12, 13, 14) else '')
+        if pl.get('en'):
+            sub_said += ' · в кадре: ' + ', '.join(pl['en'][:2])
+        if pl.get('parent'):
+            screen = pl['ru']
+            sub_scr = pl.get('sub', '').split(' — ')[0]
+        else:
+            screen = pl['label']
+            sub_scr = pl.get('sub', '')[:70]
+        rows.append(_nrow(said, sub_said, screen, sub_scr))
+    _namecard('info_namemap_places', f'МЕСТА · {len(rows)} названий — страна, город, месторождение', rows,
+              'Современное имя первым, старое в скобках. Город и месторождение всегда подписаны своей страной. '
+              'Пояснение про переименование — один раз, на первом упоминании.',
+              'ТЗ-76 · канон названий мест')
+
+    trows = []
+    order = {t[0]: i for i, t in enumerate(TERMS)}
+    for k, ttl, sub in sorted(((t[0], t[2], t[3]) for t in TERMS if t[0] in cnt_t),
+                              key=lambda x: first_t.get(x[0], '99:99')):
+        x = TERM_EXTRA.get(k) or {}
+        n = cnt_t[k]
+        said = (x['en'][0] if x.get('lead') == 'en' and x.get('en') else ttl)
+        sub_said = f'с {first_t.get(k, "")} · {n} раз' + ('а' if 2 <= n % 10 <= 4 and n not in (12, 13, 14) else '')
+        if x.get('read'):
+            sub_said += f' · читается «{x["read"]}»'
+        trows.append(_nrow(said, sub_said, ttl, sub))
+    half = (len(trows) + 1) // 2
+    _namecard('info_namemap_terms', f'ТЕРМИНЫ 1–{half} из {len(trows)} — по порядку появления', trows[:half],
+              'Русское название крупно, оригинал мелко под ним, одна строка объяснения простыми словами. '
+              'Если надпись видна в кадре по-английски — ведём оригиналом и переводим рядом.',
+              'ТЗ-75 · канон терминов')
+    _namecard('info_namemap_terms_2', f'ТЕРМИНЫ {half + 1}–{len(trows)} из {len(trows)}', trows[half:],
+              'Тот же канон: русское имя крупно, оригинал мелко, объяснение одной строкой.',
+              'ТЗ-75 · канон терминов')
 
 print('\nготово →', OUT)

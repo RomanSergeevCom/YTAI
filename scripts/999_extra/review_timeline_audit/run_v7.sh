@@ -29,7 +29,7 @@ mark "V7 start (from=$FROM until=$UNTIL)"
 run terms       python3 "$W6/terms_index.py"
 run s10         python3 "$W6/s10_format_tz.py"
 run s11         python3 "$W6/s11_apply_sources.py"
-run render      python3 "$W6/make_infographics_v6.py" G
+run render      python3 "$W6/make_infographics_v6.py" A B G I
 run review      python3 "$W6/make_review_v6.py"
 run mock        node "$W6/mockbuild_v6.js"
 run prev_render python3 "$W6/s12_doc_previews.py" --render

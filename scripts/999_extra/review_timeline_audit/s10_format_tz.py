@@ -269,6 +269,35 @@ def gen_terms():
     return out
 
 
+def gen_renames():
+    """Блок ТЗ-75 «что переписать»: переименование + КОРОТКОЕ объяснение, что это такое.
+    Роман 11.09: «не вижу просто объяснение… здесь не перевод нужен, а коротко объяснить, что это»."""
+    meta = {t[0]: (t[2], t[3], t[4]) for t in TERMS}
+    order = {k: i for i, (k, *_) in enumerate(TERMS)}
+    out = []
+    for k, x in sorted(TERM_EXTRA.items(), key=lambda kv: order.get(kv[0], 99)):
+        if not x.get('was'):
+            continue
+        title, _sub, definition = meta.get(k, (k.upper(), '', ''))
+        why = clean(definition).rstrip('.')
+        why = why[0].lower() + why[1:] if why else ''
+        was = x['was'] if x['was'].startswith('«') else f'«{x["was"]}»'
+        now = title if title.startswith('«') else f'«{title}»'
+        out.append(f'было {was} — стало {now} · {why}')
+    return out
+
+
+def gen_reads():
+    """трудные слова — как читаются вслух"""
+    meta = {t[0]: t[2] for t in TERMS}
+    order = {k: i for i, (k, *_) in enumerate(TERMS)}
+    out = []
+    for k, x in sorted(TERM_EXTRA.items(), key=lambda kv: order.get(kv[0], 99)):
+        if x.get('read') and x.get('read_of'):
+            out.append(f'{x["read_of"]} — читается «{x["read"]}», на экране «{meta.get(k, k.upper())}»')
+    return out
+
+
 def _plural(n, one, few, many):
     n10, n100 = n % 10, n % 100
     return f'{n} ' + (one if n10 == 1 and n100 != 11 else
@@ -361,6 +390,9 @@ def gen_term_cards():
     cards.sort(key=lambda c: c.pop('_t'))
     grp = 'termgrp_marble_iron_fluor.png'
     cards.append({'t': 'Так выглядит общая плашка, когда 2–3 термина звучат подряд', 'img': grp})
+    # сводная шпаргалка: что звучит → как подписываем (Роман 11.09 — «иначе легко путаться»)
+    cards.append({'t': 'КАРТА НАЗВАНИЙ: термины по порядку появления, часть 1', 'img': 'info_namemap_terms.png'})
+    cards.append({'t': 'КАРТА НАЗВАНИЙ: термины по порядку появления, часть 2', 'img': 'info_namemap_terms_2.png'})
     return cards
 
 
@@ -382,10 +414,43 @@ def gen_loc_cards():
         {'t': '«Рубиновый пояс», шаг 1 из 3', 'img': 'mapfull_belt.png'},
         {'t': '«Рубиновый пояс», шаг 2 из 3', 'img': 'mapfull_belt_2.png'},
         {'t': '«Рубиновый пояс», шаг 3 из 3', 'img': 'mapfull_belt_3.png'},
+        {'t': 'КАРТА НАЗВАНИЙ: все 13 мест одним кадром — что звучит и что ставим на экран',
+         'img': 'info_namemap_places.png'},
     ]
 
 
 GEN_MAT = {'ТЗ-75': gen_term_cards, 'ТЗ-76': gen_loc_cards}
+
+
+# ── карточка-пример в каждом ТЗ (Роман 11.09: «проверь, чтобы все карточки были во всех местах») ──
+# слева — ТЗ, справа — наш рендер: либо свежий fix-драфт «как должно быть», либо уже готовая плашка
+ADD_MAT = {
+    'ТЗ-02': [('map_mogok.png', 'Драфт: мини-карта «МОГОК» — русская подпись поверх английской карты')],
+    'ТЗ-11': [('term_silk.png', 'Драфт: плашка «ШЁЛК» — что это простыми словами')],
+    'ТЗ-13': [('info_structure_map.png', 'Карта структуры: все главы и подглавы одним кадром')],
+    'ТЗ-14': [('term_pigeon.png', 'Драфт: «ГОЛУБИНАЯ КРОВЬ» крупно, «pigeon blood» мелко')],
+    'ТЗ-18': [('info_videomap_ch06.png', 'Карта выпуска: где стоит глава «Происхождение рубина»')],
+    'ТЗ-20': [('term_sothebys.png', 'Драфт: плашка «СОТБИС» — что это за дом')],
+    'ТЗ-24': [('term_jewels17.png', 'Драфт: «17 JEWELS» как на часах и перевод «17 КАМНЕЙ»')],
+    'ТЗ-25': [('term_highjew.png', 'Драфт: «ВЫСОКОЕ ЮВЕЛИРНОЕ ИСКУССТВО» — что это значит'),
+              ('term_cartier.png', 'Драфт: плашка «КАРТЬЕ»'),
+              ('term_winston.png', 'Драфт: плашка «ГАРРИ УИНСТОН»')],
+    'ТЗ-36': [('fix_tz36.png', 'Драфт: титр «ТЫСЯЧИ ЛЕТ» — вариант А')],
+    'ТЗ-54': [('fix_tz54.png', 'Драфт: русский перевод схемы')],
+    'ТЗ-56': [('fix_tz56.png', 'Драфт: исправленная строка сертификата')],
+    'ТЗ-57': [('fix_tz57.png', 'Драфт: русский титр вместо английского пресс-релиза')],
+    'ТЗ-65': [('fix_tz65.png', 'Драфт: титр «Затравки»')],
+    'ТЗ-66': [('fix_tz66.png', 'Драфт: русская подпись к фото Меймана')],
+    'ТЗ-68': [('fix_tz68.png', 'Драфт: исправленный заголовок таблицы')],
+}
+
+
+def add_cards(p):
+    """дописать карточку-рендер, если её ещё нет (оверрайды и GEN_MAT не трогаем)"""
+    have = {m.get('img') for m in (p.get('material_rich') or [])}
+    for img, cap in ADD_MAT.get(p['num'], []):
+        if img not in have:
+            p.setdefault('material_rich', []).append({'t': cap, 'img': img})
 
 
 def title_terms():
@@ -484,9 +549,15 @@ def apply_typo(p):
 
 
 # ── рендер ──
+AT = {'@renames': lambda: gen_renames(), '@reads': lambda: gen_reads()}
+
+
 def expand(items):
+    """строка-плейсхолдер вместо списка: '@prog:08' · '@renames' · '@reads' — списки из каталога"""
     if isinstance(items, str):
-        return gen_prog(items.split(':', 1)[1]) if items.startswith('@prog:') else [items]
+        if items.startswith('@prog:'):
+            return gen_prog(items.split(':', 1)[1])
+        return AT[items]() if items in AT else [items]
     return items or []
 
 
@@ -590,6 +661,7 @@ for p in allp:
         p['title'] = GEN_TITLE[p['num']]()
     if p['num'] in GEN_MAT:                       # правый столбец: карточка на каждый термин/место
         p['material_rich'] = GEN_MAT[p['num']]()
+    add_cards(p)
     apply_typo(p)
     p['nado'] = render(p)
     if p.get('status') != 'rejected':

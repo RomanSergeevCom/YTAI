@@ -159,6 +159,11 @@ no_orig = [ln for ln in (t3.get('ТЗ-75', '') + t3.get('ТЗ-76', '')).split('\
            if re.search(r'\d{1,2}:\d{2}.*в кадре по-английски', ln) and '«' not in ln]
 ck('строки «в кадре по-английски» показывают оригинал', not no_orig, f'{no_orig[:2]}' if no_orig else '')
 
+# Роман 11.09: «не вижу просто объяснение» — у каждого переименования должно быть, что это такое
+no_why = [ln for ln in t3.get('ТЗ-75', '').split('\n')
+          if re.search(r'было «.+» — стало «', ln) and ' · ' not in ln.split('стало')[1]]
+ck('ТЗ-75: у каждого переименования есть объяснение', not no_why, f'{no_why[:2]}' if no_why else '')
+
 ck('ТЗ-21: суммы цифрами', '$30 300 000' in t3.get('ТЗ-21', '') and '$34 800 000' in t3.get('ТЗ-21', ''))
 dups = [n for n, p in act if p.get('roman_comment') and t3[n].count('💬') != len(p['roman_comment'])]
 ck('💬 комменты Романа без дублей', not dups, f'{dups}' if dups else '')
