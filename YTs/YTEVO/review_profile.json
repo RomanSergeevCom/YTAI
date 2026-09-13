@@ -1,0 +1,32 @@
+{
+ "schema": "review-profile-v1",
+ "channel": "YTEVO",
+ "_note": "Профиль канала YTEVO (АНО «Эволюция», эволюция.рус): манифесты и разговоры основательниц; режим по умолчанию — ТЗ на монтаж из исходников (ката нет).",
+ "mode_default": "montage_tz",
+ "style": {
+  "ivory": "#F4F1EA",
+  "red": "#D2432E",
+  "mut": "#B8B3A8",
+  "bg": "#14161A",
+  "panel": "rgba(20,22,26,.86)",
+  "font_stack": "'Inter','Helvetica Neue',Arial,sans-serif",
+  "mockup_style": "ytevo_client",
+  "draft_badge": "DRAFT · согласовать с клиентом"
+ },
+ "ch_marker_colors": ["Green", "Cyan", "Orange", "Magenta", "Blue", "Yellow"],
+ "rules_text": "ПРАВИЛА КАНАЛА: графика в визуальном языке клиента (презентация Evolution_Platform); один тезис — один экран; title-safe и без переполнения (DOM-QC); имена и должности спикеров единообразны; ссылки и названия платформы — как в презентации клиента.",
+ "tz_classes": {
+  "keep": ["typo", "grammar", "fact", "mismatch", "structure"],
+  "drop": ["design", "taste", "pacing", "layout"]
+ },
+ "sources_default": ["презентация клиента Evolution_Platform", "эволюция.рус"],
+ "latin_whitelist": [],
+ "terms_base_file": "",
+ "doc": {
+  "tab_tz_template": "ТЗ монтажёру · {ver}",
+  "nav_template": "Структура · {ver}"
+ },
+ "drive": {"materials_folder": "Review_materials"},
+ "notes_cycle": false,
+ "fact_check": {"max_claims": 20}
+}

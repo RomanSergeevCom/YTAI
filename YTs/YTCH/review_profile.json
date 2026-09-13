@@ -1,0 +1,44 @@
+{
+ "schema": "review-profile-v1",
+ "channel": "YTCH",
+ "_note": "Профиль канала YTCH (документальные истории семей, фонд «Быть рядом» / burodd.ru). Чувствительное = ⚠️ на подтверждение фонда, не ⛔. Паттерны стоп-реестра — из b_risk_v4 (YTCH12), дополняются по проектам.",
+ "mode_default": "cut_review",
+ "style": {
+  "ivory": "#FFFFFF",
+  "red": "#C1272D",
+  "mut": "#BBBBBB",
+  "bg": "#000000",
+  "panel": "rgba(0,0,0,.82)",
+  "font_stack": "'PT Sans Narrow','Arial Narrow',sans-serif",
+  "mockup_style": "ytch_black_caps",
+  "draft_badge": "DRAFT · перерисовать в стиле канала"
+ },
+ "ch_marker_colors": ["Green", "Cyan", "Orange", "Magenta", "Blue", "Yellow"],
+ "rules_text": "ПРАВИЛА КАНАЛА (Роман): русский титр, подписи героев и фонда единообразны (имя · роль · город); фонд входит не раньше 34-й минуты и малыми кусками, не монолитом; тизер — не только из бед; последний звук фильма — не призыв о деньгах; полное ФИО ребёнка, тайна усыновления, диагнозы, работодатель и неофициальная работа — только с письменного одобрения фонда; лица и фото детей при необходимости блюрить.",
+ "tz_classes": {
+  "keep": ["typo", "grammar", "fact", "mismatch", "foreign_trace", "structure"],
+  "drop": ["design", "taste", "pacing", "layout"]
+ },
+ "sources_default": ["burodd.ru", "юрист фонда", "монтажный лист проекта"],
+ "latin_whitelist": [],
+ "terms_base_file": "",
+ "sensitivity": {
+  "policy": "fund_confirm",
+  "mark": "⚠️",
+  "never_cut": true,
+  "_note": "находка по паттерну = ⚠️ «на подтверждение фонда / блюр», а не ⛔; ⛔ только для дублей, техбрака и прямых письменных запретов фонда",
+  "patterns": []
+ },
+ "structure_rules": {
+  "fund_entry_min": 34,
+  "teaser_rule": "тизер не только из бед: минимум одна фраза-надежда из актов ≥2",
+  "last_sound_rule": "финальная реплика — героя, не призыв о деньгах"
+ },
+ "doc": {
+  "tab_tz_template": "ТЗ монтажёру · {ver}",
+  "nav_template": "Ревью по видео · {ver}"
+ },
+ "drive": {"materials_folder": "Review_materials"},
+ "notes_cycle": true,
+ "fact_check": {"max_claims": 20}
+}

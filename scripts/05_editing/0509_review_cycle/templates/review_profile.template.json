@@ -1,0 +1,34 @@
+{
+ "schema": "review-profile-v1",
+ "channel": "YTXX",
+ "_note": "Профиль канала для стадии 0509_review_cycle: стиль графики, каноны, классы ТЗ, чувствительность. Скопировать в YTs/{CH}/review_profile.json.",
+ "mode_default": "cut_review",
+ "style": {
+  "ivory": "#F2EAD8",
+  "red": "#C1272D",
+  "mut": "#CDC6B8",
+  "bg": "#101014",
+  "panel": "rgba(10,10,14,.84)",
+  "font_stack": "Georgia,'Times New Roman',serif",
+  "mockup_style": "generic_dark",
+  "draft_badge": "DRAFT · перерисовать в стиле канала"
+ },
+ "ch_marker_colors": ["Green", "Cyan", "Orange", "Magenta", "Blue", "Yellow"],
+ "rules_text": "ПРАВИЛА КАНАЛА: …",
+ "tz_classes": {
+  "keep": ["typo", "grammar", "fact", "currency", "language", "mismatch", "foreign_trace"],
+  "drop": ["design", "taste", "pacing", "layout"]
+ },
+ "sources_default": [],
+ "latin_whitelist": [],
+ "terms_base_file": "",
+ "sensitivity": null,
+ "structure_rules": null,
+ "doc": {
+  "tab_tz_template": "ТЗ монтажёру · {ver}",
+  "nav_template": "Ревью {ver} по видео"
+ },
+ "drive": {"materials_folder": "Review_materials"},
+ "notes_cycle": false,
+ "fact_check": {"max_claims": 40}
+}

@@ -1,0 +1,32 @@
+{
+ "schema": "review-profile-v1",
+ "channel": "YTUVI",
+ "_note": "Профиль канала UVI (yuvi.ru, камни) для стадии 0509_review_cycle. Стиль графики = заставки ката: слоновая кость на чёрном, серифный шрифт.",
+ "mode_default": "cut_review",
+ "style": {
+  "ivory": "#F2EAD8",
+  "red": "#C1272D",
+  "mut": "#CDC6B8",
+  "bg": "#101014",
+  "panel": "rgba(10,10,14,.84)",
+  "font_stack": "Georgia,'Times New Roman',serif",
+  "mockup_style": "ytuvi_ivory",
+  "draft_badge": "DRAFT · перерисовать в стиле канала"
+ },
+ "ch_marker_colors": ["Green", "Cyan", "Orange", "Magenta", "Blue", "Yellow"],
+ "rules_text": "ПРАВИЛА КАНАЛА (Роман): валюта — знак ПЕРЕД числом и сокращение «$30,3 МЛН» / «$34,8 МЛН» (НЕ «30 300 000 $»), единый формат по всему фильму; суммы в ТЗ — цифрами «$30,3 МЛН (= $30 300 000)»; русский титр главный, английский допустим только вторым/меньшим; названия локаций показывать НА КАРТЕ; страна — современное имя первым, старое в скобках («МЬЯНМА (БИРМА)»), город всегда подписан своей страной; термин — русское имя крупно, оригинал мелко; имена/термины/даты без опечаток; числа должны совпадать с проверяемыми фактами. «Титр за головой ведущей» у этого канала — приём, не ошибка.",
+ "tz_classes": {
+  "keep": ["typo", "grammar", "fact", "currency", "language", "mismatch", "foreign_trace"],
+  "drop": ["design", "taste", "pacing", "layout"]
+ },
+ "sources_default": ["GIA", "Lotus Gemology", "SSEF", "Gübelin", "Sotheby's", "Christie's", "Britannica"],
+ "latin_whitelist": ["GIA", "SSEF", "GRS", "Gübelin", "ct", "cts", "VS", "4C", "UVI", "yuvi.ru", "OK"],
+ "terms_base_file": "review_terms_base.json",
+ "doc": {
+  "tab_tz_template": "ТЗ монтажёру · {ver}",
+  "nav_template": "Ревью {ver} по видео"
+ },
+ "drive": {"materials_folder": "Review_materials"},
+ "notes_cycle": true,
+ "fact_check": {"max_claims": 40}
+}
