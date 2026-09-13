@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 SP = Path(__file__).parent
-W6 = Path('/Users/romansergeev/Downloads/YTUVI01_Sonya_cut/work/v6')
+W6 = SP.parent                              # v7_tools лежит внутри work/v6 (был путь первого видео)
 OVR = W6 / 'previews_v7.json'
 J = Path(sys.argv[1])
 DRY = '--dry' in sys.argv

@@ -30,9 +30,12 @@ shots_ids = json.loads((M / 'shots_ids.json').read_text())
 # на каждом файле висит коммент с ТЗ/таймкодом/источником
 proj_ids = json.loads((M / 'proj_material_ids.json').read_text()) \
     if (M / 'proj_material_ids.json').exists() else {}
-MATERIALS_FOLDER = 'https://drive.google.com/drive/folders/1s6KJ3ka4L98hwur23KtAraucneMRQN7w'
-PROJECT_FOLDER = 'https://drive.google.com/drive/folders/1rVYvtG-5rpUO--DnV9z3n-LJXSUl7hdH'
-SPRINT_FOLDER = 'https://drive.google.com/drive/folders/1af9NONmWnWkfvPLdbVGqNjg2Zc1ecxFL'
+sys.path.insert(0, str(M.parent / 'v6'))
+import proj_config as P  # noqa: E402
+
+MATERIALS_FOLDER = P.folder_url('materials_id')          # дубль 2 из 4 — теперь из карточки
+PROJECT_FOLDER = P.folder_url('project_folder_id')
+SPRINT_FOLDER = P.folder_url('sprint_folder_id')
 
 CAT = {'cut': '✂️ резать', 'insert': '➕ вставить', 'graphics': '🎨 графика',
        'structure': '🃏 структура', 'color': '🔧 обработка', 'check': '✅ разобрано'}
@@ -62,12 +65,12 @@ def q(v):
     return "'" + v if v and (v[0].isdigit() or v[0] in "=+") else v
 
 
-LEGEND = ('Секвенция: YTUVI01_5_Review_v6_tz_v{N} (панель UXP → Review → Review_v6). '
+LEGEND = (f'Секвенция: {P.CODE}_5_Review_v6_tz_v{{N}} (панель UXP → Review → Review_v6). '
           'Слои: V1 = ОРИГИНАЛ (не тронут) · V2 = футажи видео+фото · V3 = инфографика + плашки терминов при каждом упоминании + мини-карты локаций + нарисованные исправления · '
           'V4 = плашки ТЗ (полный текст + ссылки: маркер клипа / кнопка панели «Copy ТЗ @ playhead») '
-          '· V5 = стрелки правок на кадре · V6 = прозрачные главы + подглавы + прогресс перечислений (гл.08/09). '
-          'Маркеры секвенции = только 10 разноцветных глав. Глава «Проверка геммолога» '
-          'удалена (07.09); CTA сразу после конца рендера.\n'
+          '· V5 = стрелки правок на кадре · V6 = прозрачные главы + подглавы + прогресс перечислений. '
+          'Маркеры секвенции = только разноцветные главы; '
+          'CTA сразу после конца рендера.\n'
           f'📁 Все материалы (на каждом файле — коммент с ТЗ и таймкодом): {MATERIALS_FOLDER} · '
           f'📁 Папка проекта: {PROJECT_FOLDER} · 📁 Спринт YTUVI S1 (исходники): {SPRINT_FOLDER}\n'
           'PDF-источники: страницы указаны в материалах. Подробный разбор — вкладка дока '

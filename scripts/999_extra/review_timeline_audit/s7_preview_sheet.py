@@ -10,9 +10,12 @@ from pathlib import Path
 from PIL import Image
 
 W6 = Path(__file__).parent
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
 OUT = W6 / 'previews_v6'
 OUT.mkdir(exist_ok=True)
-J = Path('/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/YTUVI01_review_v6.json')
+J = Path(P.get('review_dir') or (Path(P.need('project_dir')) / '00_Setup/05_Review')) / f'{P.CODE}_review_v6.json'
 doc = json.load(open(J))
 segs = [s for s in doc['segments'] if s['kind'] == 'graphic' and s['track'] in ('V3', 'V4', 'V5', 'V6')]
 only = sys.argv[1] if len(sys.argv) > 1 else None
@@ -21,9 +24,9 @@ for s in segs:
     if only and s['track'] != only:
         continue
     sec = int(s['timeline_in_sec'] + 0.5)
-    if sec >= 2440:
-        continue
     fr = W6 / 'hires' / f'h{sec + 1:04d}.jpg'
+    if not fr.exists():            # хвост секвенции за концом ката (было зашито «≥ 2440»)
+        continue
     dst = OUT / f'{s["segment_id"]}.jpg'
     if not dst.exists():
         bg = Image.open(fr).convert('RGBA')

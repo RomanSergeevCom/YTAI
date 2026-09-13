@@ -10,7 +10,14 @@ import json, re, sys
 from pathlib import Path
 
 W6 = Path(__file__).parent
-EXPECT_FRAMES = 2440          # 2440.48 с → fps=1
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
+# Раньше тут стояло 2440 — число кадров ПЕРВОГО ката. На кате другой длины условие
+# не выполнялось никогда: стадия стирала кадры и перегоняла 4K заново три раза подряд,
+# после чего прогон объявлялся провальным при технически верных данных.
+EXPECT_FRAMES = P.expect_frames()
+TOL = P.FRAMES_TOLERANCE
 stage = sys.argv[1] if len(sys.argv) > 1 else 'all'
 rep, bad = {}, []
 
@@ -18,8 +25,9 @@ rep, bad = {}, []
 def check_frames():
     n = len(list((W6 / 'hires').glob('h*.jpg')))
     small = [p.name for p in (W6 / 'hires').glob('h*.jpg') if p.stat().st_size < 20_000]
-    rep['frames'] = {'count': n, 'expected': EXPECT_FRAMES, 'suspicious_small': small[:10]}
-    if n < EXPECT_FRAMES - 1:
+    rep['frames'] = {'count': n, 'expected': EXPECT_FRAMES, 'tolerance': TOL,
+                     'suspicious_small': small[:10]}
+    if n < EXPECT_FRAMES - TOL:
         bad.append(f'frames: {n} < {EXPECT_FRAMES}')
     if len(small) > 5:
         bad.append(f'frames: {len(small)} подозрительно маленьких (<20 КБ) — битые кадры?')
@@ -38,22 +46,31 @@ def check_ocr():
         except Exception:
             broken += 1
     ev = json.load(open(W6 / 'screens_v6.json')) if (W6 / 'screens_v6.json').exists() else []
-    rep['ocr'] = {'frames': n, 'with_text': txt, 'broken_lines': broken, 'screens': len(ev)}
-    if n < EXPECT_FRAMES - 1:
+    lo, hi = P.screens_range()
+    min_txt = P.min_frames_with_text()
+    rep['ocr'] = {'frames': n, 'with_text': txt, 'broken_lines': broken, 'screens': len(ev),
+                  'expect_screens': [lo, hi], 'min_with_text': min_txt}
+    if n < EXPECT_FRAMES - TOL:
         bad.append(f'ocr: {n} кадров < {EXPECT_FRAMES}')
     if broken:
         bad.append(f'ocr: {broken} битых JSON-строк')
-    if txt < 400:
-        bad.append(f'ocr: с текстом всего {txt} (ожидали ~500+) — OCR отработал?')
-    if not (150 <= len(ev) <= 400):
-        bad.append(f'ocr: событий экранов {len(ev)} — вне ожидаемого 150..400')
-    # опечатки-якоря должны быть найдены (контроль дословности OCR)
-    # Й/И и Ё/Е OCR путает на титрах — якоря сравниваем в нормализованном виде
-    allt = ' '.join(' '.join(e['texts_all']) for e in ev).upper().replace('Й', 'И').replace('Ё', 'Е')
-    for anchor in ('ОБЫЧНЫНИ', 'КРИСТАЛИЧЕСКИИ', '3450'):
-        if anchor not in allt:
-            bad.append(f'ocr: якорь «{anchor}» не найден в текстах экранов (известная ошибка ката)')
-    rep['ocr']['anchors_ok'] = [a for a in ('ОБЫЧНЫНИ', 'КРИСТАЛИЧЕСКИИ', '3450') if a in allt]
+    if txt < min_txt:
+        bad.append(f'ocr: с текстом всего {txt} (ожидали ≥{min_txt}) — OCR отработал?')
+    if not (lo <= len(ev) <= hi):
+        bad.append(f'ocr: событий экранов {len(ev)} — вне ожидаемого {lo}..{hi}')
+    # Якоря дословности — тексты, которые ТОЧНО есть в ЭТОМ кате (prep_config.json → ocr_anchors).
+    # Пустой список = проверка не применяется. Раньше тут были зашиты якоря первого фильма,
+    # и на любом другом кате селфчек браковал корректный прогон.
+    # Й/И и Ё/Е OCR путает на титрах — якоря сравниваем в нормализованном виде.
+    if P.OCR_ANCHORS:
+        allt = ' '.join(' '.join(e['texts_all']) for e in ev).upper().replace('Й', 'И').replace('Ё', 'Е')
+        for anchor in P.OCR_ANCHORS:
+            if anchor.upper().replace('Й', 'И').replace('Ё', 'Е') not in allt:
+                bad.append(f'ocr: якорь «{anchor}» не найден в текстах экранов')
+        rep['ocr']['anchors_ok'] = [a for a in P.OCR_ANCHORS
+                                    if a.upper().replace('Й', 'И').replace('Ё', 'Е') in allt]
+    else:
+        rep['ocr']['anchors_ok'] = 'якоря не заданы — проверка пропущена'
 
 
 def check_vlm():
@@ -97,15 +114,49 @@ def check_llm():
         bad.append(f'llm: {len(res)}/{len(jobs)}')
     if len(raw) > len(jobs) * .1:
         bad.append(f'llm: {len(raw)} ответов не распарсились как JSON')
-    known = {57: 'ОБЫЧНЫНИ', 387: 'КРИСТАЛИЧЕСКИЙ'}
-    for t0, word in known.items():
+    # Известные опечатки ЭТОГО ката: {секунда: 'слово'} из prep_config.json → llm_anchors.
+    # Пусто = проверка пропущена. Флаг мягкий: стадию не валит.
+    for t0, word in P.LLM_ANCHORS.items():
         hit = [r for r in res if abs(r['t0'] - t0) <= 4 and any(word.lower() in str(x).lower() for x in (r.get('typos') or []))]
         rep['llm'][f'anchor_{word}'] = bool(hit)
         if not hit:
             bad.append(f'llm: известная опечатка «{word}» @{t0}s не поймана корректором (мягкий флаг)')
 
 
-funcs = {'frames': check_frames, 'ocr': check_ocr, 'vlm': check_vlm, 'llm': check_llm}
+def check_transcript():
+    """Контракт words.json: segments[].words[].{w, s, e}, где s/e — ЧИСЛА-секунды (формат wordrole).
+
+    Чужой формат (строки «M:SS.sss», как в Claude4_assembly) роняет float() в трёх скриптах.
+    Хуже, если ключа words нет вовсе: `seg.get('words') or []` ничего не роняет, но молча
+    обнуляет озвучку в пакетах аудита, якоря ТЗ и каталог терминов.
+    """
+    p = Path(P.WORDS)
+    if not p.exists():
+        bad.append(f'transcript: нет {p}')
+        return
+    d = json.load(open(p, encoding='utf-8'))
+    segs = d.get('segments') or []
+    words = [w for s in segs for w in (s.get('words') or [])]
+    num = lambda v: isinstance(v, (int, float))                            # noqa: E731
+    nonnum = [w for w in words if not (num(w.get('s')) and num(w.get('e')))]
+    no_words = sum(1 for s in segs if not s.get('words'))
+    last = max((w['e'] for w in words if num(w.get('e'))), default=0)
+    rep['transcript'] = {'segments': len(segs), 'words': len(words), 'segments_without_words': no_words,
+                         'non_numeric_times': len(nonnum), 'last_word_sec': round(last, 1),
+                         'language': d.get('language'), 'diarization': d.get('diarization')}
+    if not words:
+        bad.append('transcript: ни одного слова в segments[].words — озвучка в аудите будет пустой')
+    if nonnum:
+        bad.append(f'transcript: {len(nonnum)} слов с нечисловыми s/e (не формат wordrole) — float() упадёт')
+    if segs and no_words > len(segs) * .1:
+        bad.append(f'transcript: {no_words}/{len(segs)} сегментов без words[]')
+    dur = P.duration_sec()
+    if words and not (dur * .6 <= last <= dur + 5):
+        bad.append(f'transcript: последнее слово на {last:.0f} с, а кат {dur:.0f} с — транскрипт от другого файла?')
+
+
+funcs = {'frames': check_frames, 'ocr': check_ocr, 'transcript': check_transcript,
+         'vlm': check_vlm, 'llm': check_llm}
 for k in (funcs if stage == 'all' else [stage]):
     try:
         funcs[k]()

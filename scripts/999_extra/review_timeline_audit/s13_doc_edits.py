@@ -21,6 +21,7 @@ import difflib
 import json
 import sys
 import urllib.parse
+import os
 import urllib.request
 from pathlib import Path
 
@@ -28,12 +29,18 @@ sys.path.insert(0, str(Path.home() / 'YTAI/scripts/999_extra/ytuvi_doctabs'))
 from doctab_lib import DOCS, access_token, get_doc, iter_tabs  # noqa: E402
 
 W6 = Path(__file__).parent
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
 ARGS = sys.argv[1:]
 BK = Path(ARGS[ARGS.index('--bk') + 1]) if '--bk' in ARGS else None
 REST = [a for i, a in enumerate(ARGS) if a != '--bk' and (i == 0 or ARGS[i - 1] != '--bk')]
-SINCE = REST[0] if REST else '2026-09-10T06:36:00Z'
-DOC_ID = DOCS['01']
-TAB_TITLE = 'ТЗ монтажёру · v3'
+# SINCE — момент сборки вкладки ЭТОГО проекта; без него правки считаются с чужой даты
+SINCE = REST[0] if REST else P.need('tab_built_at')
+# Было DOCS['01']: снимали бы правки из дока первого видео и ставили status: rejected
+# тем ТЗ нового проекта, у которых совпал номер — тихая порча брифа.
+DOC_ID = P.need('doc_id')
+TAB_TITLE = os.environ.get('TZ_TAB') or P.need('tab_title')
 
 
 def expected():

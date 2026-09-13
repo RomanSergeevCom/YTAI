@@ -12,7 +12,7 @@
 → montage/proj_material_ids.json (имя → id) дополняется.
 usage: s9_materials_drive.py [--dry-run] [--only screens|graphics]
 """
-import json, mimetypes, re, subprocess, sys, urllib.parse, urllib.request
+import json, mimetypes, re, subprocess, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path.home() / 'YTAI/scripts/999_extra/ytuvi_doctabs'))
@@ -23,10 +23,16 @@ from make_infographics_v6_data import SUB, PROG  # noqa: E402
 from PIL import Image  # noqa: E402
 
 W6 = Path(__file__).parent
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
 M = W6.parent / 'montage'
-MOCK = Path('/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/mockups')
-MATERIALS_ID = '1s6KJ3ka4L98hwur23KtAraucneMRQN7w'
-SHOTS_REMOTE = 'gdrive:YTUVI_plan_v3_shots'
+MOCK = Path(P.get('mockups_dir') or (Path(P.get('project_dir', '.')) / '00_Setup/05_Review/mockups'))
+# ⚠️ id папки Review_materials был зашит строкой и дублировался в четырёх файлах:
+# рассинхрон означал заливку материалов в папку ЧУЖОГО проекта. Теперь один источник,
+# и пустое значение — отказ, а не тихий фолбэк на прошлый проект.
+MATERIALS_ID = P.need('materials_id')
+SHOTS_REMOTE = P.get('shots_remote', 'gdrive:YTUVI_plan_v3_shots')
 DRY = '--dry-run' in sys.argv
 ONLY = sys.argv[sys.argv.index('--only') + 1] if '--only' in sys.argv else 'all'
 COMP = W6 / 'err_frames_annotated'
@@ -42,13 +48,30 @@ def api(method, url, body=None, raw=None, ctype='application/json'):
     elif body is not None:
         data = json.dumps(body).encode()
         headers['Content-Type'] = 'application/json'
-    req = urllib.request.Request(url, method=method, headers=headers, data=data)
-    try:
-        with urllib.request.urlopen(req) as r:
-            return json.load(r)
-    except urllib.error.HTTPError as e:
-        print('API ERROR:', method, url[:90], e.read().decode()[:400])
-        raise
+    # Drive регулярно отдаёт 500/503 на пачке загрузок и 429 по квоте. Без повтора прогон падал
+    # посередине (12.09: рухнул на 100 файлах из 203), а заливка идемпотентна — повторять безопасно.
+    RETRY = (408, 429, 500, 502, 503, 504)
+    for k in range(6):
+        req = urllib.request.Request(url, method=method, headers=headers, data=data)
+        try:
+            with urllib.request.urlopen(req, timeout=300) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            body_txt = e.read().decode('utf-8', 'replace')[:300]
+            if e.code in RETRY and k < 5:
+                wait = 4 * (2 ** k)
+                print(f'  API {e.code} → повтор через {wait} с ({method} {url[:60]})', flush=True)
+                time.sleep(wait)
+                headers['Authorization'] = f'Bearer {access_token()}'      # токен мог истечь за время ожидания
+                continue
+            print('API ERROR:', method, url[:90], body_txt)
+            raise
+        except (urllib.error.URLError, TimeoutError) as e:                 # сеть/таймаут — тоже повторяем
+            if k == 5:
+                raise
+            wait = 4 * (2 ** k)
+            print(f'  сеть ({str(e)[:60]}) → повтор через {wait} с', flush=True)
+            time.sleep(wait)
 
 
 def find_child(parent, name, folder=False, meta=False):
@@ -114,7 +137,7 @@ def tc(sec):
 
 
 proj_ids = json.load(open(M / 'proj_material_ids.json')) if (M / 'proj_material_ids.json').exists() else {}
-audit = json.load(open(W6 / 'audit_v6.json')) if (W6 / 'audit_v6.json').exists() else {'annotations': []}
+audit = P.audit_or_die(W6 / 'audit_v6.json') or {'annotations': []}
 terms = json.load(open(W6 / 'terms_v6.json'))
 pravki = json.load(open(M / 'pravki_v2.json'))['all']
 jobs = []   # (subfolder, local_path, name, comment, also_shots)

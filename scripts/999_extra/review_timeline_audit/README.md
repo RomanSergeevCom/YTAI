@@ -58,24 +58,39 @@ KB-страница метода: https://yt.rya.ae/kb/review-timeline/ (4.6). �
 ⚠️ Карта, заменяющая кадр, должна быть ГЛУХОЙ — сквозь полупрозрачную панель просвечивают английские
 подписи карты ката.
 
-## Как повторить на новом проекте
-1. Скопировать папку в `{project}/…/work/v6/` рядом с `montage/` (нужны `pravki_v2.json`, `shots_ids.json`,
-   `proj_material_ids.json`, `drive_clips.json`, `notes_sheet.json`).
-2. Поправить константы в скриптах: `PROJECT`, `RENDER` (рендер монтажёра, 25p), `WORDS` (words.json транскрипта),
-   `CHAPTERS` (главы: сек, цвет, имя) в `make_review_v6.py`/`s1_screens.py`/`s6_pack_chapters.py`,
-   `SUB`/`PROG`/`CH_NAME` в `make_infographics_v6_data.py`, `TERMS`/`LOCS` в `terms_catalog.py`,
-   `MATERIALS_ID` (Drive-папка Review_materials) и `SHOTS_REMOTE` в `s9_materials_drive.py`.
-3. `./run_prep.sh` — ночь, автономно: кадры → OCR (vision_ocr_ru) → Qwen2.5-VL-7B → Qwen3-8B, селфчеки `s5_selfcheck.py`, TG.
-4. `python3 s6_pack_chapters.py` → `audit_pack/`; аудит: `Workflow({scriptPath: wf_audit_v6.js, args: {packs, existing_tz_file, inventory_file, inventory_count}})`,
-   результат → `audit_findings_v6.json` (поле `confirmed`).
-5. `python3 s10_format_tz.py && python3 s11_apply_sources.py` — ТЗ блоками + источники картинок.
-6. `./run_post.sh` — s8 (находки → ТЗ) → рендер G → JSON → превью → мок-сборка → Drive → лист → док + verify.
+## Как повторить на новом проекте (с 11.09.2026 — через карточку проекта)
+1. Скопировать папку в рабочую копию `…/work/v6/` рядом с `montage/` (файлы `montage/` — `pravki_v2.json`,
+   `shots_ids.json`, `proj_material_ids.json`, `drive_clips.json`, `notes_sheet.json` — у каждого проекта свои).
+2. **Завести карточку `work/v6/prep_config.json`** — все проектные константы живут в ней, читает их `proj_config.py`
+   (образец — в его докстринге). Без карточки скрипты падают с текстом, а НЕ берут значения прошлого видео:
+   раньше путь к транскрипту был зашит в пяти файлах, id папки материалов — в четырёх, id дока — в пяти.
+   - обязательные: `project`, `code`, `src`, `words`, `duration_sec`;
+   - для стадий после моделей: `project_dir`, `doc_id`, `tab_title`, `materials_id`, `project_folder_id`,
+     `sprint_folder_id`, `chapters`, `ch_name`, `film`;
+   - внешние id пустыми быть не могут: стадия откажется, а не уйдёт в документ или папку прошлого проекта;
+   - якоря самопроверки (`ocr_anchors`, `llm_anchors`) — тексты ИМЕННО этого ката; пусто = проверка пропущена.
+3. Главы/подглавы/прогресс (`make_infographics_v6_data.py`) и каталог терминов (`terms_catalog.py`) — пока в коде.
+4. Локальный разбор — стадии ПО ОДНОЙ: кадры → `ctl_prep.sh ocr|vlm|llm start` (пауза `pause/resume`, флаг
+   `~/.cache/<project>/PAUSE` читают обе модельные стадии), селфчек `s5_selfcheck.py frames|ocr|transcript|vlm|llm|all`.
+   `run_prep.sh` — только без пауз: его сторож по часам убивает стадию, простоявшую на паузе.
+   Автономно на Memex (YTUVI02, 11.09): сквозная цепочка `run_chain.sh` + сторож `chain_watch.sh` (вехи в TG, подъём упавшего).
+5. `python3 s6_pack_chapters.py` → `audit_pack/`; аудит: `Workflow({scriptPath: wf_audit_v6.js, args: {packs,
+   existing_tz_file, inventory_file, inventory_count, film, sources}})` → `audit_findings_v6.json` (поле `confirmed`).
+   Без результата аудита стадии после него откажутся (`YTAI_NO_AUDIT=1` — если так и задумано).
+6. `./run_post.sh` / `./run_v7.sh` — папки берут от своего места, константы — из карточки.
 7. Панель UXP → Review → выбрать `{CODE}_review_v6.json` → секвенция `{CODE}_5_Review_v6_tz_v{N}`.
+
+Ручные правки `tz_overrides.json` и `previews_v7.json` привязаны к НОМЕРАМ ТЗ фильма и помечены `_project`:
+правки чужого проекта не применяются (иначе ТЗ-05 нового фильма молча получал текст ТЗ-05 первого).
+Промпты доводки `v7_tools/wf_*_v7.js` содержат числа первого видео (26 ТЗ, 65 превью, 64 страницы, монтажёр Соня) —
+при повторе переписать под проект.
 
 ## Скрипты
 | файл | роль |
 |---|---|
-| run_prep.sh / s1–s5 | кадры 1 fps 1080p, OCR с bbox, инвентарь экранов, VLM-транскрипция, LLM-корректор, селфчеки |
+| proj_config.py + prep_config.json | карточка проекта: пути, длительность, главы, якоря, внешние id; пауза и атомарная запись |
+| run_prep.sh / ctl_prep.sh / s2–s5 | кадры 1 fps 1080p, OCR с bbox, инвентарь экранов, VLM-транскрипция, LLM-корректор, селфчеки |
+| s1_screens.py | ⚠️ НЕ в конвейере (архив): нумерует кадры на единицу иначе, чем s2 — смешать = сдвиг всех таймкодов |
 | s6_pack_chapters.py | пакеты для агентов по главам |
 | wf_audit_v6.js | Workflow: аудиторы по главам → 3 скептика на находку → критик полноты |
 | s8_apply_audit.py | находки → pravki (ТЗ-N+, `source: audit_v6`) + audit_v6.json (стрелки/исправления) |

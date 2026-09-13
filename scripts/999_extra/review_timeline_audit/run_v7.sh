@@ -5,8 +5,10 @@
 #   шаги: terms s10 s11 render review mock prev_render prev_upload prev_apply drive sheet doc verify
 # Правки Романа в доке снимать ДО запуска: python3 s13_doc_edits.py
 set -uo pipefail
-W6=~/Downloads/YTUVI01_Sonya_cut/work/v6
-MONT=~/Downloads/YTUVI01_Sonya_cut/work/montage
+# папки — от места самого скрипта (он лежит в рабочей копии work/v6), а не путь первого видео
+W6="${W6:-$(cd "$(dirname "$0")" && pwd)}"
+MONT="${MONT:-$(cd "$W6/.." && pwd)/montage}"
+[ -f "$W6/prep_config.json" ] || { echo "нет $W6/prep_config.json — карточка проекта не заведена"; exit 1; }
 LOG=$W6/v7.log
 export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
 cd "$W6" || exit 1

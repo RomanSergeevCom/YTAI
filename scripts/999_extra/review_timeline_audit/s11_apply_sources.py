@@ -13,7 +13,12 @@ from pathlib import Path
 
 W6 = Path(__file__).parent
 M = W6.parent / 'montage'
-src = json.load(open(W6 / 'sources_research.json'))
+if (W6 / 'sources_research.json').exists():
+    src = json.load(open(W6 / 'sources_research.json'))
+else:
+    # на новом проекте библиограф-агент ещё не ходил — это законное состояние, но не тихое
+    print('!! sources_research.json нет — источники картинок НЕ проставлены (нужен прогон библиографа)')
+    src = {'items': []}
 fixes = json.load(open(W6 / 'sources_fixes.json')) if (W6 / 'sources_fixes.json').exists() else {}
 
 INFO = {}

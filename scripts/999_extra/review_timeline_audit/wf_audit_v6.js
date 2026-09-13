@@ -2,6 +2,10 @@
 //   Workflow({scriptPath: '.../wf_audit_v6.js', args: {packs:[{pack,file,chapter,n,range}], existing_tz_file, inventory_file, inventory_count}})
 // packs — из s6_pack_chapters.py (audit_pack/INDEX.json); existing_tz_file — «ТЗ-NN · tc · название» построчно;
 // inventory_file — [{id,tc,chapter,frame,ocr}] всех экранов. Результат → сохранить как audit_findings_v6.json (поле confirmed).
+// ⚠️ Сохранять СРАЗУ после возврата воркфлоу: в скрипте нет доступа к файловой системе, и единственная
+// копия находок до сохранения — task-output прогона (11.09 так потерялись 51 находка из 79).
+// Находка без голосов (верификаторы упали по лимиту) = status 'unverified', НЕ опровергнута: догнать
+// её проверку через wf_verify_rest_v6.js, иначе она молча не попадёт в ТЗ.
 export const meta = {
   name: 'screen-audit-v6',
   description: 'Audit every on-screen title/graphic of a cut (chapter packs) → adversarial 3-lens verify → completeness critic',
@@ -14,9 +18,14 @@ export const meta = {
 
 const PACKS = args.packs
 const EXISTING_TZ = `(полный список — файл ${args.existing_tz_file}, прочитай его Read'ом: строки «ТЗ-NN · tc · название»)`
+// Личность фильма приходит снаружи (args.film из карточки проекта). Зашитая строка
+// не роняет воркфлоу — она тихо уводит аудиторов: агенты получают чужую тему и чужой
+// перечень проверяемых источников, а именно этот прогон порождает ВСЕ ТЗ по экранам.
+const FILM = args.film || 'русскоязычный YouTube-док о рубинах (ведущая Наталья, канал UVI / yuvi.ru)'
+const SOURCES = args.sources || "GIA, Lotus Gemology, SSEF, Sotheby's, Britannica"
 const RULES = `
-ПРАВИЛА КАНАЛА (Роман): валюта — знак ПЕРЕД числом и сокращение «$30,3 МЛН» / «$34,8 МЛН» (НЕ «30 300 000 $»), единый формат по всему фильму; русский титр главный, английский допустим только вторым/меньшим; названия локаций показывать НА КАРТЕ; имена/термины/даты без опечаток; числа должны совпадать с проверяемыми фактами (GIA, Lotus Gemology, SSEF, Sotheby's, Britannica).
-Фильм — русскоязычный YouTube-док о рубинах (ведущая Наталья, канал UVI / yuvi.ru).`
+ПРАВИЛА КАНАЛА (Роман): валюта — знак ПЕРЕД числом и сокращение «$30,3 МЛН» / «$34,8 МЛН» (НЕ «30 300 000 $»), единый формат по всему фильму; русский титр главный, английский допустим только вторым/меньшим; названия локаций показывать НА КАРТЕ; имена/термины/даты без опечаток; числа должны совпадать с проверяемыми фактами (${SOURCES}).
+Фильм — ${FILM}.`
 
 const FINDINGS_SCHEMA = {
   type: 'object',
@@ -75,14 +84,14 @@ const VERDICT_SCHEMA = {
 }
 
 function auditPrompt(p) {
-  return `Ты — корректор, факт-чекер и графический редактор русскоязычного YouTube-фильма о рубинах. Аудит ВСЕХ экранов главы ${p.chapter} «${p.range}» (пакет ${p.pack}, ${p.n} экранов).
+  return `Ты — корректор, факт-чекер и графический редактор фильма: ${FILM}. Аудит ВСЕХ экранов главы ${p.chapter} «${p.range}» (пакет ${p.pack}, ${p.n} экранов).
 
 Прочитай пакет: ${p.file}
 Для КАЖДОГО экрана ОТКРОЙ кадр frame_best инструментом Read (это картинка 1920×1080) и при необходимости frame_last и соседние секунды (hires/h{sec+1:04d}.jpg) — OCR и VLM в пакете лишь подсказка, они путают Й/И, Щ/Ш, латиницу/кириллицу, а анимация «допечатки» даёт обрезанные слова. Считай ошибкой только то, что видишь глазами на кадре.
 
 Проверяй каждый титр/плашку/лоуэр/цифру:
 1) ТЕКСТ — опечатки, орфография, грамматика, пунктуация, регистр, дефисы/тире, ё/е непоследовательность внутри одного экрана.
-2) ФАКТЫ — каждое число, дата, имя, вес, цена, географическое название: проверь веб-поиском (WebSearch; если инструмент не виден — подгрузи через ToolSearch "select:WebSearch"). Авторитетные источники: GIA, Lotus Gemology, SSEF, Sotheby's/Christie's, Britannica, Wikipedia как вторичный. Укажи источник в evidence.
+2) ФАКТЫ — каждое число, дата, имя, вес, цена, географическое название: проверь веб-поиском (WebSearch; если инструмент не виден — подгрузи через ToolSearch "select:WebSearch"). Авторитетные источники: ${SOURCES}; Wikipedia — как вторичный. Укажи источник в evidence.
 3) ВАЛЮТА/ЧИСЛА — формат по правилам канала; разнобой форматов между экранами.
 4) ЯЗЫК — английские графики/термины/подписи без русского перевода или где английский стоит ПЕРВЫМ/крупнее русского.
 5) ЭКРАН ≠ ОЗВУЧКА — титр противоречит тому, что говорится (voiceover_around).
@@ -99,7 +108,7 @@ fix_text — ТОЧНЫЙ правильный текст титра (как д�
 
 const LENSES = {
   visual: (f) => `Ты — скептик-«визуал». Утверждается, что на экране ${f.tc} (${f.frame}) есть ошибка типа ${f.kind}: «${f.on_screen_text}» — ${f.problem}. ОТКРОЙ кадр Read'ом сам (и соседние секунды в той же папке: h{sec+1:04d}.jpg для sec=${f.t0}..${f.t1}, т.е. h${String(f.t0 + 1).padStart(4, '0')}.jpg…h${String(f.t1 + 1).padStart(4, '0')}.jpg). Подтверди или опровергни: (а) текст на кадре действительно читается именно так (не артефакт OCR, не полукадр анимации, не обрезка допечатки); (б) bbox ${JSON.stringify(f.bbox)} действительно накрывает этот элемент (если нет — дай corrected_bbox). Если ошибку глазами НЕ видно — refuted=true. Отвечай по схеме.`,
-  factual: (f) => `Ты — скептик-«лингвист/факт-чекер». Утверждается: на экране ${f.tc} текст «${f.on_screen_text}» ошибочен (${f.kind}): ${f.problem}. Предлагаемое исправление: «${f.fix_text}». Доказательства автора: ${f.evidence}. Проверь независимо: для орфографии/грамматики — нормы русского языка (допустимые варианты написания, авторская стилистика, капслок-титры без точек — не ошибка); для фактов — веб-поиск (WebSearch; подгрузи через ToolSearch "select:WebSearch" при необходимости) по авторитетным источникам (GIA, Lotus Gemology, SSEF, Sotheby's, Britannica). Если экранная форма допустима или «факт» защитим — refuted=true. Если ошибка реальна, но fix_text неточен — дай corrected_fix_text. ${RULES}`,
+  factual: (f) => `Ты — скептик-«лингвист/факт-чекер». Утверждается: на экране ${f.tc} текст «${f.on_screen_text}» ошибочен (${f.kind}): ${f.problem}. Предлагаемое исправление: «${f.fix_text}». Доказательства автора: ${f.evidence}. Проверь независимо: для орфографии/грамматики — нормы русского языка (допустимые варианты написания, авторская стилистика, капслок-титры без точек — не ошибка); для фактов — веб-поиск (WebSearch; подгрузи через ToolSearch "select:WebSearch" при необходимости) по авторитетным источникам (${SOURCES}). Если экранная форма допустима или «факт» защитим — refuted=true. Если ошибка реальна, но fix_text неточен — дай corrected_fix_text. ${RULES}`,
   editorial: (f) => `Ты — скептик-«редактор выпуска». Находка: экран ${f.tc}, тип ${f.kind}, «${f.on_screen_text}» → «${f.fix_text}»; проблема: ${f.problem}. Вопрос: обязан ли монтажёр это править? Опровергни (refuted=true), если это вкусовщина, не влияет на понимание зрителя, уже полностью покрыто существующим ТЗ так, что отдельной стрелки не нужно (список ТЗ ниже; заметь: если existing_tz указан, стрелка на кадре всё равно полезна — тогда НЕ опровергай), или если правка противоречит правилам канала. Правила: ${RULES}
 Существующие ТЗ: ${EXISTING_TZ}`,
 }
@@ -110,10 +119,14 @@ async function verify(f, phase) {
   const votes = await parallel(Object.keys(LENSES).map((lens) => () =>
     agent(LENSES[lens](f), { label: `verify:${lens}:${f.tc}`, phase, schema: VERDICT_SCHEMA }).then((v) => ({ lens, v }))))
   const vs = votes.filter(Boolean).filter((x) => x.v)
-  const keep = vs.filter((x) => !x.v.refuted).length >= 2
+  // Голосов меньше двух — большинство не набирается В ПРИНЦИПЕ (линзы упали по лимиту/ошибке сети).
+  // Это НЕ «опровергнуто»: такую находку надо догнать отдельным прогоном, а не выбросить.
+  const enough = vs.length >= 2
+  const keep = enough && vs.filter((x) => !x.v.refuted).length >= 2
   const fixes = vs.map((x) => x.v.corrected_fix_text).filter((s) => s && s.trim())
   const bb = vs.map((x) => x.v.corrected_bbox).filter((b) => b && typeof b.x === 'number')
-  return { ...f, confirmed: keep, votes: vs.map((x) => ({ lens: x.lens, refuted: x.v.refuted, reason: x.v.reason })),
+  return { ...f, confirmed: keep, status: enough ? 'verified' : 'unverified',
+    votes: vs.map((x) => ({ lens: x.lens, refuted: x.v.refuted, reason: x.v.reason })),
     fix_text_final: fixes.length ? fixes[0] : f.fix_text, bbox_final: bb.length ? bb[0] : f.bbox }
 }
 
@@ -133,7 +146,9 @@ const perPack = await pipeline(
 const packs = perPack.filter(Boolean)
 const all = packs.flatMap((p) => p.findings)
 const confirmed = all.filter((f) => f.confirmed)
-log(`audit done: ${all.length} raw → ${confirmed.length} confirmed`)
+const unverified = all.filter((f) => f.status === 'unverified')
+log(`audit done: ${all.length} raw → ${confirmed.length} confirmed` +
+  (unverified.length ? ` · ⚠️ ${unverified.length} БЕЗ ПРОВЕРКИ (линзы не вернулись) — догнать wf_verify_rest_v6.js` : ''))
 
 // ── Critic: completeness over the whole inventory (reads the inventory file itself) ──
 const flaggedIds = Array.from(new Set(all.map((f) => f.screen_id)))
@@ -154,6 +169,12 @@ if (critic && critic.findings.length) {
   extra = (await parallel(fresh.map((f) => () => verify(f, 'Critic').then((v) => ({ ...v, from_critic: true }))))).filter(Boolean)
 }
 const extraConfirmed = extra.filter((f) => f.confirmed)
-log(`final: ${confirmed.length + extraConfirmed.length} confirmed (${extraConfirmed.length} from critic), ${all.length - confirmed.length + extra.length - extraConfirmed.length} refuted`)
+const allFindings = all.concat(extra)
+const unverifiedAll = allFindings.filter((f) => f.status === 'unverified')
+const refuted = allFindings.filter((f) => f.status === 'verified' && !f.confirmed)
+log(`final: ${confirmed.length + extraConfirmed.length} confirmed (${extraConfirmed.length} from critic), ` +
+  `${refuted.length} refuted, ${unverifiedAll.length} unverified${critic ? '' : ' · ⚠️ критик полноты не вернулся'}`)
 return { packs, critic_notes: critic ? critic.notes : '', critic_clean: critic ? critic.clean_screens : [],
-  findings: all.concat(extra), confirmed: confirmed.concat(extraConfirmed) }
+  critic_done: !!critic,
+  findings: allFindings, confirmed: confirmed.concat(extraConfirmed),
+  unverified: unverifiedAll.map((f) => ({ screen_id: f.screen_id, tc: f.tc, kind: f.kind, severity: f.severity })) }

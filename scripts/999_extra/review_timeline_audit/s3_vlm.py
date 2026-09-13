@@ -13,9 +13,13 @@ from pathlib import Path
 
 os.environ.setdefault('HF_HOME', str(Path.home() / 'YTAI/models/huggingface'))
 W6 = Path(__file__).parent
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
 HIRES = W6 / 'hires'
 OUT = W6 / 'vlm_v6.jsonl'
 MODEL = 'mlx-community/Qwen2.5-VL-7B-Instruct-4bit'
+P.banner('vlm')
 
 from mlx_vlm import load, generate
 from mlx_vlm.prompt_utils import apply_chat_template
@@ -53,8 +57,16 @@ def ask(img, q, max_tokens):
 
 with open(OUT, 'a', encoding='utf-8') as out:
     for i, e in enumerate(todo):
+        P.pause_gate('vlm')          # граница экрана — единственное безопасное место паузы
         img = str(HIRES / e['best_frame'])
         if not os.path.exists(img):
+            # раньше тут был голый continue: экран без кадра навсегда оставался в очереди,
+            # и стадия никогда не «заканчивалась» сама. Пишем пропуск явно.
+            out.write(json.dumps({'id': e['id'], 't0': e['t0'], 'best_frame': e['best_frame'],
+                                  'vlm_text': '', 'vlm_desc': '',
+                                  'skipped': 'нет кадра на диске'}, ensure_ascii=False) + '\n')
+            out.flush()
+            print(f'  ⚠️ {e["id"]}: нет кадра {e["best_frame"]} — записан пропуск', flush=True)
             continue
         txt = ask(img, Q_TEXT, 220)
         desc = ask(img, Q_DESC, 60)

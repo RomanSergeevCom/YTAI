@@ -7,16 +7,20 @@
 строки best-кадра с bbox (0..1, origin левый верх), VLM-транскрипция/описание, флаги Qwen3,
 озвучка ±8 с. Агент СМОТРИТ кадры сам (Read image) — OCR/VLM только подсказка.
 """
-import json, re
+import json, re, sys
 from pathlib import Path
 
 W6 = Path(__file__).parent
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
 PACK = W6 / 'audit_pack'
 PACK.mkdir(exist_ok=True)
-WORDS = '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/YTUVI01_v1.words.json'
-CH_NAME = {'01': 'ВСТУПЛЕНИЕ / ХУК', '02': 'КОРОЛЬ САМОЦВЕТОВ', '03': 'АНАТОМИЯ ЦВЕТА', '04': 'ТЕХПАСПОРТ РУБИНА',
-           '05': 'КОМУ ПОДХОДИТ РУБИН', '06': 'ПРОИСХОЖДЕНИЕ РУБИНА', '07': 'РЕКОРДЫ АУКЦИОНОВ',
-           '08': 'ИСКУССТВЕННЫЙ РУБИН', '09': 'СПОСОБЫ ОБРАБОТКИ', '10': 'ФИНАЛ + CTA'}
+WORDS = P.WORDS
+CH_NAME = dict(P.get('ch_name', {
+    '01': 'ВСТУПЛЕНИЕ / ХУК', '02': 'КОРОЛЬ САМОЦВЕТОВ', '03': 'АНАТОМИЯ ЦВЕТА', '04': 'ТЕХПАСПОРТ РУБИНА',
+    '05': 'КОМУ ПОДХОДИТ РУБИН', '06': 'ПРОИСХОЖДЕНИЕ РУБИНА', '07': 'РЕКОРДЫ АУКЦИОНОВ',
+    '08': 'ИСКУССТВЕННЫЙ РУБИН', '09': 'СПОСОБЫ ОБРАБОТКИ', '10': 'ФИНАЛ + CTA'}))
 
 ws = []
 for seg in json.load(open(WORDS, encoding='utf-8'))['segments']:
@@ -65,7 +69,8 @@ for ch, recs in sorted(by_ch.items()):
         parts = [recs[:h], recs[h:]]
     for i, part in enumerate(parts):
         name = f'ch_{ch}' + (f'_{"ab"[i]}' if len(parts) > 1 else '')
-        pack = {'pack': name, 'chapter': ch, 'chapter_name': CH_NAME[ch],
+        # .get: глава, которой нет в ch_name карточки, раньше роняла сборку пакетов KeyError'ом
+        pack = {'pack': name, 'chapter': ch, 'chapter_name': CH_NAME.get(ch, f'ГЛАВА {ch}'),
                 'range_tc': f'{part[0]["tc"]}–{part[-1]["tc"]}', 'n_screens': len(part),
                 'hires_dir': str(W6 / 'hires'), 'frame_naming': 'h{sec+1:04d}.jpg = секунда sec (кадр = сек+1)',
                 'screens': part}

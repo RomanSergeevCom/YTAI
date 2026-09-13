@@ -15,9 +15,11 @@ sys.path.insert(0, str(M.parent / 'v6'))
 from doctab_lib import DOCS, get_doc, iter_tabs  # noqa: E402
 from typo_diff import diff_spans, typo_line, typo_offsets  # noqa: E402
 
-DOC_ID = DOCS['01']
-TAB_TITLE = os.environ.get('TZ_TAB') or 'ТЗ монтажёру · v3'
-N_CH = 9                                   # 09.09: глава «Техпаспорт» снята Романом
+import proj_config as P  # noqa: E402
+
+DOC_ID = P.need('doc_id')                  # было DOCS['01'] — проверяли бы вкладку первого видео
+TAB_TITLE = os.environ.get('TZ_TAB') or P.need('tab_title')
+N_CH = int(P.get('n_chapters', len(P.CHAPTERS)))   # YTUVI01: 9 (глава «Техпаспорт» снята 09.09)
 MIN_IMG_W = 250
 TC_RE = re.compile(r'(?<![\d:])~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?(?![\d:])')  # доли секунды: «2:46.0–2:48.6» — один таймкод
 
@@ -60,13 +62,17 @@ row_of = {c: r for c, r in zip(col0, rows) if re.match(r'^ТЗ-\d\d$', c)}
 exp_nums = {n for n, _ in act}
 ck(f'все {n_tz} номеров ТЗ', set(row_of) == exp_nums,
    f'нет: {sorted(exp_nums - set(row_of))} лишние: {sorted(set(row_of) - exp_nums)}' if set(row_of) != exp_nums else '')
-ck('ТЗ-30 первой строкой', col0[1] == 'ТЗ-30', f'={col0[1]!r}')
-
 full = '\n'.join(cell_text(c) for r in rows for c in r['tableCells'])
 t3 = {n: cell_text(r['tableCells'][3]) for n, r in row_of.items()}
-ck('fps-warning в ТЗ-12', '23.976' in t3.get('ТЗ-12', '') and 'Interpret' in t3.get('ТЗ-12', ''))
-ck('дубль интервью: «оставить ВТОРОЙ» @25:48 в ТЗ-17', 'оставить ВТОРОЙ' in t3.get('ТЗ-17', '') and '25:48' in t3.get('ТЗ-17', ''))
-ck('«Карта выпуска» в ТЗ-30', 'КАРТА ВЫПУСКА' in t3.get('ТЗ-30', ''))
+# Проверки «по содержанию конкретного ТЗ» — из карточки (verify_tz: {«ТЗ-12»: [«23.976», «Interpret»]}).
+# Были зашиты номера и тексты первого фильма (ТЗ-30 первой строкой, fps в ТЗ-12, дубль @25:48 в ТЗ-17,
+# суммы в ТЗ-21): на другом кате они гарантированно падали и топили реальные замечания.
+for _num, _needles in (P.get('verify_tz') or {}).items():
+    _txt = t3.get(_num, '')
+    _miss = [x for x in _needles if x not in _txt]
+    ck(f'{_num}: содержит {", ".join(_needles)}', not _miss, f'нет: {_miss}' if _miss else '')
+if P.get('verify_first_tz'):
+    ck(f'{P.get("verify_first_tz")} первой строкой', col0[1] == P.get('verify_first_tz'), f'={col0[1]!r}')
 ch_labels = [t for t in (cell_text(r['tableCells'][3]).strip() for r in rows) if t.startswith('[') and '·' in t]
 ck(f'{N_CH} глав-строк со [скобками]', len(ch_labels) == N_CH, f'={len(ch_labels)}')
 
@@ -164,7 +170,6 @@ no_why = [ln for ln in t3.get('ТЗ-75', '').split('\n')
           if re.search(r'было «.+» — стало «', ln) and ' · ' not in ln.split('стало')[1]]
 ck('ТЗ-75: у каждого переименования есть объяснение', not no_why, f'{no_why[:2]}' if no_why else '')
 
-ck('ТЗ-21: суммы цифрами', '$30 300 000' in t3.get('ТЗ-21', '') and '$34 800 000' in t3.get('ТЗ-21', ''))
 dups = [n for n, p in act if p.get('roman_comment') and t3[n].count('💬') != len(p['roman_comment'])]
 ck('💬 комменты Романа без дублей', not dups, f'{dups}' if dups else '')
 

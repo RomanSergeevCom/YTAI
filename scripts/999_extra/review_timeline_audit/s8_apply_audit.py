@@ -9,14 +9,18 @@ severity, on_screen_text, problem, fix_text_final, evidence, bbox_final, existin
 не получает номера, но получает стрелку ann_tz{NN}{x}.png. Категория новых ТЗ = graphics (🎨).
 Идемпотентно: новые ТЗ помечены `source: audit_v6` и при повторном запуске заменяются.
 """
-import json, re, subprocess, sys
+import json, os, re, subprocess, sys
+import difflib
 from pathlib import Path
 
 W6 = Path(__file__).parent
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
 M = W6.parent / 'montage'
 ERR = W6 / 'err_frames'
 ERR.mkdir(exist_ok=True)
-WORDS = '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/YTUVI01_v1.words.json'
+WORDS = P.WORDS
 KIND_RU = {'typo': 'ОПЕЧАТКА', 'grammar': 'ГРАММАТИКА', 'fact': 'ФАКТ-ОШИБКА', 'currency': 'ФОРМАТ ВАЛЮТЫ/ЧИСЛА',
            'language': 'АНГЛИЙСКИЙ БЕЗ ПЕРЕВОДА', 'mismatch': 'ЭКРАН ≠ ОЗВУЧКА', 'design': 'ВЁРСТКА', 'other': 'ПРАВКА'}
 FIXABLE = {'typo', 'grammar', 'currency', 'fact'}        # где рисуем правильную плашку на V3
@@ -31,11 +35,49 @@ def anchor(t0, t1):
     return ' '.join(w for w, s in ws if t0 - 2 <= s <= t1 + 2)[:160]
 
 
+def typo_pair(f, tcs):
+    """находка → пара «было → стало» для красной подсветки знаков (или None, если пара бессмысленна).
+
+    Два случая, на которых наивная пара врала:
+      • fix_text — не титр, а инструкция («Стиль (низкий приоритет…)») → пары быть не должно;
+      • исправлено ОДНО слово («ПРОДАВАТЬ СИНЕТИКУ» → «СИНТЕТИКУ») → подставляем слово в титр,
+        иначе монтажёр прочтёт, что половину титра надо убрать.
+    """
+    was = (f.get('on_screen_text') or '').replace('\n', ' ').strip()
+    now = (f.get('fix_text_final') or f.get('fix_text') or '').replace('\n', ' ').strip()
+    if not was or not now or len(was) > 90:
+        return None
+    if ' ' not in now and ' ' in was:                       # правка одного слова → вставляем его в титр
+        words = was.split()
+        i, best = max(enumerate(words), key=lambda kv: difflib.SequenceMatcher(
+            None, kv[1].lower(), now.lower()).ratio())
+        if difflib.SequenceMatcher(None, words[i].lower(), now.lower()).ratio() < 0.5:
+            return None
+        now = ' '.join(words[:i] + [now] + words[i + 1:])
+    if difflib.SequenceMatcher(None, was.lower(), now.lower()).ratio() < 0.55:
+        return None                                         # «стало» не похоже на титр — это инструкция
+    return {'tc': tcs, 'was': was, 'now': now} if was != now else None
+
+
 def tc(sec):
     return f'{int(sec) // 60}:{int(sec) % 60:02d}'
 
 
-data = json.load(open(W6 / 'audit_findings_v6.json'))
+data = P.audit_or_die(W6 / 'audit_findings_v6.json', 'аудит экранов агентами (s6 → wf_audit_v6.js)') \
+    or {'confirmed': [], 'packs': None}
+# Полнота: каждый пакет s6 обязан вернуться от аудиторов. Воркфлоу, упавший по лимиту сессии,
+# отдаёт часть пакетов — и глава без аудита выглядела бы «чистой», без единой строчки в логе.
+_idx = W6 / 'audit_pack' / 'INDEX.json'
+if _idx.exists() and data.get('packs') is not None:
+    sent = {p['pack'] for p in json.load(open(_idx))}
+    back = {p['pack'] for p in data['packs']}
+    lost = sorted(sent - back)
+    if lost and os.environ.get('YTAI_PARTIAL_AUDIT') != '1':
+        raise SystemExit(f'аудит неполный: не вернулись пакеты {", ".join(lost)} (из {len(sent)}).\n'
+                         'Догони их (resume воркфлоу) или, если осознанно, запусти с YTAI_PARTIAL_AUDIT=1.')
+    if lost:
+        print(f'⚠️ аудит неполный по YTAI_PARTIAL_AUDIT=1 — без пакетов {", ".join(lost)}')
+    print(f'аудит: пакетов вернулось {len(back & sent)}/{len(sent)}')
 conf = [f for f in data['confirmed'] if f.get('confirmed', True)]
 print('confirmed findings:', len(conf))
 
@@ -81,6 +123,11 @@ for sid, fs in sorted(by_screen.items(), key=lambda kv: kv[1][0]['t0']):
             'material_rich': [{'t': f'Кадр {tc(t0)} с отметкой ошибки (стрелка)', 'img': f'v6_err_{sid}.jpg'}]
                              + ([{'t': f'Драфт исправленного титра ({(main.get("fix_draw") or fix_main)[:40]})', 'img': f'fix_{num.replace("ТЗ-", "tz")}.png'}]
                                 if draws else []),
+            # опечатки/грамматика/валюта → строка «было → стало», в которой doc_tab красит изменённые
+            # знаки (s10.apply_typo + typo_diff). Поле заполнялось руками у первого видео, из аудита
+            # не приходило — и монтажёр не видел, какая именно буква меняется.
+            'typo': [p for p in (typo_pair(f, tc(t0)) for f in fs
+                                 if f['kind'] in ('typo', 'grammar', 'currency')) if p],
             'sheet_answer': '', 'decision': '',
         }
         new_tz.append(entry)

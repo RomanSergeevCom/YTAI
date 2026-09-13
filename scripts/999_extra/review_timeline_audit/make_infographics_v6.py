@@ -23,10 +23,14 @@ from terms_catalog import TERMS, LOCS, PLACE, PLACES, TERM_EXTRA, place_family  
 from make_infographics_v6_data import SUB, CH_ACCENT, CH_NAME, PROG, CH_BOUNDS, NEW_CH  # noqa: E402
 from typo_diff import spans_for_fragment  # noqa: E402
 
+import proj_config as P  # noqa: E402
+
 W6 = Path(__file__).parent
 MONT = W6.parent / 'montage'
-PROJECT = Path('/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby')
-OUT = PROJECT / '00_Setup/05_Review/mockups'
+PROJECT = Path(P.need('project_dir'))      # было зашито: мокапы писались в папку первого видео
+# mockups_dir из карточки — как в s9_materials_drive.py. Нужен, когда SSD проекта не смонтирован:
+# рендер идёт в рабочую копию, а в папку проекта мокапы переносятся, когда диск вернётся.
+OUT = Path(P.get('mockups_dir') or (PROJECT / '00_Setup/05_Review/mockups'))
 SRC = OUT / 'src'
 SRC.mkdir(parents=True, exist_ok=True)
 IVORY, RED, MUT, BG = '#F2EAD8', '#C1272D', '#CDC6B8', '#101014'
@@ -575,10 +579,11 @@ def _lum(hexcol):
 
 if want('G'):
     aj = W6 / 'audit_v6.json'
-    if not aj.exists():
-        print('G: нет audit_v6.json — пропуск')
+    # было «нет audit_v6.json — пропуск»: стадия тихо проходила без единой стрелки ошибки
+    audit = P.audit_or_die(aj, 'аудит экранов (стрелки ошибок, стадия G)')
+    if audit is None:
+        print('G: аудит пропущен по YTAI_NO_AUDIT=1 — стрелок нет')
     else:
-        audit = json.load(open(aj))
         for a in audit.get('annotations', []):
             num = a['tz']
             x, y, w, h = a['bbox']
@@ -755,19 +760,25 @@ def _struct_blocks(here=None, subs=True):
 
 if want('H'):
     bl = _struct_blocks()
-    page('info_structure_map',
-         '<div class="sm"><div class="hd"><h1>СТРУКТУРА ВЫПУСКА: <span class="r">10 ГЛАВ · 36 ПОДГЛАВ</span></h1>'
-         '<div class="s">кат 40:40 · главы = заставки · подглавы = титульные экраны подтем</div></div>'
-         '<div class="cols"><div class="col">%s'
-         '<div class="lg"><div class="lgh">ЧТО ДОБАВЛЯЕМ ПО СТРУКТУРЕ</div>'
-         '<div class="lgi"><b>ТЗ-30</b> «Карта выпуска» — 2–3 сек на каждой смене главы</div>'
-         '<div class="lgi"><b>ТЗ-74</b> плашка подглавы «ГЛАВА NN ▸ подтема» на каждом титульном экране (36)</div>'
-         '<div class="lgi"><b>ТЗ-72 / ТЗ-73</b> прогресс перечислений: 3 способа синтеза (гл.08), 6 способов обработки (гл.09) — обзор ДО и подсветка следующего пункта</div>'
-         '<div class="lgi"><b>гл.05</b> подтем в кате нет — предложить 2–3 титульных экрана</div></div>'
-         '</div><div class="col">%s</div></div>'
-         '<div class="foot2"><span>➕ = заставки нет в кате, создать</span>'
-         '<span>DRAFT · ПЕРЕРИСОВАТЬ В СТИЛЕ КАНАЛА</span></div></div>'
-         % (''.join(bl[:5]), ''.join(bl[5:])), STRUCT_CSS, draft=False)
+    # шапка и легенда — из карточки проекта: было зашито «10 ГЛАВ · 36 ПОДГЛАВ · кат 40:40»
+    # и номера ТЗ первого фильма, то есть карта структуры врала на любом другом кате.
+    half = (len(bl) + 1) // 2
+    _legend = ['<div class="lgi">«Карта выпуска» — 2–3 сек на каждой смене главы</div>',
+               f'<div class="lgi">плашка подглавы «ГЛАВА NN ▸ подтема» на каждом титульном экране ({len(SUB)})</div>']
+    _legend += [f'<div class="lgi">прогресс перечисления гл.{k}: {v[0]} — обзор ДО и подсветка '
+                f'следующего пункта ({len(v[1])} шт)</div>' for k, v in sorted(PROG.items())]
+    _legend += [f'<div class="lgi">гл.{n:02d} — заставки нет в кате, создать</div>' for n in sorted(NEW_CH)]
+    _html = (
+        '<div class="sm"><div class="hd"><h1>СТРУКТУРА ВЫПУСКА: <span class="r">'
+        f'{len(CH_BOUNDS)} ГЛАВ · {len(SUB)} ПОДГЛАВ</span></h1>'
+        f'<div class="s">кат {_tc(CH_BOUNDS[-1][1])} · главы = заставки · '
+        'подглавы = титульные экраны подтем</div></div>'
+        '<div class="cols"><div class="col">' + ''.join(bl[:half]) +
+        '<div class="lg"><div class="lgh">ЧТО ДОБАВЛЯЕМ ПО СТРУКТУРЕ</div>' + ''.join(_legend) + '</div>'
+        '</div><div class="col">' + ''.join(bl[half:]) + '</div></div>'
+        '<div class="foot2"><span>➕ = заставки нет в кате, создать</span>'
+        '<span>DRAFT · ПЕРЕРИСОВАТЬ В СТИЛЕ КАНАЛА</span></div></div>')
+    page('info_structure_map', _html, STRUCT_CSS, draft=False)
     VM_CSS = STRUCT_CSS + """
 .vm { position:absolute; inset:0; background:%s; display:flex; flex-direction:column;
   align-items:center; justify-content:center; padding:80px 0; }
@@ -785,7 +796,7 @@ if want('H'):
 .vm .row .here { background:%s; color:%s; font-family:Helvetica,Arial,sans-serif; font-size:26px;
   font-weight:bold; letter-spacing:.08em; border-radius:9px; padding:5px 16px; margin-left:10px; }
 """ % (BG, RED, MUT, RED, IVORY, BG)
-    for hn in range(1, 11):
+    for hn in range(1, len(CH_BOUNDS) + 1):          # было range(1, 11) — 10 глав первого фильма
         rows = ''.join(
             '<div class="row %s"><div class="n" style="color:%s">%02d</div>'
             '<div class="nm">%s</div>%s</div>'

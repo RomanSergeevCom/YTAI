@@ -11,9 +11,13 @@ import json, re, subprocess, sys
 from pathlib import Path
 
 W6 = Path(__file__).parent
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
 HIRES = W6 / 'hires'
 BIN = Path.home() / 'YTAI/scripts/999_extra/bin/vision_ocr_ru'
 OUT = W6 / 'ocr_hires.jsonl'
+P.banner('ocr')
 
 files = sorted(HIRES.glob('h*.jpg'))
 done = set()
@@ -27,6 +31,7 @@ todo = [str(f) for f in files if f.name not in done]
 print('hires frames:', len(files), 'todo:', len(todo), flush=True)
 with open(OUT, 'a', encoding='utf-8') as out:
     for i in range(0, len(todo), 200):
+        P.pause_gate('ocr')          # пауза на границе пачки, не посреди неё
         batch = todo[i:i + 200]
         p = subprocess.run([str(BIN)], input='\n'.join(batch), capture_output=True, text=True, timeout=900)
         out.write(p.stdout)
@@ -34,16 +39,12 @@ with open(OUT, 'a', encoding='utf-8') as out:
         print(f'  ocr {min(i + 200, len(todo))}/{len(todo)}', flush=True)
 
 # ── пересборка инвентаря по hires ──
-CHAPTERS = [(0, '01'), (135, '02'), (377, '03'), (675, '04'), (777, '05'), (916, '06'),
-            (1558, '07'), (1731, '08'), (2019, '09'), (2322, '10')]
-
-
-def chapter(sec):
-    c = '01'
-    for t, n in CHAPTERS:
-        if sec >= t:
-            c = n
-    return c
+# Границы глав — из карточки проекта (prep_config.json → "chapters").
+# Пока главы нового ката не размечены, там лежит [[0,"01"]]: экраны получат главу «01»,
+# а пересобрать инвентарь после разметки стоит секунды — OCR покадрово чекпойнтится
+# и заново не гоняется.
+CHAPTERS = P.CHAPTERS
+chapter = P.chapter
 
 
 def words(lines):

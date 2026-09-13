@@ -27,37 +27,37 @@ M = W6.parent / 'montage'
 sys.path.insert(0, str(W6))
 from terms_catalog import TERMS, LOCS  # noqa: E402
 
-PROJECT = Path('/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby')
-REVIEW_DIR = PROJECT / '00_Setup/05_Review'
-RENDER = PROJECT / '03_Exports/YTUVI01_v1_Corundum_Ruby.mp4'
-MOCK = REVIEW_DIR / 'mockups'
+import proj_config as P  # noqa: E402
+
+PROJECT = Path(P.get('project_dir', '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby'))
+# review_dir/mockups_dir из карточки: когда SSD проекта не смонтирован, собираем в рабочую копию
+REVIEW_DIR = Path(P.get('review_dir') or (PROJECT / '00_Setup/05_Review'))
+RENDER = Path(P.get('render', '')) if P.get('render') else PROJECT / '03_Exports'
+MOCK = Path(P.get('mockups_dir') or (REVIEW_DIR / 'mockups'))
 REFS = REVIEW_DIR / 'refs'
-FOOT = Path('/Volumes/T7-Blue-2-RYA/YTUVI-Footage')
-NAT = PROJECT / '01_Source/02_Natalia_Gems'
+FOOT = Path(P.get('footage_dir', '/Volumes/T7-Blue-2-RYA/YTUVI-Footage'))
+NAT = PROJECT / P.get('host_scene', '01_Source/02_Natalia_Gems')
 
-V1_DUR = 2440.48
-FPS = 25.0
+V1_DUR = float(P.get('duration_sec', 2440.48))     # длительность ката из карточки
+FPS = float(P.get('fps', 25.0))
 D = 4.8
-TOTAL = 2459.64
+TOTAL = float(P.get('total_sec', V1_DUR + 19.16))  # кат + хвост ревью-секвенции
 MAX_SHIFT = 6.0
-MATERIALS_FOLDER = 'https://drive.google.com/drive/folders/1s6KJ3ka4L98hwur23KtAraucneMRQN7w'
+MATERIALS_FOLDER = P.folder_url('materials_id')           # дубль 4 из 4 — из карточки
 
-CHAPTERS = [
-    (0.0, 135.0, 'Green', '01 · ВСТУПЛЕНИЕ / ХУК'),
-    (135.0, 377.0, 'Cyan', '02 · КОРОЛЬ САМОЦВЕТОВ'),
-    (377.0, 675.0, 'Orange', '03 · АНАТОМИЯ ЦВЕТА'),
-    (675.0, 777.0, 'Magenta', '04 ➕ ТЕХПАСПОРТ РУБИНА'),
-    (777.0, 916.0, 'Blue', '05 · КОМУ ПОДХОДИТ РУБИН'),
-    (916.0, 1558.0, 'Yellow', '06 · ПРОИСХОЖДЕНИЕ РУБИНА'),
-    (1558.0, 1731.0, 'Green', '07 ➕ РЕКОРДЫ АУКЦИОНОВ'),
-    (1731.0, 2019.0, 'Cyan', '08 · ИСКУССТВЕННЫЙ РУБИН'),
-    (2019.0, 2322.0, 'Orange', '09 · СПОСОБЫ ОБРАБОТКИ'),
-    (2322.0, TOTAL, 'Magenta', '10 · ФИНАЛ + CTA yuvi.ru'),
-]
+# Главы — из карточки проекта (chapters + ch_name), цвета маркеров Premiere по кругу.
+# Здесь были зашиты 10 глав первого фильма: на другом кате маркеры секвенции легли бы
+# по чужой структуре. «➕» — глава, заставки которой в кате нет (new_ch).
+_MCOL = P.get('ch_marker_colors') or ['Green', 'Cyan', 'Orange', 'Magenta', 'Blue', 'Yellow']
+_NEW = set(P.get('new_ch', []))
+_ends = [float(t) for t, _ in P.CHAPTERS[1:]] + [TOTAL]
+CHAPTERS = [(float(t), e, _MCOL[i % len(_MCOL)],
+             f'{n} {"➕" if int(n) in _NEW else "·"} {P.get("ch_name", {}).get(n, "ГЛАВА " + n)}')
+            for i, ((t, n), e) in enumerate(zip(P.CHAPTERS, _ends))]
 
 pravki = json.load(open(M / 'pravki_v2.json'))['all']
 terms = json.load(open(W6 / 'terms_v6.json'))
-audit = json.load(open(W6 / 'audit_v6.json')) if (W6 / 'audit_v6.json').exists() else {'placements': []}
+audit = P.audit_or_die(W6 / 'audit_v6.json') or {'placements': []}
 # ТЗ, снятые Романом (status=rejected, 09.09): их плашки V4, стрелки V5 и fix V3 на таймлайн не идут
 REJECTED = {i + 1 for i, p in enumerate(pravki) if p.get('status') == 'rejected'}
 
@@ -69,8 +69,9 @@ def rejected_sid(sid):
 
 audit['placements'] = [a for a in audit['placements'] if not rejected_sid(a['sid'])]
 # v7: находки аудита, которые Роман переквалифицировал (ТЗ живо, но «ошибки» нет): их стрелки V5 на таймлайн не идут.
-# ТЗ-41 — «титр за головой — приём канала» (10.09), ТЗ переписано в стабилизацию проходки.
-NO_ARROW = {41}
+# Номера — из карточки проекта (no_arrow). У YTUVI01 это было ТЗ-41 («титр за головой — приём канала», 10.09);
+# зашитое число молча сняло бы стрелку с ТЗ-41 нового фильма.
+NO_ARROW = set(int(x) for x in P.get('no_arrow', []))
 audit['placements'] = [a for a in audit['placements']
                        if not (a['track'] == 'V5' and (m := re.search(r'tz(\d+)', a['sid'])) and int(m.group(1)) in NO_ARROW)]
 drive_clips = json.load(open(M / 'drive_clips.json')) if (M / 'drive_clips.json').exists() else {}
@@ -126,35 +127,33 @@ def material_links(p):
     return out
 
 
-# ══ V2 — футажи (как v5) ══
-V2 = [
-    seg('v2_tz01_RYA-ZVE1-1841', 'V2', 'Cyan', FOOT / '12_Globe_Gem_Origins/RYA-ZVE1-1841.MP4', 0.0, 8.64, 172.0),
-    still('v2_burma1_cassay', REFS / 'burma_cassay_horseman.png', 180.64, 'V2', 'Cyan'),
-    still('v2_burma2_ava', REFS / 'burma_ava_army.jpg', 185.44, 'V2', 'Cyan'),
-    still('v2_burma3_shan', REFS / 'burma_shan_warrior.jpg', 190.24, 'V2', 'Cyan'),
-    still('v2_mogok1888', REFS / 'mogok_map_1888.jpg', 195.04, 'V2', 'Cyan'),
-    seg('v2_tz06a_IMG_1766', 'V2', 'Cyan', NAT / 'IMG_1766.MOV', 0.0, 3.48, 524.0, keep_audio=False),
-    seg('v2_tz06b_IMG_1783', 'V2', 'Cyan', NAT / 'IMG_1783.MOV', 5.0, 9.0, 527.48),
-    seg('v2_tz06c_IMG_3889', 'V2', 'Cyan', NAT / 'IMG_3889.MOV', 2.0, 6.0, 531.48, keep_audio=False),
-    seg('v2_tz06d_IMG_1936', 'V2', 'Cyan', NAT / 'IMG_1936.MOV', 4.0, 8.0, 535.48),
-    still('v2_cut_gema2', REFS / 'gema_cut_fig2_proportions.jpg', 572.0, 'V2', 'Cyan'),
-    still('v2_cut_gema1', REFS / 'gema_cut_fig1_crown.jpg', 576.8, 'V2', 'Cyan'),
-    still('v2_cut_gema3', REFS / 'gema_cut_fig3_pavilion.jpg', 581.6, 'V2', 'Cyan'),
-    # ТЗ-39 (Роман 10.09 «сам найди и предложи варианты»): глава «Carbunculus» вместо «De adamante»
-    still('v2_tz39_lapidary_carbunculus', REFS / 'lapidary_1_169.jpg', 221.0, 'V2', 'Cyan'),
-    still('v2_myanmar_lotus', REFS / 'myanmar_map_lotus.jpg', 1043.0, 'V2', 'Cyan'),
-    seg('v2_tz17_IMG_1783', 'V2', 'Cyan', NAT / 'IMG_1783.MOV', 12.0, 18.0, 1300.0),
-    still('v2_star1', REFS / 'star_ruby_518.jpg', 1655.0, 'V2', 'Cyan'),
-    still('v2_star2', REFS / 'star_ruby_pbglass.jpg', 1704.0, 'V2', 'Cyan'),
-    still('v2_doublet', REFS / 'doublet_garnet_ssef.jpg', 1862.8, 'V2', 'Cyan'),
-    still('v2_heat_ba', REFS / 'heat_before_after.jpg', 2029.8, 'V2', 'Cyan'),
-    still('v2_flux_scheme', REFS / 'flux_scheme_lotus.jpg', 2210.0, 'V2', 'Cyan'),
-    still('v2_flux_macro', REFS / 'flux_macro_annotated.jpg', 2214.8, 'V2', 'Cyan'),
-    still('v2_diff_lotus', REFS / 'diffusion_scheme_lotus.jpg', 2250.0, 'V2', 'Cyan'),
-    still('v2_diff_cut', REFS / 'diffusion_cut_jog2005.jpg', 2254.8, 'V2', 'Cyan'),
-    still('v2_diff_skin', REFS / 'diffusion_be_skin.jpg', 2259.6, 'V2', 'Cyan'),
-    seg('v2_cta_RYA-FX3-0619', 'V2', 'Cyan', FOOT / '06_Office_Gem_Commentary/RYA-FX3-0619.MP4', 169.0, 188.16, 2440.48, speaker='Наталья', kind='cta'),
-]
+# ══ V2 — футажи и стиллы по ТЗ ══
+# Список — из карточки проекта (ключ v2): у каждого фильма свои вставки со своими таймкодами.
+# Здесь были зашиты 26 вставок первого фильма с абсолютными таймкодами (Бирма, Могок, CTA на 40:40) —
+# на другом кате они легли бы в случайные места. Путь — абсолютный или с префиксом FOOT/ REFS/ NAT/ MOCK/.
+# Запись: {"kind": "seg"|"still", "sid", "path", "t", "in", "out", "opts": {keep_audio, speaker, kind, dur, prio}}
+_ROOTS = {'FOOT': FOOT, 'REFS': REFS, 'NAT': NAT, 'MOCK': MOCK}
+
+
+def _path(p):
+    head, _, rest = str(p).partition('/')
+    return _ROOTS[head] / rest if head in _ROOTS else Path(p)
+
+
+def _entry(e, track, color):
+    """запись карточки → сегмент раскладки (те же seg()/still(), что и раньше)"""
+    if e.get('kind', 'still') == 'seg':
+        return seg(e['sid'], track, e.get('color', color), _path(e['path']), float(e['in']), float(e['out']),
+                   float(e['t']), **e.get('opts', {}))
+    return still(e['sid'], _path(e['path']), float(e['t']), track, e.get('color', color), **e.get('opts', {}))
+
+
+def _entries(key, track, color, prio):
+    return [_entry({**e, 'opts': {'prio': prio, **e.get('opts', {})}} if prio else e, track, color)
+            for e in P.get(key, [])]
+
+
+V2 = _entries('v2', 'V2', 'Cyan', None)
 
 # ══ V3 — инфографика: драфты v5 (прозрачные версии где уместно) prio 3 ══
 V3_INFO = [
@@ -164,21 +163,9 @@ V3_INFO = [
     *[still(f'v3_videomap_{i + 1:02d}', MOCK / f'info_videomap_ch{i + 1:02d}.png', tc + 0.2,
             'V3', 'Green', dur=3.0, prio=2)
       for i, (tc, end, color, name) in enumerate(CHAPTERS)],
-    still('v3_cut_ru', MOCK / 'info_cut_diagram.png', 586.4, 'V3', 'Green', prio=3),
-    still('v3_mohs_a', MOCK / 'info_mohs_curve.png', 680.0, 'V3', 'Green', prio=3),
-    still('v3_mohs_b', MOCK / 'info_mohs_curve.png', 831.8, 'V3', 'Green', prio=3),
-    still('v3_mohs_what', MOCK / 'info_mohs_what_t.png', 836.6, 'V3', 'Green', prio=3),        # → прозрачная
-    still('v3_mogok_ru', MOCK / 'mapfull_burma.png', 1047.8, 'V3', 'Green', prio=3),      # реальная география
-    # «рубиновый пояс» в три шага: страны загораются по мере перечисления (19:30–19:42),
-    # тайминги сверены по words.json; закрывает английский титр ката и стопку мини-карт на 19:40
-    still('v3_deposits', MOCK / 'mapfull_belt.png', 1169.8, 'V3', 'Green', dur=3.4, prio=3),
-    still('v3_deposits_2', MOCK / 'mapfull_belt_2.png', 1173.2, 'V3', 'Green', dur=4.0, prio=3),
-    still('v3_deposits_3', MOCK / 'mapfull_belt_3.png', 1177.2, 'V3', 'Green', prio=3),
-    still('v3_card_auct', MOCK / 'card_auctions.png', 1558.0, 'V3', 'Green', prio=3),
-    still('v3_synthesis', MOCK / 'info_synthesis_list_t.png', 1804.0, 'V3', 'Green', prio=3),  # → прозрачная
-    still('v3_treat_scheme1', MOCK / 'info_treatments_scheme_t.png', 2025.0, 'V3', 'Green', prio=3),
-    still('v3_diff_ru', MOCK / 'info_diffusion.png', 2264.4, 'V3', 'Green', prio=3),
-    still('v3_treat_scheme2', MOCK / 'info_treatments_scheme_t.png', 2300.0, 'V3', 'Green', prio=3),
+    # проектные драфты (схемы, большие карты, карточки) — из карточки (ключ v3_info), prio 3.
+    # У YTUVI01 тут были 14 драфтов с его таймкодами (Моос, «рубиновый пояс», аукционы, обработки).
+    *_entries('v3_info', 'V3', 'Green', 3),
 ]
 # термины (prio 6) и мини-карты (prio 5). Если упоминание попадает на ТИТУЛЬНЫЙ экран ката
 # (событие OCR без лица в кадре = карточка/заставка), плашку сдвигаем за его конец (≤ +8 с),
@@ -235,14 +222,9 @@ def superseded(base_sid, t):
     return any(re.search(rf'tz{num}[a-z]', sid) and abs(tt - t) < 6 for sid, tt in AUDIT_V5)
 
 
-V5_BASE = [
-    still('v5_ann_tz31', MOCK / 'ann_tz31.png', 57.0, 'V5', 'Red', dur=3.0, prio=2),
-    still('v5_ann_tz32', MOCK / 'ann_tz32.png', 387.0, 'V5', 'Red', dur=3.0, prio=2),
-    still('v5_ann_tz10', MOCK / 'ann_tz10.png', 827.0, 'V5', 'Red', prio=2),
-    still('v5_ann_tz21', MOCK / 'ann_tz21.png', 1620.0, 'V5', 'Red', prio=2),
-    still('v5_ann_tz23', MOCK / 'ann_tz23.png', 1858.0, 'V5', 'Red', prio=2),
-    still('v5_ann_tz24', MOCK / 'ann_tz24.png', 2004.0, 'V5', 'Red', dur=3.0, prio=2),
-]
+# ручные стрелки (до аудита) — из карточки (ключ v5_base); sid обязан содержать tzNN (по нему
+# ищется замена стрелкой аудита). У YTUVI01 тут были 6 стрелок под его номера ТЗ.
+V5_BASE = _entries('v5_base', 'V5', 'Red', 2)
 V5 = [s for s in V5_BASE if not superseded(s['segment_id'], s['timeline_in_sec'])] + [
     still(a['sid'], MOCK / a['png'], a['t'], 'V5', 'Red', dur=a.get('dur', D), prio=1)
     for a in audit['placements'] if a['track'] == 'V5']
@@ -251,26 +233,42 @@ for s in V5_BASE:
         DROPS.append(f'V5: {s["segment_id"]} (ручная стрелка v5) заменена стрелкой аудита')
 
 # ══ V6 — главы (prio 1) + подсказки (2) + прогресс (3) + подглавы (4) ══
-V6 = [still(f'v6_ch{i + 1:02d}', MOCK / f'ch_ov_{i + 1:02d}.png', tc, 'V6', 'Magenta', prio=1)
+def _ch_plate(i):
+    """плашка главы для V6: ручная ch_ov_NN.png, иначе «карта выпуска» стадии H (info_videomap_chNN)."""
+    manual = MOCK / f'ch_ov_{i:02d}.png'
+    return manual if manual.exists() else MOCK / f'info_videomap_ch{i:02d}.png'
+
+
+V6 = [still(f'v6_ch{i + 1:02d}', _ch_plate(i + 1), tc, 'V6', 'Magenta', prio=1)
       for i, (tc, end, color, name) in enumerate(CHAPTERS)]
-V6 += [still('v6_str_tz30', MOCK / 'str_tz30.png', 43.6, 'V6', 'Magenta', prio=2),
-       still('v6_str_tz18', MOCK / 'str_tz18.png', 1310.0, 'V6', 'Magenta', prio=2),
-       still('v6_str_tz19', MOCK / 'str_tz19.png', 1562.8, 'V6', 'Magenta', prio=2)]
+# подсказки структуры (prio 2) — из карточки (ключ v6_extra); у YTUVI01 — три плашки под ТЗ-30/18/19
+V6 += _entries('v6_extra', 'V6', 'Magenta', 2)
 # Роман 09.09: «структура должна быть ДО, и каждый пункт показывать до» — обзор списка сразу после плашки
 # главы, затем панель с подсветкой следующего пункта за 3 с до смены подтемы (LEAD)
 LEAD = 3.0
-PROG = [('08', 0, 1736.0), ('08', 1, 1757.0 - LEAD), ('08', 2, 1861.0 - LEAD), ('08', 3, 1881.0 - LEAD), ('08', 3, 1906.0 - LEAD),
-        ('09', 0, 2024.0), ('09', 1, 2029.0), ('09', 2, 2169.0 - LEAD), ('09', 3, 2197.0 - LEAD), ('09', 4, 2242.0 - LEAD),
-        ('09', 5, 2258.0 - LEAD), ('09', 6, 2301.0 - LEAD)]
-V6 += [still(f'v6_prog_{ch}_{k}_{int(t)}', MOCK / f'prog_{ch}_{k}.png', t, 'V6', 'Magenta', prio=3) for ch, k, t in PROG]
 sys.path.insert(0, str(W6))
-from make_infographics_v6_data import SUB  # noqa: E402  (тот же список, что рендерит sub_NN)
+from make_infographics_v6_data import SUB, PROG_T, PROG_FINAL  # noqa: E402  (те же данные, что рендерят sub_NN/prog_NN)
+# Раскладка панелей прогресса выводится из таймкодов смены подтем (prog_t карточки): обзор — через 5 с после
+# плашки главы, каждый пункт — за LEAD до своей смены, но не ближе 5 с к предыдущей панели; итог (prog_final) —
+# последним. Раньше таблица была ручной под гл.08/09 первого фильма; на его данных правило даёт её же.
+PROG = []
+for _ch, _ts in PROG_T.items():
+    _cur = float(next(t for t, n in P.CHAPTERS if n == _ch)) + 5.0
+    PROG.append((_ch, 0, _cur))
+    for _k, _t in enumerate(_ts, 1):
+        _cur = max(float(_t) - LEAD, _cur + 5.0)
+        PROG.append((_ch, _k, _cur))
+    if _ch in PROG_FINAL:
+        _cur = max(float(PROG_FINAL[_ch][0]) - LEAD, _cur + 5.0)
+        PROG.append((_ch, len(_ts), _cur))
+V6 += [still(f'v6_prog_{ch}_{k}_{int(t)}', MOCK / f'prog_{ch}_{k}.png', t, 'V6', 'Magenta', prio=3) for ch, k, t in PROG]
 PROG_SECS = {int(t) for _, _, t in PROG}
-# v7 (QA превью 10.09): на 0:57–1:00 левый борт-середина занят подзаголовком ката «А МОЖЕТ НЕ ТАКОЙ / УЖ И
-# ОБЫЧНЫНИ?» — плашка подглавы его закрывала; уступает титру (сдвиг за его конец)
-SUB_DODGE = {57: 61.0}
+# Плашка подглавы уступает титру ката, если ложится на него (сдвиг за его конец): sub_dodge {сек: новая сек}.
+# sub_skip — подглавы, которые не ставим вовсе. У YTUVI01: {57: 61.0} («А МОЖЕТ НЕ ТАКОЙ…», QA 10.09) и {1762}.
+SUB_DODGE = {int(k): float(v) for k, v in P.get('sub_dodge', {}).items()}
+SUB_SKIP = set(int(x) for x in P.get('sub_skip', []))
 for i, (sec, ch, label) in enumerate(SUB):
-    if any(abs(sec - ps) <= 6 for ps in PROG_SECS) or sec in (1762,):
+    if any(abs(sec - ps) <= 6 for ps in PROG_SECS) or sec in SUB_SKIP:
         continue                                    # подтему уже несёт прогресс-панель
     V6.append(still(f'v6_sub_{i + 1:02d}', MOCK / f'sub_{i + 1:02d}.png', SUB_DODGE.get(sec, float(sec)), 'V6', 'Magenta',
                     dur=4.0, prio=4))
@@ -378,9 +376,9 @@ for d in DROPS:
 out = {
     'schema': 'ytai-part-v1',
     'part': {
-        'code': 'YTUVI01', 'project_name': 'YTUVI01_Corundum_Ruby',
+        'code': P.CODE, 'project_name': P.get('project_name', P.CODE),
         'name': 'Review_v6', 'stage': 'Review', 'fps': FPS,
-        'sequence_name': 'YTUVI01_5_Review_v6_tz', 'build_model': 'review_overlay',
+        'sequence_name': f'{P.CODE}_5_Review_v6_tz', 'build_model': 'review_overlay',
         'seed_clip': '', 'base_clip': RENDER.name, 'base_clip_path': str(RENDER),
         'markers': False, 'min_builder': '1.11.0',
         'chapter_markers': chapter_markers, 'bin': '05_Review',
@@ -389,7 +387,7 @@ out = {
                 '(прозрачные панели, термины при каждом упоминании, мини-карты локаций, нарисованные '
                 'исправления) · V4 плашки ТЗ (полный текст+ссылки в маркере мастер-клипа; кнопка панели '
                 '«Copy ТЗ @ playhead») · V5 стрелки «где ошибка» (аудит всех экранов) · V6 главы + подглавы + '
-                'прогресс перечислений гл.08/09. Маркеры секвенции = ТОЛЬКО 10 глав. Материалы с комментами: '
+                f'прогресс перечислений. Маркеры секвенции = ТОЛЬКО {len(chapter_markers)} глав. Материалы с комментами: '
                 + MATERIALS_FOLDER,
     },
     'segments': SEGMENTS,
@@ -401,13 +399,13 @@ out = {
                'dropped': len(DROPS), 'total_dur_sec': TOTAL},
     'dropped': DROPS,
 }
-dst = REVIEW_DIR / 'YTUVI01_review_v6.json'
+dst = REVIEW_DIR / f'{P.CODE}_review_v6.json'
 dst.write_text(json.dumps(out, ensure_ascii=False, indent=1))
 print('→', dst)
 md = ['# Review_v6 — 6 слоёв + аудит экранов, термины, карты, подглавы', '',
-      f'Создан: {out["part"]["created"]}. Секвенция: `YTUVI01_5_Review_v6_tz_v{{N}}`.', '',
+      f'Создан: {out["part"]["created"]}. Секвенция: `{P.CODE}_5_Review_v6_tz_v{{N}}`.', '',
       f'- V2 футажи: {cnt["V2"]} · V3 инфографика/термины/карты/исправления: {cnt["V3"]} · V4 ТЗ: {cnt["V4"]} · '
       f'V5 стрелки: {cnt["V5"]} · V6 структура: {cnt["V6"]}.',
       f'- Выпало по арбитражу наездов: {len(DROPS)} (см. `dropped` в JSON).',
       '- Требует partsBuilder ≥1.11.0; текст ТЗ — маркер клипа или кнопка «Copy ТЗ @ playhead» (панель v2.17.0).']
-(REVIEW_DIR / 'YTUVI01_review_v6_summary.md').write_text('\n'.join(md))
+(REVIEW_DIR / f'{P.CODE}_review_v6_summary.md').write_text('\n'.join(md))

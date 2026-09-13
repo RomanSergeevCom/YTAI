@@ -13,9 +13,14 @@ from pathlib import Path
 
 os.environ.setdefault('HF_HOME', str(Path.home() / 'YTAI/models/huggingface'))
 W6 = Path(__file__).parent
-WORDS = '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/YTUVI01_v1.words.json'
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
+WORDS = P.WORDS
 MODEL = 'mlx-community/Qwen3-8B-4bit'
 OUT = W6 / 'llm_v6.json'
+SUBJECT = P.get('film_subject', 'о рубинах')     # чем фильм — идёт в промпт корректора
+P.banner('llm')
 
 from mlx_lm import load, generate
 from mlx_lm.sample_utils import make_sampler
@@ -30,7 +35,7 @@ def vo(t0, t1, pad=6.0):
     return ' '.join(w for w, s, e in ws if t0 - pad <= s <= t1 + pad)
 
 
-PROMPT = """/no_think Ты корректор и факт-чекер русскоязычного YouTube-фильма о рубинах.
+PROMPT = """/no_think Ты корректор и факт-чекер русскоязычного YouTube-фильма {subject}.
 Экран #{id} (таймкод {tc}). Текст на экране — два независимых распознавания:
 OCR: {ocr}
 VLM: {vlm}
@@ -73,8 +78,9 @@ res = list(done.values())
 for i, e in enumerate(jobs):
     if e['id'] in done:
         continue
+    P.pause_gate('llm')              # граница экрана; дамп на диске уже согласован
     v = vlm.get(e['id'], {})
-    msg = PROMPT.format(id=e['id'], tc=e['tc'], ocr=' | '.join(e['texts_all'])[:600],
+    msg = PROMPT.format(subject=SUBJECT, id=e['id'], tc=e['tc'], ocr=' | '.join(e['texts_all'])[:600],
                         vlm=(v.get('vlm_text') or '—')[:600], desc=(v.get('vlm_desc') or '—')[:200],
                         vo=vo(e['t0'], e['t1'])[:900])
     prompt = tok.apply_chat_template([{'role': 'user', 'content': msg}], add_generation_prompt=True)
@@ -91,8 +97,11 @@ for i, e in enumerate(jobs):
            'best_frame': e['best_frame'], 'ocr': e['text_best'][:300],
            'vlm': (v.get('vlm_text') or '')[:300], **parsed}
     res.append(rec)
-    if i % 10 == 0:
+    # дамп через временный файл + os.replace: обычный json.dump обнулял llm_v6.json
+    # в момент открытия, и kill в это окно стирал стадию целиком. Раз в 5 экранов —
+    # окно потери вдвое короче прежнего, цена записи копеечная (файл ~200 КБ).
+    if i % 5 == 0:
         print(f'  {i}/{len(jobs)} {e["id"]} @{e["tc"]} sev={parsed.get("severity")}', flush=True)
-        json.dump(res, open(OUT, 'w'), ensure_ascii=False, indent=1)
-json.dump(res, open(OUT, 'w'), ensure_ascii=False, indent=1)
+        P.write_json_atomic(OUT, res)
+P.write_json_atomic(OUT, res)
 print('llm done:', len(res), 'high:', sum(1 for r in res if r.get('severity') == 'high'), flush=True)

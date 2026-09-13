@@ -29,15 +29,31 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 W6 = Path(__file__).parent
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+
 M = W6.parent / 'montage'
-PROJECT = Path('/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby')
-MOCK = PROJECT / '00_Setup/05_Review/mockups'
-REVIEW = PROJECT / '00_Setup/05_Review/YTUVI01_review_v6.json'
+PROJECT = Path(P.need('project_dir'))
+REVIEW_DIR = Path(P.get('review_dir') or (PROJECT / '00_Setup/05_Review'))
+MOCK = Path(P.get('mockups_dir') or (REVIEW_DIR / 'mockups'))
+REVIEW = REVIEW_DIR / f'{P.CODE}_review_v6.json'
 HIRES = W6 / 'hires'
 COMP = W6 / 'err_frames_annotated'
 OUT = W6 / 'previews_doc'
-OVR = W6 / 'previews_v7.json'
-SHOTS_REMOTE = 'gdrive:YTUVI_plan_v3_shots'
+OVR = W6 / 'previews_v7.json'          # ручные поправки превью — принимаются только со своей меткой _project
+SHOTS_REMOTE = P.get('shots_remote', 'gdrive:YTUVI_plan_v3_shots')
+
+
+def load_ovr():
+    """Поправки превью по НОМЕРАМ ТЗ — только если файл помечен этим проектом."""
+    if not OVR.exists():
+        return {}
+    o = json.load(open(OVR))
+    if o.get('_project') != P.PROJECT:
+        print(f'!! previews_v7.json от проекта «{o.get("_project") or "без метки"}», '
+              f'а собираем «{P.PROJECT}» — поправки превью НЕ применяю')
+        return {}
+    return o
 FONT = '/Library/Fonts/Arial Unicode.ttf'
 FW, FH = 3840, 2160
 PW, PH = 1600, 900
@@ -172,7 +188,7 @@ FIRST_T = first_t_map()
 
 def load_common():
     pr = json.load(open(M / 'pravki_v2.json'))
-    audit = json.load(open(W6 / 'audit_v6.json'))
+    audit = P.audit_or_die(W6 / 'audit_v6.json') or {'annotations': []}
     ann_by_tz = {a['tz']: a for a in audit['annotations']}
     ann_by_screen = {}
     for a in audit['annotations']:
@@ -186,7 +202,7 @@ def load_common():
 # ═══════════════════ render ═══════════════════
 def render():
     pr, ann_by_tz, ann_by_screen, seg_t = load_common()
-    ovr = json.load(open(OVR)) if OVR.exists() else {}
+    ovr = load_ovr()
     shots = json.load(open(M / 'shots_ids.json'))
     man = {'imgs': {}, 'tz': {}}
 
@@ -356,7 +372,7 @@ def apply():
     d = json.load(open(M / 'pravki_v2.json'))
     man = json.load(open(OUT / 'manifest.json'))
     shots = json.load(open(M / 'shots_ids.json'))
-    ovr = json.load(open(OVR)) if OVR.exists() else {}
+    ovr = load_ovr()
     seg_t = {}
     for s in json.load(open(REVIEW))['segments']:
         seg_t.setdefault(Path(s['source_path']).name, []).append(s['timeline_in_sec'])

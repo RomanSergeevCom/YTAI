@@ -15,16 +15,23 @@ set -u
 PROJ="${PROJ:-ytuvi02}"
 W6="${W6:-$(cd "$(dirname "$0")" && pwd)}"
 CTL="$HOME/.cache/$PROJ"
-PY_VLM="${PY_VLM:-$HOME/YTAI/environment/.venv_llm/bin/python}"
+# ⚠️ У стадий РАЗНЫЕ окружения: mlx_vlm стоит только в .venv_vlm. Один PY на обе стадии
+# означал мгновенный ImportError на «vlm start» — venv выбирается по стадии ниже.
+PY_VLM="${PY_VLM:-$HOME/YTAI/environment/.venv_vlm/bin/python}"
+PY_LLM="${PY_LLM:-$HOME/YTAI/environment/.venv_llm/bin/python}"
+PY_OCR="${PY_OCR:-python3}"
 mkdir -p "$CTL"
 
 stage="${1:-}"; cmd="${2:-}"
 case "$stage" in
-  vlm) SCRIPT=s3_vlm.py;        OUTF="$W6/vlm_v6.jsonl" ;;
-  llm) SCRIPT=s4_llm.py;        OUTF="$W6/llm_v6.json"  ;;
-  ocr) SCRIPT=s2_ocr_hires.py;  OUTF="$W6/ocr_hires.jsonl" ;;
+  vlm) SCRIPT=s3_vlm.py;        OUTF="$W6/vlm_v6.jsonl";    PY="$PY_VLM" ;;
+  llm) SCRIPT=s4_llm.py;        OUTF="$W6/llm_v6.json";     PY="$PY_LLM" ;;
+  ocr) SCRIPT=s2_ocr_hires.py;  OUTF="$W6/ocr_hires.jsonl"; PY="$PY_OCR" ;;
   *) echo "usage: $0 {vlm|llm|ocr} {start|pause|resume|stop|status}"; exit 2 ;;
 esac
+if [ ! -x "$PY" ] && ! command -v "$PY" >/dev/null 2>&1; then
+  echo "нет интерпретатора для стадии $stage: $PY"; exit 2
+fi
 PID="$CTL/$stage.pid"
 LOG="$W6/$stage.log"
 
@@ -33,9 +40,13 @@ alive() { [ -f "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null; }
 case "$cmd" in
   start)
     if alive; then echo "уже идёт (pid $(cat "$PID"))"; exit 0; fi
+    if [ ! -f "$W6/prep_config.json" ]; then
+      echo "нет $W6/prep_config.json — карточка проекта не заведена, стадия взяла бы чужой транскрипт"; exit 2
+    fi
     rm -f "$CTL/PAUSE"
     # detached: nohup + caffeinate. setsid на macOS нет, поэтому подоболочка + nohup.
-    ( cd "$W6" && nohup caffeinate -dims "$PY_VLM" -u "$SCRIPT" >> "$LOG" 2>&1 < /dev/null & echo $! > "$PID" )
+    export YTAI_PROJECT="$PROJ" YTAI_CTL_DIR="$CTL"
+    ( cd "$W6" && nohup caffeinate -dims "$PY" -u "$SCRIPT" >> "$LOG" 2>&1 < /dev/null & echo $! > "$PID" )
     sleep 1
     echo "▶️ $stage запущен (pid $(cat "$PID")), лог: $LOG"
     echo "   проверь отцепление: ps -o ppid= -p $(cat "$PID")  → должно быть 1"

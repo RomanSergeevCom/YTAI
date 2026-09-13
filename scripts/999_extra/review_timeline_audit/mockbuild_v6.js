@@ -1,4 +1,4 @@
-// Прогон YTUVI01_review_v6.json через реальный partsBuilder на mock-ppro (как smoke-тесты панели):
+// Прогон {CODE}_review_v6.json через реальный partsBuilder на mock-ppro (как smoke-тесты панели):
 // ловит ошибки схемы/раскладки ДО сборки в Premiere. usage: node mockbuild_v6.js [path-to-json]
 const path = require('path');
 const fs = require('fs');
@@ -6,7 +6,15 @@ const UXP = path.join(process.env.HOME, 'YTAI/scripts/05_editing/0500_uxp');
 const ppro = require(path.join(UXP, 'tests/mocks/premierepro'));
 const { buildPartSequence } = require(path.join(UXP, 'src/parts/partsBuilder'));
 
-const jsonPath = process.argv[2] || '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/YTUVI01_review_v6.json';
+// путь и длительность — из карточки проекта рядом со скриптом (был зашит JSON первого видео)
+const cfgPath = path.join(__dirname, 'prep_config.json');
+const cfg = fs.existsSync(cfgPath) ? JSON.parse(fs.readFileSync(cfgPath, 'utf8')) : {};
+const jsonPath = process.argv[2] || (cfg.project_dir && cfg.code
+  ? path.join(cfg.project_dir, '00_Setup/05_Review', `${cfg.code}_review_v6.json`) : null);
+if (!jsonPath) {
+  console.error('нет пути к review JSON: передай аргументом или заведи prep_config.json (project_dir + code)');
+  process.exit(2);
+}
 const doc = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 const part = doc.part;
 const segs = doc.segments;
@@ -18,7 +26,7 @@ function mkClip(name, dur, still) {
   return c;
 }
 const project = new ppro._MockProject(part.code);
-const base = mkClip(part.base_clip, 2440.48);
+const base = mkClip(part.base_clip, Number(cfg.duration_sec) || 2440.48);
 project._rootItem._items.push(base);
 const clipMap = { [part.base_clip]: base };
 for (const s of segs) {

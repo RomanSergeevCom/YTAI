@@ -11,7 +11,7 @@ SP = Path(__file__).parent
 sys.path.insert(0, str(SP))
 from guard_v7 import guard  # noqa: E402
 
-OV = Path('/Users/romansergeev/Downloads/YTUVI01_Sonya_cut/work/v6/tz_overrides.json')
+OV = SP.parent / 'tz_overrides.json'        # v7_tools лежит внутри work/v6 (был путь первого видео)
 DATA = json.load(open(SP / 'lint_tz_parts.json'))
 DRY = '--dry' in sys.argv
 ov = json.load(open(OV))

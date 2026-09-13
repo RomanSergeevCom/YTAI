@@ -12,9 +12,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from terms_catalog import TERM_RX, LOC_RX, MAP_WINDOWS, PLACE, TERM_EXTRA  # noqa
+import proj_config as P  # noqa: E402
 
 W6 = Path(__file__).parent
-WORDS = '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/YTUVI01_v1.words.json'
+WORDS = P.WORDS
 COOLDOWN = 45.0
 
 

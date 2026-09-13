@@ -31,12 +31,23 @@ from doctab_lib import DOCS, get_doc, iter_tabs  # noqa: E402
 from doctab_lib import batch_update as _batch_update  # noqa: E402
 from typo_diff import diff_spans, typo_line, typo_offsets  # noqa: E402
 
-DOC_ID = DOCS['01']
+import proj_config as P  # noqa: E402
+
+# ⚠️ Было DOCS['01'] — документ ПЕРВОГО видео. Сборщик пересоздаёт вкладку целиком,
+# так что запуск с чужим id затирал бы вкладку YTUVI01 вместе с ручными правками
+# Романа от 11.09 (v3 помечена FROZEN именно поэтому); откат — только через ревизии.
+DOC_ID = P.need('doc_id')
 # вкладка задаётся снаружи: TZ_TAB='ТЗ монтажёру · v4'. v3 ЗАМОРОЖЕНА — в ней правки Романа
 # (он удалял неактуальное руками 11.09), пересобирать её нельзя, иначе правки затрутся.
-TAB_TITLE = os.environ.get('TZ_TAB') or 'ТЗ монтажёру · v3'
-FROZEN = {'ТЗ монтажёру · v3'}
-SHEET_URL = 'https://docs.google.com/spreadsheets/d/1xeCzuOr_W-WuaeehgUOhTWHzYmsdvW7w0wYwT8XPejY/edit'
+# имя вкладки: TZ_TAB > карточка (tab_title) > дефолт. На новом проекте имя своё («ТЗ монтажёру · v1»),
+# и брать его из карточки надёжнее, чем помнить про env на каждом запуске.
+TAB_TITLE = os.environ.get('TZ_TAB') or P.get('tab_title') or 'ТЗ монтажёру · v3'
+# FROZEN — только для дока, где эта вкладка реально правилась руками (YTUVI01). На чужом доке
+# совпадение имён не должно блокировать сборку: сверяем пару (doc_id, вкладка).
+FROZEN = {('1bzFOdAQFU_nqDAG2QCcaKBfrdgKFqPRsYK7ygjNU5Sk', 'ТЗ монтажёру · v3')}
+# лист-чеклист — из карточки; пусто = листа у проекта ещё нет, строку про него не пишем
+# (ссылка на лист ДРУГОГО фильма в ТЗ — худший вариант: монтажёр уйдёт в чужой чек-лист).
+SHEET_URL = P.get('sheet_url') or ''
 WIDTHS = [34, 62, 22, 282, 276]          # v7: «Материал» шире; №/TC без переноса «ТЗ / -30», «9:32–10:1 / 0» (сумма 676pt)
 FONT = 9
 IMG_W = 262                               # превью на всю ширину колонки «Материал» (276 − поля)
@@ -61,20 +72,17 @@ LINK = {'red': 0.06, 'green': 0.33, 'blue': 0.8}
 ITEM_TC = re.compile(r'^( +)( ?~?\d{1,2}:\d{2}(?:\.\d+)?(?:–\d{1,2}:\d{2})?)  ▸ ', re.M)
 URL_RE = re.compile(r'https?://[^\s)\]»]+')
 
-CHAPTERS = [
-    {'no': 1, 'sec': 0, 'name': 'ВСТУПЛЕНИЕ / ХУК', 'img': 'chapter_0018_tizer.jpg', 'color': 'Green'},
-    {'no': 2, 'sec': 135, 'name': 'КОРОЛЬ САМОЦВЕТОВ', 'img': 'chapter_0215_korol.jpg', 'color': 'Green'},
-    {'no': 3, 'sec': 377, 'name': 'АНАТОМИЯ ЦВЕТА', 'img': 'chapter_0617_anatomia.jpg', 'color': 'Green'},
-    {'no': 5, 'sec': 777, 'name': 'КОМУ ПОДХОДИТ РУБИН', 'img': 'chapter_1257_komu.jpg', 'color': 'Green'},
-    {'no': 6, 'sec': 916, 'name': 'ПРОИСХОЖДЕНИЕ РУБИНА', 'img': 'chapter_1516_proishozhdenie.jpg', 'color': 'Green'},
-    {'no': 7, 'sec': 1558, 'name': '➕ РЕКОРДЫ АУКЦИОНОВ — НОВАЯ', 'img': 'card_auctions.png', 'color': 'Yellow'},  # тот же драфт, что в ТЗ-19
-    {'no': 8, 'sec': 1731, 'name': 'ИСКУССТВЕННЫЙ РУБИН', 'img': 'chapter_2851_iskusstvennyi.jpg', 'color': 'Green'},
-    {'no': 9, 'sec': 2019, 'name': 'СПОСОБЫ ОБРАБОТКИ', 'img': 'chapter_3339_obrabotka.jpg', 'color': 'Green'},
-    {'no': 10, 'sec': 2322, 'name': 'ФИНАЛ + CTA', 'img': 'chapter_4007_final.jpg', 'color': 'Green'},
-]
-MATERIALS_FOLDER = 'https://drive.google.com/drive/folders/1s6KJ3ka4L98hwur23KtAraucneMRQN7w'
-PROJECT_FOLDER = 'https://drive.google.com/drive/folders/1rVYvtG-5rpUO--DnV9z3n-LJXSUl7hdH'
-SPRINT_FOLDER = 'https://drive.google.com/drive/folders/1af9NONmWnWkfvPLdbVGqNjg2Zc1ecxFL'
+# Главы вкладки — из карточки проекта (chapters + ch_name; кадр заставки главы — ch_img, по желанию).
+# Здесь были зашиты 9 глав первого фильма с именами их кадров: вкладка нового фильма получила бы
+# чужие строки-главы и картинки. Глава без заставки в кате (new_ch) — жёлтая, как «➕» у YTUVI01.
+_IMG, _NEW = P.get('ch_img', {}), set(int(x) for x in P.get('new_ch', []))
+CHAPTERS = [{'no': int(n), 'sec': int(t),
+             'name': ('➕ ' if int(n) in _NEW else '') + P.get('ch_name', {}).get(n, f'ГЛАВА {n}'),
+             'img': _IMG.get(n, ''), 'color': 'Yellow' if int(n) in _NEW else 'Green'}
+            for t, n in P.CHAPTERS]
+MATERIALS_FOLDER = P.folder_url('materials_id')           # дубль 1 из 4 — из карточки
+PROJECT_FOLDER = P.folder_url('project_folder_id')
+SPRINT_FOLDER = P.folder_url('sprint_folder_id')
 
 
 def u16(s):
@@ -165,23 +173,23 @@ def build_head(act, rejected):
     decisions = [p for p in act if p.get('decision')]
     li = lambda t: (0, '▸ ' + t, {})                                            # noqa: E731
     head = [
-        (1, f'YTUVI01 · {TAB_TITLE} — по секвенции Review_v6_tz (формат 11.09)', {}),
+        (1, f'{P.CODE} · {TAB_TITLE} — по секвенции Review_v6_tz (формат 11.09)', {}),
         (0, 'Как читать:', {'bold': True}),
         li('каждый таймкод — отдельной строкой: «таймкод ▸ что там», как в карте структуры'),
         li('справа — крупное превью: наш драфт или стрелка на реальном кадре, кроп на то, о чём речь; под ним «таймкод · что видно»'),
         li('опечатки — строкой «было → стало»: изменённые знаки выделены в доке красным'),
         li('суммы — цифрами'),
-        (0, 'Рабочая секвенция: YTUVI01_5_Review_v6_tz_v1 (или последняя _vN) — панель UXP → Review → Review_v6. Слои:', {'bold': True}),
+        (0, f'Рабочая секвенция: {P.CODE}_5_Review_v6_tz_v1 (или последняя _vN) — панель UXP → Review → Review_v6. Слои:', {'bold': True}),
         li('V1 — оригинал монтажёра (не тронут)'),
         li('V2 — футажи: видео и фото'),
         li('V3 — инфографика, плашки терминов, мини-карты локаций, нарисованные исправления'),
         li('V4 — плашки ТЗ: полный текст и ссылки (маркер клипа / кнопка панели «Copy ТЗ @ playhead»)'),
         li('V5 — стрелки правок на кадре'),
-        li('V6 — главы, подглавы, прогресс перечислений гл.08/09'),
-        li('маркеры секвенции — только 10 разноцветных глав; глава «Проверка геммолога» удалена (07.09); CTA сразу после рендера'),
+        li(f'V6 — главы, подглавы, прогресс перечислений гл.{"/".join(sorted(P.get("prog", {})))}'),
+        li(f'маркеры секвенции — только {len(CHAPTERS)} разноцветных глав; CTA сразу после рендера'),
         (0, 'Ссылки:', {'bold': True}),
-        li(f'живой чек-лист со статусами — лист «ТЗ монтажёру»: {SHEET_URL}'),
-        li('полный разбор с транскрибацией — вкладка «Ревью v2 · правки»'),
+        *([li(f'живой чек-лист со статусами — лист «ТЗ монтажёру»: {SHEET_URL}')] if SHEET_URL else []),
+        li(f'полный разбор с транскрибацией — вкладка «{P.get("nav_tab", "Ревью v2 · правки")}»'),
         li(f'📁 все материалы (на каждом файле — коммент с ТЗ, таймкодом и источником): {MATERIALS_FOLDER}'),
         li(f'📁 папка проекта: {PROJECT_FOLDER}'),
         li(f'📁 спринт YTUVI S1: {SPRINT_FOLDER}'),
@@ -218,7 +226,7 @@ def build_rows(pravki_all, shots_ids, proj_ids, drive_clips):
             r['cells'][1] = '⏱ весь фильм'
             rows.append(r)
     for ci, ch in enumerate(CHAPTERS):
-        ch_end = CHAPTERS[ci + 1]['sec'] if ci + 1 < len(CHAPTERS) else 2440
+        ch_end = CHAPTERS[ci + 1]['sec'] if ci + 1 < len(CHAPTERS) else int(P.duration_sec()) + 1
         label = f"[{ch.get('no', ci + 1)}. {ch['name']} · {tmm(ch['sec'])}–{tmm(ch_end)}]"
         rows.append({'kind': 'ch', 'label': label, 'color': ch['color'], 'cat': None,
                      'cells': ['', '', '', label, ''], 'bold': [], 'purple': [], 'caps': [], 'small': [],
@@ -269,8 +277,9 @@ def index_of(cell, pos):
 
 
 def main(force=False):
-    if TAB_TITLE in FROZEN and not force:
-        raise SystemExit(f'«{TAB_TITLE}» заморожена: там правки Романа. Запускай с TZ_TAB=«ТЗ монтажёру · v4».')
+    if (DOC_ID, TAB_TITLE) in FROZEN and not force:
+        raise SystemExit(f'«{TAB_TITLE}» в этом доке заморожена: там правки Романа. '
+                         f'Запускай с TZ_TAB=«ТЗ монтажёру · v4» или поправь tab_title в карточке.')
     import socket
     socket.setdefaulttimeout(300)                              # зависшее соединение не должно висеть вечно
     pravki, shots_ids, proj_ids, drive_clips = load()

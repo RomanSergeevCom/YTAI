@@ -31,8 +31,11 @@ from make_infographics_v6_data import (SUB, CH_NAME, CH_BOUNDS, NEW_CH, PROG, PR
 from terms_catalog import TERMS, LOCS, PLACE, TERM_EXTRA, place_family  # noqa: E402
 from typo_diff import typo_line  # noqa: E402
 
+import proj_config as P  # noqa: E402
+
 PRAVKI = M / 'pravki_v2.json'
-WORDS = '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/YTUVI01_v1.words.json'
+# был зашитый путь прошлого проекта: скрипт не падал, а молча терял цитаты озвучки
+WORDS = P.WORDS
 LBL = {'now': '❌ СЕЙЧАС', 'do': '✅ СДЕЛАТЬ', 'list': '📋 СПИСОК', 'where': '📍 ГДЕ',
        'src': '📚 ИСТОЧНИК', 'tl': '🎬 НА ТАЙМЛАЙНЕ'}
 ORDER = ['now', 'do', 'list', 'where', 'src', 'tl']
@@ -54,8 +57,9 @@ allp = pr['all']
 for i, p in enumerate(allp):
     p['num'] = f'ТЗ-{i + 1:02d}'
 
-audit = json.load(open(W6 / 'audit_v6.json')) if (W6 / 'audit_v6.json').exists() else {'annotations': []}
-finds = json.load(open(W6 / 'audit_findings_v6.json'))['confirmed'] if (W6 / 'audit_findings_v6.json').exists() else []
+# без аудита — отказ, а не пустышка: иначе получался «готовый» бриф без единого ТЗ по экранам
+audit = P.audit_or_die(W6 / 'audit_v6.json') or {'annotations': []}
+finds = (P.audit_or_die(W6 / 'audit_findings_v6.json') or {}).get('confirmed', [])
 by_screen = {}
 for f in finds:
     if f.get('confirmed', True):
@@ -632,6 +636,14 @@ for p in allp:
 
 # ── 2. ручные тексты (Роман 09–10.09 + v7) ──
 OVERRIDES = json.load(open(W6 / 'tz_overrides.json')) if (W6 / 'tz_overrides.json').exists() else {}
+# Ручные тексты привязаны к НОМЕРАМ ТЗ конкретного фильма. Файл едет вместе с инструментом
+# в каждую новую рабочую копию — без метки проекта ТЗ-05 нового фильма молча получил бы
+# текст ТЗ-05 первого. Чужие или безымянные правки не применяем.
+_ov_proj = OVERRIDES.get('_project')
+if OVERRIDES and _ov_proj != P.PROJECT:
+    print(f'!! tz_overrides.json от проекта «{_ov_proj or "без метки"}», а собираем «{P.PROJECT}» '
+          f'— {sum(1 for k in OVERRIDES if not k.startswith("_"))} ручных текстов НЕ применяю')
+    OVERRIDES = {}
 for num, ov in OVERRIDES.items():
     if num.startswith('_'):
         continue

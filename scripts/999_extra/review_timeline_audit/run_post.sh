@@ -4,8 +4,9 @@
 # лист «ТЗ монтажёру» → вкладка дока + verify. Каждый шаг с проверкой кода выхода; лог post.log.
 # usage: ./run_post.sh [--no-drive] [--no-doc]
 set -uo pipefail
-W6=~/Downloads/YTUVI01_Sonya_cut/work/v6
-MONT=~/Downloads/YTUVI01_Sonya_cut/work/montage
+W6="${W6:-$(cd "$(dirname "$0")" && pwd)}"
+MONT="${MONT:-$(cd "$W6/.." && pwd)/montage}"
+[ -f "$W6/prep_config.json" ] || { echo "нет $W6/prep_config.json — карточка проекта не заведена"; exit 1; }
 LOG=$W6/post.log
 export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
 cd "$W6" || exit 1

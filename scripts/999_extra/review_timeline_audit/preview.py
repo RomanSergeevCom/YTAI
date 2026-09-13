@@ -4,7 +4,9 @@ import sys
 from pathlib import Path
 from PIL import Image
 W6 = Path(__file__).parent
-MOCK = Path('/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI01_Corundum_Ruby/00_Setup/05_Review/mockups')
+sys.path.insert(0, str(W6))
+import proj_config as P  # noqa: E402
+MOCK = Path(P.need('project_dir')) / '00_Setup/05_Review/mockups'
 png, sec = sys.argv[1], int(sys.argv[2])
 out = sys.argv[3] if len(sys.argv) > 3 else str(W6 / 'previews' / f'{Path(png).stem}_{sec}.jpg')
 Path(out).parent.mkdir(exist_ok=True)
