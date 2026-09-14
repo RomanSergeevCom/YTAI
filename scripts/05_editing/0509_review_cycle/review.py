@@ -1263,7 +1263,22 @@ def cmd_cloud(r: Review, a) -> int:
 
 
 def cmd_edits(r: Review) -> int:
-    rc = sub([PY, STAGES_DIR / 's13_doc_edits.py'], r.env())
+    """Правки Романа в доке → pravki. SINCE = момент последней записи вкладки ТЗ (из стейта), в ISO UTC —
+    s13 сравнивает с modifiedTime ревизий Drive; без него правки считались бы с чужой даты."""
+    argv = [PY, STAGES_DIR / 's13_doc_edits.py']
+    at = (r.S['surfaces'].get('doc_tz') or {}).get('at') or r.card.get('tab_built_at')
+    if at and 'T' not in str(at):
+        from datetime import timezone
+        try:
+            at = datetime.strptime(at, '%Y-%m-%d %H:%M:%S').astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        except ValueError:
+            pass
+    if at:
+        argv.append(str(at))
+    else:
+        print('вкладка ТЗ этим проектом ещё не писалась (нет surfaces.doc_tz.at) — снимать правки не с чего')
+        return 0
+    rc = sub(argv, r.env())
     if rc == 0:
         r.S['edits'] = {'at': now()}
         r.save()
