@@ -663,12 +663,19 @@ def v_format_tz(r: Review) -> bool:
 def st_polish(r: Review):
     if lint_long(r) == 0:
         return True, 'полировка не нужна (lint 0)'
+    rc0, out0 = r.run_cmd([PY, STAGES_DIR / 'polish_todo.py'], 'polish_todo', 5)
+    if rc0 != 0:
+        return False, f'polish_todo rc={rc0}'
+    if 'строк 0' in out0:
+        return True, 'полировка: нарушения не найдены в parts (нечего править)'
     rc, out = r.run_cmd([PY_LLM, STAGES_DIR / 's14_polish_local.py'], 'polish', 120)
     if rc != 0:
         return False, f's14 rc={rc}'
-    rc, out = r.run_cmd([PY, STAGES_DIR / 'merge_r3.py'], 'polish_merge', 10)
+    rc, out = r.run_cmd([PY, STAGES_DIR / 'merge_local_fixes.py'], 'polish_merge', 10)
+    if rc != 0:
+        return False, f'merge_local_fixes rc={rc}'
     rc2, out2 = r.run_cmd([PY, STAGES_DIR / 's10_format_tz.py'], 'format_tz', 20)
-    return rc2 == 0, f'после полировки длинных строк {lint_long(r)}'
+    return rc2 == 0, f'после полировки длинных строк {lint_long(r)} (слито: {out.strip().splitlines()[-2][:60] if len(out.strip().splitlines()) > 1 else "?"})'
 
 
 def v_polish(r: Review) -> bool:
