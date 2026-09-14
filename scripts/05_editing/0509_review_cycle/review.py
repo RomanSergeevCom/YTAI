@@ -1040,11 +1040,14 @@ def cmd_run(r: Review, a) -> int:
     r.stop_f.unlink(missing_ok=True)
     r.log(f'######## {r.code} run {sel[0]}…{sel[-1]} pid={os.getpid()} host={a.host} version={version()}')
     rc = 0
+    # --from S / --only S = регенерация: выбранные стадии гоняются заново, даже если артефакты на месте;
+    # resume / run без флагов = продолжить, пропуская готовое по артефактам.
+    force_range = bool(a.start or a.only or a.force or a.force_all)
     try:
         for name, host, fn, vfn, gate in stages:
             if name not in sel:
                 continue
-            if not run_stage(r, name, host, fn, vfn, gate, force=a.force and (a.only == name or a.start == name or a.force_all)):
+            if not run_stage(r, name, host, fn, vfn, gate, force=force_range):
                 rc = 4 if r.st(name).get('status') == 'awaiting_cloud' else 1
                 break
     except Stopped:
