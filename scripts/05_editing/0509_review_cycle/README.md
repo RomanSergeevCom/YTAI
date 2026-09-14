@@ -50,7 +50,53 @@ notes_sync, recover_from_session_log, shot, peek) · `memex/` (push/pull/start/s
 `geo/` · `templates/` · `examples/` (YTUVI01 данные, YTCH12 v4, YTEVO02 — только как справка) · `docs/contracts.md`.
 
 <!-- stages:begin -->
-(таблица стадий генерится `review.py docs`)
+### Стадии cut_review (генерится `review.py docs`)
+| # | стадия | хост | инструмент | гейт |
+|---|---|---|---|---|
+| 1 | download | memex | rclone из cut_drive напрямую | кат на диске |
+| 2 | frames | memex | ffmpeg 1 fps 1080p | кадров ≥ длительность − допуск |
+| 3 | ocr | memex | s2_ocr_hires (Apple Vision, bbox) | селфчек ocr + якоря |
+| 4 | transcript | memex | wordrole_transcribe --plain (.venv_transcribe) | words.json |
+| 5 | vlm | memex | s3_vlm Qwen2.5-VL-7B | селфчек vlm |
+| 6 | llm | memex | s4_llm Qwen3-8B (признаки, не вердикты) | селфчек llm |
+| 7 | probe | memex | s3b_probe_vlm: чужие следы, обрезка, zoom-перечит | probes на всех экранах |
+| 8 | selfcheck | memex | s5_selfcheck all | ALL OK |
+| 9 | route | mac | route_candidates: auto / cloud / drop | candidates.json |
+| 10 | cloud | mac | pack → Workflow wf_judge (J≤4, F, V, S) → collect | все пакеты done, покрытие 100 % |
+| 11 | apply | mac | s8_apply_audit: классовый фильтр, одна ТЗ на экран | audit_v6.json + pravki |
+| 12 | align | mac | align: n-gram кат ↔ план/прошлые версии (card.align_against) | align.json |
+| 13 | risk | mac | risk_registry (YTCH): ⚠️ на подтверждение фонда, не ⛔ | risk.json |
+| 14 | acts | mac | acts_compact Qwen3-8B по актам + проверки структуры (YTCH) | acts_compact.json |
+| 15 | verdict | mac | 1 облачный агент: вердикт, обязательные правки, структура (YTCH) | verdict.json применён |
+| 16 | terms | mac | terms_index | terms_v6.json |
+| 17 | format_tz | mac | s10_format_tz + lint | lint_v7.json |
+| 18 | polish | mac | s14_polish_local Qwen3-8B по одной строке + guard | длинных строк 0 |
+| 19 | sources | mac | s11_apply_sources | — |
+| 20 | render | mac | make_infographics_v6 (chrome-headless 4K PNG) | PNG в mockups |
+| 21 | review_json | mac | make_review_v6 (ytai-part-v1, 6 слоёв) | {CODE}_review_v6.json |
+| 22 | mock | mac | mockbuild_v6.js через partsBuilder | 0 ошибок |
+| 23 | previews | mac | s7 + s12 --render + preview_qc_local | qc 0 high |
+| 24 | drive | mac | s9_materials_drive + s12 --upload/--apply | файлы с комментами |
+| 25 | sheet | mac | tz_sheet | лист обновлён |
+| 26 | doc_tz | mac | doc_tab_tz_v4 (гейт: review.py edits) | вкладка записана |
+| 27 | doc_nav | mac | doc_tab_review_v1 (навигатор) | вкладка записана |
+| 28 | verify | mac | doc_tab_tz_v4_verify | ALL PASS |
+| 29 | doc_qc | mac | doc_pdf_qc (pdftotext/pdfimages/PIL) | 0 high |
+| 30 | phone_brief | mac | phone_brief → Telegram | файл ≤1 МБ отправлен |
+| 31 | producer_page | mac | producer_page / review_page | HTML |
+
+### Стадии montage_tz
+| # | стадия | хост | инструмент | гейт |
+|---|---|---|---|---|
+| 1 | transcript | memex | wordrole_transcribe --plain (.venv_transcribe) | words.json |
+| 2 | segment | memex | segment_local Qwen3-8B: тезисы + якоря | segments.json |
+| 3 | montage | mac | build_montage по пословным якорям | montage.json |
+| 4 | structure | mac | 1 облачный агент: структура/тезисы/графика | montage_plan обновлён |
+| 5 | mockups | mac | build_mockups + DOM-QC | PNG 4K |
+| 6 | design_review | mac | 1 облачный агент по контактному листу мокапов | design_review.json применён |
+| 7 | structure_html | mac | build_structure_html | HTML |
+| 8 | standalone | mac | make_standalone (для телефона) | один HTML |
+| 9 | phone_brief | mac | phone_brief → Telegram | файл ≤1 МБ отправлен |
 <!-- stages:end -->
 
 ## Облако — один проход на фильм
