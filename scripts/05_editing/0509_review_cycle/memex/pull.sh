@@ -5,7 +5,8 @@
 source "$(dirname "$0")/common.sh"
 mkdir -p "$REVIEW_DIR/work/$CUT" "$REVIEW_DIR/logs/memex"
 echo "← work/$CUT с Memex"
-rsync -a --info=progress2 "$MX_HOST:$MX_REVIEW_ABS/work/$CUT/" "$REVIEW_DIR/work/$CUT/"
+RSYNC=$(command -v /opt/homebrew/bin/rsync || command -v rsync)   # встроенный macOS rsync не знает --info=progress2
+"$RSYNC" -a "$MX_HOST:$MX_REVIEW_ABS/work/$CUT/" "$REVIEW_DIR/work/$CUT/" || { echo "rsync work/$CUT не прошёл"; exit 3; }
 rsync -a "$MX_HOST:$MX_REVIEW_ABS/${CODE}_${CUT}.*" "$REVIEW_DIR/" 2>/dev/null || true
 rsync -a "$MX_HOST:$MX_REVIEW_ABS/logs/" "$REVIEW_DIR/logs/memex/" 2>/dev/null || true
 echo "← проверка хэшей ключевых файлов"
