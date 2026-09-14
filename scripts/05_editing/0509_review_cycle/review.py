@@ -125,7 +125,14 @@ class Review:
         e.setdefault('HF_HOME', str(YTAI / 'models' / 'huggingface'))
         e['PATH'] = '/opt/homebrew/bin:/usr/local/bin:' + e.get('PATH', '')
         e['PYTHONUNBUFFERED'] = '1'
+        # имя вкладки ТЗ — из карточки (doc_tab_tz_v4 иначе подставляет «· v4» первого фильма через setdefault)
+        tab = os.environ.get('YTAI_TAB_TITLE') or self.card.get('tab_title')
+        if tab and not os.environ.get('TZ_TAB'):
+            e['TZ_TAB'] = str(tab)
         return e
+
+    def tab_title(self) -> str:
+        return os.environ.get('TZ_TAB') or os.environ.get('YTAI_TAB_TITLE') or str(self.card.get('tab_title') or '')
 
     # ── состояние ─────────────────────────────────────────────────────────────
     def load(self) -> dict:
@@ -631,10 +638,15 @@ def v_terms(r: Review) -> bool:
 
 
 def lint_long(r: Review) -> int:
+    """lint_v7.json = {"ТЗ-NN": {"multi": [...], "long": [...]}, ...} — считаем длинные строки по всем ТЗ."""
     p = r.work / 'lint_v7.json'
     try:
         d = json.loads(p.read_text(encoding='utf-8'))
-        return len(d.get('long') or d.get('long_lines') or []) if isinstance(d, dict) else 0
+        if not isinstance(d, dict):
+            return 0
+        if 'long' in d and isinstance(d['long'], list):
+            return len(d['long'])
+        return sum(len((v or {}).get('long') or []) + len((v or {}).get('multi') or []) for v in d.values() if isinstance(v, dict))
     except Exception:
         return 0
 
@@ -750,10 +762,14 @@ def v_sheet(r: Review) -> bool:
 
 
 def edits_guard(r: Review, surface: str):
-    """Перед регенерацией вкладки — правки Романа должны быть сняты (review.py edits)."""
-    written = (r.S['surfaces'].get(surface) or {}).get('at')
+    """Перед регенерацией вкладки — правки Романа должны быть сняты (review.py edits).
+    Гейт действует только для той же вкладки (имя) и того же дока, что писались в прошлый раз."""
+    prev = r.S['surfaces'].get(surface) or {}
+    written = prev.get('at')
+    same_target = (prev.get('doc') or '') == (os.environ.get('YTAI_DOC_ID') or r.card.get('doc_id') or '') and \
+                  (surface != 'doc_tz' or (prev.get('tab') or '') == r.tab_title())
     last_edits = (r.S.get('edits') or {}).get('at')
-    if written and (not last_edits or last_edits < written) and not os.environ.get('YTAI_SKIP_EDITS_GUARD'):
+    if written and same_target and (not last_edits or last_edits < written) and not os.environ.get('YTAI_SKIP_EDITS_GUARD'):
         raise Fatal(f'вкладка {surface} писалась {written}, а правки Романа с тех пор не снимались — '
                     f'сначала `review.py edits`, либо YTAI_SKIP_EDITS_GUARD=1')
 
@@ -763,8 +779,9 @@ def st_doc_tz(r: Review):
         return True, 'doc_id пуст — вкладка ТЗ пропущена'
     edits_guard(r, 'doc_tz')
     rc, out = r.run_cmd([PY, STAGES_DIR / 'doc_tab_tz_v4.py'], 'doc_tz', 40)
-    r.S['surfaces']['doc_tz'] = {'at': now(), 'rc': rc, 'tab': r.card.get('tab_title')}
-    return rc == 0, f'вкладка «{r.card.get("tab_title")}»'
+    r.S['surfaces']['doc_tz'] = {'at': now(), 'rc': rc, 'tab': r.tab_title(),
+                                 'doc': os.environ.get('YTAI_DOC_ID') or r.card.get('doc_id')}
+    return rc == 0, f'вкладка «{r.tab_title()}»'
 
 
 def v_doc_tz(r: Review) -> bool:
@@ -776,7 +793,8 @@ def st_doc_nav(r: Review):
         return True, 'doc_id пуст — навигатор пропущен'
     edits_guard(r, 'doc_nav')
     rc, out = r.run_cmd([PY, STAGES_DIR / 'doc_tab_review_v1.py'], 'doc_nav', 40)
-    r.S['surfaces']['doc_nav'] = {'at': now(), 'rc': rc, 'tab': r.card.get('nav_tab')}
+    r.S['surfaces']['doc_nav'] = {'at': now(), 'rc': rc, 'tab': os.environ.get('YTAI_NAV_TAB') or r.card.get('nav_tab'),
+                                  'doc': os.environ.get('YTAI_DOC_ID') or r.card.get('doc_id')}
     return rc == 0, f'вкладка-навигатор «{r.card.get("nav_tab", "")}»'
 
 
