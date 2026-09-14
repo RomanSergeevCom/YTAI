@@ -116,6 +116,9 @@ notes_sync, recover_from_session_log, shot, peek) · `memex/` (push/pull/start/s
 `~/YTAI_work/{CODE}/00_Setup/05_Review/`; `VERSION` = git sha (дрейф виден в `status`). `memex start` —
 `nohup caffeinate -dims review.py run --host memex --tg` + `watchdog.sh` (подъём ≤5 раз, выход по готовности).
 `memex pull` — rsync `work/v1/` + транскрипт назад, сверка md5. Одна модель за раз (16 ГБ): стадии строго последовательны.
+Нагрузка подписывается: на тяжёлых стадиях пишется флаг `~/.cache/ytai/LOAD.json` (мониторинг Memex читает его и помечает
+тревоги температуры как «идёт разбор»), в TG уходят «🔥 начинаю разбор … ожидаемо N ч» и «🧊 закончен». Регрессия перед
+любым commit/push — `review.py selftest` (секунда, 0 токенов). `--from S` / `--only S` гоняют стадии заново, `resume` — по артефактам.
 
 ## Правила
 
