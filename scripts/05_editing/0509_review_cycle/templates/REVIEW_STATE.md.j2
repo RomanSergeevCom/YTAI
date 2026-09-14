@@ -1,0 +1,96 @@
+<!--
+REVIEW_STATE.md — тикет для запуска ревью в НОВОМ чате. Генерится `review.py ticket` (write_ticket)
+в {project}/00_Setup/05_Review/REVIEW_STATE.md после каждого `run` / `init` / `edits`.
+Этот файл — документированный образец раскладки: шесть разделов в фиксированном порядке, плейсхолдеры
+в стиле str.format (не jinja). Литеральные фигурные скобки в тексте экранируются как {{ }}.
+
+Плейсхолдеры:
+  code, project_name, mode, cut, updated, version           — шапка (код фильма, папка, cut_review|montage_tz, v1…)
+  root                                                       — корень проекта (для команд)
+  channel, src, duration_sec, words, n_chapters              — Факты: кат и транскрипт
+  doc_id, tab_title, nav_tab, materials_id, project_folder_id, film
+  stage_rows      — строки таблицы «| стадия | хост | статус | результат |» (по одной на стадию из STAGES_CUT/MONTAGE)
+  next_step       — первая стадия не в done/warn, либо «всё готово — отдать Роману бриф и ссылки»
+  cloud_pending   — строка про ожидающие облачные пакеты (пустая, если нет)
+  notes_lines     — «Грабли проекта»: card.notes по одному «- …» на строку (раздел опускается, если пусто)
+  chain_notes     — «Последние заметки цепочки»: review_state.notes[-8:] (раздел опускается, если пусто)
+Символы статуса (SYM в review.py): ✅ done · ▶ running · ✗ failed · ⚠️ warn · ☁️ awaiting_cloud · 🖐 blocked_gui · · todo/skipped
+-->
+# {code} · {project_name} — REVIEW_STATE ({mode}, кат {cut})
+_генерится `review.py ticket`; обновлено {updated}; версия кода {version}_
+
+## Запуск в новом чате
+```
+/review {code}
+python3 ~/YTAI/scripts/05_editing/0509_review_cycle/review.py status --project "{root}"
+python3 ~/YTAI/scripts/05_editing/0509_review_cycle/review.py resume --project "{root}"
+```
+
+## Факты
+- проект: `{root}`
+- канал: {channel} · режим: {mode} · кат: {src} ({duration_sec} с)
+- транскрипт: `{words}` · главы: {n_chapters}
+- док: `{doc_id}` · вкладки: «{tab_title}», «{nav_tab}»
+- Drive: материалы `{materials_id}` · проект `{project_folder_id}`
+- фильм: {film}
+
+## Состояние стадий
+| стадия | хост | статус | результат |
+|---|---|---|---|
+{stage_rows}
+
+## Следующий шаг
+- {next_step}
+{cloud_pending}
+
+## Грабли проекта
+{notes_lines}
+
+## Готово, когда
+- селфчек ALL OK · candidates.json · все облачные пакеты done · pravki обновлены
+- mock 0 ошибок · вкладки дока ALL PASS · doc QA 0 high · бриф ушёл в Telegram
+- секвенция построена в Premiere (кнопка Build — Роман)
+
+<!--
+Пример заполнения (YTUVI02, 14.09.2026):
+
+# YTUVI02 · YTUVI02_Ruby_Certificate — REVIEW_STATE (cut_review, кат v1)
+_генерится `review.py ticket`; обновлено 2026-09-14 00:34:10; версия кода 298c66e_
+
+## Запуск в новом чате
+```
+/review YTUVI02
+python3 ~/YTAI/scripts/05_editing/0509_review_cycle/review.py status --project "/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate"
+python3 ~/YTAI/scripts/05_editing/0509_review_cycle/review.py resume --project "/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate"
+```
+
+## Факты
+- проект: `/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate`
+- канал: YTUVI · режим: cut_review · кат: /Volumes/T9-Black-RYA/YTUVI02_Review/cut/YTUVI02_v1.mp4 (1282.76 с)
+- транскрипт: `YTUVI02_v1.words.json` · главы: 5
+- док: `1cJOFviJ50Mc3JWI7ynzUWLJaDjw_u1CVz9tpnBKQFC4` · вкладки: «ТЗ монтажёру · v1», «Ревью v1 по видео»
+- Drive: материалы `1Eq1LdES2DVCxKzXj40SxRNOAKGVaNJ1j` · проект `1a4sK_DYf-nSpVWfQ-odct2GgExeufBO9`
+- фильм: русскоязычный YouTube-док «Рубин. Сертификат и подделки» (канал UVI / yuvi.ru)
+
+## Состояние стадий
+| стадия | хост | статус | результат |
+|---|---|---|---|
+| download | memex | ✅ done | кат на диске |
+| frames | memex | ✅ done | 1283 кадров |
+| … | … | … | … |
+| doc_tz | mac | ✅ done | вкладка записана |
+| phone_brief | mac | · todo |  |
+| producer_page | mac | · todo |  |
+
+## Следующий шаг
+- phone_brief
+
+## Грабли проекта
+- кат v1 лежит на T9-Black (YTUVI02_Review/cut) — при отключённом T9 стадии с кадрами не запускать
+- вкладка t.5rgu01vw70c3 «Монтажный план v6» — НЕ трогать
+
+## Готово, когда
+- селфчек ALL OK · candidates.json · все облачные пакеты done · pravki обновлены
+- mock 0 ошибок · вкладки дока ALL PASS · doc QA 0 high · бриф ушёл в Telegram
+- секвенция построена в Premiere (кнопка Build — Роман)
+-->

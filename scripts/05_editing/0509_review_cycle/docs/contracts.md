@@ -132,36 +132,67 @@ TERM_EXTRA, TERM_RX, LOC_RX, MAP_WINDOWS, place_family`.
 
 ## 7. Облако — один проход `cloud/wf_judge.js`
 
-**Вход пакета J** `cloud/in/J_<nn>_<sha8>.json`:
+Инструменты: `cloud/pack.py` (пакеты, 0 токенов) → `Workflow({scriptPath: cloud/wf_judge.js, args})` (вызов печатает
+`pack.py --print-call`) → `cloud/collect.py` (сбор, покрытие, `audit_findings.json`) → `stages/s8_apply_audit.py`.
+Спасение результатов упавшего прогона и таблица стоимости — `cloud/salvage.py`. Общий код — `cloud/cloudlib.py`.
+Цикл: прогон 1 = J (+ скептик по его результатам) → collect → `pack.py` (при всех J done сам добирает F/V/S) →
+прогон 2 = F ‖ V → S → collect (exit 0). Args воркфлоу — только пути; пакеты агенты читают сами (Read).
+
+**Вход пакета J** `cloud/in/J_<nn>_<sha8>.json` (≤50 экранов, ≤60 кандидатов, ≤120 КБ; `sha8` = sha1 блока `screens` —
+шапка film/rules/existing_tz в хеш не входит, иначе каждое новое ТЗ переупаковывало бы фильм):
 ```
-{ "batch_id": "J_01_ab12cd34", "sha8": "ab12cd34", "film": "...", "rules": "...", "existing_tz": ["ТЗ-01 · 0:57 · …"],
-  "summary": {"auto_confirmed": n, "dropped": m},
-  "screens": [ {"id": "s031", "tc": "5:12", "t0": 312, "t1": 318, "chapter": "03",
-                "ocr_lines": [{"i": 0, "t": "…"}], "vlm_text": "…", "vlm_desc": "…", "vo": "…",
-                "local_flags": {"typo_susp": [...], "latin_ratio": 0.1, "numbers_screen": [...], "numbers_vo": [...], "probe_foreign": false, "dup_of": null},
-                "candidates": [ {"cand_id", "kind", "text", "fix_local", "route_reason", "signals"} ] } ] }
+{ "batch_id": "J_01_ab12cd34", "sha8": "ab12cd34", "kind": "J", "film": "...", "rules": "...", "existing_tz": ["ТЗ-01 · 0:57 · …"],
+  "summary": {"auto_confirmed": n, "dropped": m, "cloud": k}, "n_screens", "n_candidates", "range_tc",
+  "screens": [ {"id": "s031", "tc": "5:12", "t0": 312, "t1": 318, "chapter": "03", "frame": "h0313.jpg",
+                "ocr_lines": [{"i": 0, "t": "…"}], "ocr_last"?: "…", "vlm_text": "…", "vlm_desc": "…", "vo": "…",
+                "local_flags": {"typo_susp": [...], "latin_ratio": 0.1, "numbers_screen": [...], "numbers_vo": [...],
+                                "probe_foreign": false, "dup_of": null, "llm"?: {currency, english, facts, mismatch}},
+                "candidates": [ {"cand_id", "kind", "text", "line_idx", "fix_local", "route_reason", "signals"} ] } ] }
 ```
-**Выход J** `cloud/out/J_<nn>_<sha8>.json` (агент пишет сам, затем возвращает по схеме):
+Без `candidates.json` пакеты собираются с пустыми `candidates[]` (предупреждение в stderr). Экран, уже покрытый
+done-батчем с тем же хешем записи, второй раз не пакуется; done-батчи не трогаются.
+
+**Выход J** `cloud/out/J_<nn>_<sha8>.json` (агент СНАЧАЛА пишет файл Write'ом, затем возвращает по схеме):
 ```
 { "batch_id", "sha8",
-  "verdicts": [ {"cand_id", "verdict": "confirm|refute|need_frame|fact_check", "reason", "fix_text", "existing_tz", "severity", "confidence"} ],
+  "verdicts": [ {"cand_id", "screen_id", "kind", "verdict": "confirm|refute|need_frame|fact_check", "reason", "on_screen_text",
+                 "fix_text", "existing_tz", "severity", "confidence"} ],
   "new_findings": [ {"screen_id", "kind", "on_screen_text", "line_idx", "problem", "fix_text", "why", "severity", "existing_tz"} ],
-  "need_frames": [ {"screen_id", "cand_id", "what_to_look_at"} ],
-  "facts_to_check": [ {"screen_id", "claim", "on_screen_text"} ],
-  "clean_screens": ["s001", …] }
+  "need_frames": [ {"screen_id", "cand_id", "on_screen_text", "what_to_look_at"} ],
+  "facts_to_check": [ {"screen_id", "cand_id", "claim", "on_screen_text"} ],
+  "clean_screens": ["s001", …], "notes" }
 ```
 Код проверяет покрытие: каждый экран пакета должен быть в `verdicts`/`new_findings`/`clean_screens`; непокрытые
-досылаются пакетом `J_<nn>b_<sha8>`.
+досылаются пакетом `J_<nn>b_<sha8>` (collect.py делает его сразу).
 
-**F (факт-чек, 1 агент):** вход `cloud/in/F_<sha8>.json` = список утверждений; выход
-`[{claim, status: verified|wrong|unclear, correct_value, source_url}]`.
-**V (кропы, 1 агент):** вход — ≤16 кропов ≤800 px (или контактный лист 4×4) + вопросы; выход
-`[{screen_id, cand_id, text_as_seen, answer, confidence}]`.
-**S (скептик, 1 агент, текст):** выход `[{finding_id, real, code: T|V|H|C|F|D, reason, corrected_fix_text}]`
-(T вкус/вёрстка · V допустимый вариант · H буквы за головой → «проверить исходник» · C покрыто ТЗ-NN · F факт защитим · D дубль).
+**Идентификаторы находок** (детерминированы, считают и python, и wf_judge.js): вердикт по кандидату → `cand_id`;
+новая находка → `<J batch>.n<NN>`; факт без кандидата → `<F batch>.f<NN>`; вопрос к кадру → `<V batch>.q<NN>`.
 
-**`cloud/state.json`**: `{run_ids: [], batches: {id: {status, in, out, source}}}` — повтор отправляет только `pending`.
-**`work/{cut}/audit_findings.json`**: `{run_ids, findings: [ {…finding, route, verdict, skeptic, run_id} ], confirmed: [...]}`.
+**F (факт-чек, 1 агент):** вход `in/F_<sha8>.json` = `{batch_id, sha8, kind: "F", film, rules, sources, items: [{fact_id, screen_id,
+cand_id, claim, on_screen_text}]}` (facts_to_check судей + вердикты fact_check + локальные utverzhdenija с числом;
+потолок `profile.fact_check.max_claims`); выход `out/F_<sha8>.json` = `{batch_id, sha8, results: [{fact_id, screen_id, cand_id, claim,
+on_screen_text, status: verified|wrong|unclear, correct_value, source_url, note}]}`. `wrong` без кандидата → новая находка kind fact.
+**V (кропы, 1 агент):** вход `in/V_<sha8>.json` = `{batch_id, sha8, kind: "V", images: [...], items: [{q_id, screen_id, cand_id, tc,
+what_to_look_at, on_screen_text, image, cell?}]}` — кропы ≤800 px из `hires` по bbox строки (`cloud/crops/V_<sha8>/`),
+при >16 — контактные листы 4×4 ≤1568 px с подписью q_id в ячейке; выход `out/V_<sha8>.json` = `{batch_id, sha8, results: [{q_id,
+screen_id, cand_id, on_screen_text, text_as_seen, error_visible, answer, confidence}]}` (`error_visible` — решающее поле для кода).
+**S (скептик, 1 агент, текст):** два режима — `mode: "pack"` (`in/S_<sha8>.json` от `pack.py --skeptic`: `items[]` = находки
+без вердикта скептика) и `mode: "run"` (`in` нет; id регистрирует `--print-call`, скептик судит результаты того же прогона);
+выход `out/S_<sha8>.json` = `{batch_id, sha8, verdicts: [{finding_id, real, code: ""|T|V|H|C|F|D, reason, corrected_fix_text}]}`
+(T вкус/вёрстка · V допустимый вариант · H буквы за головой → kind `check_source`, fix «проверить исходник титра» ·
+C покрыто ТЗ-NN · F факт защитим · D дубль). По умолчанию real=true; коды T,V,C,F,D снимают находку.
+
+**`cloud/state.json`**: `{schema: "review-cloud-state-v1", run_ids: [], batches: {id: {status: pending|done, kind: J|F|V|S, in, out,
+source: agent|journal|agent-file|wf-meta|task-output, n, run_id?, screens? {sid: sha8}, covered?, uncovered?, mode?, covers?}}}`
+— повтор отправляет только `pending`. Результат прогона воркфлоу: `{batches_done, batches_failed, summary, results: {batch_id: …}}`.
+**`work/{cut}/audit_findings.json`** (`schema: "review-findings-v8"`): `{code, cut_version, run_ids, batches, summary,
+findings: [ {finding_id, screen_id, tc, t0, t1, chapter, frame, kind, on_screen_text, line_idx, bbox{x,y,w,h}, fix_text, problem, why,
+severity, route: cloud|auto_confirm|legacy, verdict, confidence, existing_tz, run_id, batch_id, skeptic?{real,code,reason,corrected_fix_text},
+fact?{status,correct_value,source_url,note}, crop?{text_as_seen,error_visible,answer,confidence}, status, confirmed} ],
+confirmed: [finding_id…], facts_ok, unmapped}`. `status`: confirm · new_finding · refute · pending_frame · pending_fact · unclear ·
+refuted_by_skeptic; confirmed = статус confirm/new_finding (факт wrong, кроп error_visible) и скептик не снял.
+`collect.py --from-legacy` переводит старый `audit_findings_v6.json` в находки `route: legacy`; `--emit-legacy` пишет старую
+форму, если файла нет (её ещё читают s10_format_tz / review_page / doc_tab_review_v1). Коды выхода collect: 0 всё done · 3 есть pending.
 
 ## 8. `montage.json` — режим montage_tz (`schema: "ytai-montage-v1"`)
 

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- launchd-вотчер заметок ревью: notes/ изменилась → notes_sync.py push (throttle N с).
+     Шаблон str.format (не jinja); поля: {{label}} {{python}} {{script}} {{notes_dir}} {{throttle}} {{path_env}} {{card}} {{log}}.
+     Рендерит shared/notes_sync.py install-autopush → ~/Library/LaunchAgents/ae.rya.<project>-notes-push.plist -->
+<dict>
+    <key>Label</key>
+    <string>{label}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{python}</string>
+        <string>{script}</string>
+        <string>push</string>
+    </array>
+    <key>WatchPaths</key>
+    <array>
+        <string>{notes_dir}</string>
+    </array>
+    <key>ThrottleInterval</key>
+    <integer>{throttle}</integer>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>{path_env}</string>
+        <key>YTAI_CARD</key>
+        <string>{card}</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>{log}</string>
+    <key>StandardErrorPath</key>
+    <string>{log}</string>
+</dict>
+</plist>

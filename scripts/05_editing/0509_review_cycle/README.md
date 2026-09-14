@@ -1,115 +1,91 @@
-# review_timeline_audit — 6-слойный ревью-таймлайн ката + аудит экранов
+# 0509_review_cycle — ревью ката + ТЗ на монтаж (машинный ранбук)
 
-KB-страница метода: https://yt.rya.ae/kb/review-timeline/ (4.6). Эталон: YTUVI01 Review_v6 (08–09.09.2026),
-рабочая копия с данными — `~/Downloads/YTUVI01_Sonya_cut/work/v6/` (+ `../montage/` — pravki_v2.json, лист, док).
-Канон слоёв — память `feedback_review_6layer_timeline`: V1 оригинал · V2 футажи · V3 инфографика · V4 ТЗ · V5 стрелки · V6 структура.
+Стадия главы «Editing» (KB 4.7 `/kb/review-cycle/`, канон форматов — KB 4.6 `/kb/review-timeline/`).
+Скрипты живут здесь, в репо; всё состояние фильма — в `{project}/00_Setup/05_Review/`.
+Никаких рабочих копий инструмента рядом с данными (так расходились три версии YTUVI01/02/Memex).
 
-## v7 (10.09.2026) — ТЗ «как карта структуры», крупные превью, суммы цифрами, выделение правок
-Запрос Романа (тикет Review v7): сплошной текст не читается → каждый таймкод отдельной строкой («таймкод ▸ пункт»,
-эталон — кадр карты структуры); картинки справа — крупные, «про что говоришь»; суммы цифрами; в опечатках выделять
-исправленное. Скрипты `doc_tab_tz_v3*.py` и `tz_sheet.py` живут в `montage/` рядом с pravki (здесь — копии).
+## Один вызов
 
-| Шаг | Скрипт | Что делает |
-|---|---|---|
-| 0 | `s13_doc_edits.py` | правки заказчика во вкладке ДО регенерации: вкладка против `build_rows()` сборщика → пропавшие строки (`status: rejected`), дописки (`roman_comment`), Drive-комменты; `--bk <снимок>` — против чистой части старого сборщика |
-| 1 | `s10_format_tz.py` | parts → nado: элемент блока = строка или `{"h","items"}`; пункт «M:SS ▸ …» (выравнивание U+2007 после чистки); `@prog:NN`; списки структура/термины/локации — из данных графики; `typo` → «было «…» → стало «…»»; lint `lint_v7.json` |
-| 2 | `s11_apply_sources.py` | источники (у драфтов — коротко; старые авто-тексты перезаписываются) |
-| 3 | `make_infographics_v6.py C G H` | fix-драфты: изменённые буквы цветом с подчёркиванием, многострочные, `font:sans`, `badge:above`; цены `_A/_B` |
-| 4 | `make_review_v6.py` + `mockbuild_v6.js` | варианты А/Б встык на V3; `NO_ARROW` (снятые находки без стрелок V5); `SUB_DODGE` |
-| 5 | `s12_doc_previews.py --render/--upload/--apply` | превью для дока/листа: оверлей на кадре + кроп по альфе (без полосы водяного знака), БЫЛО/СТАЛО, кроп кадра со стрелкой, кадр ТЗ без картинки; поправки `previews_v7.json`; `--apply` — после каждого s10+s11 |
-| 6–8 | `s9_materials_drive.py` → `tz_sheet.py` → `doc_tab_tz_v3.py` + `_verify.py` | Drive (md5-пропуск, варианты fix), лист (превью в =IMAGE), док (картинка в своём абзаце 262pt, подпись, моно-таймкоды, красные буквы, backoff) |
-| 9 | приёмка глазами (см. ниже) | `export_tab_pdf.py` → `wf_final_doc_qa_v7.js` → `wf_final_qa_fix_v7.js` + `guard_v7b.py` + `merge_r3.py` → пересборка шагов 1–8 |
-| — | `run_v7.sh [--from STEP] [--until STEP]` | всё по порядку с логом `v7.log` |
+```bash
+R=~/YTAI/scripts/05_editing/0509_review_cycle/review.py
+python3 $R init    --project <path|CODE> --channel YTUVI --mode cut_review [--cut gdrive:…/cut.mp4] [--from-prep-config old.json]
+python3 $R status  --project P
+python3 $R memex   --project P push [--with-cut] | start | status | pause | resume | stop | pull
+python3 $R run     --project P [--from S] [--until S] [--only S] [--force] [--dry-run] [--host mac|memex] [--tg] [--no-drive] [--no-doc]
+python3 $R resume  --project P
+python3 $R cloud   --project P judge --print-call | collect --run <id> | salvage [--session <id>] | cost | verdict | structure
+python3 $R edits   --project P        # правки Романа из дока → pravki; ОБЯЗАТЕЛЬНО перед регенерацией вкладок
+python3 $R ticket  --project P        # REVIEW_STATE.md
+python3 $R card    --project P check
+python3 $R docs                        # таблица стадий → README + KB 4.7 (между маркерами)
+```
 
-`v7_tools/` — доводка агентами: `listify_rules.md` + `guard_v7.py` (кодовый страж: таймкоды/ссылки/слова, ≤1 таймкода в строке),
-`wf_listify_v7.js` (переписать ТЗ, которые ловит lint, → скептик), `merge_listify.py` (в `tz_overrides.json` через страж),
-`wf_preview_qa_v7.js` (QA превью: пробный кроп, подпись «таймкод · что видно») + `apply_qa.py` (в `previews_v7.json`),
-`export_tab_pdf.py` (вкладка → PDF → PNG для глазной проверки). Общий модуль диффа — `typo_diff.py`.
+Стадии идемпотентны, гейт — по артефактам на диске (`review_state.json` можно потерять — ничего не
+переделается). `--force` гоняет заново, `--from S` сбрасывает S и всё после. Пауза/стоп — флаги
+`~/.cache/<project>/PAUSE|STOP` (стадии читают их на границе экрана). Логи — `05_Review/logs/<stage>.log`.
 
-### Приёмка (v7.1) — свою же работу смотрят глазами
-Сборка «ALL PASS» по коду не значит, что документ читается. Последний шаг цикла:
-`export_tab_pdf.py OUT 110` (вкладка → PDF → PNG-страницы) → `wf_final_doc_qa_v7.js` (агенты по ~8 страниц,
-критерии заказчика, «мелко — так и напиши»; на 64 страницах — 320 замечаний, 51 критичное) →
-`wf_final_qa_fix_v7.js` (переписчик + скептик на батч; каждому ТЗ дают ЕГО замечания, полные находки аудита и 💬)
-→ `guard_v7b.py` (правила `listify_rules_v2.md`) → `merge_r3.py` → пересборка. Правило разделения труда:
-картинки, подписи, ширины, порядок строк — код; смысл и формулировки — редактор.
+## Что где
 
-Правила v2 (`listify_rules_v2.md`): таймкод — в начале строки; никаких «→ / ; | vs»-перечислений; одна строка —
-одна мысль; без обрывков «…» (восстанавливать по полной находке); без жаргона `hNNNN`/`sNNN`/«нота»/«коммент»/
-«ночной разбор»; у каждого ТЗ обязательное ✅ СДЕЛАТЬ; 💬 заказчика главнее старого текста ТЗ; вопрос заказчику —
-в `decision` (❓), не внутри ТЗ; длительности словами («6 мин 11 с»); шапка вкладки — тоже списками.
+```
+{project}/00_Setup/05_Review/
+├── review_card.json      карточка фильма (пути, главы, film, внешние id, якоря, notes)   ← docs/contracts.md §1
+├── review_state.json     стейт-машина                                                     ← §4
+├── REVIEW_STATE.md       тикет для новой сессии (генерится)
+├── review_terms.json     термины/места фильма (сверх YTs/{CH}/review_terms_base.json)      ← §3
+├── {CODE}_v1.words.json  транскрипт (wordrole, --plain)
+├── {CODE}_review_v6.json таймлайн ревью для UXP (ytai-part-v1, review_overlay, 6 слоёв)   ← §9
+├── pravki/               pravki_v2.json (источник истины всех поверхностей) · tz_overrides · previews_v7 · shots_ids · drive_clips · notes_sheet · channel_rules
+├── work/v1/              hires/ · ocr_hires.jsonl · screens_v6.json · vlm_v6.jsonl · llm_v6.json · probes.jsonl · candidates.json · audit_findings.json · audit_v6.json · terms_v6.json · lint_v7.json · previews_* · err_frames* · polish/
+├── cloud/                state.json · in/ · out/ · raw/<runId>/ · CALL.txt
+├── mockups/ · notes/ · logs/
+YTs/{CH}/review_profile.json   профиль канала (стиль, каноны, классы ТЗ, чувствительность)       ← §2
+```
 
-**Когда облачные агенты в лимите:** `s14_polish_local.py` — Qwen3-8B (mlx, `~/YTAI/environment/.venv_llm/bin/python`).
-Модели даётся ОДНА строка («разбей на пункты, ничего не потеряй»), а не «перепиши ТЗ»: код сверяет таймкоды и слова
-(≥92%, ≤1 таймкода в строке) и при провале берёт детерминированный разбор `det_split()`. Формулировки после неё читает человек.
+Папка стадии: `review.py` · `proj_config.py` (карточка+профиль, `YTAI_CARD`/`YTAI_PROJECT_DIR`/поиск вверх) ·
+`stages/` (s2…s14, make_*, doc_tab_*, tz_sheet, s9, route_candidates, s3b_probe_vlm, doc_pdf_qc,
+preview_qc_local; `_bootstrap.py` — единая точка путей) · `cloud/` (pack, wf_judge, collect, salvage,
+wf_verdict_doc, wf_structure_src; `_legacy/` — старые 250-агентные воркфлоу, не запускать) · `montage/`
+(режим montage_tz) · `shared/` (card_tools, align, risk_registry, acts_compact, phone_brief, producer_page,
+notes_sync, recover_from_session_log, shot, peek) · `memex/` (push/pull/start/status/pause/resume/stop/watchdog) ·
+`geo/` · `templates/` · `examples/` (YTUVI01 данные, YTCH12 v4, YTEVO02 — только как справка) · `docs/contracts.md`.
 
-### Канон названий мест и терминов (v7.2, 11.09.2026)
-Роман: «люди путают названия стран и городов; Бирма (Мьянма) — что это одно место».
-Источник канона — `PLACES` в `terms_catalog.py` (kind · parent · role · old · renamed · sub · note),
-из него выводится старый кортеж `LOCS` (его позиционно распаковывают 4 скрипта — форму не менять).
-Правила: современное имя первым, старое в скобках («МЬЯНМА (БИРМА)»); пояснение про переименование —
-ОДИН раз, на первом упоминании (`terms_index.py` ставит `note`, рендерится `map_<key>_note.png`);
-город всегда подписан своей страной; в списке ТЗ-76 города идут сразу за своей страной (`gen_locs`),
-а не по частоте. Термин — русское имя крупно, оригинал мелко (канон ТЗ-14).
-⚠️ Грабли, найденные на YTUVI01: «сиамские рубины» — способ подделки, а не Таиланд (стал термином);
-`танзан` ловил «танзанит»; ASR пишет «мазамбик», каталог искал «мозамбик»; «шри -ланка» — два разделителя.
-⚠️ Когда подряд звучат 6–9 стран, мини-карты схлопываются в одну точку: вместо них одна большая карта
-в ТРИ шага, мини-карты в окне глушатся через `MAP_WINDOWS` (поле `cover` в `terms_v6.json`).
-⚠️ Карта, заменяющая кадр, должна быть ГЛУХОЙ — сквозь полупрозрачную панель просвечивают английские
-подписи карты ката.
+<!-- stages:begin -->
+(таблица стадий генерится `review.py docs`)
+<!-- stages:end -->
 
-## Как повторить на новом проекте (с 11.09.2026 — через карточку проекта)
-1. Скопировать папку в рабочую копию `…/work/v6/` рядом с `montage/` (файлы `montage/` — `pravki_v2.json`,
-   `shots_ids.json`, `proj_material_ids.json`, `drive_clips.json`, `notes_sheet.json` — у каждого проекта свои).
-2. **Завести карточку `work/v6/prep_config.json`** — все проектные константы живут в ней, читает их `proj_config.py`
-   (образец — в его докстринге). Без карточки скрипты падают с текстом, а НЕ берут значения прошлого видео:
-   раньше путь к транскрипту был зашит в пяти файлах, id папки материалов — в четырёх, id дока — в пяти.
-   - обязательные: `project`, `code`, `src`, `words`, `duration_sec`;
-   - для стадий после моделей: `project_dir`, `doc_id`, `tab_title`, `materials_id`, `project_folder_id`,
-     `sprint_folder_id`, `chapters`, `ch_name`, `film`;
-   - внешние id пустыми быть не могут: стадия откажется, а не уйдёт в документ или папку прошлого проекта;
-   - якоря самопроверки (`ocr_anchors`, `llm_anchors`) — тексты ИМЕННО этого ката; пусто = проверка пропущена.
-3. Главы/подглавы/прогресс (`make_infographics_v6_data.py`) и каталог терминов (`terms_catalog.py`) — пока в коде.
-4. Локальный разбор — стадии ПО ОДНОЙ: кадры → `ctl_prep.sh ocr|vlm|llm start` (пауза `pause/resume`, флаг
-   `~/.cache/<project>/PAUSE` читают обе модельные стадии), селфчек `s5_selfcheck.py frames|ocr|transcript|vlm|llm|all`.
-   `run_prep.sh` — только без пауз: его сторож по часам убивает стадию, простоявшую на паузе.
-   Автономно на Memex (YTUVI02, 11.09): сквозная цепочка `run_chain.sh` + сторож `chain_watch.sh` (вехи в TG, подъём упавшего).
-5. `python3 s6_pack_chapters.py` → `audit_pack/`; аудит: `Workflow({scriptPath: wf_audit_v6.js, args: {packs,
-   existing_tz_file, inventory_file, inventory_count, film, sources}})` → `audit_findings_v6.json` (поле `confirmed`).
-   Без результата аудита стадии после него откажутся (`YTAI_NO_AUDIT=1` — если так и задумано).
-6. `./run_post.sh` / `./run_v7.sh` — папки берут от своего места, константы — из карточки.
-7. Панель UXP → Review → выбрать `{CODE}_review_v6.json` → секвенция `{CODE}_5_Review_v6_tz_v{N}`.
+## Облако — один проход на фильм
 
-Ручные правки `tz_overrides.json` и `previews_v7.json` привязаны к НОМЕРАМ ТЗ фильма и помечены `_project`:
-правки чужого проекта не применяются (иначе ТЗ-05 нового фильма молча получал текст ТЗ-05 первого).
-Промпты доводки `v7_tools/wf_*_v7.js` содержат числа первого видео (26 ТЗ, 65 превью, 64 страницы, монтажёр Соня) —
-при повторе переписать под проект.
+`cloud/pack.py` собирает текстовые пакеты J (≤50 экранов, ≤60 кандидатов; OCR + VLM + озвучка ±8 с +
+локальные сигналы, картинок нет) → сессия выполняет напечатанный `Workflow({scriptPath: cloud/wf_judge.js, …})`
+один раз → агенты пишут `cloud/out/<batch>.json` сами → `cloud/collect.py` сливает в `work/v1/audit_findings.json`
+(покрытие 100 %, непокрытые экраны досылаются) → после J: `pack.py --facts --crops --skeptic` → тот же воркфлоу
+(F: факт-чек списком, V: ≤16 кропов ≤800 px, S: скептик default real=true с кодами T|V|H|C|F|D) → `s8_apply_audit`.
+Обрыв по лимиту сессии: `cloud/salvage.py` достаёт результаты из journal/agent-логов сессии; повтор — только pending.
+Бюджет: 7–10 агентов и ≈0,7–1,5 M токенов на 40-минутный фильм (было 233–560 агентов, 25–37 M).
 
-## Скрипты
-| файл | роль |
-|---|---|
-| proj_config.py + prep_config.json | карточка проекта: пути, длительность, главы, якоря, внешние id; пауза и атомарная запись |
-| run_prep.sh / ctl_prep.sh / s2–s5 | кадры 1 fps 1080p, OCR с bbox, инвентарь экранов, VLM-транскрипция, LLM-корректор, селфчеки |
-| s1_screens.py | ⚠️ НЕ в конвейере (архив): нумерует кадры на единицу иначе, чем s2 — смешать = сдвиг всех таймкодов |
-| s6_pack_chapters.py | пакеты для агентов по главам |
-| wf_audit_v6.js | Workflow: аудиторы по главам → 3 скептика на находку → критик полноты |
-| s8_apply_audit.py | находки → pravki (ТЗ-N+, `source: audit_v6`) + audit_v6.json (стрелки/исправления) |
-| s11_apply_sources.py | источник каждой картинки-материала → строка «📚 источник»: книга/журнал, страница, ссылка на сам PDF в Drive-зеркале архива (сверка md5 с Digital_Originals — библиограф-агент) |
-| s10_format_tz.py | ТЗ в читаемый вид: блоки ❌ СЕЙЧАС · ✅ СДЕЛАТЬ · 📋 СПИСОК · 📍 ГДЕ · 📚 ИСТОЧНИК · 🎬 НА ТАЙМЛАЙНЕ · 💬 РОМА (фиолетовым). Источник истины — `p['parts']`, ручные правки — `tz_overrides.json` |
-| make_infographics_v6.py стадия H | карта структуры одним кадром (главы+подглавы) + «карта выпуска» с «ВЫ ЗДЕСЬ» на каждую главу |
-| make_infographics_v6.py (+_data, terms_catalog, terms_index) | PNG 4K: термины, мини-карты (Natural Earth `geo/ne_50m_countries.geojson` — скачать), подглавы, прогресс, прозрачные панели, стрелки, fix-патчи, LT |
-| make_review_v6.py | раскладка ytai-part-v1 по 6 трекам, арбитраж наездов, сетка 25p |
-| s7_preview_sheet.py / preview.py | композиты оверлеев на кадрах для самопроверки |
-| mockbuild_v6.js | прогон JSON через partsBuilder на mock-ppro (0 ошибок = можно строить) |
-| s9_materials_drive.py | Drive Review_materials/v6_* + коммент на каждом файле; кадры → shots для =IMAGE |
-| tz_sheet.py / doc_tab_tz_v3.py + _verify.py | лист «ТЗ монтажёру», вкладка дока (ALL PASS) |
+## Memex («глаза»)
 
-Статусы в pravki: `status: rejected` (Роман снял строку в доке — номер сохранён, строка исчезает везде),
-`decision` (⏳ решение Романа), `source: audit_v6 | structure_v6`.
+`memex push` — rsync папки стадии + зависимостей (`ytuvi_doctabs/doctab_lib.py`, `infographic/render.py`,
+`wordrole_transcribe.py`, `bin/vision_ocr_ru`) по путям репо и карточка в Memex-варианте в
+`~/YTAI_work/{CODE}/00_Setup/05_Review/`; `VERSION` = git sha (дрейф виден в `status`). `memex start` —
+`nohup caffeinate -dims review.py run --host memex --tg` + `watchdog.sh` (подъём ≤5 раз, выход по готовности).
+`memex pull` — rsync `work/v1/` + транскрипт назад, сверка md5. Одна модель за раз (16 ГБ): стадии строго последовательны.
+
+## Правила
+
+- Классы ТЗ: только `typo · grammar · fact · currency · language · mismatch · foreign_trace` (+`structure` у YTCH);
+  `design/taste/pacing` не попадают в ТЗ по коду (профиль `tz_classes`). Целевой размер списка не задаётся.
+- Номера ТЗ никогда не переиспользуются; `status: rejected` = Роман снял строку в доке (`review.py edits`).
+- Внешние id (док, Drive, лист) — только из карточки; пусто = отказ, не фолбэк на прошлый фильм.
+- Чувствительное (YTCH) = ⚠️ «на подтверждение фонда/блюр», не ⛔.
+- Формат поверхностей заморожен (KB 4.6): 6 слоёв · ОДНА таблица во вкладке · блоки ❌/✅/📋/📍/📚/🎬/💬 · превью на кадре.
 
 ## Грабли
+
 - alpha-рендер: `html,body{background:transparent}`; chrome-headless-shell (GUI-Chrome в headless виснет).
 - Стиллы ≤4,8 с; tc на сетке 25p; `sequence_name` не кончать на `_v\d`.
-- OCR путает Й/И — якоря селфчека нормализовать; стрелку ставить на секунду ДОПИСАННОГО титра.
-- Session limit агентов (сброс 10:00 МСК) — аудиторов первыми, верификация pipeline'ом, результат сохранять сразу; недопроверенное — своими глазами по кадрам.
+- OCR путает Й/И — такие пары никогда не auto_confirm; стрелку ставить на секунду ДОПИСАННОГО титра.
+- `get_doc` тянет весь док (~30 с) — шапку вкладки вставлять одной пачкой.
 - Верх кадра занят титрами ката: подглавы/прогресс слева-посередине, термины/карты справа-посередине.
+- Memex 16 ГБ: две модели одновременно не запускать; в неинтерактивном ssh `export PATH=/opt/homebrew/bin:$PATH`.
+- Клипы магазина 23.976 → Interpret 25p (fps-warning в ТЗ).
