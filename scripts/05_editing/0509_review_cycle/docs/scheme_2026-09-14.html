@@ -1,0 +1,227 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>"><title>Конвейер ревью ката</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#0A0D16; --bg-2:#0F131E; --card:#161B29; --line:#2A3247; --line-soft:#1E2436;
+  --ink:#F0F2F8; --ink-2:#C8CDD9; --ink-3:#8A92A8;
+  --accent:#E4FF6E; --accent-ink:#0A0D16;
+  --memex:#199e70; --mac:#3987e5; --cloud:#9085e9; --out:#d95926;
+  --was:#3987e5; --now:#199e70;
+  --display:'Unbounded','Arial Black',Arial,sans-serif; --body:'Manrope','Helvetica Neue',Arial,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);padding-block:0 60px;padding-inline:18px}
+a{color:var(--accent)}
+.wrap{max-width:820px;margin:0 auto}
+.top{display:flex;gap:10px;align-items:center;padding:16px 0 10px;border-bottom:1px solid var(--line);font:700 12px var(--mono);color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase}
+.top .mark{background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:3px 8px;font-family:var(--display);font-size:11px;letter-spacing:.04em}
+.top .tc{margin-left:auto}
+h1{font:700 clamp(26px,5.6vw,42px)/1.12 var(--display);letter-spacing:-.01em;margin:26px 0 12px;text-wrap:balance}
+.lede{font-size:17px;color:var(--ink-2);max-width:62ch;margin:0 0 22px}
+.lede b{color:var(--ink)}
+h2{font:700 clamp(19px,3.4vw,24px)/1.2 var(--display);margin:44px 0 14px;text-wrap:balance;display:flex;align-items:baseline;gap:12px}
+h2 .n{font:700 12px var(--mono);color:var(--ink-3);letter-spacing:.06em}
+h3{font:700 15px/1.3 var(--body);margin:0 0 6px}
+p{margin:0 0 10px}
+.muted{color:var(--ink-3)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* hero numbers */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 6px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.tile .lab{font:700 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px}
+.tile .row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.tile .was{font:500 22px var(--mono);color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line)}
+.tile .arr{color:var(--ink-3)}
+.tile .now{font:700 34px/1 var(--display);color:var(--ink)}
+.tile .sub{margin-top:8px;font-size:13px;color:var(--ink-3)}
+.note{font-size:13px;color:var(--ink-3);margin:8px 0 0}
+
+/* timeline diagram */
+.seq{background:var(--bg-2);border:1px solid var(--line);border-radius:14px;padding:14px 14px 10px;overflow-x:auto}
+.seq-in{min-width:640px}
+.ruler{display:grid;grid-template-columns:120px 1fr;font:700 11px var(--mono);color:var(--ink-3);letter-spacing:.06em;margin-bottom:8px}
+.ruler .ticks{display:flex;justify-content:space-between;padding:0 4px}
+.track{display:grid;grid-template-columns:120px 1fr;gap:0 10px;align-items:stretch;border-top:1px solid var(--line-soft);padding:9px 0}
+.track .name{font:700 12px var(--mono);letter-spacing:.06em;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.track .name span{font:500 11px var(--body);color:var(--ink-3);letter-spacing:0}
+.track .lane{display:flex;gap:4px;align-items:stretch;min-height:44px}
+.clip{border-radius:7px;padding:6px 8px;font:500 12px/1.25 var(--body);color:var(--ink);display:flex;flex-direction:column;justify-content:center;gap:2px;position:relative;min-width:0}
+.clip small{font:700 10px var(--mono);color:rgba(240,242,248,.75);letter-spacing:.04em}
+.clip.mx{background:color-mix(in srgb,var(--memex) 42%,var(--bg-2));border:1px solid var(--memex)}
+.clip.mc{background:color-mix(in srgb,var(--mac) 38%,var(--bg-2));border:1px solid var(--mac)}
+.clip.cl{background:color-mix(in srgb,var(--cloud) 38%,var(--bg-2));border:1px solid var(--cloud)}
+.clip.ou{background:color-mix(in srgb,var(--out) 34%,var(--bg-2));border:1px solid var(--out)}
+.clip.gap{background:transparent;border:1px dashed var(--line);color:var(--ink-3);justify-content:center;align-items:center;text-align:center;font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:10px 0 0;font-size:13px;color:var(--ink-2)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.tokens{display:inline-block;margin-left:6px;font:700 11px var(--mono);letter-spacing:.06em;color:var(--accent)}
+
+/* levers */
+.levers{display:grid;gap:10px}
+.lever{display:grid;grid-template-columns:44px 1fr;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.lever .ico{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:700 13px var(--mono);color:var(--ink);border:1px solid var(--line);background:var(--bg-2)}
+.lever .eff{margin-top:6px;font:500 13px var(--mono);color:var(--accent)}
+.lever p{color:var(--ink-2);font-size:15px}
+
+/* bars */
+.chart{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.chart .cap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--ink-3);margin-bottom:12px}
+.chart .cap b{color:var(--ink-2)}
+.metric{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:6px 14px;align-items:center;padding:9px 0;border-top:1px solid var(--line-soft)}
+.metric .m{font-size:14px;color:var(--ink-2)}
+.metric .m small{display:block;color:var(--ink-3);font-size:12px}
+.bars{display:grid;gap:4px}
+.bar{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.bar .fill{height:14px;border-radius:0 4px 4px 0;min-width:2px}
+.bar.was .fill{background:var(--was)}
+.bar.now .fill{background:var(--now)}
+.bar .v{font:700 12px var(--mono);color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.bar .v small{color:var(--ink-3);font-weight:500}
+.chart .leg{display:flex;gap:16px;margin-top:10px;font-size:13px;color:var(--ink-2)}
+.chart .leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* one source → surfaces */
+.flow{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
+.flow .src{background:var(--card);border:1px solid var(--accent);border-radius:14px;padding:14px 16px}
+.flow .src b{font-family:var(--mono)}
+.flow .arrow{font:700 22px var(--mono);color:var(--ink-3)}
+.flow ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.flow li{background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
+.flow li small{display:block;color:var(--ink-3);font-size:12px}
+@media (max-width:560px){.flow{grid-template-columns:1fr}.flow .arrow{transform:rotate(90deg);justify-self:center}}
+
+/* steps for Roman */
+.steps{display:grid;gap:10px}
+.step{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+.step .k{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:700 14px var(--display);display:flex;align-items:center;justify-content:center}
+.step .t{font:700 15px var(--body)}
+.step p{color:var(--ink-2);font-size:15px;margin:2px 0 0}
+.step code{font:500 13px var(--mono);background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--ink)}
+
+/* facts table */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+th{font:700 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3)}
+.foot a{color:var(--ink-2)}
+@media (prefers-reduced-motion:no-preference){.tile,.lever{transition:border-color .15s}.tile:hover,.lever:hover{border-color:var(--ink-3)}}
+</style>
+
+</head><body><div class="wrap">
+<div class="top"><span class="mark">RYA.AE</span><span>ревью ката · ТЗ на монтаж</span><span class="tc">версия 14.09.2026</span></div>
+
+<h1>Конвейер ревью ката: где идут часы машины, где минуты агента</h1>
+<p class="lede">Монтажёр прислал сборку. Раньше её разбирали <b>сотни облачных агентов</b>, каждый заново читал кадры, а упавший прогон запускали ещё раз. Теперь всё, что можно посчитать, считают <b>локальные модели на Memex ночью</b>, а в облако уходит <b>один короткий проход</b> с готовым списком кандидатов. Форматы для монтажёра не изменились.</p>
+
+<div class="tiles">
+  <div class="tile"><div class="lab">агентов в облаке на фильм</div><div class="row"><span class="was">508</span><span class="arr">→</span><span class="now">7</span></div><div class="sub">YTUVI02: аудит 244 + три догона 264 → судья ×4, факты, кропы, скептик</div></div>
+  <div class="tile"><div class="lab">токенов на фильм</div><div class="row"><span class="was">18,7 M</span><span class="arr">→</span><span class="now">≈1 M</span></div><div class="sub">замер: 292 k на половину фильма (48 экранов)</div></div>
+  <div class="tile"><div class="lab">повторных запусков аудита</div><div class="row"><span class="was">4</span><span class="arr">→</span><span class="now">0</span></div><div class="sub">результат агента лежит на диске до конца прогона; повтор только для недоделанных пакетов</div></div>
+</div>
+<p class="note">Цифры «было» — реальные прогоны YTUVI02 (11–12.09), «стало» — замер той же системы на тех же данных 14.09.</p>
+
+<h2><span class="n">СХЕМА</span>Три дорожки, как в секвенции</h2>
+<p class="muted">Стадии лежат на дорожках по месту исполнения. Длительности — из реального ночного прогона YTUVI02 на Memex (кат 21 мин).</p>
+<div class="seq"><div class="seq-in">
+  <div class="ruler"><div></div><div class="ticks"><span>00:00</span><span>ночь · 2 ч 18 мин</span><span>утро · ~30 мин</span><span>→ монтажёру</span></div></div>
+  <div class="track"><div class="name" style="color:var(--cloud)">V3 · ОБЛАКО<span>один проход, 7 агентов</span></div>
+    <div class="lane">
+      <div class="clip gap" style="flex:6.2">ноль токенов</div>
+      <div class="clip cl" style="flex:1.6"><small>J ×4</small>судья по пакетам</div>
+      <div class="clip cl" style="flex:.9"><small>F ‖ V</small>факты · кропы</div>
+      <div class="clip cl" style="flex:.7"><small>S</small>скептик</div>
+      <div class="clip gap" style="flex:2.2">ноль токенов</div>
+    </div></div>
+  <div class="track"><div class="name" style="color:var(--mac)">V2 · MAC<span>«руки»: собрать и отдать</span></div>
+    <div class="lane">
+      <div class="clip gap" style="flex:6.2">Memex считает</div>
+      <div class="clip mc" style="flex:.8"><small>&lt;1 мин</small>маршрутизация</div>
+      <div class="clip gap" style="flex:3.2">ждёт облако</div>
+      <div class="clip mc" style="flex:1.3"><small>~5 мин</small>ТЗ · графика · таймлайн</div>
+      <div class="clip ou" style="flex:1.2"><small>док · лист · Drive</small>+ бриф в TG</div>
+    </div></div>
+  <div class="track"><div class="name" style="color:var(--memex)">V1 · MEMEX<span>«глаза»: локальные модели</span></div>
+    <div class="lane">
+      <div class="clip mx" style="flex:.5"><small>6 мин</small>кадры</div>
+      <div class="clip mx" style="flex:.35"><small>3</small>OCR</div>
+      <div class="clip mx" style="flex:2.4"><small>59 мин</small>VLM читает каждый экран</div>
+      <div class="clip mx" style="flex:1"><small>23</small>LLM</div>
+      <div class="clip mx" style="flex:1.95"><small>48 мин</small>пробы: следы, обрезка, зум</div>
+      <div class="clip gap" style="flex:5.3">спит</div>
+    </div></div>
+</div></div>
+<div class="legend"><span><i style="background:var(--memex)"></i>Memex, автономно, ноутбук можно выключить</span><span><i style="background:var(--mac)"></i>Mac, одна команда на шаг</span><span><i style="background:var(--cloud)"></i>облако, единственные токены</span><span><i style="background:var(--out)"></i>поверхности для монтажёра и для тебя</span></div>
+
+<h2><span class="n">РЫЧАГИ</span>Пять причин, почему стало дешевле</h2>
+<div class="levers">
+  <div class="lever"><div class="ico">A</div><div><h3>Класс ошибки решает код, а не три скептика</h3><p>На YTUVI02 24 из 26 находок «вёрстка» прошли трёх скептиков, хотя по твоему правилу это не ошибки. Теперь вёрстка, вкус и темп отбрасываются до облака, а опечатки, факты, валюта, английский, экран≠озвучка и чужие следы маршрутизируются по правилам: три совпавших чтения (OCR, VLM, зум) и найденное исправление подтверждают опечатку сами.</p><div class="eff">61 из 84 старых находок решаются локально · 0 ложных подтверждений</div></div></div>
+  <div class="lever"><div class="ico">B</div><div><h3>Судья читает текст, а не кадры</h3><p>Пакет на 50 экранов: строки OCR, дословное чтение VLM, озвучка ±8 с, кандидаты. Кадры не прикладываются. Если по тексту не решить, судья просит кроп, и код вырезает участок по bbox не больше 800 px, не больше 16 штук на фильм.</p><div class="eff">≈700 картинок за прогон → ≤16 кропов · пакет 90–117 КБ</div></div></div>
+  <div class="lever"><div class="ico">C</div><div><h3>Один проход и никаких перезапусков</h3><p>Агент сначала пишет свой результат на диск, потом возвращает его. Обрыв по лимиту сессии ничего не теряет: сборщик проверяет покрытие экранов и отправляет повторно только недоделанные пакеты. Три прогона «догоняющей верификации» по 264 агента исчезли как класс.</p><div class="eff">4 прогона аудита → 1 · 12,6 M токенов догона → 0</div></div></div>
+  <div class="lever"><div class="ico">D</div><div><h3>Ночная смена на Memex</h3><p>Кадры, OCR, транскрипт, чтение экранов моделью, признаки и пробы идут на Mac mini в Дубае автономно, со сторожем и вехами в Telegram. Утром на маке остаётся одна команда. Ноутбук в это время свободен или выключен.</p><div class="eff">2 ч 18 мин машинного времени · 0 токенов · OCR совпал с маком байт-в-байт</div></div></div>
+  <div class="lever"><div class="ico">E</div><div><h3>Проверки кодом и сессия без самодеятельности</h3><p>QA страниц дока, читаемость превью, разбивка текста ТЗ на строки: раньше 65 агентов, теперь скрипты и локальная Qwen3-8B. Сессия Claude читает пять файлов и вызывает <span class="mono">review.py</span>; кадры и большие JSON в чат не попадают, разовые скрипты не пишутся.</p><div class="eff">65 QA-агентов → 0 · 271 разовый скрипт за 15 сессий → 0</div></div></div>
+</div>
+
+<h2><span class="n">ЦИФРЫ</span>Было и стало по одному фильму</h2>
+<div class="chart">
+  <div class="cap"><span><b>YTUVI02</b>, 21 мин, 95 экранов</span><span>каждая строка в своём масштабе, значения подписаны</span></div>
+  <div class="metric"><div class="m">агентов в облаке<small>на весь цикл ревью</small></div><div class="bars">
+    <div class="bar was" title="было: 244 аудит + 22 + 88 + 154 догон"><div class="fill" style="width:100%"></div><div class="v">508</div></div>
+    <div class="bar now" title="стало: 4 судьи + факты + кропы + скептик"><div class="fill" style="width:1.4%"></div><div class="v">7 <small>оценка, замер 2 на половину</small></div></div></div></div>
+  <div class="metric"><div class="m">токенов в облаке<small>млн</small></div><div class="bars">
+    <div class="bar was" title="было: 6,10 + 1,76 + 6,04 + 4,82 M"><div class="fill" style="width:100%"></div><div class="v">18,7 M</div></div>
+    <div class="bar now" title="стало: ≈1 M на фильм; замер 0,29 M на 48 экранов"><div class="fill" style="width:5.3%"></div><div class="v">≈1,0 M</div></div></div></div>
+  <div class="metric"><div class="m">картинок, открытых агентами<small>за один прогон аудита</small></div><div class="bars">
+    <div class="bar was" title="было: 668 кадров за прогон verify-rest"><div class="fill" style="width:100%"></div><div class="v">668</div></div>
+    <div class="bar now" title="стало: не больше 16 кропов по запросу судьи"><div class="fill" style="width:2.4%"></div><div class="v">≤16</div></div></div></div>
+  <div class="metric"><div class="m">запусков аудита<small>до полного результата</small></div><div class="bars">
+    <div class="bar was" title="было: аудит + три догона"><div class="fill" style="width:100%"></div><div class="v">4</div></div>
+    <div class="bar now" title="стало: один проход, повтор только pending"><div class="fill" style="width:25%"></div><div class="v">1</div></div></div></div>
+  <div class="metric"><div class="m">агентов на QA дока, превью и текста ТЗ<small>YTUVI01 v7</small></div><div class="bars">
+    <div class="bar was" title="было: 8 + 18 + 11 + 14 + 14 агентов"><div class="fill" style="width:100%"></div><div class="v">65</div></div>
+    <div class="bar now" title="стало: doc_pdf_qc, preview_qc_local, s14_polish_local"><div class="fill" style="width:0"></div><div class="v">0</div></div></div></div>
+  <div class="metric"><div class="m">скриптов, написанных в сессии<small>первая сессия YTUVI02</small></div><div class="bars">
+    <div class="bar was" title="было: 38 файлов до начала ревью"><div class="fill" style="width:100%"></div><div class="v">38</div></div>
+    <div class="bar now" title="стало: инструменты только в репо"><div class="fill" style="width:0"></div><div class="v">0</div></div></div></div>
+  <div class="leg"><span><i style="background:var(--was)"></i>было (11–12.09)</span><span><i style="background:var(--now)"></i>стало (14.09)</span></div>
+</div>
+
+<h2><span class="n">ВЫХОД</span>Один файл правок, все поверхности из него</h2>
+<div class="flow">
+  <div class="src"><b>pravki_v2.json</b><p class="muted" style="margin:6px 0 0;font-size:14px">каждая ТЗ: номер (не переиспользуется), класс, «сейчас → сделать», таймкод, материалы, «было → стало», твои решения и снятые строки</p></div>
+  <div class="arrow">→</div>
+  <ul>
+    <li>Секвенция Premiere <small>6 слоёв над нетронутым оригиналом, маркеры = главы</small></li>
+    <li>Вкладка «ТЗ монтажёру» и вкладка-навигатор <small>одна таблица, списки «таймкод ▸ пункт», превью на кадре</small></li>
+    <li>Лист и папка Drive <small>коммент на каждом файле</small></li>
+    <li>Бриф на телефон <small>один файл до 1 МБ в Telegram: обязательно · убрать · решить</small></li>
+  </ul>
+</div>
+
+<h2><span class="n">ДЛЯ ТЕБЯ</span>Как это выглядит на практике</h2>
+<div class="steps">
+  <div class="step"><div class="k">1</div><div><div class="t">Пришёл кат</div><p>Одна команда: <code>/review</code> заводит карточку фильма и запускает ночную смену на Memex. Вехи приходят в Telegram, ноутбук можно закрыть.</p></div></div>
+  <div class="step"><div class="k">2</div><div><div class="t">Утром: один вызов облака</div><p>Кандидаты уже размечены. Судья, факт-чек, кропы и скептик отрабатывают за 15 минут; результат сразу на диске.</p></div></div>
+  <div class="step"><div class="k">3</div><div><div class="t">Правки как раньше, в доке</div><p>Удалил строку — ТЗ снято навсегда; дописал в ячейке — попало в 💬. Команда <code>edits</code> забирает это в правки, поверхности пересобираются согласованно, без облака.</p></div></div>
+  <div class="step"><div class="k">4</div><div><div class="t">Отдача</div><p>Бриф на телефон, секвенция в Premiere кнопкой Build, монтажёру: док, лист, Drive. Что решать тебе — отдельным списком ❓.</p></div></div>
+</div>
+
+<h2><span class="n">ФАКТЫ</span>Что уже проверено на YTUVI02</h2>
+<div class="tbl"><table>
+  <thead><tr><th>проверка</th><th>результат</th></tr></thead>
+  <tbody>
+    <tr><td>Поверхности новым кодом против старого</td><td class="num">172/172 PNG и таймлайн байт-в-байт · mock 0 ошибок</td></tr>
+    <tr><td>Маршрутизация 84 старых находок</td><td class="num">61 локально · 0 ложных auto · 25 в облако</td></tr>
+    <tr><td>Облачный проход на половине фильма</td><td class="num">2 агента · 292 k токенов · 15 мин · покрытие 48/48</td></tr>
+    <tr><td>Что нашёл судья без картинок</td><td>8 настоящих ошибок: две «СИНЕТИКУ», «ВЫСОКВАЯ», порядок слов в названии закона, «линии роста» как признак синтетики, янтарь, $5 000 000 → $5 МЛН, «УФ-свет»</td></tr>
+    <tr><td>Ночная смена Memex</td><td class="num">2 ч 18 мин · OCR и VLM совпали с маком · сторож вышел сам</td></tr>
+    <tr><td>ТЗ из исходников (YTEVO02)</td><td class="num">монтажный лист 0 расхождений · 28/28 мокапов побайтно</td></tr>
+  </tbody>
+</table></div>
+
+<div class="foot">Документация: <a href="https://yt.rya.ae/kb/review-cycle/">KB 4.7 Cut Review Cycle</a> · <a href="https://yt.rya.ae/kb/montage-tz/">4.8 Montage TZ from Source</a> · <a href="https://yt.rya.ae/kb/review-timeline/">4.6 канон форматов</a>. Код: <span class="mono">scripts/05_editing/0509_review_cycle/</span>, хэндофф в <span class="mono">docs/HANDOFF_2026-09-14.md</span>.</div>
+</div>
+</body></html>
