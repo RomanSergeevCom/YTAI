@@ -6,26 +6,31 @@
   --bg:#0A0D16; --bg-2:#0F131E; --card:#161B29; --line:#2A3247; --line-soft:#1E2436;
   --ink:#F0F2F8; --ink-2:#C8CDD9; --ink-3:#8A92A8;
   --accent:#E4FF6E; --accent-ink:#0A0D16;
-  --memex:#199e70; --mac:#3987e5; --cloud:#9085e9; --out:#d95926;
+  --memex:#199e70; --mac:#3987e5; --cloud:#9085e9; --out:#d95926; --roman:#E4FF6E;
   --was:#3987e5; --now:#199e70;
   --display:'Unbounded','Arial Black',Arial,sans-serif; --body:'Manrope','Helvetica Neue',Arial,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);padding-block:0 60px;padding-inline:18px}
 a{color:var(--accent)}
-.wrap{max-width:820px;margin:0 auto}
+.wrap{max-width:860px;margin:0 auto}
 .top{display:flex;gap:10px;align-items:center;padding:16px 0 10px;border-bottom:1px solid var(--line);font:700 12px var(--mono);color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase}
 .top .mark{background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:3px 8px;font-family:var(--display);font-size:11px;letter-spacing:.04em}
 .top .tc{margin-left:auto}
 h1{font:700 clamp(26px,5.6vw,42px)/1.12 var(--display);letter-spacing:-.01em;margin:26px 0 12px;text-wrap:balance}
 .lede{font-size:17px;color:var(--ink-2);max-width:62ch;margin:0 0 22px}
 .lede b{color:var(--ink)}
-h2{font:700 clamp(19px,3.4vw,24px)/1.2 var(--display);margin:44px 0 14px;text-wrap:balance;display:flex;align-items:baseline;gap:12px}
+h2{font:700 clamp(19px,3.4vw,24px)/1.2 var(--display);margin:46px 0 6px;text-wrap:balance;display:flex;align-items:baseline;gap:12px}
 h2 .n{font:700 12px var(--mono);color:var(--ink-3);letter-spacing:.06em}
+.sub{color:var(--ink-3);margin:0 0 14px;font-size:15px}
 h3{font:700 15px/1.3 var(--body);margin:0 0 6px}
 p{margin:0 0 10px}
 .muted{color:var(--ink-3)}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+code{font:500 13px var(--mono);background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--ink);white-space:nowrap}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.toc a{font:700 12px var(--mono);color:var(--ink-2);text-decoration:none;border:1px solid var(--line);border-radius:20px;padding:5px 12px;letter-spacing:.04em}
+.toc a:hover{border-color:var(--accent);color:var(--accent)}
 
 /* hero numbers */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 6px}
@@ -38,6 +43,26 @@ p{margin:0 0 10px}
 .tile .sub{margin-top:8px;font-size:13px;color:var(--ink-3)}
 .note{font-size:13px;color:var(--ink-3);margin:8px 0 0}
 
+/* action scheme */
+.who{display:inline-block;font:700 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;border-radius:20px;padding:3px 9px;border:1px solid;white-space:nowrap}
+.who.r{color:var(--roman);border-color:var(--roman)}
+.who.x{color:var(--memex);border-color:var(--memex)}
+.who.m{color:var(--mac);border-color:var(--mac)}
+.who.c{color:var(--cloud);border-color:var(--cloud)}
+.who.e{color:var(--out);border-color:var(--out)}
+.scheme{display:grid;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
+.act{display:grid;grid-template-columns:38px 1fr;gap:12px;padding:14px 16px;border-top:1px solid var(--line-soft)}
+.act:first-child{border-top:0}
+.act .k{width:34px;height:34px;border-radius:50%;background:var(--bg-2);border:1px solid var(--line);font:700 14px var(--display);display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.act .hd{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-bottom:4px}
+.act .hd b{font-size:16px}
+.act .hd .t{font:500 12px var(--mono);color:var(--ink-3);margin-left:auto}
+.act p{color:var(--ink-2);font-size:15px;margin:0}
+.act .io{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.act .io span{font:600 11px var(--mono);color:var(--ink-2);background:var(--bg-2);border:1px solid var(--line-soft);border-radius:7px;padding:2px 8px}
+.act .io span b{color:var(--ink-3);font-weight:700}
+.act .io span.tok{color:var(--accent);border-color:rgba(228,255,110,.35)}
+
 /* timeline diagram */
 .seq{background:var(--bg-2);border:1px solid var(--line);border-radius:14px;padding:14px 14px 10px;overflow-x:auto}
 .seq-in{min-width:640px}
@@ -47,7 +72,7 @@ p{margin:0 0 10px}
 .track .name{font:700 12px var(--mono);letter-spacing:.06em;display:flex;flex-direction:column;justify-content:center;gap:3px}
 .track .name span{font:500 11px var(--body);color:var(--ink-3);letter-spacing:0}
 .track .lane{display:flex;gap:4px;align-items:stretch;min-height:44px}
-.clip{border-radius:7px;padding:6px 8px;font:500 12px/1.25 var(--body);color:var(--ink);display:flex;flex-direction:column;justify-content:center;gap:2px;position:relative;min-width:0}
+.clip{border-radius:7px;padding:6px 8px;font:500 12px/1.25 var(--body);color:var(--ink);display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0}
 .clip small{font:700 10px var(--mono);color:rgba(240,242,248,.75);letter-spacing:.04em}
 .clip.mx{background:color-mix(in srgb,var(--memex) 42%,var(--bg-2));border:1px solid var(--memex)}
 .clip.mc{background:color-mix(in srgb,var(--mac) 38%,var(--bg-2));border:1px solid var(--mac)}
@@ -56,14 +81,23 @@ p{margin:0 0 10px}
 .clip.gap{background:transparent;border:1px dashed var(--line);color:var(--ink-3);justify-content:center;align-items:center;text-align:center;font-size:11px}
 .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:10px 0 0;font-size:13px;color:var(--ink-2)}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
-.tokens{display:inline-block;margin-left:6px;font:700 11px var(--mono);letter-spacing:.06em;color:var(--accent)}
+
+/* tables */
+.tbl{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:700 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);background:var(--bg-2)}
+td.num,td.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td .why{display:block;color:var(--ink-3);font-size:13px;margin-top:2px}
+td.w{color:var(--ink-2)}
 
 /* levers */
-.levers{display:grid;gap:10px}
-.lever{display:grid;grid-template-columns:44px 1fr;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
-.lever .ico{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:700 13px var(--mono);color:var(--ink);border:1px solid var(--line);background:var(--bg-2)}
-.lever .eff{margin-top:6px;font:500 13px var(--mono);color:var(--accent)}
-.lever p{color:var(--ink-2);font-size:15px}
+.levers{display:grid;gap:8px}
+.lever{display:grid;grid-template-columns:40px 1fr;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.lever .ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:700 13px var(--mono);color:var(--ink);border:1px solid var(--line);background:var(--bg-2)}
+.lever p{color:var(--ink-2);font-size:14.5px;margin:0}
+.lever .eff{margin-top:5px;font:500 12.5px var(--mono);color:var(--accent)}
 
 /* bars */
 .chart{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
@@ -92,40 +126,46 @@ p{margin:0 0 10px}
 .flow li small{display:block;color:var(--ink-3);font-size:12px}
 @media (max-width:560px){.flow{grid-template-columns:1fr}.flow .arrow{transform:rotate(90deg);justify-self:center}}
 
-/* steps for Roman */
-.steps{display:grid;gap:10px}
-.step{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
-.step .k{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:700 14px var(--display);display:flex;align-items:center;justify-content:center}
-.step .t{font:700 15px var(--body)}
-.step p{color:var(--ink-2);font-size:15px;margin:2px 0 0}
-.step code{font:500 13px var(--mono);background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--ink)}
-
-/* facts table */
-.tbl{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
-th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
-th{font:700 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
-td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* two-column info cards */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card h3{font-family:var(--display);font-size:14px;margin-bottom:10px}
+.card ul{margin:0;padding-left:18px;color:var(--ink-2);font-size:14.5px}
+.card li{margin:0 0 6px}
+.card li b{color:var(--ink)}
 .foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3)}
 .foot a{color:var(--ink-2)}
-@media (prefers-reduced-motion:no-preference){.tile,.lever{transition:border-color .15s}.tile:hover,.lever:hover{border-color:var(--ink-3)}}
 </style>
 
 </head><body><div class="wrap">
-<div class="top"><span class="mark">RYA.AE</span><span>ревью ката · ТЗ на монтаж</span><span class="tc">версия 14.09.2026</span></div>
+<div class="top"><span class="mark">RYA.AE</span><span>ревью ката · ТЗ на монтаж</span><span class="tc">версия 2 · 14.09.2026</span></div>
 
 <h1>Конвейер ревью ката: где идут часы машины, где минуты агента</h1>
 <p class="lede">Монтажёр прислал сборку. Раньше её разбирали <b>сотни облачных агентов</b>, каждый заново читал кадры, а упавший прогон запускали ещё раз. Теперь всё, что можно посчитать, считают <b>локальные модели на Memex ночью</b>, а в облако уходит <b>один короткий проход</b> с готовым списком кандидатов. Форматы для монтажёра не изменились.</p>
+<div class="toc"><a href="#s-scheme">схема действия</a><a href="#s-tracks">дорожки</a><a href="#s-models">модели</a><a href="#s-levers">рычаги</a><a href="#s-numbers">цифры</a><a href="#s-out">выход</a><a href="#s-continue">как продолжать</a><a href="#s-where">где лежит</a></div>
 
-<div class="tiles">
+<div class="tiles" style="margin-top:18px">
   <div class="tile"><div class="lab">агентов в облаке на фильм</div><div class="row"><span class="was">508</span><span class="arr">→</span><span class="now">7</span></div><div class="sub">YTUVI02: аудит 244 + три догона 264 → судья ×4, факты, кропы, скептик</div></div>
   <div class="tile"><div class="lab">токенов на фильм</div><div class="row"><span class="was">18,7 M</span><span class="arr">→</span><span class="now">≈1 M</span></div><div class="sub">замер: 292 k на половину фильма (48 экранов)</div></div>
   <div class="tile"><div class="lab">повторных запусков аудита</div><div class="row"><span class="was">4</span><span class="arr">→</span><span class="now">0</span></div><div class="sub">результат агента лежит на диске до конца прогона; повтор только для недоделанных пакетов</div></div>
 </div>
 <p class="note">Цифры «было» — реальные прогоны YTUVI02 (11–12.09), «стало» — замер той же системы на тех же данных 14.09.</p>
 
-<h2><span class="n">СХЕМА</span>Три дорожки, как в секвенции</h2>
-<p class="muted">Стадии лежат на дорожках по месту исполнения. Длительности — из реального ночного прогона YTUVI02 на Memex (кат 21 мин).</p>
+<h2 id="s-scheme"><span class="n">СХЕМА ДЕЙСТВИЯ</span>Один цикл ревью, шаг за шагом</h2>
+<p class="sub">Кто делает, что происходит, чем, и что получается на выходе. Команды — одна строка в чате: <code>/review КОД</code>.</p>
+<div class="scheme">
+  <div class="act"><div class="k">1</div><div><div class="hd"><span class="who r">Роман</span><b>Пришёл кат</b><span class="t">5 минут</span></div><p>Говоришь «ревью ката YTUVI03» и даёшь ссылку на кат. Сессия заводит карточку фильма (главы, ссылка на док и Drive-папку, 2–3 фразы-якоря из ролика) и запускает ночную смену на Memex. Дальше можно закрывать ноутбук: вехи придут в Telegram.</p><div class="io"><span><b>инструмент</b> review.py init · memex push · memex start</span><span><b>выход</b> review_card.json · REVIEW_STATE.md</span></div></div></div>
+  <div class="act"><div class="k">2</div><div><div class="hd"><span class="who x">Memex</span><b>Ночная смена: разбор без токенов</b><span class="t">2–3 часа</span></div><p>Качает кат с Drive напрямую, режет кадр в секунду, читает текст экранов (Apple Vision), делает пословный транскрипт с ролями (whisper + pyannote), читает каждый экран моделью-«глазами» (Qwen2.5-VL), собирает признаки (Qwen3-8B), прощупывает экраны на водяные знаки, обрезку и спорные буквы. Сторож поднимает упавшую стадию, селфчек закрывает смену.</p><div class="io"><span><b>инструмент</b> review.py run --host memex</span><span><b>выход</b> work/v1: кадры · OCR · транскрипт · VLM · LLM · пробы</span><span class="tok">0 токенов</span></div></div></div>
+  <div class="act"><div class="k">3</div><div><div class="hd"><span class="who m">Сессия · Mac</span><b>Маршрутизация кандидатов</b><span class="t">1 минута</span></div><p>Забирает результаты с Memex. Код решает, что можно подтвердить без облака (три совпавших чтения и найденное исправление), что отбросить (вёрстка, вкус, допечатка анимации) и что отдать судье. Кандидаты упаковываются в текстовые пакеты по 50 экранов: строки OCR, дословное чтение VLM, озвучка ±8 с, признаки.</p><div class="io"><span><b>инструмент</b> memex pull · run --until route · cloud judge --print-call</span><span><b>выход</b> candidates.json · cloud/in/J_*.json · CALL.txt</span><span class="tok">0 токенов</span></div></div></div>
+  <div class="act"><div class="k">4</div><div><div class="hd"><span class="who c">Облако</span><b>Один проход суждения</b><span class="t">15 минут</span></div><p>Один Workflow: судья читает пакеты и решает confirm / refute / нужен кадр; факт-чекер проверяет числа и имена веб-поиском по авторитетам канала; «глаза» смотрят только запрошенные кропы (не больше 16); скептик снимает лишнее только с кодом причины. Каждый агент сначала пишет результат на диск, потом возвращает его: обрыв ничего не теряет.</p><div class="io"><span><b>инструмент</b> cloud/wf_judge.js · cloud collect</span><span><b>выход</b> cloud/out/*.json → audit_findings.json</span><span class="tok">≈1 M токенов на фильм</span></div></div></div>
+  <div class="act"><div class="k">5</div><div><div class="hd"><span class="who m">Сессия · Mac</span><b>ТЗ и все поверхности</b><span class="t">10–20 минут</span></div><p>Находки становятся ТЗ (одна на экран, номера не переиспользуются), текст ТЗ раскладывается на строки «таймкод ▸ пункт», графика рендерится в 4K, собирается 6-слойный таймлайн и проверяется мок-сборкой, QA дока и превью идёт кодом, затем док, лист, Drive и бриф на телефон.</p><div class="io"><span><b>инструмент</b> review.py resume</span><span><b>выход</b> pravki · {CODE}_review_v6.json · вкладки · лист · Drive · бриф в TG</span><span class="tok">0 токенов</span></div></div></div>
+  <div class="act"><div class="k">6</div><div><div class="hd"><span class="who r">Роман</span><b>Смотришь и правишь как раньше</b><span class="t">когда удобно</span></div><p>Бриф на телефоне: вердикт, обязательное с кадрами, что убрать, что решить. Секвенция в Premiere кнопкой Build. Правки прямо в доке: удалил строку — ТЗ снято навсегда, дописал в ячейке — попало в 💬. Вопросы ❓ ждут твоего ответа.</p><div class="io"><span><b>выход</b> решения в доке и листе</span></div></div></div>
+  <div class="act"><div class="k">7</div><div><div class="hd"><span class="who m">Сессия · Mac</span><b>Правки в систему, пересборка без облака</b><span class="t">5 минут</span></div><p>Команда <code>edits</code> снимает твои правки из дока в pravki (это гейт: без него вкладки не перезаписываются), поверхности пересобираются согласованно. Никаких новых агентов.</p><div class="io"><span><b>инструмент</b> review.py edits · run --from format_tz</span><span class="tok">0 токенов</span></div></div></div>
+  <div class="act"><div class="k">8</div><div><div class="hd"><span class="who e">Монтажёр</span><b>Получает и делает следующую версию</b><span class="t">→ v2</span></div><p>Док с ТЗ и навигатором, лист, Drive-папка с материалами и комментом на каждом файле, таймлайн с плашками и стрелками. Пришёл v2 — цикл повторяется с новой версией ката; всё, что он уже исправил, система видит по номерам ТЗ.</p></div></div>
+</div>
+
+<h2 id="s-tracks"><span class="n">ДОРОЖКИ</span>То же самое как секвенция</h2>
+<p class="sub">Стадии по месту исполнения. Длительности — из реального ночного прогона YTUVI02 на Memex (кат 21 мин).</p>
 <div class="seq"><div class="seq-in">
   <div class="ruler"><div></div><div class="ticks"><span>00:00</span><span>ночь · 2 ч 18 мин</span><span>утро · ~30 мин</span><span>→ монтажёру</span></div></div>
   <div class="track"><div class="name" style="color:var(--cloud)">V3 · ОБЛАКО<span>один проход, 7 агентов</span></div>
@@ -156,16 +196,32 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:now
 </div></div>
 <div class="legend"><span><i style="background:var(--memex)"></i>Memex, автономно, ноутбук можно выключить</span><span><i style="background:var(--mac)"></i>Mac, одна команда на шаг</span><span><i style="background:var(--cloud)"></i>облако, единственные токены</span><span><i style="background:var(--out)"></i>поверхности для монтажёра и для тебя</span></div>
 
-<h2><span class="n">РЫЧАГИ</span>Пять причин, почему стало дешевле</h2>
+<h2 id="s-models"><span class="n">МОДЕЛИ</span>Какие, где и почему именно так</h2>
+<p class="sub">Принцип: восприятие (кадры, текст, речь) — локально и бесплатно; суждение и веб — в облаке, одним проходом.</p>
+<div class="tbl"><table>
+  <thead><tr><th>модель / инструмент</th><th>где</th><th>что делает</th><th>почему</th></tr></thead>
+  <tbody>
+    <tr><td><b>Apple Vision OCR</b><span class="why">vision_ocr_ru, Swift</span></td><td class="mono">Memex</td><td class="w">текст каждого кадра с координатами строк (bbox)</td><td class="w">3 минуты на фильм, координаты дают стрелки на кадре и кропы; путает Й/И и Щ/Ш, поэтому никогда не единственное чтение</td></tr>
+    <tr><td><b>whisper large-v3 + pyannote 3.1</b><span class="why">mlx, .venv_transcribe</span></td><td class="mono">Memex</td><td class="w">пословный транскрипт с таймкодами и ролями</td><td class="w">слова — якоря для ТЗ и монтажного листа (правка на полсекунды не ломает склейку); ~6 минут на 21 минуту речи</td></tr>
+    <tr><td><b>Qwen2.5-VL-7B</b><span class="why">mlx-vlm, .venv_vlm</span></td><td class="mono">Memex</td><td class="w">дословно читает каждый экран и описывает его; пробы: водяные знаки и логотипы, обрезанный текст, зум спорных слов</td><td class="w">второе независимое чтение и «глаза» там, где OCR слеп (водяной знак «唐» видит только она); 40 с на экран на Memex, 0 токенов</td></tr>
+    <tr><td><b>Qwen3-8B</b><span class="why">mlx-lm, .venv_llm</span></td><td class="mono">Memex · Mac</td><td class="w">признаки по экрану (числа, английский, кандидаты в опечатки); резюме актов (YTCH); тезисы с якорями (YTEVO); полировка текста ТЗ по одной строке</td><td class="w">локальный смысл там, где не нужен веб; маленькие задачи делает надёжно, большие — нет, поэтому задание всегда по одной строке и с кодовым стражем (таймкоды и ≥88 % слов на месте)</td></tr>
+    <tr><td><b>pymorphy3 + каталог канала</b><span class="why">словарь, review_terms_base.json</span></td><td class="mono">Mac</td><td class="w">известное слово или опечатка; каноны названий («МЬЯНМА (БИРМА)»), путаемые пары («дуплет → дублет»)</td><td class="w">0 токенов; профессиональная лексика живёт в каталоге канала, а не в модели</td></tr>
+    <tr><td><b>Claude-агенты</b><span class="why">Workflow: cloud/wf_judge.js</span></td><td class="mono">облако</td><td class="w">судья по тексту (≤4), факт-чек с веб-поиском (1), кропы (1), скептик (1); YTCH — вердикт по актам (1); YTEVO — структура (1) и дизайн-ревью по контактному листу (1)</td><td class="w">только суждение и веб: кадры не прикладываются, картинки по запросу, результат сразу на диск; скептик по умолчанию верит находке и снимает только с кодом причины</td></tr>
+    <tr><td><b>chrome-headless-shell</b><span class="why">infographic/render.py</span></td><td class="mono">Mac</td><td class="w">HTML → PNG 4K: плашки, карты, стрелки, карточки глав; проверка раскладки прямо в DOM</td><td class="w">детерминированный рендер и QA без токенов; PNG совпадают побайтно от прогона к прогону</td></tr>
+    <tr><td><b>partsBuilder (UXP)</b><span class="why">mockbuild_v6.js</span></td><td class="mono">Mac</td><td class="w">мок-сборка 6-слойного таймлайна тем же кодом, что панель в Premiere</td><td class="w">0 ошибок до того, как жать Build</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="s-levers"><span class="n">РЫЧАГИ</span>Пять причин, почему стало дешевле</h2>
 <div class="levers">
-  <div class="lever"><div class="ico">A</div><div><h3>Класс ошибки решает код, а не три скептика</h3><p>На YTUVI02 24 из 26 находок «вёрстка» прошли трёх скептиков, хотя по твоему правилу это не ошибки. Теперь вёрстка, вкус и темп отбрасываются до облака, а опечатки, факты, валюта, английский, экран≠озвучка и чужие следы маршрутизируются по правилам: три совпавших чтения (OCR, VLM, зум) и найденное исправление подтверждают опечатку сами.</p><div class="eff">61 из 84 старых находок решаются локально · 0 ложных подтверждений</div></div></div>
-  <div class="lever"><div class="ico">B</div><div><h3>Судья читает текст, а не кадры</h3><p>Пакет на 50 экранов: строки OCR, дословное чтение VLM, озвучка ±8 с, кандидаты. Кадры не прикладываются. Если по тексту не решить, судья просит кроп, и код вырезает участок по bbox не больше 800 px, не больше 16 штук на фильм.</p><div class="eff">≈700 картинок за прогон → ≤16 кропов · пакет 90–117 КБ</div></div></div>
-  <div class="lever"><div class="ico">C</div><div><h3>Один проход и никаких перезапусков</h3><p>Агент сначала пишет свой результат на диск, потом возвращает его. Обрыв по лимиту сессии ничего не теряет: сборщик проверяет покрытие экранов и отправляет повторно только недоделанные пакеты. Три прогона «догоняющей верификации» по 264 агента исчезли как класс.</p><div class="eff">4 прогона аудита → 1 · 12,6 M токенов догона → 0</div></div></div>
-  <div class="lever"><div class="ico">D</div><div><h3>Ночная смена на Memex</h3><p>Кадры, OCR, транскрипт, чтение экранов моделью, признаки и пробы идут на Mac mini в Дубае автономно, со сторожем и вехами в Telegram. Утром на маке остаётся одна команда. Ноутбук в это время свободен или выключен.</p><div class="eff">2 ч 18 мин машинного времени · 0 токенов · OCR совпал с маком байт-в-байт</div></div></div>
-  <div class="lever"><div class="ico">E</div><div><h3>Проверки кодом и сессия без самодеятельности</h3><p>QA страниц дока, читаемость превью, разбивка текста ТЗ на строки: раньше 65 агентов, теперь скрипты и локальная Qwen3-8B. Сессия Claude читает пять файлов и вызывает <span class="mono">review.py</span>; кадры и большие JSON в чат не попадают, разовые скрипты не пишутся.</p><div class="eff">65 QA-агентов → 0 · 271 разовый скрипт за 15 сессий → 0</div></div></div>
+  <div class="lever"><div class="ico">A</div><div><h3>Класс ошибки решает код, а не три скептика</h3><p>На YTUVI02 24 из 26 находок «вёрстка» прошли трёх скептиков, хотя по твоему правилу это не ошибки. Теперь вёрстка, вкус и темп отбрасываются до облака; опечатки, факты, валюта, английский, экран≠озвучка и чужие следы идут по правилам.</p><div class="eff">61 из 84 старых находок решаются локально · 0 ложных подтверждений</div></div></div>
+  <div class="lever"><div class="ico">B</div><div><h3>Судья читает текст, а не кадры</h3><p>Пакет на 50 экранов без единой картинки. Если по тексту не решить, судья просит кроп, и код вырезает участок по bbox не больше 800 px, не больше 16 штук на фильм.</p><div class="eff">≈700 картинок за прогон → ≤16 кропов · пакет 90–117 КБ</div></div></div>
+  <div class="lever"><div class="ico">C</div><div><h3>Один проход и никаких перезапусков</h3><p>Агент сначала пишет результат на диск, потом возвращает. Сборщик проверяет покрытие экранов и отправляет повторно только недоделанные пакеты. Три прогона «догоняющей верификации» исчезли как класс.</p><div class="eff">4 прогона аудита → 1 · 12,6 M токенов догона → 0</div></div></div>
+  <div class="lever"><div class="ico">D</div><div><h3>Ночная смена на Memex</h3><p>Кадры, OCR, транскрипт, чтение экранов, признаки и пробы идут на Mac mini в Дубае автономно, со сторожем и вехами в Telegram. Утром на маке остаётся одна команда.</p><div class="eff">2 ч 18 мин машинного времени · 0 токенов · OCR и VLM совпали с маком байт-в-байт</div></div></div>
+  <div class="lever"><div class="ico">E</div><div><h3>Проверки кодом, сессия без самодеятельности</h3><p>QA страниц дока, читаемость превью, разбивка текста ТЗ на строки: раньше 65 агентов, теперь скрипты и локальная Qwen3-8B. Сессия читает пять файлов и вызывает <code>review.py</code>; кадры и большие JSON в чат не попадают, разовые скрипты не пишутся.</p><div class="eff">65 QA-агентов → 0 · 271 разовый скрипт за 15 сессий → 0</div></div></div>
 </div>
 
-<h2><span class="n">ЦИФРЫ</span>Было и стало по одному фильму</h2>
+<h2 id="s-numbers"><span class="n">ЦИФРЫ</span>Было и стало по одному фильму</h2>
 <div class="chart">
   <div class="cap"><span><b>YTUVI02</b>, 21 мин, 95 экранов</span><span>каждая строка в своём масштабе, значения подписаны</span></div>
   <div class="metric"><div class="m">агентов в облаке<small>на весь цикл ревью</small></div><div class="bars">
@@ -189,7 +245,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:now
   <div class="leg"><span><i style="background:var(--was)"></i>было (11–12.09)</span><span><i style="background:var(--now)"></i>стало (14.09)</span></div>
 </div>
 
-<h2><span class="n">ВЫХОД</span>Один файл правок, все поверхности из него</h2>
+<h2 id="s-out"><span class="n">ВЫХОД</span>Один файл правок, все поверхности из него</h2>
 <div class="flow">
   <div class="src"><b>pravki_v2.json</b><p class="muted" style="margin:6px 0 0;font-size:14px">каждая ТЗ: номер (не переиспользуется), класс, «сейчас → сделать», таймкод, материалы, «было → стало», твои решения и снятые строки</p></div>
   <div class="arrow">→</div>
@@ -201,27 +257,46 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:now
   </ul>
 </div>
 
-<h2><span class="n">ДЛЯ ТЕБЯ</span>Как это выглядит на практике</h2>
-<div class="steps">
-  <div class="step"><div class="k">1</div><div><div class="t">Пришёл кат</div><p>Одна команда: <code>/review</code> заводит карточку фильма и запускает ночную смену на Memex. Вехи приходят в Telegram, ноутбук можно закрыть.</p></div></div>
-  <div class="step"><div class="k">2</div><div><div class="t">Утром: один вызов облака</div><p>Кандидаты уже размечены. Судья, факт-чек, кропы и скептик отрабатывают за 15 минут; результат сразу на диске.</p></div></div>
-  <div class="step"><div class="k">3</div><div><div class="t">Правки как раньше, в доке</div><p>Удалил строку — ТЗ снято навсегда; дописал в ячейке — попало в 💬. Команда <code>edits</code> забирает это в правки, поверхности пересобираются согласованно, без облака.</p></div></div>
-  <div class="step"><div class="k">4</div><div><div class="t">Отдача</div><p>Бриф на телефон, секвенция в Premiere кнопкой Build, монтажёру: док, лист, Drive. Что решать тебе — отдельным списком ❓.</p></div></div>
+<h2 id="s-continue"><span class="n">КАК ПРОДОЛЖАТЬ</span>Что нужно, чтобы система работала и менялась</h2>
+<div class="cols">
+  <div class="card"><h3>Что должно быть на месте</h3><ul>
+    <li><b>SSD с проектом</b> и папкой <code>00_Setup/05_Review/</code> (карточка, стейт, pravki, work).</li>
+    <li><b>Memex по Tailscale</b> (<code>ssh memex</code>): venv’ы <code>.venv_vlm / .venv_llm / .venv_transcribe</code>, модели в <code>~/YTAI/models/huggingface</code>, ffmpeg, rclone. Код туда кладёт <code>memex push</code>.</li>
+    <li><b>Mac</b>: те же venv’ы, chrome-headless-shell, node + панель UXP (partsBuilder), poppler, pymorphy3.</li>
+    <li><b>Доступы</b>: токен rscore для Docs/Sheets/Drive (<code>~/.config/rscore/token.json</code>), Telegram-токен для вех и брифа, Drive-remote в rclone.</li>
+    <li><b>Сессия Claude с Workflow</b> — только для шага 4 (облако). Всё остальное работает без неё.</li>
+    <li><b>Карточка фильма + профиль канала</b> — без них скрипты падают с текстом, а не берут данные прошлого видео.</li>
+  </ul></div>
+  <div class="card"><h3>Хочу изменить … → правлю здесь</h3><ul>
+    <li><b>Правила канала</b> (валюта, язык титров, что считать ошибкой, латиница-исключения, чувствительные темы) → <code>YTs/{CH}/review_profile.json</code></li>
+    <li><b>Термины, места, каноны названий</b> → <code>YTs/YTUVI/review_terms_base.json</code>, у фильма <code>review_terms.json</code></li>
+    <li><b>Главы, якоря, ссылки на док и Drive, грабли</b> → <code>review_card.json</code> фильма</li>
+    <li><b>Как судит облако</b> → промпты в <code>cloud/wf_judge.js</code>; <b>пороги маршрутизации</b> → константы в шапке <code>stages/route_candidates.py</code></li>
+    <li><b>Порядок и набор стадий</b> → таблицы <code>STAGES_CUT</code> / <code>STAGES_MONTAGE</code> в <code>review.py</code></li>
+    <li><b>Вид вкладок, листа, таймлайна</b> (канон 4.6) → <code>stages/doc_tab_tz_v3.py</code>, <code>tz_sheet.py</code>, <code>make_review_v6.py</code>; <b>графика</b> → <code>make_infographics_v6.py</code> + <code>style</code> профиля</li>
+    <li><b>Бриф, страница продюсера, заметки</b> → <code>shared/phone_brief.py</code>, <code>producer_page.py</code>, <code>notes_sync.py</code></li>
+    <li>После правки кода: commit в репо и <code>review.py memex push</code>. Скрипты никогда не правятся «под проект» внутри сессии.</li>
+  </ul></div>
 </div>
 
-<h2><span class="n">ФАКТЫ</span>Что уже проверено на YTUVI02</h2>
-<div class="tbl"><table>
-  <thead><tr><th>проверка</th><th>результат</th></tr></thead>
-  <tbody>
-    <tr><td>Поверхности новым кодом против старого</td><td class="num">172/172 PNG и таймлайн байт-в-байт · mock 0 ошибок</td></tr>
-    <tr><td>Маршрутизация 84 старых находок</td><td class="num">61 локально · 0 ложных auto · 25 в облако</td></tr>
-    <tr><td>Облачный проход на половине фильма</td><td class="num">2 агента · 292 k токенов · 15 мин · покрытие 48/48</td></tr>
-    <tr><td>Что нашёл судья без картинок</td><td>8 настоящих ошибок: две «СИНЕТИКУ», «ВЫСОКВАЯ», порядок слов в названии закона, «линии роста» как признак синтетики, янтарь, $5 000 000 → $5 МЛН, «УФ-свет»</td></tr>
-    <tr><td>Ночная смена Memex</td><td class="num">2 ч 18 мин · OCR и VLM совпали с маком · сторож вышел сам</td></tr>
-    <tr><td>ТЗ из исходников (YTEVO02)</td><td class="num">монтажный лист 0 расхождений · 28/28 мокапов побайтно</td></tr>
-  </tbody>
-</table></div>
+<h2 id="s-where"><span class="n">ГДЕ ЛЕЖИТ</span>Тикеты, исходники, история</h2>
+<div class="cols">
+  <div class="card"><h3>Точки входа</h3><ul>
+    <li><b>Скилл</b> <code>/review</code> — <code>~/YTAI/.claude/skills/review/SKILL.md</code>; раздел в <code>CLAUDE.md</code>.</li>
+    <li><b>Код</b> <code>~/YTAI/scripts/05_editing/0509_review_cycle/</code>: <code>README.md</code> (ранбук, таблица стадий), <code>docs/contracts.md</code> (схемы файлов), <code>docs/HANDOFF_2026-09-14.md</code> (итоги и хвосты), эта схема — <code>docs/scheme_2026-09-14.html</code>.</li>
+    <li><b>KB</b>: <a href="https://yt.rya.ae/kb/review-cycle/">4.7 Cut Review Cycle</a> · <a href="https://yt.rya.ae/kb/montage-tz/">4.8 Montage TZ from Source</a> · <a href="https://yt.rya.ae/kb/review-timeline/">4.6 канон форматов</a>.</li>
+    <li><b>Проект</b>: <code>{project}/00_Setup/05_Review/REVIEW_STATE.md</code> — живой тикет, генерится <code>review.py ticket</code>.</li>
+    <li><b>Память Claude</b>: <code>reference_review_cycle_system</code> (+ указатели в старых заметках о ревью).</li>
+  </ul></div>
+  <div class="card"><h3>Исходные тикеты и чаты</h3><ul>
+    <li><b>Хэндофф этой сборки</b>: репо <code>docs/HANDOFF_2026-09-14.md</code>, копия <code>~/Desktop/TICKET_review_cycle_handoff_2026-09-14.md</code>, файл в Telegram.</li>
+    <li><b>Старые тикеты</b>: <code>~/Desktop/untitled folder/TICKET_YTUVI01_Review_v7.md</code>; YTUVI02 — в Корзине (<code>TICKET_YTUVI02_Review.md</code>, <code>RUN_YTUVI02.md</code>); YTUVI01 <code>HANDOFF_REVIEW_CYCLE.md</code> на T7-Blue-2 в папке проекта.</li>
+    <li><b>Примеры данных и восстановленный тулинг</b>: <code>examples/ytuvi01</code>, <code>examples/ytch12_v4</code> (28 файлов из лога сессии), <code>examples/ytch11_v2</code>, <code>examples/ytevo02</code> (golden montage.json).</li>
+    <li><b>Чаты ревью</b> (id сессий в <code>~/.claude/projects/-Users-romansergeev-YTAI/</code>): YTUVI01 <code>1b145d6b</code>, <code>aae3a644</code>, <code>85c6dce0</code>; YTUVI02 <code>4cbf3c56</code>, <code>5bac9b3b</code>; YTCH12 <code>4de45847</code> (v4), <code>d364a110</code> (v1–v2); YTEVO02 <code>fd86095f</code>; эта сборка <code>78ea6a5c</code>. Результаты воркфлоу — в <code>&lt;id&gt;/subagents/workflows/</code>.</li>
+    <li><b>Данные YTUVI02</b>: T7-Blue-2 <code>YTUVI-Projects/YTUVI02_Ruby_Certificate/00_Setup/05_Review/</code>; ночной прогон на Memex — <code>~/YTAI_work/YTUVI02/</code>.</li>
+  </ul></div>
+</div>
 
-<div class="foot">Документация: <a href="https://yt.rya.ae/kb/review-cycle/">KB 4.7 Cut Review Cycle</a> · <a href="https://yt.rya.ae/kb/montage-tz/">4.8 Montage TZ from Source</a> · <a href="https://yt.rya.ae/kb/review-timeline/">4.6 канон форматов</a>. Код: <span class="mono">scripts/05_editing/0509_review_cycle/</span>, хэндофф в <span class="mono">docs/HANDOFF_2026-09-14.md</span>.</div>
+<div class="foot">Проверено 14.09.2026 на YTUVI02: поверхности новым кодом совпали со старым байт-в-байт (172/172 PNG, mock 0 ошибок); маршрутизация 61 из 84 находок локально, 0 ложных; облако 2 агента / 292 k токенов на 48 экранов, покрытие 48/48; ночная смена Memex 2 ч 18 мин; YTEVO02 — монтажный лист 0 расхождений, 28/28 мокапов побайтно.</div>
 </div>
 </body></html>
