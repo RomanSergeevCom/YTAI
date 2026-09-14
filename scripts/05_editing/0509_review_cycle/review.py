@@ -950,6 +950,26 @@ def stages_for(r: Review):
 # 2. Исполнение
 # ══════════════════════════════════════════════════════════════════════════════
 
+LOAD_FLAG = Path.home() / '.cache' / 'ytai' / 'LOAD.json'
+HEAVY = {'frames': 15, 'ocr': 10, 'transcript': 20, 'vlm': 90, 'llm': 40, 'probe': 70, 'render': 10, 'segment': 30, 'acts': 40, 'polish': 30}
+
+
+def load_flag(r: Review, stage: str | None, expected_min: int = 0):
+    """Флаг нагрузки для мониторинга Memex (memex-temp-check.sh читает его и подписывает тревоги
+    «идёт разбор {CODE}: {stage}»). stage=None — снять флаг."""
+    try:
+        if stage is None:
+            LOAD_FLAG.unlink(missing_ok=True)
+            return
+        LOAD_FLAG.parent.mkdir(parents=True, exist_ok=True)
+        LOAD_FLAG.write_text(json.dumps({'job': 'review', 'code': r.code, 'stage': stage, 'started': now(),
+                                         'expected_min': expected_min, 'host': os.uname().nodename,
+                                         'note': f'локальный разбор {r.code}: {stage} — высокая нагрузка ожидаема'},
+                                        ensure_ascii=False), encoding='utf-8')
+    except Exception:
+        pass
+
+
 def run_stage(r: Review, name: str, host: str, fn, vfn, gate: str, force: bool = False) -> bool:
     stg = r.st(name)
     stg['host'] = host
@@ -966,8 +986,11 @@ def run_stage(r: Review, name: str, host: str, fn, vfn, gate: str, force: bool =
         stg.update(status='running', attempts=attempt, started=now(), inputs_hash=r.inputs_hash(), log=str(r.logs / f'{name}.log'))
         r.save()
         r.log(f'▶ {name} ({attempt}/{MAX_ATTEMPTS})')
+        if name in HEAVY:
+            load_flag(r, name, HEAVY[name])
         if attempt == 1:
-            r.tg(f'▶ <b>{r.code}</b>: {name}')
+            r.tg(f'▶ <b>{r.code}</b>: {name}' + (f' — тяжёлая стадия, ~{HEAVY[name]} мин, температура Memex будет высокой (это разбор, не сбой)'
+                                                 if name in HEAVY and host == 'memex' else ''))
         try:
             ok, msg = fn(r)
             if ok and (vfn(r) or r.dry):
@@ -1039,6 +1062,11 @@ def cmd_run(r: Review, a) -> int:
     r.pidf.write_text(str(os.getpid()))
     r.stop_f.unlink(missing_ok=True)
     r.log(f'######## {r.code} run {sel[0]}…{sel[-1]} pid={os.getpid()} host={a.host} version={version()}')
+    if a.host == 'memex':
+        heavy = [s for s in sel if s in HEAVY]
+        r.tg(f'🔥 <b>Memex</b>: начинаю локальный разбор <b>{r.code}</b> ({" → ".join(heavy) or "стадии без моделей"}), '
+             f'ожидаемо ~{sum(HEAVY[s] for s in heavy) // 60} ч {sum(HEAVY[s] for s in heavy) % 60} мин. '
+             f'Тревоги о температуре в это время — это рендер, не сбой. Пауза: review.py memex pause')
     rc = 0
     # --from S / --only S = регенерация: выбранные стадии гоняются заново, даже если артефакты на месте;
     # resume / run без флагов = продолжить, пропуская готовое по артефактам.
@@ -1055,9 +1083,12 @@ def cmd_run(r: Review, a) -> int:
         rc = 3
     finally:
         r.pidf.unlink(missing_ok=True)
+        load_flag(r, None)
         r.save()
         if not r.dry:
             write_ticket(r)
+    if a.host == 'memex':
+        r.tg(f'🧊 <b>Memex</b>: локальный разбор <b>{r.code}</b> закончен (rc={rc}) — нагрузка снята.')
     print_status(r)
     return rc
 
