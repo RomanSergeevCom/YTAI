@@ -293,13 +293,15 @@ class AwaitCloud(Exception):
 
 
 def version() -> str:
-    vf = ROOT / 'VERSION'
-    if vf.exists():
-        return vf.read_text().strip()
+    """В репо — git sha (истина); на Memex (rsync-копия без .git) — файл VERSION, записанный push.sh."""
     try:
-        return subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip() or 'dev'
+        sha = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True, timeout=5).stdout.strip()
+        if sha:
+            return sha
     except Exception:
-        return 'dev'
+        pass
+    vf = ROOT / 'VERSION'
+    return vf.read_text().strip() if vf.exists() else 'dev'
 
 
 # ══════════════════════════════════════════════════════════════════════════════
