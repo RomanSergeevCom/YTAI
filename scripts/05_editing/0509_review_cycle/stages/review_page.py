@@ -289,7 +289,7 @@ footer {{ padding:28px 32px 60px; color:var(--mut); font-size:13px }}
   .timeline {{ margin-left:16px; margin-right:16px }} }}
 </style></head><body>
 <header>
-  <h1>{E(P.CODE)} · Рубин. Сертификат и подделки</h1>
+  <h1>{E(P.CODE)} · {E(str(P.get('film_subject') or P.get('project_name') or P.FILM or 'ревью ката'))}</h1>
   <div class="sub">Ревью ката v1 · {tc(DUR)} · 3840×2160 · монтажёр сдал 11.09.2026</div>
   <div class="stats">{''.join(f'<div><b>{v}</b><span>{k}</span></div>' for k, v in stat)}</div>
   {audit_note}

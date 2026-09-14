@@ -719,7 +719,8 @@ def v_previews(r: Review) -> bool:
 
 # --- внешние поверхности ------------------------------------------------------
 def _ext(r: Review, key: str) -> bool:
-    return bool(r.card.get(key))
+    """Внешний id задан в карточке или окружением YTAI_<KEY> (тестовые док/папка/лист)."""
+    return bool(r.card.get(key) or os.environ.get('YTAI_' + key.upper()))
 
 
 def st_drive(r: Review):
@@ -1267,9 +1268,81 @@ def cmd_memex(r: Review, a) -> int:
     return sub(['bash', script, r.root] + list(a.rest or []), env)
 
 
+def cmd_selftest(a) -> int:
+    """Регрессия без токенов: синтаксис всех скриптов, импорт стадий с карточкой, маршрутизация, мок-сборка,
+    golden-тест монтажного листа. Гонять после любой правки кода, до commit и memex push."""
+    import py_compile
+    rows = []
+
+    def ok(name, cond, msg=''):
+        rows.append((name, bool(cond), msg))
+        return bool(cond)
+
+    bad = []
+    for p in ROOT.rglob('*.py'):
+        if any(x in p.parts for x in ('examples', '_legacy_runners', '_legacy', '__pycache__')):
+            continue
+        try:
+            py_compile.compile(str(p), doraise=True)
+        except Exception as e:
+            bad.append(f'{p.relative_to(ROOT)}: {str(e)[:80]}')
+    ok('python: синтаксис всех стадий', not bad, '; '.join(bad)[:200])
+    js = [p for p in ROOT.rglob('*.js') if '_legacy' not in p.parts and 'examples' not in p.parts]
+    badjs = [str(p.relative_to(ROOT)) for p in js if subprocess.run([NODE, '--check', str(p)], capture_output=True).returncode != 0]
+    ok('node: синтаксис воркфлоу и мок-сборки', not badjs, ', '.join(badjs))
+    ok('bash: синтаксис memex/*.sh', all(subprocess.run(['bash', '-n', str(p)], capture_output=True).returncode == 0 for p in MEMEX.glob('*.sh')))
+
+    proj = a.project or '/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate'
+    root = Path(proj)
+    card = root / '00_Setup/05_Review/review_card.json'
+    if card.exists():
+        r = Review(root)
+        env = r.env()
+        rc = subprocess.run([PY, SHARED / 'card_tools.py', 'check', card], capture_output=True, text=True, env=env)
+        ok(f'карточка {r.code}: card check', rc.returncode == 0, rc.stdout.strip().splitlines()[-1][:100] if rc.stdout.strip() else '')
+        rc = subprocess.run([PY, STAGES_DIR / 'terms_catalog.py'], capture_output=True, text=True, env=env, cwd=str(r.review_dir))
+        ok('каталог терминов грузится', rc.returncode == 0, rc.stdout.strip()[:100])
+        legacy = r.work / 'audit_findings_v6.json'
+        if legacy.exists():
+            rc = subprocess.run([PY_LLM if Path(PY_LLM).exists() else PY, STAGES_DIR / 'route_candidates.py', '--eval', str(legacy)],
+                                capture_output=True, text=True, env=env, cwd=str(r.review_dir))
+            m = re.search(r'ложн\w*[^\d]*(\d+)', rc.stdout)
+            ok('маршрутизация --eval (0 ложных auto)', rc.returncode == 0 and (m is None or m.group(1) == '0'),
+               (rc.stdout.strip().splitlines()[-1][:110] if rc.stdout.strip() else ''))
+        if (r.review_dir / f'{r.code}_review_v6.json').exists():
+            rc = subprocess.run([NODE, STAGES_DIR / 'mockbuild_v6.js'], capture_output=True, text=True, env=env, cwd=str(r.review_dir))
+            ok('мок-сборка таймлайна: 0 ошибок', rc.returncode == 0 and 'error 0' in rc.stdout, (rc.stdout.strip().splitlines()[-2:][0][:100] if rc.stdout.strip() else ''))
+    else:
+        rows.append(('карточка проекта для прогона (нет — пропуск)', True, str(card)))
+
+    ev = Path('/Volumes/T9-Black-RYA/YTEVO/YTEVO02_evolution_manifesto')
+    golden = ROOT / 'examples/ytevo02/montage.golden.json'
+    if (ev / '00_Setup/05_Review/review_card.json').exists() and golden.exists():
+        env = dict(os.environ, YTAI_CARD=str(ev / '00_Setup/05_Review/review_card.json'))
+        env['PATH'] = '/opt/homebrew/bin:/usr/local/bin:' + env.get('PATH', '')
+        rc = subprocess.run([PY, MONTAGE / 'build_montage.py'], capture_output=True, text=True, env=env, cwd=str(ev / '00_Setup/05_Review'))
+        try:
+            g = json.loads(golden.read_text(encoding='utf-8'))
+            m = json.loads((ev / '00_Setup/05_Review/montage.json').read_text(encoding='utf-8'))
+            m.pop('schema', None); g.pop('schema', None)
+            ok('golden YTEVO02: montage.json без расхождений', rc.returncode == 0 and m == g)
+        except Exception as e:
+            ok('golden YTEVO02: montage.json без расхождений', False, str(e)[:100])
+    else:
+        rows.append(('golden YTEVO02 (диск не смонтирован — пропуск)', True, ''))
+
+    print(f'selftest {version()} · {now()}')
+    for name, good, msg in rows:
+        print(f'{"✅" if good else "✗ "} {name}' + (f'  — {msg}' if msg else ''))
+    failed = [n for n, g, _ in rows if not g]
+    print('ИТОГ:', 'OK' if not failed else f'FAIL {len(failed)}')
+    return 0 if not failed else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     sp = ap.add_subparsers(dest='cmd', required=True)
+    p = sp.add_parser('selftest'); p.add_argument('--project')
 
     p = sp.add_parser('init'); p.add_argument('--project', required=True); p.add_argument('--channel', required=True)
     p.add_argument('--mode', default='cut_review', choices=['cut_review', 'montage_tz']); p.add_argument('--cut')
@@ -1300,6 +1373,8 @@ def main() -> int:
     a = ap.parse_args()
     if a.cmd == 'docs':
         return cmd_docs()
+    if a.cmd == 'selftest':
+        return cmd_selftest(a)
     if a.cmd == 'init':
         return cmd_init(a)
     root = resolve_project(a.project)
