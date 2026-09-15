@@ -20,6 +20,7 @@ ad-hoc скриптов и не читает кадры в тред.
 
 ## Шаг 0 — загрузить знания (ровно эти файлы, в этом порядке)
 
+0. `scripts/05_editing/0509_review_cycle/docs/TICKET_next_session.md` — сценарии практики, карта «что менять где», правила сессии, хвосты
 1. `scripts/05_editing/0509_review_cycle/README.md` — машинный ранбук, таблица стадий
 2. `scripts/05_editing/0509_review_cycle/docs/contracts.md` — схемы карточки/профиля/стейта/pravki/облака
 3. `{project}/00_Setup/05_Review/REVIEW_STATE.md` — тикет проекта (если есть; иначе `review.py init`)
