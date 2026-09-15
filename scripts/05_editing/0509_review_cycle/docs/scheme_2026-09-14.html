@@ -138,7 +138,7 @@ td.w{color:var(--ink-2)}
 </style>
 
 </head><body><div class="wrap">
-<div class="top"><span class="mark">RYA.AE</span><span>ревью ката · ТЗ на монтаж</span><span class="tc">версия 2 · 14.09.2026</span></div>
+<div class="top"><span class="mark">RYA.AE</span><span>ревью ката · ТЗ на монтаж</span><span class="tc">версия 5 · 15.09.2026</span></div>
 
 <h1>Конвейер ревью ката: где идут часы машины, где минуты агента</h1>
 <p class="lede">Монтажёр прислал сборку. Раньше её разбирали <b>сотни облачных агентов</b>, каждый заново читал кадры, а упавший прогон запускали ещё раз. Теперь всё, что можно посчитать, считают <b>локальные модели на Memex ночью</b>, а в облако уходит <b>один короткий проход</b> с готовым списком кандидатов. Форматы для монтажёра не изменились.</p>
@@ -184,27 +184,29 @@ td.w{color:var(--ink-2)}
 </div>
 
 <h2 id="s-tracks"><span class="n">ДОРОЖКИ</span>То же самое как секвенция</h2>
-<p class="sub">Стадии по месту исполнения. Длительности — из реального ночного прогона YTUVI02 на Memex (кат 21 мин).</p>
+<p class="sub">Стадии по месту исполнения. Всё начинается с макбука: одна команда заводит карточку и отправляет Memex считать; длительности — из реального ночного прогона YTUVI02 (кат 21 мин).</p>
 <div class="seq"><div class="seq-in">
   <div class="ruler"><div></div><div class="ticks"><span>00:00</span><span>ночь · 2 ч 18 мин</span><span>утро · ~30 мин</span><span>→ монтажёру</span></div></div>
   <div class="track"><div class="name" style="color:var(--cloud)">V3 · ОБЛАКО<span>один проход, 7 агентов</span></div>
     <div class="lane">
-      <div class="clip gap" style="flex:6.2">ноль токенов</div>
+      <div class="clip gap" style="flex:6.9">ноль токенов</div>
       <div class="clip cl" style="flex:1.6"><small>J ×4</small>судья по пакетам</div>
       <div class="clip cl" style="flex:.9"><small>F ‖ V</small>факты · кропы</div>
       <div class="clip cl" style="flex:.7"><small>S</small>скептик</div>
       <div class="clip gap" style="flex:2.2">ноль токенов</div>
     </div></div>
-  <div class="track"><div class="name" style="color:var(--mac)">V2 · MAC<span>«руки»: собрать и отдать</span></div>
+  <div class="track"><div class="name" style="color:var(--mac)">V2 · MAC<span>старт здесь: «руки» запускают и собирают</span></div>
     <div class="lane">
-      <div class="clip gap" style="flex:6.2">Memex считает</div>
-      <div class="clip mc" style="flex:.8"><small>&lt;1 мин</small>маршрутизация</div>
+      <div class="clip mc" style="flex:1.1"><small>5 мин · старт с мака</small>карточка · push · start</div>
+      <div class="clip gap" style="flex:5.1">Memex считает, мак свободен</div>
+      <div class="clip mc" style="flex:.9"><small>&lt;2 мин</small>pull · маршрутизация</div>
       <div class="clip gap" style="flex:3.2">ждёт облако</div>
       <div class="clip mc" style="flex:1.3"><small>~5 мин</small>ТЗ · графика · таймлайн</div>
       <div class="clip ou" style="flex:1.2"><small>док · лист · Drive</small>+ бриф в TG</div>
     </div></div>
-  <div class="track"><div class="name" style="color:var(--memex)">V1 · MEMEX<span>«глаза»: локальные модели</span></div>
+  <div class="track"><div class="name" style="color:var(--memex)">V1 · MEMEX<span>«глаза»: локальные модели, по команде с мака</span></div>
     <div class="lane">
+      <div class="clip gap" style="flex:1.1">ждёт команду с мака</div>
       <div class="clip mx" style="flex:.5"><small>6 мин</small>кадры</div>
       <div class="clip mx" style="flex:.35"><small>3</small>OCR</div>
       <div class="clip mx" style="flex:2.4"><small>59 мин</small>VLM читает каждый экран</div>
