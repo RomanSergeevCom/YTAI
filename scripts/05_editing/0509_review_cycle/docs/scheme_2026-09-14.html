@@ -142,7 +142,7 @@ td.w{color:var(--ink-2)}
 
 <h1>Конвейер ревью ката: где идут часы машины, где минуты агента</h1>
 <p class="lede">Монтажёр прислал сборку. Раньше её разбирали <b>сотни облачных агентов</b>, каждый заново читал кадры, а упавший прогон запускали ещё раз. Теперь всё, что можно посчитать, считают <b>локальные модели на Memex ночью</b>, а в облако уходит <b>один короткий проход</b> с готовым списком кандидатов. Форматы для монтажёра не изменились.</p>
-<div class="toc"><a href="#s-scheme">схема действия</a><a href="#s-tracks">дорожки</a><a href="#s-models">модели</a><a href="#s-levers">рычаги</a><a href="#s-numbers">цифры</a><a href="#s-out">выход</a><a href="#s-continue">как продолжать</a><a href="#s-where">где лежит</a></div>
+<div class="toc"><a href="#s-built">что собрано</a><a href="#s-scheme">схема действия</a><a href="#s-tracks">дорожки</a><a href="#s-models">модели</a><a href="#s-levers">рычаги</a><a href="#s-numbers">цифры</a><a href="#s-out">выход</a><a href="#s-continue">как продолжать</a><a href="#s-where">где лежит</a></div>
 
 <div class="tiles" style="margin-top:18px">
   <div class="tile"><div class="lab">агентов в облаке на фильм</div><div class="row"><span class="was">508</span><span class="arr">→</span><span class="now">7</span></div><div class="sub">YTUVI02: аудит 244 + три догона 264 → судья ×4, факты, кропы, скептик</div></div>
@@ -150,6 +150,25 @@ td.w{color:var(--ink-2)}
   <div class="tile"><div class="lab">повторных запусков аудита</div><div class="row"><span class="was">4</span><span class="arr">→</span><span class="now">0</span></div><div class="sub">результат агента лежит на диске до конца прогона; повтор только для недоделанных пакетов</div></div>
 </div>
 <p class="note">Цифры «было» — реальные прогоны YTUVI02 (11–12.09), «стало» — замер той же системы на тех же данных 14.09.</p>
+
+<h2 id="s-built"><span class="n">ЧТО СОБРАНО</span>Система в сборе: одна папка в репо, состояние в проекте</h2>
+<p class="sub">Стадия <code>scripts/05_editing/0509_review_cycle/</code>, репо ~/YTAI, 12 коммитов 14–15.09, последний 216033e. Копия кода на Memex кладётся <code>memex push</code> (VERSION = git sha).</p>
+<div class="tbl"><table>
+  <thead><tr><th>часть</th><th>файлов</th><th>что внутри</th><th>описание</th></tr></thead>
+  <tbody>
+    <tr><td><b>review.py</b></td><td class="num">1</td><td class="w">единый CLI: init · status · run · resume · stage · cloud · edits · ticket · memex · card · docs · selftest; стейт-машина 31 стадии cut_review и 9 montage_tz</td><td class="w"><code>README.md</code> (машинный ранбук, таблица стадий), <code>python3 review.py --help</code></td></tr>
+    <tr><td><b>proj_config.py</b> + профили</td><td class="num">1 + 3</td><td class="w">карточка фильма (поиск по YTAI_CARD / YTAI_PROJECT_DIR / вверх от cwd), профили каналов YTUVI · YTCH · YTEVO, база терминов UVI</td><td class="w"><code>docs/contracts.md</code> §1–3</td></tr>
+    <tr><td><b>stages/</b></td><td class="num">46</td><td class="w">кадры → OCR → VLM → LLM → пробы → маршрутизация → ТЗ → полировка → графика 4K → таймлайн 6 слоёв → мок-сборка → превью и QA → лист · вкладки · verify · QA дока</td><td class="w">докстринг в каждом файле; таблица стадий в README и KB 4.7</td></tr>
+    <tr><td><b>cloud/</b></td><td class="num">7</td><td class="w">один проход: pack · wf_judge.js (J·F·V·S) · collect · salvage · cost; вердикт YTCH · структура YTEVO; старые 250-агентные воркфлоу в <code>_legacy/</code></td><td class="w"><code>docs/contracts.md</code> §7, README «Облако»</td></tr>
+    <tr><td><b>montage/</b></td><td class="num">10</td><td class="w">режим ТЗ из исходников: сегментация тезисов, лист по пословным якорям, мокапы с DOM-QC, структурная страница, standalone</td><td class="w">KB 4.8, <code>docs/contracts.md</code> §8</td></tr>
+    <tr><td><b>shared/</b></td><td class="num">12</td><td class="w">карточка · выравнивание · стоп-реестр · резюме актов · вердикт · бриф для телефона · страница продюсера · заметки · восстановление из логов сессий · shot/peek (гигиена)</td><td class="w">докстринги; <code>ytai_load</code> в 999_extra/bin</td></tr>
+    <tr><td><b>memex/</b></td><td class="num">9</td><td class="w">push · pull · start · status · pause · resume · stop · watchdog</td><td class="w">README «Memex»</td></tr>
+    <tr><td><b>docs/ · templates/ · examples/</b></td><td class="num">4 · 4 · 4 папки</td><td class="w">контракты, хэндофф, эта схема; шаблоны карточки, профиля, тикета, plist; примеры YTUVI01, YTCH12 v4, YTCH11 v2, YTEVO02 (golden)</td><td class="w"><code>docs/HANDOFF_2026-09-14.md</code></td></tr>
+    <tr><td><b>Вход в сессию</b></td><td class="num">2</td><td class="w">скилл <code>/review</code> (читает 5 файлов, дальше только review.py) и раздел в <code>CLAUDE.md</code></td><td class="w"><code>~/YTAI/.claude/skills/review/SKILL.md</code></td></tr>
+    <tr><td><b>KB yt.rya.ae</b></td><td class="num">3</td><td class="w">4.7 Cut Review Cycle (человеческий ранбук) · 4.8 Montage TZ from Source · 4.6 канон форматов</td><td class="w"><a href="https://yt.rya.ae/kb/review-cycle/">/kb/review-cycle/</a> · <a href="https://yt.rya.ae/kb/montage-tz/">/kb/montage-tz/</a></td></tr>
+  </tbody>
+</table></div>
+<p class="note">Проверено на YTUVI02 от начала до конца: ночной разбор на Memex, маршрутизация, облако 7 агентов / 924 k, полировка, все поверхности на тестовых Google-ресурсах, verify ALL PASS, гейт правок, бриф в Telegram. Регрессия — <code>review.py selftest</code>, 1 секунда.</p>
 
 <h2 id="s-scheme"><span class="n">СХЕМА ДЕЙСТВИЯ</span>Один цикл ревью, шаг за шагом</h2>
 <p class="sub">Кто делает, что происходит, чем, и что получается на выходе. Команды — одна строка в чате: <code>/review КОД</code>.</p>
