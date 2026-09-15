@@ -146,7 +146,7 @@ td.w{color:var(--ink-2)}
 
 <div class="tiles" style="margin-top:18px">
   <div class="tile"><div class="lab">агентов в облаке на фильм</div><div class="row"><span class="was">508</span><span class="arr">→</span><span class="now">7</span></div><div class="sub">YTUVI02: аудит 244 + три догона 264 → судья ×4, факты, кропы, скептик</div></div>
-  <div class="tile"><div class="lab">токенов на фильм</div><div class="row"><span class="was">18,7 M</span><span class="arr">→</span><span class="now">≈1 M</span></div><div class="sub">замер: 292 k на половину фильма (48 экранов)</div></div>
+  <div class="tile"><div class="lab">токенов на фильм</div><div class="row"><span class="was">18,7 M</span><span class="arr">→</span><span class="now">0,92 M</span></div><div class="sub">замер по всему фильму: 3 прогона, 7 агентов, 924 531 токен</div></div>
   <div class="tile"><div class="lab">повторных запусков аудита</div><div class="row"><span class="was">4</span><span class="arr">→</span><span class="now">0</span></div><div class="sub">результат агента лежит на диске до конца прогона; повтор только для недоделанных пакетов</div></div>
 </div>
 <p class="note">Цифры «было» — реальные прогоны YTUVI02 (11–12.09), «стало» — замер той же системы на тех же данных 14.09.</p>
@@ -226,10 +226,10 @@ td.w{color:var(--ink-2)}
   <div class="cap"><span><b>YTUVI02</b>, 21 мин, 95 экранов</span><span>каждая строка в своём масштабе, значения подписаны</span></div>
   <div class="metric"><div class="m">агентов в облаке<small>на весь цикл ревью</small></div><div class="bars">
     <div class="bar was" title="было: 244 аудит + 22 + 88 + 154 догон"><div class="fill" style="width:100%"></div><div class="v">508</div></div>
-    <div class="bar now" title="стало: 4 судьи + факты + кропы + скептик"><div class="fill" style="width:1.4%"></div><div class="v">7 <small>оценка, замер 2 на половину</small></div></div></div></div>
+    <div class="bar now" title="стало: 2 судьи + кропы + факты + 3 скептика (по одному на прогон)"><div class="fill" style="width:1.4%"></div><div class="v">7 <small>замер, весь фильм</small></div></div></div></div>
   <div class="metric"><div class="m">токенов в облаке<small>млн</small></div><div class="bars">
     <div class="bar was" title="было: 6,10 + 1,76 + 6,04 + 4,82 M"><div class="fill" style="width:100%"></div><div class="v">18,7 M</div></div>
-    <div class="bar now" title="стало: ≈1 M на фильм; замер 0,29 M на 48 экранов"><div class="fill" style="width:5.3%"></div><div class="v">≈1,0 M</div></div></div></div>
+    <div class="bar now" title="стало: 0,29 + 0,40 + 0,23 M за три прогона"><div class="fill" style="width:4.9%"></div><div class="v">0,92 M</div></div></div></div>
   <div class="metric"><div class="m">картинок, открытых агентами<small>за один прогон аудита</small></div><div class="bars">
     <div class="bar was" title="было: 668 кадров за прогон verify-rest"><div class="fill" style="width:100%"></div><div class="v">668</div></div>
     <div class="bar now" title="стало: не больше 16 кропов по запросу судьи"><div class="fill" style="width:2.4%"></div><div class="v">≤16</div></div></div></div>
@@ -297,6 +297,6 @@ td.w{color:var(--ink-2)}
   </ul></div>
 </div>
 
-<div class="foot">Проверено 14.09.2026 на YTUVI02: поверхности новым кодом совпали со старым байт-в-байт (172/172 PNG, mock 0 ошибок); маршрутизация 61 из 84 находок локально, 0 ложных; облако 2 агента / 292 k токенов на 48 экранов, покрытие 48/48; ночная смена Memex 2 ч 18 мин; YTEVO02 — монтажный лист 0 расхождений, 28/28 мокапов побайтно.</div>
+<div class="foot">Проверено 14–15.09.2026 на YTUVI02: поверхности новым кодом совпали со старым байт-в-байт (172/172 PNG, mock 0 ошибок); маршрутизация 61 из 84 находок локально, 0 ложных; облако целиком — 7 агентов / 924 k токенов, 55 находок, 41 подтверждена, 6 фактов опровергнуты с источниками; ночная смена Memex 2 ч 18 мин; док, лист, Drive и бриф прогнаны на тестовых ресурсах, verify ALL PASS, гейт правок сработал; полировка 41 строки ТЗ локальной моделью за 78 с; YTEVO02 — монтажный лист 0 расхождений, 28/28 мокапов побайтно.</div>
 </div>
 </body></html>
