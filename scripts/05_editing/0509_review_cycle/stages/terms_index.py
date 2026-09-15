@@ -10,7 +10,7 @@
 import json, re, sys
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, LANG  # noqa: E402
 from terms_catalog import TERM_RX, LOC_RX, MAP_WINDOWS, PLACE, TERM_EXTRA  # noqa
 
 WORDS = P.WORDS
@@ -27,7 +27,10 @@ words = [(w['w'], float(w['s'])) for s in d['segments'] for w in s['words']]
 mentions = {'terms': [], 'locs': []}
 for i, (w, t) in enumerate(words):
     win = ' '.join(x[0] for x in words[i:i + 3]).lower()
-    first = re.sub(r'[^а-яёa-z0-9 ]', '', w.lower())
+    if LANG == 'en':                                  # EN: без кириллического класса — чистим только пунктуацию
+        first = re.sub(r"[^\w'’]", '', w.lower())
+    else:
+        first = re.sub(r'[^а-яёa-z0-9 ]', '', w.lower())
     for kind, table in (('terms', TERM_RX), ('locs', LOC_RX)):
         for row in table:
             key, rx = row[0], row[1]

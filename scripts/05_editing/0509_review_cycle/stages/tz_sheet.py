@@ -13,16 +13,15 @@ import sys
 import urllib.parse
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402
 from doctab_lib import access_token  # noqa: E402
 import urllib.request
 
 # id листа — из карточки (notes_sheet_id); легаси — pravki/notes_sheet.json; пусто = отказ (лист чужого фильма хуже отсутствия)
 SID = (P.get('notes_sheet_id') or (json.loads((M / 'notes_sheet.json').read_text())['id']
                                    if (M / 'notes_sheet.json').exists() else P.need('notes_sheet_id')))
-TAB = 'ТЗ монтажёру'
-HDR = ['ТЗ', 'v1 TC', 'Тип', 'Название', 'Что сделать', 'Материал / ссылки',
-       'Кадр 1', 'Кадр 2', 'Кадр 3', '⏳ Решение Романа', 'Статус']
+TAB = T('c2.sheet_tab')                   # 'ТЗ монтажёру' / 'Edit notes'
+HDR = list(T('c2.sheet_hdr'))             # ['ТЗ', 'v1 TC', …, '⏳ Решение Романа', 'Статус'] / EN — с ним же сверяет verify ниже
 
 pravki = json.loads((M / 'pravki_v2.json').read_text())['all']
 drive_clips = json.loads((M / 'drive_clips.json').read_text())
@@ -36,8 +35,7 @@ MATERIALS_FOLDER = P.folder_url('materials_id')          # дубль 2 из 4 �
 PROJECT_FOLDER = P.folder_url('project_folder_id')
 SPRINT_FOLDER = P.folder_url('sprint_folder_id')
 
-CAT = {'cut': '✂️ резать', 'insert': '➕ вставить', 'graphics': '🎨 графика',
-       'structure': '🃏 структура', 'color': '🔧 обработка', 'check': '✅ разобрано'}
+CAT = {k: T(f'c2.sheet_cat.{k}') for k in ('cut', 'insert', 'graphics', 'structure', 'color', 'check')}
 CAT_BG = {'cut': {'red': 0.99, 'green': 0.87, 'blue': 0.86},
           'insert': {'red': 0.87, 'green': 0.95, 'blue': 0.87},
           'graphics': {'red': 1.0, 'green': 0.97, 'blue': 0.82},
@@ -59,21 +57,36 @@ def api(method, url, body=None):
         raise
 
 
+# --dump-rows FILE: весь путь листа на офлайн-двойнике Sheets API — вызовы и строки → FILE, без Google API
+DUMP = sys.argv[sys.argv.index('--dump-rows') + 1] if '--dump-rows' in sys.argv else None
+if DUMP:
+    _CALLS, _PUT = [], {}
+
+    def api(method, url, body=None):  # noqa: F811
+        _CALLS.append({'method': method, 'url': url, 'body': body})
+        if method == 'GET' and '/values/' in url:
+            return {'values': _PUT.get('values', [])}
+        if method == 'GET':
+            return {'sheets': []}
+        if method == 'PUT':
+            _PUT['values'] = body['values']
+            return {}
+        if url.endswith(':batchUpdate'):
+            return {'replies': [{} for _ in body['requests'][:-1]] + [{'addSheet': {'properties': {'sheetId': 0}}}]}
+        return {}
+
+
 def q(v):
     v = str(v)
     return "'" + v if v and (v[0].isdigit() or v[0] in "=+") else v
 
 
-LEGEND = (f'Секвенция: {P.CODE}_5_Review_v6_tz_v{{N}} (панель UXP → Review → Review_v6). '
-          'Слои: V1 = ОРИГИНАЛ (не тронут) · V2 = футажи видео+фото · V3 = инфографика + плашки терминов при каждом упоминании + мини-карты локаций + нарисованные исправления · '
-          'V4 = плашки ТЗ (полный текст + ссылки: маркер клипа / кнопка панели «Copy ТЗ @ playhead») '
-          '· V5 = стрелки правок на кадре · V6 = прозрачные главы + подглавы + прогресс перечислений. '
-          'Маркеры секвенции = только разноцветные главы; '
-          'CTA сразу после конца рендера.\n'
-          f'📁 Все материалы (на каждом файле — коммент с ТЗ и таймкодом): {MATERIALS_FOLDER} · '
-          f'📁 Папка проекта: {PROJECT_FOLDER} · 📁 Спринт YTUVI S1 (исходники): {SPRINT_FOLDER}\n'
-          'PDF-источники: страницы указаны в материалах. Подробный разбор — вкладка дока '
-          '«Ревью v2 · правки»; компакт-ТЗ — вкладка «ТЗ монтажёру · v4».')
+# легенда — c2.sheet_legend; спринт — card sprint_name (иначе «{канал} S1», было зашито «YTUVI S1»);
+# RU-шаблон ссылается на вкладки литералами (как было), EN — на имена из карточки
+LEGEND = T('c2.sheet_legend', code=P.CODE, materials=MATERIALS_FOLDER, project=PROJECT_FOLDER, sprint=SPRINT_FOLDER,
+           sprint_name=P.get('sprint_name') or T('c2.sprint_default', ch=P.CHANNEL),
+           nav_tab=P.get('nav_tab') or T('c2.nav_tab_default').replace('{ver}', P.CUT_VERSION),
+           tz_tab=P.get('tab_title') or str(P.profile('doc.tab_tz_template', T('c2.tz_tab_template'))).format(ver=P.CUT_VERSION))
 
 
 def clip_link(text):
@@ -96,7 +109,8 @@ rows = []
 decision_rows = []          # индексы (0-based среди данных) для оранжевой подсветки
 purple_rows = []            # строки с 💬 комментами Романа (фиолетовый текст в J)
 for i, p in enumerate(pravki):
-    num = f'ТЗ-{i + 1:02d}'
+    key = f'ТЗ-{i + 1:02d}'                     # внутренний ключ (данные)
+    num = tz_label(i + 1)                      # что видит монтажёр: ТЗ-07 / FIX-07
     if p.get('status') == 'rejected':          # Роман снял (вкладка дока 09.09) — номер сохраняем, строку не пишем
         continue
     mat_lines, imgs = [], []
@@ -104,21 +118,22 @@ for i, p in enumerate(pravki):
         t = mr['t']
         link = clip_link(t)
         if link:
-            t += f'\n🔗 клип: {link}'
+            t += f'\n{T("c2.link_clip")}{link}'
         img = mr.get('img')
         if img:  # ссылка на файл ВСЕГДА: приоритет — папка проекта (там комменты)
             fid = proj_ids.get(img) or shots_ids.get(img)
             if fid:
-                t += f'\n🔗 файл: https://drive.google.com/file/d/{fid}/view'
+                t += f'\n{T("c2.link_file")}https://drive.google.com/file/d/{fid}/view'
         mat_lines.append('• ' + t)
         if mr.get('src'):
-            mat_lines.append('📚 источник: ' + mr['src'])
+            mat_lines.append(T('c2.src_prefix') + mr['src'])
         if mr.get('preview') or img:             # v7: крупное превью «про что речь» (s12), иначе оригинал
             imgs.append(mr.get('preview') or img)
     imgs = imgs[:3] + [''] * (3 - min(3, len(imgs)))
-    # ТЗ-02: в pravki category=check, но там реальная работа (русская плашка) — не прятать
-    cat = 'graphics' if num == 'ТЗ-02' else p['category']
-    status = 'решить' if p.get('decision') else ('info' if cat == 'check' else 'todo')
+    # ТЗ-02 (легаси YTUVI01): в pravki category=check, но там реальная работа (русская плашка) — не прятать.
+    # Только для ru: на английском канале второе ТЗ — чужое, категорию не подменяем.
+    cat = 'graphics' if (key == 'ТЗ-02' and LANG == 'ru') else p['category']
+    status = T('c2.sheet_status_decide') if p.get('decision') else ('info' if cat == 'check' else 'todo')
     if p.get('decision'):
         decision_rows.append(len(rows))
     rc = p.get('roman_comment') or []
@@ -253,10 +268,15 @@ api('POST', f'https://sheets.googleapis.com/v4/spreadsheets/{SID}:batchUpdate',
 got = api('GET', f'https://sheets.googleapis.com/v4/spreadsheets/{SID}/values/'
           f'{urllib.parse.quote(TAB + f"!A1:K{len(rows) + 2}")}?valueRenderOption=FORMULA')
 vals = got.get('values', [])
-assert len(vals[0]) > 2 and vals[0][2].startswith('Секвенция'), 'легенда не на месте'
+assert len(vals[0]) > 2 and vals[0][2].startswith(LEGEND.split(':')[0]), 'легенда не на месте'   # 'Секвенция' / 'Sequence'
 assert vals[1][:len(HDR)] == HDR, 'шапка не совпала'
 assert len(vals) - 2 == len(rows), f'строк {len(vals)-2} вместо {len(rows)}'
 n_img = sum(1 for r in vals[2:] for c in r[6:9] if str(c).startswith('=IMAGE'))
 n_lnk = sum(str(r[5]).count('🔗') for r in vals[2:] if len(r) > 5)
 print(f'ALL PASS: {len(rows)} ТЗ, {n_img} кадров, {n_lnk} ссылок, {len(decision_rows)} решений')
 print(f'https://docs.google.com/spreadsheets/d/{SID}/edit#gid={gid}')
+if DUMP:
+    Path(DUMP).parent.mkdir(parents=True, exist_ok=True)
+    Path(DUMP).write_text(json.dumps({'schema': 'fake-sheets-dump-v1', 'tab': TAB, 'hdr': HDR, 'legend': LEGEND,
+                                      'rows': rows, 'calls': _CALLS}, ensure_ascii=False, indent=1), encoding='utf-8')
+    print(f'--dump-rows: вызовов {len(_CALLS)}, строк {len(rows)} → {DUMP} (Google API не вызывался)')

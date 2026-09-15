@@ -18,6 +18,8 @@ TC1 = re.compile(r'(?<![\d:])\d{1,2}:\d{2}(?![\d:])')
 TCR = re.compile(r'(?<![\d:])\d{1,2}:\d{2}(?:\s*[–-]\s*\d{1,2}:\d{2})?(?![\d:])')
 URL = re.compile(r'https?://[^\s;,)»"]+')
 KEYS = {'now', 'do', 'list', 'where', 'src', 'tl'}
+# фикстура YTUVI01: фрагменты, которые правка обязана сохранить. Требуются только если они ЕСТЬ в оригинале этой
+# ТЗ — у другого фильма номер ТЗ-12 не про «23.976».
 MUST = {'ТЗ-12': ['23.976', 'Interpret'], 'ТЗ-17': ['оставить ВТОРОЙ', '25:48']}
 
 
@@ -74,7 +76,7 @@ def guard(num, orig_parts, prop):
         if len(s) > 230 and not s.lstrip('▸ ').startswith('http'):
             warn.append(f'длинная строка ({len(s)} зн.): ' + s[:100] + '…')
     for lit in MUST.get(num, []):
-        if lit not in sp:
+        if lit in so and lit not in sp:
             hard.append('нет обязательного фрагмента: ' + lit)
     return hard, warn
 

@@ -24,7 +24,7 @@ import time
 from bisect import bisect_right
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402
 from doctab_lib import DOCS, get_doc, iter_tabs  # noqa: E402
 from doctab_lib import batch_update as _batch_update  # noqa: E402
 from typo_diff import diff_spans, typo_line, typo_offsets  # noqa: E402
@@ -39,19 +39,22 @@ DOC_ID = P.need('doc_id')
 # имя вкладки: TZ_TAB > карточка (tab_title) > дефолт. На новом проекте имя своё («ТЗ монтажёру · v1»),
 # и брать его из карточки надёжнее, чем помнить про env на каждом запуске.
 TAB_TITLE = (os.environ.get('TZ_TAB') or P.get('tab_title')
-             or str(P.profile('doc.tab_tz_template', 'ТЗ монтажёру · {ver}')).format(ver=P.CUT_VERSION))
+             or str(P.profile('doc.tab_tz_template', T('c2.tz_tab_template'))).format(ver=P.CUT_VERSION))
 # FROZEN — пары (doc_id, вкладка), которые правились руками и пересобирать их нельзя: из карточки
-# (frozen_tabs) + постоянный страж вкладки YTUVI01 (правки Романа 11.09). На чужом доке
-# совпадение имён не блокирует сборку: сверяем именно пару.
-FROZEN = {tuple(x) for x in P.get('frozen_tabs', [])} | {('1bzFOdAQFU_nqDAG2QCcaKBfrdgKFqPRsYK7ygjNU5Sk', 'ТЗ монтажёру · v3')}
+# (frozen_tabs) + профиля канала (doc.frozen_tabs) + постоянный страж вкладки YTUVI01 (правки Романа 11.09).
+# На чужом доке совпадение имён не блокирует сборку: сверяем именно пару.
+FROZEN = ({tuple(x) for x in P.get('frozen_tabs', [])} | {tuple(x) for x in (P.profile('doc.frozen_tabs', []) or [])}
+          | {('1bzFOdAQFU_nqDAG2QCcaKBfrdgKFqPRsYK7ygjNU5Sk', 'ТЗ монтажёру · v3')})
 # лист-чеклист — из карточки; пусто = листа у проекта ещё нет, строку про него не пишем
 # (ссылка на лист ДРУГОГО фильма в ТЗ — худший вариант: монтажёр уйдёт в чужой чек-лист).
 SHEET_URL = P.get('sheet_url') or ''
 WIDTHS = [34, 62, 22, 282, 276]          # v7: «Материал» шире; №/TC без переноса «ТЗ / -30», «9:32–10:1 / 0» (сумма 676pt)
 FONT = 9
 IMG_W = 262                               # превью на всю ширину колонки «Материал» (276 − поля)
-HDR = ['№', '⏱ TC', '', 'ТЗ монтажёру', 'Материал / ссылки']
-LABELS = ('❌ СЕЙЧАС ·', '✅ СДЕЛАТЬ ·', '📋 СПИСОК ·', '📍 ГДЕ ·', '📚 ИСТОЧНИК ·', '🎬 НА ТАЙМЛАЙНЕ ·')
+HDR = list(T('c2.tz_hdr'))                # ['№', '⏱ TC', '', 'ТЗ монтажёру', 'Материал / ссылки'] / EN
+# метки блоков s10 («❌ СЕЙЧАС ·» …) — core.lbl_* + « ·»
+LABELS = tuple(T(f'core.lbl_{k}') + ' ·' for k in ('now', 'do', 'list', 'where', 'source', 'timeline'))
+SPRINT_NAME = P.get('sprint_name') or T('c2.sprint_default', ch=P.CHANNEL)   # было зашито «YTUVI S1»
 CH_BG = {'Green': {'red': 0.85, 'green': 0.93, 'blue': 0.85},
          'Yellow': {'red': 0.98, 'green': 0.95, 'blue': 0.78}}
 CAT = {'graphics': '🎨', 'structure': '🧭', 'cut': '✂️', 'insert': '➕',
@@ -76,7 +79,7 @@ URL_RE = re.compile(r'https?://[^\s)\]»]+')
 # чужие строки-главы и картинки. Глава без заставки в кате (new_ch) — жёлтая, как «➕» у YTUVI01.
 _IMG, _NEW = P.get('ch_img', {}), set(int(x) for x in P.get('new_ch', []))
 CHAPTERS = [{'no': int(n), 'sec': int(t),
-             'name': ('➕ ' if int(n) in _NEW else '') + P.get('ch_name', {}).get(n, f'ГЛАВА {n}'),
+             'name': ('➕ ' if int(n) in _NEW else '') + P.get('ch_name', {}).get(n, f"{T('core.chapter')} {n}"),
              'img': _IMG.get(n, ''), 'color': 'Yellow' if int(n) in _NEW else 'Green'}
             for t, n in P.CHAPTERS]
 MATERIALS_FOLDER = P.folder_url('materials_id')           # дубль 1 из 4 — из карточки
@@ -113,7 +116,7 @@ def clip_link_line(text, drive_clips):
     for name in re.findall(r'RYA-[A-Z0-9]+-\d{3,4}', text or ''):
         e = drive_clips.get(name + '.MP4') or drive_clips.get(name + '.MOV')
         if e:
-            return f'🔗 клип: https://drive.google.com/file/d/{e[0]["id"]}/view'
+            return f'{T("c2.link_clip")}https://drive.google.com/file/d/{e[0]["id"]}/view'
     return None
 
 
@@ -134,9 +137,9 @@ def mat_cell(p, shots_ids, proj_ids, drive_clips):
         elif t:
             lines.append('• ' + t)
         for s in ([clip_link_line(it.get('t'), drive_clips)] +
-                  [f'🔗 файл: https://drive.google.com/file/d/{fid}/view'
+                  [f'{T("c2.link_file")}https://drive.google.com/file/d/{fid}/view'
                    for fid in [(proj_ids.get(it['img']) or shots_ids.get(it['img'])) if it.get('img') else None] if fid] +
-                  (['📚 источник: ' + clean(it['src'])] if it.get('src') else [])):
+                  ([T('c2.src_prefix') + clean(it['src'])] if it.get('src') else [])):
             if s:
                 lines.append(s)
                 small.append(s)
@@ -146,15 +149,16 @@ def mat_cell(p, shots_ids, proj_ids, drive_clips):
 def tz_row(p, shots_ids, proj_ids, drive_clips):
     title = clean(p['title'])
     body = f"【{title}】\n{p['nado']}"
+    dec = T('c2.decision_prefix')                          # '❓ РЕШЕНИЕ РОМАНА: '
     if p.get('decision'):
-        body += '\n❓ РЕШЕНИЕ РОМАНА: ' + p['decision']
+        body += '\n' + dec + p['decision']
     purple = []
     for c in p.get('roman_comment') or []:                 # s10 уже печатает «💬 …» в nado — не дублируем
         line = '💬 ' + c
         if line not in body:
             body += '\n' + line
         purple.append(line)
-    bold = [f'【{title}】'] + [l for l in LABELS if l in body] + (['❓ РЕШЕНИЕ РОМАНА:'] if p.get('decision') else [])
+    bold = [f'【{title}】'] + [l for l in LABELS if l in body] + ([dec.rstrip()] if p.get('decision') else [])
     mat, imgs, caps, small = mat_cell(p, shots_ids, proj_ids, drive_clips)
     return {'kind': 'tz', 'num': p['num'], 'cat': p['category'],
             'cells': [p['num'], f"⏱ {p.get('tc_range', p['v1_tc'])}", CAT.get(p['category'], '·'), body, mat],
@@ -172,32 +176,32 @@ def build_head(act, rejected):
     decisions = [p for p in act if p.get('decision')]
     li = lambda t: (0, '▸ ' + t, {})                                            # noqa: E731
     head = [
-        (1, f'{P.CODE} · {TAB_TITLE} — по секвенции Review_v6_tz (формат 11.09)', {}),
-        (0, 'Как читать:', {'bold': True}),
-        li('каждый таймкод — отдельной строкой: «таймкод ▸ что там», как в карте структуры'),
-        li('справа — крупное превью: наш драфт или стрелка на реальном кадре, кроп на то, о чём речь; под ним «таймкод · что видно»'),
-        li('опечатки — строкой «было → стало»: изменённые знаки выделены в доке красным'),
-        li('суммы — цифрами'),
-        (0, f'Рабочая секвенция: {P.CODE}_5_Review_v6_tz_v1 (или последняя _vN) — панель UXP → Review → Review_v6. Слои:', {'bold': True}),
-        li('V1 — оригинал монтажёра (не тронут)'),
-        li('V2 — футажи: видео и фото'),
-        li('V3 — инфографика, плашки терминов, мини-карты локаций, нарисованные исправления'),
-        li('V4 — плашки ТЗ: полный текст и ссылки (маркер клипа / кнопка панели «Copy ТЗ @ playhead»)'),
-        li('V5 — стрелки правок на кадре'),
-        li(f'V6 — главы, подглавы, прогресс перечислений гл.{"/".join(sorted(P.get("prog", {})))}'),
-        li(f'маркеры секвенции — только {len(CHAPTERS)} разноцветных глав; CTA сразу после рендера'),
-        (0, 'Ссылки:', {'bold': True}),
-        *([li(f'живой чек-лист со статусами — лист «ТЗ монтажёру»: {SHEET_URL}')] if SHEET_URL else []),
-        li(f'полный разбор с транскрибацией — вкладка «{P.get("nav_tab", "Ревью v2 · правки")}»'),
-        li(f'📁 все материалы (на каждом файле — коммент с ТЗ, таймкодом и источником): {MATERIALS_FOLDER}'),
-        li(f'📁 папка проекта: {PROJECT_FOLDER}'),
-        li(f'📁 спринт YTUVI S1: {SPRINT_FOLDER}'),
-        (2, f'❓ Решения Романа ({len(decisions)})', {}),
+        (1, T('c2.tz_head_title', code=P.CODE, tab=TAB_TITLE), {}),
+        (0, T('c2.how_to_read'), {'bold': True}),
+        li(T('c2.tz_head_read1')),
+        li(T('c2.tz_head_read2')),
+        li(T('c2.tz_head_read3')),
+        li(T('c2.tz_head_read4')),
+        (0, T('c2.tz_head_seq', code=P.CODE), {'bold': True}),
+        li(T('c2.tz_head_v1')),
+        li(T('c2.tz_head_v2')),
+        li(T('c2.tz_head_v3')),
+        li(T('c2.tz_head_v4')),
+        li(T('c2.tz_head_v5')),
+        li(T('c2.tz_head_v6', chs="/".join(sorted(P.get("prog", {}))))),
+        li(T('c2.tz_head_markers', n=len(CHAPTERS))),
+        (0, T('c2.tz_head_links'), {'bold': True}),
+        *([li(T('c2.tz_head_sheet', url=SHEET_URL, sheet_tab=T('c2.sheet_tab')))] if SHEET_URL else []),
+        li(T('c2.tz_head_nav', nav=P.get("nav_tab", T('c2.tz_head_nav_default').replace('{ver}', P.CUT_VERSION)))),
+        li(T('c2.tz_head_materials', url=MATERIALS_FOLDER)),
+        li(T('c2.tz_head_project', url=PROJECT_FOLDER)),
+        li(T('c2.tz_head_sprint', sprint=SPRINT_NAME, url=SPRINT_FOLDER)),
+        (2, T('c2.tz_head_decisions', n=len(decisions)), {}),
     ]
     for p in decisions:
         head.append((0, f"• {p['num']} · {p['v1_tc']} · {clean_title(p['title'])} — {p['decision']}", {}))
     if rejected:
-        head.append((0, '🚫 Снято Романом (09–10.09) — не менять, номера сохранены:', {'bold': True}))
+        head.append((0, T('c2.tz_head_rejected'), {'bold': True}))
         for p in rejected:
             head.append(li(f"{p['num']} · {clean_title(p['title'])}"))
     return head
@@ -207,7 +211,7 @@ def build_rows(pravki_all, shots_ids, proj_ids, drive_clips):
     """ЧИСТО: → (rows, head). rows[i] = dict(kind, cells[5], bold, purple, imgs, caps, small, typo, …)"""
     pr = copy.deepcopy(pravki_all)
     for i, p in enumerate(pr):
-        p['num'] = f'ТЗ-{i + 1:02d}'
+        p['num'] = tz_label(i + 1)                             # 'ТЗ-07' (ru) / 'FIX-07' (en) — то, что видит монтажёр
         p['_sec'] = tc_sec(p['v1_tc'].split('–')[0].split('/')[0])
     rejected = [p for p in pr if p.get('status') == 'rejected']      # Роман снял — номера сохранены, строк нет
     act = [p for p in pr if p.get('status') != 'rejected']
@@ -222,7 +226,7 @@ def build_rows(pravki_all, shots_ids, proj_ids, drive_clips):
     for p in act:
         if p['_sec'] is None:                                  # ТЗ-30 «весь фильм» — первой строкой
             r = tz_row(p, shots_ids, proj_ids, drive_clips)
-            r['cells'][1] = '⏱ весь фильм'
+            r['cells'][1] = T('c2.whole_film')
             rows.append(r)
     for ci, ch in enumerate(CHAPTERS):
         ch_end = CHAPTERS[ci + 1]['sec'] if ci + 1 < len(CHAPTERS) else int(P.duration_sec()) + 1
@@ -545,5 +549,24 @@ def main(force=False):
     print(f'https://docs.google.com/document/d/{DOC_ID}/edit?tab={tab_id}')
 
 
-if __name__ == '__main__':
+def dump_main(path):
+    """--dump-requests FILE: тот же main() на офлайн-двойнике Docs (shared/fake_docs.py) — все batchUpdate
+    ложатся в FILE, Google API не вызывается (golden-регрессия, review.py selftest)."""
+    sys.path.insert(0, str(ROOT / 'shared'))
+    from fake_docs import FakeDocs  # noqa: E402
+    fd = FakeDocs()
+    g = globals()
+    g['get_doc'], g['_batch_update'] = fd.get_doc, fd.batch_update
     main()
+    fd.dump(path, {'tab_title': TAB_TITLE})
+
+
+def cli():
+    if '--dump-requests' in sys.argv:
+        dump_main(sys.argv[sys.argv.index('--dump-requests') + 1])
+    else:
+        main()
+
+
+if __name__ == '__main__':
+    cli()

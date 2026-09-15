@@ -15,7 +15,7 @@ usage: s9_materials_drive.py [--dry-run] [--only screens|graphics]
 import json, mimetypes, re, subprocess, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402
 from doctab_lib import access_token  # noqa: E402
 from terms_catalog import TERMS, LOCS  # noqa: E402
 from make_infographics_v6_data import SUB, PROG  # noqa: E402
@@ -153,18 +153,17 @@ if ONLY in ('all', 'screens'):
             subprocess.run(['cp', str(frame), str(out)], check=True)
         else:
             continue
-        num = a['tz']
+        num = tz_label(a['tz'])                    # ключ данных «ТЗ-NN» → подпись ТЗ-07 / FIX-07
         jobs.append(('v6_audit_screens', out, out.name,
-                     f'{num} · {tc(a["t0"])} · {a["kind"]}: {a["text"]} — кадр рендера v1 с отметкой места ошибки (стрелка = слой V5 секвенции Review_v6).', True))
+                     T('c2.drv_err', num=num, tc=tc(a["t0"]), kind=a["kind"], text=a["text"], ver=P.CUT_VERSION), True))
         fix = MOCK / f'fix_{fn}.png'
         if a.get('fix') and fix.exists():
             jobs.append(('v6_audit_screens', fix, fix.name,
-                         f'{num} · {tc(a["t0"])} · драфт ИСПРАВЛЕННОГО титра (слой V3): {a["fix"]["text"]}. Перерисовать в стиле канала.', True))
+                         T('c2.drv_fix', num=num, tc=tc(a["t0"]), fix=a["fix"]["text"]), True))
         # v7: варианты оформления (ТЗ-21 цены: А — все цифры, Б — «$X,X МЛН» + мелко цифрами) — Роман выбирает
         for vf in (sorted(MOCK.glob(f'fix_{fn}_*.png')) if a.get('fix') else []):
             jobs.append(('v6_audit_screens', vf, vf.name,
-                         f'{num} · {tc(a["t0"])} · драфт ИСПРАВЛЕНИЯ (слой V3), вариант {vf.stem.rsplit("_", 1)[1]} — '
-                         f'сумма цифрами. Роман выбирает А или Б; перерисовать в стиле канала.', True))
+                         T('c2.drv_variant', num=num, tc=tc(a["t0"]), v=vf.stem.rsplit("_", 1)[1]), True))
 
 # ── 2. новая графика ──
 if ONLY in ('all', 'graphics'):
@@ -176,7 +175,7 @@ if ONLY in ('all', 'graphics'):
         p = MOCK / f'term_{key}.png'
         if p.exists() and key in by_key:
             jobs.append(('v6_graphics', p, p.name,
-                         f'V3 · термин «{title}» ({sub}) — плашка-определение при каждом упоминании: {", ".join(by_key[key])}. Прозрачный PNG 4K, драфт — перерисовать в стиле канала.', False))
+                         T('c2.drv_term', title=title, sub=sub, tcs=", ".join(by_key[key])), False))
     seen = set()
     for g in terms['term_groups']:
         if len(g['keys']) < 2:
@@ -185,7 +184,7 @@ if ONLY in ('all', 'graphics'):
         if name in seen or not (MOCK / name).exists():
             continue
         seen.add(name)
-        jobs.append(('v6_graphics', MOCK / name, name, f'V3 · группа терминов {" + ".join(g["keys"])} @ {g["tc"]} — одна плашка на 2–3 определения, прозрачный PNG 4K.', False))
+        jobs.append(('v6_graphics', MOCK / name, name, T('c2.drv_termgrp', keys=" + ".join(g["keys"]), tc=g["tc"]), False))
     loc_tc = {}
     for m in terms['locs']:
         loc_tc.setdefault(m['key'], []).append(m['tc'])
@@ -193,45 +192,39 @@ if ONLY in ('all', 'graphics'):
         p = MOCK / f'map_{key}.png'
         if p.exists() and key in loc_tc:
             jobs.append(('v6_graphics', p, p.name,
-                         f'V3 · мини-карта «{label}» — при каждом упоминании локации: {", ".join(loc_tc[key])}. География Natural Earth 50m (public domain), координаты месторождений сверены (GIA/Lotus). Прозрачный PNG 4K.', False))
+                         T('c2.drv_map', label=label, tcs=", ".join(loc_tc[key])), False))
     # карта со сноской «одна страна — два имени» ставится только на первом упоминании места
     for m in terms['locs']:
         if not m.get('note'):
             continue
         nm = f"map_{m['key']}_note.png"
         if (MOCK / nm).exists():
-            jobs.append(('v6_graphics', MOCK / nm, nm,
-                         f"V3 · мини-карта со сноской про переименование — только на первом упоминании @{m['tc']}. Прозрачный PNG 4K.", False))
-    for name, txt in (('mapfull_burma.png', 'V3 · Мьянма (Бирма): Могок и Монг Су на реальной карте @17:27 (замена рисованной схемы 052).'),
-                      ('mapfull_belt.png', 'V3 · «Рубиновый пояс», шаг 1 из 3 @19:30 — Мьянма, Мозамбик, Таиланд и Камбоджа (замена английского титра).'),
-                      ('mapfull_belt_2.png', 'V3 · «Рубиновый пояс», шаг 2 из 3 @19:33 — Вьетнам, Таджикистан, Афганистан, Пакистан, Шри-Ланка.'),
-                      ('mapfull_belt_3.png', 'V3 · «Рубиновый пояс», шаг 3 из 3 @19:37 — Танзания, Мадагаскар, Кения, Малави.'),
-                      ('info_mohs_what_t.png', 'V3 · «Что такое шкала Мооса» — прозрачная панель по центру (видео видно) @13:56.'),
-                      ('info_synthesis_list_t.png', 'V3 · «3 способа вырастить рубин» — прозрачная панель @30:04.'),
-                      ('info_treatments_scheme_t.png', 'V3 · «Обработка рубинов: 6 способов» — прозрачная панель @33:45 и @38:20.')):
+            jobs.append(('v6_graphics', MOCK / nm, nm, T('c2.drv_map_note', tc=m['tc']), False))
+    # фикстуры YTUVI01 (карты/панели по именам файлов) — коммент только если такой файл есть в mockups
+    for name in ('mapfull_burma.png', 'mapfull_belt.png', 'mapfull_belt_2.png', 'mapfull_belt_3.png',
+                 'info_mohs_what_t.png', 'info_synthesis_list_t.png', 'info_treatments_scheme_t.png'):
         if (MOCK / name).exists():
-            jobs.append(('v6_graphics', MOCK / name, name, txt, False))
+            jobs.append(('v6_graphics', MOCK / name, name, T(f'c2.drv_fx.{Path(name).stem}'), False))
     # сводные карты названий — нужны и в доке, поэтому also_shots=True (в док картинка идёт из shots_ids)
-    for name, txt in (('info_namemap_places.png', 'Справочник монтажёру · КАРТА НАЗВАНИЙ: места — что звучит в озвучке и что ставим на экран (ТЗ-76).'),
-                      ('info_namemap_terms.png', 'Справочник монтажёру · КАРТА НАЗВАНИЙ: термины, часть 1 (ТЗ-75).'),
-                      ('info_namemap_terms_2.png', 'Справочник монтажёру · КАРТА НАЗВАНИЙ: термины, часть 2 (ТЗ-75).')):
+    for name in ('info_namemap_places.png', 'info_namemap_terms.png', 'info_namemap_terms_2.png'):
         if (MOCK / name).exists():
-            jobs.append(('v6_graphics', MOCK / name, name, txt, True))
+            jobs.append(('v6_graphics', MOCK / name, name, T(f'c2.drv_fx.{Path(name).stem}'), True))
     for i, (sec, ch, label) in enumerate(SUB):
         p = MOCK / f'sub_{i + 1:02d}.png'
         if p.exists():
-            jobs.append(('v6_graphics', p, p.name, f'V6 · подглава «{label}» (глава {ch:02d}) @{tc(sec)} — прозрачная плашка, левый борт.', False))
+            jobs.append(('v6_graphics', p, p.name, T('c2.drv_sub', label=label, ch=ch, tc=tc(sec)), False))
     for ch, (title, items, acc) in PROG.items():
         for k in range(1, len(items) + 1):
             p = MOCK / f'prog_{ch}_{k}.png'
             if p.exists():
-                jobs.append(('v6_graphics', p, p.name, f'V6 · прогресс перечисления гл.{ch} «{title}»: шаг {k} из {len(items)} — {items[k - 1]}.', False))
+                jobs.append(('v6_graphics', p, p.name,
+                             T('c2.drv_prog', ch=ch, title=title, k=k, n=len(items), item=items[k - 1]), False))
     start = int(audit.get('new_tz_from', 33))
     for i, p in enumerate(pravki):
         if i + 1 >= start:
             lt = MOCK / f'tz_lt_{i + 1:02d}.png'
             if lt.exists():
-                jobs.append(('v6_graphics', lt, lt.name, f'ТЗ-{i + 1:02d} · {p["v1_tc"]} · плашка ТЗ (слой V4): {p["title"]}.', False))
+                jobs.append(('v6_graphics', lt, lt.name, T('c2.drv_lt', num=tz_label(i + 1), tc=p["v1_tc"], title=p["title"]), False))
 
 print(f'jobs: {len(jobs)}  (dry={DRY})')
 folders = {}

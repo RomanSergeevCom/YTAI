@@ -39,7 +39,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402
 
 # ── константы приёмки ─────────────────────────────────────────────────────
 ORPHAN_LINES = 3            # заголовок ТЗ в последних N строках страницы — сирота
@@ -56,11 +56,17 @@ TC = r'~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?'
 TCR = re.compile(rf'(?<![\d:]){TC}(?![\d:])')
 CAP_RE = re.compile(r'^\d{1,2}:\d{2}(?:[–-]\d{1,2}:\d{2})?\s·\s\S')
 URL_RE = re.compile(r'https?://\S+')
-QUOTE_RE = re.compile(r'«[^«»]*»')
+QUOTE_RE = re.compile(T('c2.qc_quote_rx'))                    # «…» (ru); «…» и “…” (en)
 LABELS = ('❌', '✅', '📋', '📍', '📚', '🎬', '💬', '❓')
-JARGON = [re.compile(r'(?<![\w/.-])[hsf]\d{3,4}(?![\w-])'),
-          re.compile(r'\bнот[аы]\s+\d'), re.compile(r'\bкоммент\w*\s+\d'),
-          re.compile(r'ночн\w+ разбор'), re.compile(r'\bревью\s*№')]
+JARGON = [re.compile(r'(?<![\w/.-])[hsf]\d{3,4}(?![\w-])')]
+if LANG == 'ru':                                              # русский жаргон ревью — только на русских вкладках
+    JARGON += [re.compile(r'\bнот[аы]\s+\d'), re.compile(r'\bкоммент\w*\s+\d'),
+               re.compile(r'ночн\w+ разбор'), re.compile(r'\bревью\s*№')]
+# что сборщик вкладки пишет (doc_tab_tz_v3): шапка таблицы, префикс номера, «✅ СДЕЛАТЬ ·», «было «…» → стало»
+TZ_HDR = T('c2.tz_hdr')                                       # ['№', '⏱ TC', '', 'ТЗ монтажёру', 'Материал / ссылки']
+TZ_PREFIX = T('core.tz_prefix')                               # 'ТЗ' / 'FIX'
+DO_LABEL = T('core.lbl_do').split(' ', 1)[1] + ' ·'           # 'СДЕЛАТЬ ·' / 'DO ·'
+WASNOW_RE = re.compile(re.escape(T('core.was_pre')) + '.*?' + re.escape(T('core.was_mid').rstrip(' «“')))
 ENUM_PATTERNS = [(' → ', re.compile(r'\s→\s')), (' / ', re.compile(r'\s/\s')),
                  (' | ', re.compile(r'\s\|\s')), (' vs ', re.compile(r'\svs\s', re.I))]
 
@@ -146,10 +152,10 @@ def find_columns(pages):
     """Границы колонок по строке-шапке «№ | ⏱ TC | | ТЗ монтажёру | Материал / ссылки»."""
     for pg in pages:
         for mat in pg['frags']:
-            if not clean(mat.text).startswith('Материал'):
+            if not clean(mat.text).startswith(TZ_HDR[4].split(' ')[0]):               # 'Материал' / 'Material'
                 continue
             same = [f for f in pg['frags'] if abs(f.top - mat.top) <= LINE_TOL]
-            tz = next((f for f in same if clean(f.text).startswith('ТЗ монтажёру')), None)
+            tz = next((f for f in same if clean(f.text).startswith(TZ_HDR[3])), None)  # 'ТЗ монтажёру' / 'Edit notes'
             tc = next((f for f in same if clean(f.text) in ('⏱ TC', 'TC', '⏱')), None)
             if tz:
                 x_tc = tc.left - 4 if tc else tz.left - 90
@@ -218,12 +224,12 @@ def read_rows(pages, cols):
         i = 0
         while i < len(numl):
             t = clean(numl[i]['text'])
-            m = re.match(r'^ТЗ-(\d{1,2})$', t)
+            m = re.match(rf'^{re.escape(TZ_PREFIX)}-(\d{{1,2}})$', t)
             if m and len(m.group(1)) == 2:
-                starts.append((numl[i]['top'], 'tz', f'ТЗ-{m.group(1)}'))
+                starts.append((numl[i]['top'], 'tz', f'{TZ_PREFIX}-{m.group(1)}'))
             elif m and i + 1 < len(numl) and re.match(r'^\d$', clean(numl[i + 1]['text'])) \
                     and numl[i + 1]['top'] - numl[i]['top'] <= 18:
-                starts.append((numl[i]['top'], 'tz', f'ТЗ-{m.group(1)}{clean(numl[i + 1]["text"])}'))
+                starts.append((numl[i]['top'], 'tz', f'{TZ_PREFIX}-{m.group(1)}{clean(numl[i + 1]["text"])}'))
                 wrapped += 1
                 i += 1
             i += 1
@@ -312,6 +318,9 @@ def strip_quotes(t):
     # незакрытая цитата (перенос через страницу): всё после « — цитата; незакрытая » — всё до неё
     t = re.sub(r'«[^»]*$', '«', t)
     t = re.sub(r'^[^«]*»', '»', t)
+    if LANG == 'en':                                          # те же правила для “…”
+        t = re.sub(r'“[^”]*$', '“', t)
+        t = re.sub(r'^[^“]*”', '”', t)
     return t
 
 
@@ -329,7 +338,7 @@ def check_text(qc, tz, lines_tz, lines_mat, sev_high='high', is_head=False):
     for ln in lines_tz + lines_mat:
         t = ln['text']
         s = t.lstrip(' \u2007\u00a0')
-        if is_head and s.startswith('\u2116'):                          # \u0441\u0442\u0440\u043e\u043a\u0430-\u0448\u0430\u043f\u043a\u0430 \u0442\u0430\u0431\u043b\u0438\u0446\u044b
+        if is_head and s.startswith(TZ_HDR[0]):                         # \u0441\u0442\u0440\u043e\u043a\u0430-\u0448\u0430\u043f\u043a\u0430 \u0442\u0430\u0431\u043b\u0438\u0446\u044b ('\u2116' / '#')
             continue
         if '▸ ▸' in re.sub(r'[ \u2007\u00a0]+', ' ', s) or '▸▸' in s:
             qc.add(ln['page'], tz, hi, 'garbage', '«▸ ▸»: ' + s)
@@ -350,14 +359,14 @@ def check_text(qc, tz, lines_tz, lines_mat, sev_high='high', is_head=False):
     for pa in paragraphs(lines_tz, head=is_head):
         t = pa['text']
         s = t.lstrip('@')
-        if s.startswith(('💬', '❓')) or (is_head and s.startswith('№')):
+        if s.startswith(('💬', '❓')) or (is_head and s.startswith(TZ_HDR[0])):
             continue
         n_tc = len(TCR.findall(URL_RE.sub('', s)))
         if n_tc >= 2:
             qc.add(pa['page'], tz, hi, 'multi_tc', f'{n_tc} таймкода в строке: {s}')
         q = strip_quotes(s)
         q = re.sub(r'«»(\s*/\s*«»)+', '«»', q)                    # «строка титра» / «вторая строка» — цитата в две строки
-        if not re.search(r'было «.*?» → стало', s):
+        if not WASNOW_RE.search(s):                                # «было «…» → стало» / “was “…” → now”
             q_out = re.sub(r'\([^()]*\)', '()', q)                  # « / » только внутри скобок — координаты, пояснение → low
             for name, rx in ENUM_PATTERNS:
                 n_hit = len(rx.findall(q))
@@ -386,7 +395,7 @@ def check_row(qc, row, pages_by_n, n_pages):
     lt, lm = row['lines']['tz'], row['lines']['mat']
     check_text(qc, tz, lt, lm)
     text_all = '\n'.join(ln['text'] for ln in lt)
-    if not ('✅' in text_all or 'СДЕЛАТЬ ·' in text_all):
+    if not ('✅' in text_all or DO_LABEL in text_all):
         qc.add(row['page'], tz, 'high', 'no_do', 'нет блока ✅ СДЕЛАТЬ')
     # сирота: на первой странице строки ≤ ORPHAN_LINES строк текста, а сама строка продолжается дальше
     cont = len(row['pages']) > 1
@@ -530,7 +539,7 @@ def main():
     for tool in ('pdftohtml', 'pdftotext', 'pdfimages', 'pdftoppm'):
         if not shutil.which(tool):
             raise SystemExit(f'нет {tool} — brew install poppler')
-    title = a.tab or P.get('tab_title') or str(P.profile('doc.tab_tz_template', 'ТЗ монтажёру · {ver}')).format(ver=P.CUT_VERSION)
+    title = a.tab or P.get('tab_title') or str(P.profile('doc.tab_tz_template', T('c2.tz_tab_template'))).format(ver=P.CUT_VERSION)
     qdir = W6 / 'doc_qc'
     qdir.mkdir(parents=True, exist_ok=True)
     if a.pdf:
@@ -544,7 +553,7 @@ def main():
         raise SystemExit(f'нет {pdf}')
 
     pr = json.load(open(M / 'pravki_v2.json', encoding='utf-8'))['all']
-    act = [(f'ТЗ-{i + 1:02d}', p) for i, p in enumerate(pr) if p.get('status') != 'rejected']
+    act = [(tz_label(i + 1), p) for i, p in enumerate(pr) if p.get('status') != 'rejected']     # как в doc_tab_tz_v3
     shots = json.load(open(M / 'shots_ids.json', encoding='utf-8')) if (M / 'shots_ids.json').exists() else {}
     n_ch = len(P.CHAPTERS)
     n_expected_imgs = sum(1 for _ in (P.get('ch_img') or {})) + sum(
@@ -618,7 +627,7 @@ def main():
     for i in qc.issues:
         c = counts['by_criterion'].setdefault(i['criterion'], {'high': 0, 'low': 0})
         c[i['severity']] += 1
-    tz_with_issues = sorted({i['tz'] for i in qc.issues if i['tz'].startswith('ТЗ-')})
+    tz_with_issues = sorted({i['tz'] for i in qc.issues if i['tz'].startswith(TZ_PREFIX + '-')})
     counts['tz_with_issues'] = len(tz_with_issues)
     rep = {'schema': 'doc-qc-v1', 'project': P.PROJECT, 'tab': title, 'pdf': str(pdf), 'pages': n_pages,
            'columns': cols, 'issues': sorted(qc.issues, key=lambda i: (i['severity'] != 'high', i['page'], i['tz'])),

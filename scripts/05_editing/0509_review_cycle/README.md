@@ -46,8 +46,10 @@ YTs/{CH}/review_profile.json   профиль канала (стиль, кано
 preview_qc_local; `_bootstrap.py` — единая точка путей) · `cloud/` (pack, wf_judge, collect, salvage,
 wf_verdict_doc, wf_structure_src; `_legacy/` — старые 250-агентные воркфлоу, не запускать) · `montage/`
 (режим montage_tz) · `shared/` (card_tools, align, risk_registry, acts_compact, phone_brief, producer_page,
-notes_sync, recover_from_session_log, shot, peek) · `memex/` (push/pull/start/status/pause/resume/stop/watchdog) ·
-`geo/` · `templates/` · `examples/` (YTUVI01 данные, YTCH12 v4, YTEVO02 — только как справка) · `docs/contracts.md`.
+notes_sync, recover_from_session_log, shot, peek, i18n + i18n_strings/, golden, fake_docs, chapters_from_plan) ·
+`memex/` (push/pull/start/status/pause/resume/stop/watchdog) · `geo/` · `templates/` · `examples/` (YTUVI01 данные, YTCH12 v4,
+YTEVO02 — только как справка; `ytuvi02_golden/` — эталон RU-регрессии; `ytcr_en_fixture/` — EN-фикстура selftest) ·
+`docs/contracts.md`.
 
 <!-- stages:begin -->
 ### Стадии cut_review (генерится `review.py docs`)
@@ -65,25 +67,26 @@ notes_sync, recover_from_session_log, shot, peek) · `memex/` (push/pull/start/s
 | 10 | cloud | mac | pack → Workflow wf_judge (J≤4, F, V, S) → collect | все пакеты done, покрытие 100 % |
 | 11 | apply | mac | s8_apply_audit: классовый фильтр, одна ТЗ на экран | audit_v6.json + pravki |
 | 12 | align | mac | align: n-gram кат ↔ план/прошлые версии (card.align_against) | align.json |
-| 13 | risk | mac | risk_registry (YTCH): ⚠️ на подтверждение фонда, не ⛔ | risk.json |
-| 14 | acts | mac | acts_compact Qwen3-8B по актам + проверки структуры (YTCH) | acts_compact.json |
-| 15 | verdict | mac | 1 облачный агент: вердикт, обязательные правки, структура (YTCH) | verdict.json применён |
-| 16 | terms | mac | terms_index | terms_v6.json |
-| 17 | format_tz | mac | s10_format_tz + lint | lint_v7.json |
-| 18 | polish | mac | s14_polish_local Qwen3-8B по одной строке + guard | длинных строк 0 |
-| 19 | sources | mac | s11_apply_sources | — |
-| 20 | render | mac | make_infographics_v6 (chrome-headless 4K PNG) | PNG в mockups |
-| 21 | review_json | mac | make_review_v6 (ytai-part-v1, 6 слоёв) | {CODE}_review_v6.json |
-| 22 | mock | mac | mockbuild_v6.js через partsBuilder | 0 ошибок |
-| 23 | previews | mac | s7 + s12 --render + preview_qc_local | qc 0 high |
-| 24 | drive | mac | s9_materials_drive + s12 --upload/--apply | файлы с комментами |
-| 25 | sheet | mac | tz_sheet | лист обновлён |
-| 26 | doc_tz | mac | doc_tab_tz_v4 (гейт: review.py edits) | вкладка записана |
-| 27 | doc_nav | mac | doc_tab_review_v1 (навигатор) | вкладка записана |
-| 28 | verify | mac | doc_tab_tz_v4_verify | ALL PASS |
-| 29 | doc_qc | mac | doc_pdf_qc (pdftotext/pdfimages/PIL) | 0 high |
-| 30 | phone_brief | mac | phone_brief → Telegram | файл ≤1 МБ отправлен |
-| 31 | producer_page | mac | producer_page / review_page | HTML |
+| 13 | chapters | mac | chapters_from_plan --apply: главы ката по плану частей (card.chapters_plan) через align; chapter экранов перепомечается | chapters_proposal.json (инверсия → карточка не тронута) |
+| 14 | risk | mac | risk_registry (YTCH): ⚠️ на подтверждение фонда, не ⛔ | risk.json |
+| 15 | acts | mac | acts_compact Qwen3-8B по актам + проверки структуры (YTCH) | acts_compact.json |
+| 16 | verdict | mac | 1 облачный агент: вердикт, обязательные правки, структура (YTCH) | verdict.json применён |
+| 17 | terms | mac | terms_index | terms_v6.json |
+| 18 | format_tz | mac | s10_format_tz + lint | lint_v7.json |
+| 19 | polish | mac | s14_polish_local Qwen3-8B по одной строке + guard | длинных строк 0 |
+| 20 | sources | mac | s11_apply_sources | — |
+| 21 | render | mac | make_infographics_v6 (chrome-headless 4K PNG) | PNG в mockups |
+| 22 | review_json | mac | make_review_v6 (ytai-part-v1, 6 слоёв) | {CODE}_review_v6.json |
+| 23 | mock | mac | mockbuild_v6.js через partsBuilder | 0 ошибок |
+| 24 | previews | mac | s7 + s12 --render + preview_qc_local | qc 0 high |
+| 25 | drive | mac | s9_materials_drive + s12 --upload/--apply | файлы с комментами |
+| 26 | sheet | mac | tz_sheet | лист обновлён |
+| 27 | doc_tz | mac | doc_tab_tz_v4 (гейт: review.py edits) | вкладка записана |
+| 28 | doc_nav | mac | doc_tab_review_v1 (навигатор) | вкладка записана |
+| 29 | verify | mac | doc_tab_tz_v4_verify | ALL PASS |
+| 30 | doc_qc | mac | doc_pdf_qc (pdftotext/pdfimages/PIL) | 0 high |
+| 31 | phone_brief | mac | phone_brief → Telegram | файл ≤1 МБ отправлен |
+| 32 | producer_page | mac | producer_page / review_page | HTML |
 
 ### Стадии montage_tz
 | # | стадия | хост | инструмент | гейт |
@@ -124,6 +127,11 @@ notes_sync, recover_from_session_log, shot, peek) · `memex/` (push/pull/start/s
 
 - Классы ТЗ: только `typo · grammar · fact · currency · language · mismatch · foreign_trace` (+`structure` у YTCH);
   `design/taste/pacing` не попадают в ТЗ по коду (профиль `tz_classes`). Целевой размер списка не задаётся.
+- Язык поверхностей монтажёра — профиль канала `lang` (карточка `lang` перебивает): `en` (YTCR, монтажёр Aymen) → ТЗ,
+  таймлайн, вкладки дока, лист, графика и промпты облака по-английски, `FIX-NN` вместо `ТЗ-NN`; всё прочее = `ru`
+  байт-в-байт. Строки — `shared/i18n_strings/<owner>.py` (контракт §10). Логи и поверхности Романа — по-русски.
+- Известные не-ошибки ката (дыра в футаже, недоделанные экраны) — `card.exclusions [{t0, t1, reason}]`, не ТЗ.
+- Любая правка кода → `review.py selftest` (RU golden YTUVI02 байт-в-байт + EN-фикстура YTCR + полнота i18n) до commit/push.
 - Номера ТЗ никогда не переиспользуются; `status: rejected` = Роман снял строку в доке (`review.py edits`).
 - Внешние id (док, Drive, лист) — только из карточки; пусто = отказ, не фолбэк на прошлый фильм.
 - Чувствительное (YTCH) = ⚠️ «на подтверждение фонда/блюр», не ⛔.
@@ -132,7 +140,12 @@ notes_sync, recover_from_session_log, shot, peek) · `memex/` (push/pull/start/s
 ## Грабли
 
 - alpha-рендер: `html,body{background:transparent}`; chrome-headless-shell (GUI-Chrome в headless виснет).
-- Стиллы ≤4,8 с; tc на сетке 25p; `sequence_name` не кончать на `_v\d`.
+- Стиллы ≤4,8 с; tc на сетке `fps` карточки (25p; 29.97 = 30000/1001 точной дробью `P.FPS_EXACT` — десятичные 29.97
+  за 30 минут уводят tc на ~2 кадра); `sequence_name` не кончать на `_v\d`.
+- EN-роутер ищет опечатки словарём pyspellchecker (0.9.0, поставлен руками в `.venv_llm` на Mac и Memex, в requirements
+  нет); без него — фолбэк `/usr/share/dict/web2`.
+- Polish (s14 Qwen) у `lang en` пропускается; главы ката по плану частей — стадия `chapters` (card `chapters_plan` +
+  `align_against`), инверсия порядка глав карточку не трогает.
 - OCR путает Й/И — такие пары никогда не auto_confirm; стрелку ставить на секунду ДОПИСАННОГО титра.
 - `get_doc` тянет весь док (~30 с) — шапку вкладки вставлять одной пачкой.
 - Верх кадра занят титрами ката: подглавы/прогресс слева-посередине, термины/карты справа-посередине.

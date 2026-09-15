@@ -28,7 +28,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG  # noqa: E402
 
 REVIEW_DIR = P.REVIEW_DIR
 MOCK = P.MOCK
@@ -54,15 +54,14 @@ FONT = '/Library/Fonts/Arial Unicode.ttf'
 FW, FH = 3840, 2160
 PW, PH = 1600, 900
 # готовые драфты, которые у ТЗ были, но в материалы не попали (Роман: «видно, про что говоришь»)
-ATTACH = {
-    'ТЗ-21': [('fix_tz21b.png', 'Драфт: цена Sunrise Ruby — два варианта оформления'),
-              ('fix_tz21c.png', 'Драфт: вес Колокола Свободы — 8500 карат'),
-              ('fix_tz21d.png', 'Драфт: цена Estrela de Fura — два варианта оформления')],
-    'ТЗ-31': [('fix_tz31b.png', 'Драфт исправленного титула')],
-    'ТЗ-32': [('fix_tz32b.png', 'Драфт исправленной плашки')],
-    'ТЗ-10': [('fix_tz10b.png', 'Драфт: «ШКАЛА МООСА» по-русски')],
-}
-SRC_FIX = 'наш драфт исправления поверх кадра v1 (слой V3) — перерисовать в стиле канала'
+# Это фикстуры YTUVI01 (ключи — внутренние «ТЗ-NN»). ru — как было (привязываются всегда); en — только если
+# файл драфта реально лежит в mockups, иначе второй/двадцать первый ТЗ чужого фильма получил бы текст про рубины.
+_ATTACH_FILES = {'ТЗ-21': ('fix_tz21b.png', 'fix_tz21c.png', 'fix_tz21d.png'), 'ТЗ-31': ('fix_tz31b.png',),
+                 'ТЗ-32': ('fix_tz32b.png',), 'ТЗ-10': ('fix_tz10b.png',)}
+ATTACH = {num: [(img, T(f'c2.pv_att.{Path(img).stem}')) for img in imgs if LANG == 'ru' or (MOCK / img).exists()]
+          for num, imgs in _ATTACH_FILES.items()}
+ATTACH = {num: lst for num, lst in ATTACH.items() if lst}
+SRC_FIX = T('c2.pv_src_fix')
 C_RED, C_GREEN, C_BLUE = (193, 39, 45), (46, 139, 62), (31, 79, 209)
 
 
@@ -238,14 +237,14 @@ def render():
         base = frame4k(path=a['frame'])
         box = norm169(o['box']) if o.get('box') else box169(x * FW, y * FH, (x + w) * FW, (y + h) * FH,
                                                             minw=o.get('minw', 0.40), padx=0.06, pady=0.10)
-        panels = [tag(fit(base.crop(box)), 'БЫЛО', C_RED)]
+        panels = [tag(fit(base.crop(box)), T('c2.pv_tag_was'), C_RED)]                  # БЫЛО / WAS
         va, vb = MOCK / f'{Path(img).stem}_A.png', MOCK / f'{Path(img).stem}_B.png'
         variants = va.exists() and vb.exists()
         if variants:
-            panels += [tag(fit(comp(base, va).crop(box)), 'ВАРИАНТ А', C_BLUE),
-                       tag(fit(comp(base, vb).crop(box)), 'ВАРИАНТ Б', C_BLUE)]
+            panels += [tag(fit(comp(base, va).crop(box)), T('c2.pv_tag_opt_a'), C_BLUE),  # ВАРИАНТ А / OPTION A
+                       tag(fit(comp(base, vb).crop(box)), T('c2.pv_tag_opt_b'), C_BLUE)]
         else:
-            panels.append(tag(fit(comp(base, MOCK / img).crop(box)), 'СТАЛО', C_GREEN))
+            panels.append(tag(fit(comp(base, MOCK / img).crop(box)), T('c2.pv_tag_now'), C_GREEN))  # СТАЛО / NOW
         return {'preview': save(stack(panels), f'dp_{Path(img).stem}.jpg'), 't': int(a['t0']), 'kind': 'fix',
                 'variants': variants}
 
@@ -349,15 +348,15 @@ def upload():
 
 # ═══════════════════ apply ═══════════════════
 def short_t(t):
-    return re.sub(r'^(Драфт(?:-мокап)?|Мокап|Кадр|Пример кадра)\s*[:—-]?\s*', '', clean(t), flags=re.I)
+    return re.sub(T('c2.pv_short_rx'), '', clean(t), flags=re.I)        # «Драфт: …» / «Draft: …» → «…»
 
 
 def mk_cap(e, mr):
     tc = tcs(e['t']) if e.get('t') is not None else ''
     if e['kind'] == 'fix':
-        return f"{tc} · было / {'варианты А и Б' if e.get('variants') else 'стало'}", False
+        return f"{tc} · {T('c2.pv_cap_wasvar') if e.get('variants') else T('c2.pv_cap_wasnow')}", False
     if e['kind'] == 'err':
-        return f'{tc} · где ошибка (стрелка на кадре)', False
+        return f"{tc} · {T('c2.pv_cap_err')}", False
     st = short_t(mr.get('t'))
     if len(st) <= 90:
         return f'{tc} · {st}', True
@@ -418,7 +417,7 @@ def auto_cap(mr, seg_t, tz_tc):
     m = _TCX.search(t)
     tc = m.group(1) if m else (tcs(seg_t[mr['img']][0]) if seg_t.get(mr.get('img')) else tz_tc)
     what = _TCX.sub('', t, count=1) if m else t
-    what = re.sub(r'^\s*[•·—:-]*\s*(Драфт(?:-мокап)?|Мокап|Кадр(?: ката)?|Пример кадра|Реф)\b\s*[:—-]?\s*', '', what, flags=re.I)
+    what = re.sub(T('c2.pv_auto_rx'), '', what, flags=re.I)
     what = clean(what).strip(' •·—-:')
     cap = f'{tc} · {what}' if tc and what else (what or tc)
     if len(cap) > 110:

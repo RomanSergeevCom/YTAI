@@ -2,24 +2,29 @@
 """Единая точка путей для скриптов stages/.
 
     from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+    from _bootstrap import T, LANG, tz_label       # язык поверхностей (shared/i18n.py)
 
 P    — proj_config (карточка фильма + профиль канала)
 W6   — рабочая папка данных фильма  {project}/00_Setup/05_Review/work/{cut_version}
 M    — папка правок                 {project}/00_Setup/05_Review/pravki
 HERE — stages/ (код), ROOT — папка стадии (код). Данные рядом с кодом НЕ ищутся.
+T, LANG, tz_label — shared/i18n.py: LANG = карточка lang → профиль lang → 'ru'; T('core.lbl_now'); tz_label(7) → ТЗ-07 / FIX-07.
 """
 import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+SHARED = ROOT / 'shared'
 EXTRA = ROOT.parent.parent / '999_extra'
-for _p in (HERE, ROOT, EXTRA / 'ytuvi_doctabs', EXTRA / 'infographic'):
+# SHARED первым: вставки идут в начало sys.path, так он получает наименьший приоритет из наших папок
+for _p in (SHARED, HERE, ROOT, EXTRA / 'ytuvi_doctabs', EXTRA / 'infographic'):
     _s = str(_p)
     if _s not in sys.path:
         sys.path.insert(0, _s)
 
 import proj_config as P  # noqa: E402
+from i18n import T, LANG, tz_label  # noqa: E402,F401  (после proj_config: язык берётся из загруженной карточки)
 
 W6 = P.WORK
 M = P.MONT

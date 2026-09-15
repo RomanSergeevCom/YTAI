@@ -38,7 +38,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402
 import s12_doc_previews as S12  # noqa: E402  (box169 / norm169 / ATTACH / load_ovr — та же геометрия, что у рендера)
 
 FW, FH, PW, PH = S12.FW, S12.FH, S12.PW, S12.PH
@@ -244,8 +244,11 @@ def load_catalogs():
     return cat
 
 
+QO, QC = T('c2.qo'), T('c2.qc')           # «…» (ru) / “…” (en) — кавычки подписей
+
+
 def quoted(s):
-    return [q for q in re.findall(r'«([^»]{2,})»', str(s or ''))]
+    return [q for q in re.findall(T('c2.pq_quoted_rx'), str(s or ''))]
 
 
 def first_do_line(p):
@@ -259,12 +262,12 @@ def first_do_line(p):
 
 def qt(s):
     """«…» вокруг текста без удвоения кавычек (титул «ШЁЛК» уже в кавычках)"""
-    return '«' + clean(s).strip('«»') + '»'
+    return QO + clean(s).strip('«»' + QO + QC) + QC
 
 
 def title_body(p):
-    """заголовок ТЗ без класса «ВЁРСТКА: » — что именно на экране"""
-    return clean(re.sub(r'^[А-ЯЁ /-]+:\s*', '', str(p.get('title') or '')))
+    """заголовок ТЗ без класса «ВЁРСТКА: » / «TYPO: » — что именно на экране"""
+    return clean(re.sub(T('c2.pq_title_rx'), '', str(p.get('title') or '')))
 
 
 def lines_in_bbox(lines, bbox, pad=0.02):
@@ -284,46 +287,48 @@ def expected_for(item, cat, ann_by_tz, ann_by_screen, pr_by_num, ocr_hires):
     p = pr_by_num.get(item.get('tz') or '', {})
     if stem.startswith('term_'):
         t = cat['terms'].get(stem[5:])
-        return (t[0] if t else ''), [f'плашка термина {qt(t[0])}' if t else 'плашка термина'], 'high' if t else None
+        return (t[0] if t else ''), [T('c2.pq_term', q=qt(t[0])) if t else T('c2.pq_term0')], 'high' if t else None
     if stem.startswith('termgrp_'):
         titles = [cat['terms'][k][0] for k in stem[8:].split('_') if k in cat['terms']]
-        return ' '.join(titles), ['плашка терминов: ' + ', '.join(qt(x) for x in titles), 'плашка терминов'], 'high' if titles else None
+        return ' '.join(titles), [T('c2.pq_termgrp', qs=', '.join(qt(x) for x in titles)), T('c2.pq_termgrp0')], 'high' if titles else None
     if stem.startswith('map_') and not stem.startswith('mapfull_'):
         key = re.sub(r'_note$', '', stem[4:])
         pl = cat['places'].get(key)
-        return (pl.get('ru', '') if pl else ''), [f'карта {qt(pl.get("label") or pl.get("ru"))}' if pl else 'мини-карта'], 'high' if pl else None
+        # на экране английского канала — английское имя места (en), у русских — ru
+        scr = ((pl.get('en') or pl.get('ru', '')) if LANG == 'en' else pl.get('ru', '')) if pl else ''
+        return scr, [T('c2.pq_map', q=qt(pl.get("label") or (scr if LANG == 'en' else pl.get("ru")))) if pl else T('c2.pq_map0')], 'high' if pl else None
     if stem.startswith('mapfull_'):
-        return '', ['карта региона'], None
+        return '', [T('c2.pq_mapfull')], None
     if stem.startswith('sub_'):
         i = int(stem[4:]) - 1
         s = cat['sub'][i] if 0 <= i < len(cat['sub']) else None
-        return (s[2] if s else ''), [f'подглава {qt(s[2])}' if s else 'плашка подглавы', 'плашка подглавы'], 'high' if s else None
+        return (s[2] if s else ''), [T('c2.pq_sub', q=qt(s[2])) if s else T('c2.pq_sub0'), T('c2.pq_sub0')], 'high' if s else None
     if stem.startswith('prog_'):
         m = re.match(r'prog_(\d+)_(\d+)', stem)
         pg = cat['prog'].get(m.group(1)) if m else None
         if pg:
             k = int(m.group(2))
             it = pg[1][k - 1] if 0 < k <= len(pg[1]) else ''
-            return f'{pg[0]} {it}', [f'прогресс {qt(pg[0])} · {k} из {len(pg[1])} · {it}', f'прогресс · {k} из {len(pg[1])}'], 'high'
-        return '', ['плашка прогресса'], None
+            return f'{pg[0]} {it}', [T('c2.pq_prog', q=qt(pg[0]), k=k, n=len(pg[1]), it=it), T('c2.pq_prog_short', k=k, n=len(pg[1]))], 'high'
+        return '', [T('c2.pq_prog0')], None
     if stem.startswith('info_videomap_ch'):
         n = stem[len('info_videomap_ch'):]
         nm = cat['ch_name'].get(n, '')
-        return nm, [f'карта главы {int(n)} {qt(nm)}' if nm else 'карта главы', 'карта главы'], 'low'
+        return nm, [T('c2.pq_chmap', n=int(n), q=qt(nm)) if nm else T('c2.pq_chmap0'), T('c2.pq_chmap0')], 'low'
     if stem.startswith('info_'):
-        return '', ['карта структуры фильма'], None
+        return '', [T('c2.pq_structmap')], None
     if stem.startswith('fix_tz'):
-        num = 'ТЗ-' + re.sub(r'[^0-9]', '', stem[len('fix_tz'):])
+        num = 'ТЗ-' + re.sub(r'[^0-9]', '', stem[len('fix_tz'):])      # внутренний ключ (данные)
         a = ann_by_tz.get(num) or {}
         fx = clean(((a.get('fix') or {}).get('text') or '').replace('\n', ' '))
         ty = (pr_by_num.get(num, {}).get('typo') or [{}])[0]
         whats = []
         if ty.get('was') and ty.get('now'):
-            whats.append(f'было {qt(ty["was"])} → стало {qt(ty["now"])}')
-            whats.append(f'было → стало {qt(ty["now"])}')
+            whats.append(T('c2.pq_fix_wasnow', qw=qt(ty["was"]), qn=qt(ty["now"])))
+            whats.append(T('c2.pq_fix_now', qn=qt(ty["now"])))
         elif fx:
-            whats.append(f'было / стало: {qt(fx)}')
-        whats.append('было / стало')
+            whats.append(T('c2.pq_fix_text', q=qt(fx)))
+        whats.append(T('c2.pv_cap_wasnow'))
         return fx or clean(ty.get('now')), whats, 'high' if (fx or ty.get('now')) else None
     if stem.startswith('v6_err_'):
         anns = ann_by_screen.get(stem[len('v6_err_'):]) or []
@@ -334,21 +339,21 @@ def expected_for(item, cat, ann_by_tz, ann_by_screen, pr_by_num, ocr_hires):
                 on_screen = q[0]
             under += lines_in_bbox(ocr_hires.get(int(a.get('t0', -1)), []), a['bbox'])   # что именно под стрелкой
         exp = ' '.join(under) or on_screen
-        whats = ([f'где ошибка: {qt(on_screen)}'] if on_screen else []) + ['где ошибка (стрелка на кадре)']
+        whats = ([T('c2.pq_err_q', q=qt(on_screen))] if on_screen else []) + [T('c2.pv_cap_err')]
         return exp, whats, 'low' if exp else None
     if stem.startswith(('ann_tz', 'tz_lt_')):
-        num = 'ТЗ-' + re.sub(r'[^0-9]', '', stem)
+        num = 'ТЗ-' + re.sub(r'[^0-9]', '', stem)                     # внутренний ключ; в подписи — tz_label
         pp = pr_by_num.get(num, {})
-        return clean(pp.get('title')) + ' ' + clean(first_do_line(pp))[:80], [f'плашка {num} на кадре'], 'low'
+        return clean(pp.get('title')) + ' ' + clean(first_do_line(pp))[:80], [T('c2.pq_lt', num=tz_label(num))], 'low'
     if kind == 'ch':
         nm = cat['ch_name'].get(item.get('ch') or '', '')
-        return '', [f'глава {int(item["ch"])} {qt(nm)}' if nm else 'карточка главы', 'карточка главы'], None
+        return '', [T('c2.pq_ch', n=int(item["ch"]), q=qt(nm)) if nm else T('c2.pq_ch0'), T('c2.pq_ch0')], None
     if kind == 'frame':
         q = quoted(p.get('title')) + [t.get('was', '') for t in (p.get('typo') or [])]
         exp = ' '.join(q)
-        whats = ([f'кадр: {qt(q[0])}'] if q else []) + [f'кадр: {title_body(p)}' if title_body(p) else 'кадр ТЗ', 'кадр ТЗ']
+        whats = ([T('c2.pq_frame_x', x=qt(q[0]))] if q else []) + [T('c2.pq_frame_x', x=title_body(p)) if title_body(p) else T('c2.pq_frame_tz'), T('c2.pq_frame_tz')]
         return exp, whats, 'low' if exp else None
-    return '', [title_body(p) or 'кадр'], None
+    return '', [title_body(p) or T('c2.pq_frame')], None
 
 
 # ── VLM (только kind=frame, по флагу) ──────────────────────────────────────

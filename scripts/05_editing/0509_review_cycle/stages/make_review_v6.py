@@ -16,13 +16,15 @@ V6 = структура: главы (ch_ov_*) + ПОДглавы (sub_NN) + пр
 
 Арбитраж наездов на дорожке: приоритеты (V3: fix > info > map > term); младший сдвигается
 вперёд до конца старшего (≤ MAX_SHIFT с), иначе выпадает — с записью в drop-лог.
-Сетка 25p: все tc кратны 0.04. Стиллы ≤ 4.8 с. sequence_name НЕ кончается на _v\\d.
+Сетка кадра = P.FPS_EXACT (25p: кратны 0.04; 29.97 = 30000/1001): tc округлены до 6 знаков и лежат на сетке
+с допуском 0.02 кадра. Стиллы ≤ 4.8 с = floor(4.8·fps) кадров. sequence_name НЕ кончается на _v\\d.
+Язык маркеров/шапки/summary — shared/i18n (таблица d.rv.*); номер ТЗ на поверхности — tz_label().
 """
-import json, re, sys
+import json, math, re, sys
 from datetime import datetime
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402,F401
 from terms_catalog import TERMS, LOCS  # noqa: E402
 
 
@@ -35,11 +37,15 @@ FOOT = Path(P.resolve(P.get('footage_dir'))) if P.get('footage_dir') else PROJEC
 NAT = PROJECT / P.get('host_scene', '01_Source')
 
 V1_DUR = P.duration_sec()                    # длительность ката из карточки (или ffprobe)
-FPS = float(P.get('fps', 25.0))
+FPS = P.FPS_EXACT                            # 25.0 · 29.97 → 30000/1001 (точной дробью: за 30 мин не уезжает)
 D = 4.8
+D_FRAMES = math.floor(D * FPS + 1e-6)        # стилл ≤ 4.8 с целым числом кадров: 25p → 120, 29.97 → 143
 TOTAL = float(P.get('total_sec', V1_DUR + 19.16))  # кат + хвост ревью-секвенции
 MAX_SHIFT = 6.0
-MATERIALS_FOLDER = P.folder_url('materials_id')           # дубль 4 из 4 — из карточки
+# папка материалов на Drive (дубль 4 из 4) — необязательна: без неё ссылки 📁 в маркерах просто не пишем
+MATERIALS_FOLDER = P.folder_url('materials_id') if P.get('materials_id') else ''
+if not MATERIALS_FOLDER:
+    print('⚠️ в карточке нет materials_id — ссылка на папку материалов в маркеры V4 не идёт', flush=True)
 
 # Главы — из карточки проекта (chapters + ch_name), цвета маркеров Premiere по кругу.
 # Здесь были зашиты 10 глав первого фильма: на другом кате маркеры секвенции легли бы
@@ -48,7 +54,7 @@ _MCOL = P.profile('ch_marker_colors') or ['Green', 'Cyan', 'Orange', 'Magenta', 
 _NEW = set(P.get('new_ch', []))
 _ends = [float(t) for t, _ in P.CHAPTERS[1:]] + [TOTAL]
 CHAPTERS = [(float(t), e, _MCOL[i % len(_MCOL)],
-             f'{n} {"➕" if int(n) in _NEW else "·"} {P.get("ch_name", {}).get(n, "ГЛАВА " + n)}')
+             f'{n} {"➕" if int(n) in _NEW else "·"} {P.get("ch_name", {}).get(n, T("core.chapter") + " " + n)}')
             for i, ((t, n), e) in enumerate(zip(P.CHAPTERS, _ends))]
 
 pravki = json.load(open(M / 'pravki_v2.json'))['all']
@@ -77,26 +83,33 @@ DROPS = []
 
 
 def grid(t):
-    return round(round(float(t) * FPS) / FPS, 3)
+    """ближайший кадр сетки FPS; 6 знаков — у 29.97 кадр 0.0333667 с, 3 знака сбили бы tc с сетки
+    (на 25p k/25 при 3 и 6 знаках — один и тот же float)"""
+    return round(round(float(t) * FPS) / FPS, 6)
 
 
 def seg(sid, track, color, path, si, so, tl, keep_audio=True, kind='broll',
-        speaker='', audio='A2', item_marker=None, prio=5):
+        speaker='', audio='A2', item_marker=None, prio=5, src_nd=3):
     p = Path(path)
     d = {'segment_id': sid, 'role': 'shown', 'track': track,
          'audio_track': audio, 'keep_audio': keep_audio, 'color': color,
          'source_file': p.name, 'source_path': str(p), 'clip_id': p.stem, 'kind': kind,
          'use': 'TRUE', 'speaker': speaker,
-         'source_in_sec': round(si, 3), 'source_out_sec': round(so, 3),
+         'source_in_sec': round(si, src_nd), 'source_out_sec': round(so, src_nd),
          'timeline_in_sec': grid(tl), 'timeline_out_sec': grid(grid(tl) + (so - si)), '_prio': prio}
     if item_marker:
         d['item_marker'] = item_marker
     return d
 
 
+def still_dur(dur):
+    """длительность стилла целым числом кадров, не больше D_FRAMES (29.97: 4.8 с → 143 кадра = 4.771 с)"""
+    return min(round(min(float(dur), D) * FPS), D_FRAMES) / FPS
+
+
 def still(sid, path, tl, track, color, dur=D, item_marker=None, prio=5):
-    return seg(sid, track, color, path, 0.0, min(dur, D), tl, keep_audio=False,
-               kind='graphic', item_marker=item_marker, prio=prio)
+    return seg(sid, track, color, path, 0.0, still_dur(dur), tl, keep_audio=False,
+               kind='graphic', item_marker=item_marker, prio=prio, src_nd=6)
 
 
 def clip_link(text):
@@ -204,7 +217,8 @@ for a in audit['placements']:
     if all(v.exists() for v in variants):
         dur = min(a.get('dur', D), D)
         V3_FIX.append(still(a['sid'] + '_A', variants[0], a['t'], 'V3', 'Green', dur=dur, prio=1))
-        V3_FIX.append(still(a['sid'] + '_B', variants[1], grid(a['t'] + dur), 'V3', 'Green', dur=dur, prio=1))
+        # Б — встык за концом А (по кадрам): при 29.97 grid(t + 4.8) лёг бы на кадр позже конца А
+        V3_FIX.append(still(a['sid'] + '_B', variants[1], V3_FIX[-1]['timeline_out_sec'], 'V3', 'Green', dur=dur, prio=1))
     else:
         V3_FIX.append(still(a['sid'], MOCK / a['png'], a['t'], 'V3', 'Green', dur=a.get('dur', D), prio=1))
 
@@ -226,7 +240,7 @@ V5 = [s for s in V5_BASE if not superseded(s['segment_id'], s['timeline_in_sec']
     for a in audit['placements'] if a['track'] == 'V5']
 for s in V5_BASE:
     if superseded(s['segment_id'], s['timeline_in_sec']):
-        DROPS.append(f'V5: {s["segment_id"]} (ручная стрелка v5) заменена стрелкой аудита')
+        DROPS.append(T('d.rv.drop_superseded', sid=s['segment_id']))
 
 # ══ V6 — главы (prio 1) + подсказки (2) + прогресс (3) + подглавы (4) ══
 def _ch_plate(i):
@@ -276,22 +290,21 @@ def tc_sec(tc):
 
 V4 = []
 for i, p in enumerate(pravki):
-    num = f'ТЗ-{i + 1:02d}'
+    num = tz_label(i + 1)                           # «ТЗ-07» (ru) / «FIX-07» (en) — только то, что видит человек
     if p.get('status') == 'rejected':
         continue
     png = MOCK / f'tz_lt_{i + 1:02d}.png'
     sec = tc_sec(p['v1_tc'].split('–')[0].split('/')[0])
+    # была заглушка YTUVI01 «ТЗ-30 без плашки/tc → 43.6 с»: на другом фильме ставила чужое ТЗ-30 в 0:43
     if not png.exists() or sec is None:
-        if num == 'ТЗ-30':
-            sec = 43.6
-        else:
-            continue
+        continue
     full = f"{num} · {p['title']}\n\n{p['nado']}"
     if p.get('decision'):
-        full += f"\n\n⏳ РЕШЕНИЕ РОМАНА: {p['decision']}"
-    links = material_links(p) + [f'📁 Review_materials: {MATERIALS_FOLDER}']
+        full += T('d.rv.decision', text=p['decision'])
+    links = material_links(p) + ([f'📁 Review_materials: {MATERIALS_FOLDER}'] if MATERIALS_FOLDER else [])
     V4.append(still(f'v4_lt_{i + 1:02d}', png, float(sec), 'V4', 'Yellow', prio=1,
-                    item_marker={'name': f'{num} · {p["title"]}', 'comment': full + '\n\n🔗 ' + '\n🔗 '.join(links),
+                    item_marker={'name': f'{num} · {p["title"]}',
+                                 'comment': full + ('\n\n🔗 ' + '\n🔗 '.join(links) if links else ''),
                                  'links': links}))
 
 
@@ -330,7 +343,8 @@ def arbitrate(items, track):
                 break
         if best is None:
             c = clash_of(t0, t0 + dur, placed)
-            DROPS.append(f'{track}: {s["segment_id"]} выпал (наезд на {c["segment_id"]}, нет окна ±{MAX_SHIFT}/{MAX_BACK} с)')
+            DROPS.append(T('d.rv.drop_clash', track=track, sid=s['segment_id'], other=c['segment_id'],
+                           fwd=MAX_SHIFT, back=MAX_BACK))
             continue
         s['timeline_in_sec'] = best
         s['timeline_out_sec'] = grid(best + dur)
@@ -341,7 +355,34 @@ def arbitrate(items, track):
 SEGMENTS = (arbitrate(V2, 'V2') + arbitrate(V3_FIX + V3_INFO + V3_MAPS + V3_TERMS, 'V3')
             + arbitrate(V4, 'V4') + arbitrate(V5, 'V5') + arbitrate(V6, 'V6'))
 
-chapter_markers = [{'tc_sec': tc, 'duration_sec': round(end - tc, 3), 'name': name, 'comment': '', 'color': color}
+# Экраны, которые Роман удалил на таймлайне ревью (card.drop_segments, id сегментов прошлой сборки).
+# Режем ПОСЛЕ арбитража: остальные экраны стоят там же, где он их отсматривал.
+DROP_SEGMENTS = set(P.get('drop_segments', []))
+if DROP_SEGMENTS:
+    SEGMENTS = [s for s in SEGMENTS if s['segment_id'] not in DROP_SEGMENTS]
+    print('drop_segments (Роман удалил на таймлайне):', len(DROP_SEGMENTS))
+
+# Куски ката, которые Роман выключил (Clip → Enable) = «вырезать»: V1 собирается кусками, выключенные — disabled
+# (partsBuilder ≥ 1.13.0 ставит createSetDisabledAction). Без card.disabled_ranges — прежний цельный V1.
+BASE_SEGMENTS = []
+_dis = sorted((grid(float(r['t0'])), grid(float(r['t1']))) for r in P.get('disabled_ranges', []))
+if _dis:
+    cur = 0.0
+    for a, b in _dis + [(TOTAL, TOTAL)]:
+        a, b = max(cur, a), min(TOTAL, b)
+        if a > cur:
+            BASE_SEGMENTS.append({'seg_id': f'on_{len(BASE_SEGMENTS) + 1:02d}', 'source_in_sec': cur, 'source_out_sec': a,
+                                  'timeline_in_sec': cur, 'timeline_out_sec': a})
+        if b > a:
+            BASE_SEGMENTS.append({'seg_id': f'off_{len(BASE_SEGMENTS) + 1:02d}', 'source_in_sec': a, 'source_out_sec': b,
+                                  'timeline_in_sec': a, 'timeline_out_sec': b, 'disabled': True})
+        cur = max(cur, b)
+    print('base_segments:', len(BASE_SEGMENTS), '· выключено:', [(s['timeline_in_sec'], s['timeline_out_sec'])
+                                                               for s in BASE_SEGMENTS if s.get('disabled')])
+
+# маркеры глав — на сетке кадра (главы карточки в целых секундах: при 29.97 62 с — не кадр); имя — ch_name как есть
+chapter_markers = [{'tc_sec': grid(tc), 'duration_sec': round(grid(end) - grid(tc), 6), 'name': name, 'comment': '',
+                    'color': color}
                    for tc, end, color, name in CHAPTERS]
 
 # ── верификация ──
@@ -352,8 +393,8 @@ for s in SEGMENTS:
     if s['kind'] == 'graphic' and s['timeline_out_sec'] - s['timeline_in_sec'] > D + 0.001:
         errs.append(f'стилл длиннее {D} с: {s["segment_id"]}')
     for k in ('timeline_in_sec', 'timeline_out_sec'):
-        if abs(s[k] * FPS - round(s[k] * FPS)) > 0.01:
-            errs.append(f'не на сетке 25p: {s["segment_id"]} {k}={s[k]}')
+        if abs(s[k] * FPS - round(s[k] * FPS)) > 0.02:
+            errs.append(f'не на сетке {FPS:g}p: {s["segment_id"]} {k}={s[k]}')
 for tr in ('V2', 'V3', 'V4', 'V5', 'V6'):
     tt = sorted([s for s in SEGMENTS if s['track'] == tr], key=lambda x: x['timeline_in_sec'])
     for a, b in zip(tt, tt[1:]):
@@ -375,20 +416,16 @@ out = {
         'name': 'Review_v6', 'stage': 'Review', 'fps': FPS,
         'sequence_name': f'{P.CODE}_5_Review_v6_tz', 'build_model': 'review_overlay',
         'seed_clip': '', 'base_clip': RENDER.name, 'base_clip_path': str(RENDER),
-        'markers': False, 'min_builder': '1.11.0',
+        'markers': False, 'min_builder': '1.13.0' if BASE_SEGMENTS else '1.11.0',
+        **({'base_segments': BASE_SEGMENTS} if BASE_SEGMENTS else {}),
         'chapter_markers': chapter_markers, 'bin': '05_Review',
         'created': datetime.now().isoformat(timespec='minutes'),
-        'note': '6 слоёв (канон 07.09) + тикет v6: V1 оригинал не тронут · V2 футажи · V3 инфографика '
-                '(прозрачные панели, термины при каждом упоминании, мини-карты локаций, нарисованные '
-                'исправления) · V4 плашки ТЗ (полный текст+ссылки в маркере мастер-клипа; кнопка панели '
-                '«Copy ТЗ @ playhead») · V5 стрелки «где ошибка» (аудит всех экранов) · V6 главы + подглавы + '
-                f'прогресс перечислений. Маркеры секвенции = ТОЛЬКО {len(chapter_markers)} глав. Материалы с комментами: '
-                + MATERIALS_FOLDER,
+        'note': T('d.rv.note', n=len(chapter_markers))
+                + (T('d.rv.note_materials', url=MATERIALS_FOLDER) if MATERIALS_FOLDER else ''),
     },
     'segments': SEGMENTS,
-    'tracks': 'V1 = оригинал · V2 = футажи · V3 = инфографика+термины+карты+исправления · V4 = ТЗ · '
-              'V5 = стрелки ошибок · V6 = главы/подглавы/прогресс',
-    'audio_policy': 'A1 (голос) не трогается; звук футажа и CTA → A2; стилы без звука',
+    'tracks': T('d.rv.tracks'),
+    'audio_policy': T('d.rv.audio_policy'),
     'required_imports': sorted({s['source_path'] for s in SEGMENTS}),
     'counts': {'segments': len(SEGMENTS), **cnt, 'chapter_markers': len(chapter_markers),
                'dropped': len(DROPS), 'total_dur_sec': TOTAL},
@@ -397,10 +434,9 @@ out = {
 dst = REVIEW_DIR / f'{P.CODE}_review_v6.json'
 dst.write_text(json.dumps(out, ensure_ascii=False, indent=1))
 print('→', dst)
-md = ['# Review_v6 — 6 слоёв + аудит экранов, термины, карты, подглавы', '',
-      f'Создан: {out["part"]["created"]}. Секвенция: `{P.CODE}_5_Review_v6_tz_v{{N}}`.', '',
-      f'- V2 футажи: {cnt["V2"]} · V3 инфографика/термины/карты/исправления: {cnt["V3"]} · V4 ТЗ: {cnt["V4"]} · '
-      f'V5 стрелки: {cnt["V5"]} · V6 структура: {cnt["V6"]}.',
-      f'- Выпало по арбитражу наездов: {len(DROPS)} (см. `dropped` в JSON).',
-      '- Требует partsBuilder ≥1.11.0; текст ТЗ — маркер клипа или кнопка «Copy ТЗ @ playhead» (панель v2.17.0).']
+md = [T('d.rv.md_title'), '',
+      T('d.rv.md_created', created=out['part']['created'], code=P.CODE), '',
+      T('d.rv.md_counts', v2=cnt['V2'], v3=cnt['V3'], v4=cnt['V4'], v5=cnt['V5'], v6=cnt['V6']),
+      T('d.rv.md_dropped', n=len(DROPS)),
+      T('d.rv.md_builder')]
 (REVIEW_DIR / f'{P.CODE}_review_v6_summary.md').write_text('\n'.join(md))

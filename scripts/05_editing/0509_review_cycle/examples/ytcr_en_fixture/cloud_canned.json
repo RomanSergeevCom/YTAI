@@ -1,0 +1,62 @@
+{
+ "verdicts": [
+  {
+   "match": "AED 25M",
+   "kind": "currency",
+   "verdict": "confirm",
+   "fix_text": "AED 2.5M",
+   "severity": "high",
+   "reason": "The voice-over says 2.5 million; the screen shows AED 25M."
+  },
+  {
+   "match": "shutterstock",
+   "kind": "foreign_trace",
+   "verdict": "confirm",
+   "fix_text": "",
+   "severity": "high",
+   "reason": "A stock agency watermark is burned into the shot."
+  },
+  {
+   "match": "MOVED TO DUBAI",
+   "kind": "*",
+   "verdict": "confirm",
+   "fix_text": "MOVED TO DUBAI IN 2009",
+   "severity": "high",
+   "reason": "Khalid says he moved to Dubai in 2009; the title says 2008."
+  },
+  {
+   "match": "مرحبا",
+   "kind": "language",
+   "verdict": "refute",
+   "fix_text": "",
+   "severity": "low",
+   "reason": "An intentional bilingual greeting card of the channel."
+  },
+  {
+   "match": "*",
+   "kind": "*",
+   "verdict": "refute",
+   "fix_text": "",
+   "severity": "low",
+   "reason": "Not an error on this screen."
+  }
+ ],
+ "new_findings": [
+  {
+   "match": "MOVED TO DUBAI IN 2008",
+   "kind": "mismatch",
+   "fix_text": "MOVED TO DUBAI IN 2009",
+   "severity": "high",
+   "problem": "The title says 2008; the voice-over says 2009.",
+   "why": "Voice-over: “I moved to Dubai in 2009”."
+  },
+  {
+   "match": "shutterstock",
+   "kind": "foreign_trace",
+   "fix_text": "",
+   "severity": "high",
+   "problem": "A Shutterstock watermark is visible across the shot.",
+   "why": "Replace the clip with a licensed one."
+  }
+ ]
+}

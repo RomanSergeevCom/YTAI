@@ -18,13 +18,13 @@
   prog_final   {"NN": [сек, "подпись итога"]}
   prog_note    {"NN:k": "пометка к k-му пункту"}
 """
-from _bootstrap import P  # noqa: E402
+from _bootstrap import P, T  # noqa: E402
 
 _PALETTE = ['#3FA34D', '#2FB4C7', '#E08A2E', '#C74FA5', '#3F6FC7', '#D9A521']
 _CHAP = P.CHAPTERS                                          # [(сек, 'NN'), …]
 _NAMES = P.get('ch_name', {})
 
-CH_NAME = [_NAMES.get(n, f'ГЛАВА {n}') for _, n in _CHAP]
+CH_NAME = [_NAMES.get(n, f'{T("core.chapter")} {n}') for _, n in _CHAP]   # имя из карточки как есть; нет — «ГЛАВА NN»/«CHAPTER NN»
 CH_ACCENT = list(P.get('ch_accent') or [_PALETTE[i % len(_PALETTE)] for i in range(len(_CHAP))])
 
 # (сек от, сек до, №) — карта структуры (стадия H) и списки ТЗ (s10) из одного места

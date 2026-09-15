@@ -90,6 +90,10 @@ def stage_rows():
     except Exception:
         pass
     names = [n for n, _ in order] + [n for n in st if n not in {n for n, _ in order}]
+    # стадия chapters (главы по плану частей) пуста без card.chapters_plan — у такого фильма строку не показываем
+    # НИКОГДА, даже если run записал в стейт «пропуск» (RU-страница продюсера YTUVI/YTCH/YTEVO не меняется)
+    if not P.get('chapters_plan'):
+        names = [n for n in names if n != 'chapters']
     hosts = dict(order)
     rows = []
     for n in names:

@@ -26,12 +26,30 @@ if OUT.exists():
         except Exception:
             pass
 todo = [str(f) for f in files if f.name not in done]
-print('hires frames:', len(files), 'todo:', len(todo), flush=True)
+
+
+def ocr_lang_args():
+    """--langs для vision_ocr_ru из профиля канала ocr_langs (список или «en-US,ru-RU»).
+    Не задан — без аргументов: бинарь берёт ["ru-RU","en-US"], как всегда."""
+    v = P.profile('ocr_langs')
+    if isinstance(v, str) and v.strip().startswith('['):
+        try:
+            v = json.loads(v)
+        except ValueError:
+            pass
+    if isinstance(v, (list, tuple)):
+        v = ','.join(str(x).strip() for x in v if str(x).strip())
+    v = str(v or '').strip()
+    return ['--langs', v] if v else []
+
+
+LANG_ARGS = ocr_lang_args()
+print('hires frames:', len(files), 'todo:', len(todo), *(['langs:', LANG_ARGS[1]] if LANG_ARGS else []), flush=True)
 with open(OUT, 'a', encoding='utf-8') as out:
     for i in range(0, len(todo), 200):
         P.pause_gate('ocr')          # пауза на границе пачки, не посреди неё
         batch = todo[i:i + 200]
-        p = subprocess.run([str(BIN)], input='\n'.join(batch), capture_output=True, text=True, timeout=900)
+        p = subprocess.run([str(BIN), *LANG_ARGS], input='\n'.join(batch), capture_output=True, text=True, timeout=900)
         out.write(p.stdout)
         out.flush()
         print(f'  ocr {min(i + 200, len(todo))}/{len(todo)}', flush=True)

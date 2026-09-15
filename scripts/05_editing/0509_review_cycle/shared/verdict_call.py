@@ -13,6 +13,15 @@
 Схема ответа агента (пишет сам Write'ом до возврата): {verdict, headline?, mandatory_edits: [{tc, what, why}],
 structure_proposal: [{title, tc_range, note}], open_questions: [str], sensitive_notes: [str], strengths?: [str], time_math?}.
 env: YTAI_CARD=<review_card.json>; YTAI_WORK_DIR / YTAI_PRAVKI_DIR — куда писать (тесты).
+
+Язык (shared/i18n.py, LANG = карточка lang → профиль lang → ru). RU — args, промпт и записи ТЗ байт-в-байт как были.
+EN (профиль verdict {enabled, kind:'editorial', acts_llm, propose_chapters}, напр. YTCR): в args добавляются
+lang='en', verdict_cfg (блок профиля), arc (5 битов арки канала: profile verdict.arc или раздел «Story-arc template»
+из YTs/{CH}/{CH}.md), exclusions (известные дыры карточки — не правки), align_path + align_duplicates (дословные
+повторы из align.json); агент отвечает по-английски {verdict, headline, strengths, arc_check[{beat, status, tc, note}],
+mandatory_edits, observations[{tc, note}] (провисания — только продюсеру, не ТЗ), open_questions, structure_proposal
+(только при propose_chapters), time_math}. --apply: ТЗ class «structure» по-английски; правки внутри exclusions
+отбрасываются (в сводку excluded_edits); arc_check / observations → producer_summary.
 """
 import argparse
 import json
@@ -21,7 +30,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'stages'))
-from _bootstrap import P, W6, M, CLOUD, REVIEW_DIR, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, CLOUD, REVIEW_DIR, ROOT, T, LANG, tz_label  # noqa: E402
 
 WF = ROOT / 'cloud' / 'wf_verdict_doc.js'
 
@@ -38,6 +47,13 @@ CAT_RX = [('cut', r'вырез|убрать|резать|сократ|сжать
           ('insert', r'вставить|вернуть|добавить|врезк|перебивк|подложить'),
           ('graphics', r'титул|карточк|подпис|плашк|график|титр|лоуэр|lower'),
           ('structure', r'.')]
+# EN: английские глаголы монтажёра + русские (карточка может быть смешанной); RU-путь берёт CAT_RX как был
+CAT_RX_EN = [('cut', r'\b(?:cut|trim|remove|delete|drop|shorten|tighten|lose|take out)\b|вырез|убрать|резать|сократ|сжать|удалить|дорезать|обрыв'),
+             # graphics раньше insert: «add a lower third» — графика, а не вставка материала
+             ('graphics', r'\b(?:title|lower[- ]third|caption|subtitle|card|graphic|label|super)s?\b|титул|карточк|подпис|плашк|график|титр|лоуэр|lower'),
+             ('insert', r'\b(?:insert|add|restore|bring back|put back|b-?roll|cutaway|overlay|cover)\b|вставить|вернуть|добавить|врезк|перебивк|подложить'),
+             ('structure', r'.')]
+CATS = CAT_RX_EN if LANG == 'en' else CAT_RX
 
 
 def tc(s):
@@ -77,13 +93,12 @@ def rules_text():
     sens = P.profile('sensitivity') or {}
     parts = [P.profile('rules_text') or '']
     if sr:
-        parts.append('ПРАВИЛА СТРУКТУРЫ: ' + ' · '.join(f'{k}: {v}' for k, v in sr.items() if not k.startswith('_') and not k.endswith('_rx')))
+        parts.append(T('e.rules_structure') + ' · '.join(f'{k}: {v}' for k, v in sr.items() if not k.startswith('_') and not k.endswith('_rx')))
     if sens:
-        parts.append(f'ЧУВСТВИТЕЛЬНОЕ: политика {sens.get("policy", "")} — находка = {sens.get("mark", "⚠️")} «на подтверждение фонда / блюр», '
-                     'НЕ ⛔; ⛔ только дубли, техбрак и письменные запреты фонда.')
+        parts.append(T('e.rules_sensitive', policy=sens.get("policy", ""), mark=sens.get("mark", "⚠️")))
     notes = P.get('notes') or []
     if notes:
-        parts.append('ГРАБЛИ ПРОЕКТА: ' + ' · '.join(map(str, notes)))
+        parts.append(T('e.rules_notes') + ' · '.join(map(str, notes)))
     return '\n'.join(x for x in parts if x)
 
 
@@ -94,7 +109,10 @@ def existing_tz():
         if p.get('status') == 'rejected':
             continue
         n = p.get('num')
-        lab = n if isinstance(n, str) else (f'ТЗ-{int(n):02d}' if n is not None else f'ТЗ-{i + 1:02d}')
+        if LANG == 'en':                                   # агент видит FIX-NN; ключи «ТЗ-NN» в данных не трогаем
+            lab = tz_label(n if n is not None else i + 1)
+        else:
+            lab = n if isinstance(n, str) else (f'ТЗ-{int(n):02d}' if n is not None else f'ТЗ-{i + 1:02d}')
         out.append(f'{lab} · {p.get("tc_range") or p.get("v1_tc") or "—"} · {one(p.get("title"))[:80]}')
     return out
 
@@ -115,10 +133,60 @@ def cmd_print_call(a):
             'chapters': [f'{n} · {tc(t)} · {dict(P.get("ch_name") or {}).get(n, "")}' for t, n in P.CHAPTERS],
             'out_path': str(CLOUD / 'out' / 'verdict.json'), 'want_tobe': bool(a.want_tobe),
             'tobe_out_path': str(CLOUD / 'out' / 'tobe.json')}
+    if LANG == 'en':                                     # RU-вызов не меняется ни на ключ
+        args.update(en_args())
     P.write_json_atomic(CLOUD / 'in' / 'verdict_args.json', args)
     print(f'args → {CLOUD / "in" / "verdict_args.json"} (risk top {len(top)}/{len(risk_rows)}, существующих ТЗ {len(args["existing_tz"])})')
     print('Workflow({scriptPath: ' + json.dumps(str(WF)) + ', args: ' + json.dumps(args, ensure_ascii=False) + '})')
     return 0
+
+
+def channel_arc():
+    """арка канала для редакторского вердикта: profile verdict.arc (строка/список) → раздел «Story-arc template»
+    из YTs/{CH}/{CH}.md (до следующего заголовка) → ''"""
+    arc = (P.profile('verdict') or {}).get('arc') if isinstance(P.profile('verdict'), dict) else None
+    if arc:
+        return '\n'.join(map(str, arc)) if isinstance(arc, list) else str(arc)
+    md = Path(P.YTAI) / 'YTs' / P.CHANNEL / f'{P.CHANNEL}.md'
+    if not P.CHANNEL or not md.exists():
+        return ''
+    lines, out, on = md.read_text(encoding='utf-8').splitlines(), [], False
+    for ln in lines:
+        if not on and re.search(r'(?i)story[- ]arc template', ln):
+            on = True
+        elif on and ln.startswith('#'):
+            break
+        if on:
+            out.append(ln)
+    return '\n'.join(out).strip()
+
+
+def align_info():
+    """align.json (кат ↔ align_against): путь + дословные повторы в кате строками «M:SS–M:SS = M:SS–M:SS · слов · текст»"""
+    ap = W6 / 'align.json'
+    d = load(ap, None)
+    if not isinstance(d, dict):
+        return '', []
+    dups = []
+    for x in (d.get('duplicates') or [])[:30]:
+        dups.append(f'{tc(x["first_t0"])}–{tc(x["first_t1"])} = {tc(x["second_t0"])}–{tc(x["second_t1"])} · '
+                    f'{x.get("words")} words{" · opening echo" if x.get("first_in_opening") else ""} · «{one(x.get("text"))[:120]}»')
+    return str(ap), dups
+
+
+def en_args():
+    cfg = P.profile('verdict') or {}
+    cfg = cfg if isinstance(cfg, dict) else {}
+    ap, dups = align_info()
+    excl = [{'tc': f'{tc(e["t0"])}–{tc(e["t1"])}', 't0': e['t0'], 't1': e['t1'], 'reason': e['reason']} for e in P.EXCLUSIONS]
+    for e in P._jsonish(P.get('exclusions'), []) or []:            # заметки без таймкода — тоже известные не-ошибки
+        if isinstance(e, dict) and (e.get('t0') is None or e.get('t1') is None) and e.get('reason'):
+            excl.append({'tc': '', 't0': None, 't1': None, 'reason': str(e['reason'])})
+    md = Path(P.YTAI) / 'YTs' / P.CHANNEL / f'{P.CHANNEL}.md'
+    return {'lang': 'en', 'verdict_cfg': cfg, 'verdict_kind': cfg.get('kind', 'editorial'),
+            'propose_chapters': bool(cfg.get('propose_chapters', False)), 'arc': channel_arc(),
+            'channel_doc': str(md) if md.exists() else '', 'exclusions': excl,
+            'align_path': ap, 'align_duplicates': dups}
 
 
 def make_entries(v, start_num):
@@ -127,17 +195,19 @@ def make_entries(v, start_num):
     props = v.get('structure_proposal') or []
     if props:
         lst = [f'{one(p.get("tc_range"))} ▸ {one(p.get("title")).upper()}' + (f' — {one(p.get("note"))}' if p.get('note') else '') for p in props]
-        items.append({'key': 'verdict:structure', 'title': 'Структура: предложенные главы',
-                      'category': 'structure', 'v1_tc': '', 'tc_range': 'весь фильм',
+        items.append({'key': 'verdict:structure', 'title': T('e.structure_title'),
+                      'category': 'structure', 'v1_tc': '', 'tc_range': T('e.whole_film'),
                       'est': one(v.get('headline') or v.get('verdict'))[:300],
                       'parts': {'now': [one(v.get('headline') or v.get('verdict'))[:300]],
-                                'do': ['Поставить карточки глав по списку ниже (порядок ката не меняется, если не сказано иное).'],
-                                'list': [{'h': 'Главы (карточки)', 'items': lst}]},
+                                'do': [T('e.structure_do')],
+                                'list': [{'h': T('e.structure_list_h'), 'items': lst}]},
                       'decision': ' ; '.join(one(q) for q in (v.get('open_questions') or [])[:3])})
     for e in sorted(v.get('mandatory_edits') or [], key=lambda e: (secs(e.get('tc')) or [10 ** 6])[0]):
         ss = secs(e.get('tc'))
+        if ss and P.in_exclusion(min(ss), max(ss)):      # известная дыра карточки — не правка (RU-карточки без exclusions)
+            continue
         what, why = one(e.get('what')), one(e.get('why'))
-        cat = next(c for c, rx in CAT_RX if re.search(rx, what.lower()))
+        cat = next(c for c, rx in CATS if re.search(rx, what.lower()))
         it = {'key': f'verdict:{one(e.get("tc"))}:{what[:40]}', 'title': what[:90], 'category': cat,
               'v1_tc': tc(ss[0]) if ss else '', 'tc_range': one(e.get('tc')), 'est': why,
               'parts': {'now': [why], 'do': [what], 'where': [one(e.get('tc'))]}}
@@ -146,9 +216,9 @@ def make_entries(v, start_num):
         items.append(it)
     qs = [one(q) for q in (v.get('open_questions') or []) if one(q)]
     if qs:
-        items.append({'key': 'verdict:questions', 'title': 'Открытые вопросы — решения Романа', 'category': 'structure',
-                      'v1_tc': '', 'tc_range': 'весь фильм', 'est': 'Вердикт оставил вопросы, без ответов правки ниже не закрыть.',
-                      'parts': {'now': ['Вердикт оставил вопросы, без ответов правки ниже не закрыть.'], 'do': qs},
+        items.append({'key': 'verdict:questions', 'title': T('e.questions_title'), 'category': 'structure',
+                      'v1_tc': '', 'tc_range': T('e.whole_film'), 'est': T('e.questions_est'),
+                      'parts': {'now': [T('e.questions_est')], 'do': qs},
                       'decision': ' ; '.join(qs)})
     for i, it in enumerate(items):
         it.update({'num': start_num + i, 'class': 'structure', 'source': 'verdict', 'notes': ['verdict'],
@@ -158,7 +228,8 @@ def make_entries(v, start_num):
     return items
 
 
-LBL = {'now': '❌ СЕЙЧАС', 'do': '✅ СДЕЛАТЬ', 'list': '📋 СПИСОК', 'where': '📍 ГДЕ', 'src': '📚 ИСТОЧНИК', 'tl': '🎬 НА ТАЙМЛАЙНЕ'}
+LBL = {'now': T('core.lbl_now'), 'do': T('core.lbl_do'), 'list': T('core.lbl_list'), 'where': T('core.lbl_where'),
+       'src': T('core.lbl_source'), 'tl': T('core.lbl_timeline')}
 
 
 def render(parts):
@@ -209,6 +280,9 @@ def cmd_apply(a):
     short = re.split(r'\s+[—–-]\s+|[.:;]\s', vtext, maxsplit=1)[0][:80] if vtext else ''
     checks = (load(W6 / 'structure_checks.json', {}) or {}).get('checks', [])
     edits = v.get('mandatory_edits') or []
+    excluded = [e for e in edits if secs(e.get('tc')) and P.in_exclusion(min(secs(e.get('tc'))), max(secs(e.get('tc'))))]
+    if excluded:                                         # только при exclusions в карточке (RU-карточки их не имеют)
+        edits = [e for e in edits if not any(e is x for x in excluded)]
     tz_by_key = {p['key']: p for p in new}
     must = []
     for e in edits:
@@ -217,9 +291,9 @@ def cmd_apply(a):
                      'todo': one(e.get('what')) + (f' — {one(e.get("why"))}' if e.get('why') else '')})
     fails = [c['rule'] for c in checks if c.get('status') == 'fail']
     lines = [x for x in (short, one(v.get('headline')),
-                         f'обязательных правок {len(edits)} · глав предложено {len(v.get("structure_proposal") or [])} · '
-                         f'вопросов Роману {len(v.get("open_questions") or [])} · ⚠️ фонд/блюр {len(v.get("sensitive_notes") or [])}',
-                         ('правила листа нарушены: ' + ', '.join(fails)) if fails else '',
+                         T('e.summary_counts', edits=len(edits), chapters=len(v.get("structure_proposal") or []),
+                           questions=len(v.get("open_questions") or []), sensitive=len(v.get("sensitive_notes") or [])),
+                         (T('e.rules_failed') + ', '.join(fails)) if fails else '',
                          one(v.get('time_math'))) if x][:5]
     # ключи verdict_short / lines / must / decisions читает pravki_lib.load_summary (producer_page, phone_brief)
     summ = {'schema': 'producer-summary-v1', 'code': P.CODE, 'cut_version': P.CUT_VERSION, 'film': P.FILM,
@@ -232,6 +306,11 @@ def cmd_apply(a):
             'risk_top': (load(W6 / 'risk.json', []) or [])[:20],
             'acts': [{k: x.get(k) for k in ('act', 'title', 'tc_range', 'summary', 'theses')} for x in acts.get('acts', [])],
             'tz_added': [p['num'] for p in new], 'verdict_file': str(vp)}
+    for k in ('arc_check', 'observations'):              # редакторский (EN) вердикт; в RU-ответе этих ключей нет
+        if k in v:
+            summ[k] = v.get(k) or []
+    if excluded:
+        summ['excluded_edits'] = excluded
     P.write_json_atomic(W6 / 'producer_summary.json', summ)
     print(f'[verdict] «{one(v.get("verdict"))[:80]}» · обязательных правок {len(v.get("mandatory_edits") or [])} · '
           f'глав {len(v.get("structure_proposal") or [])} · вопросов {len(v.get("open_questions") or [])} · '

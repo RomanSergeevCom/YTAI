@@ -1,0 +1,56 @@
+{
+ "schema": "review-profile-v1",
+ "channel": "YTCR",
+ "_note": "Core Realty (Dubai real estate) profile for stage 0509_review_cycle. English channel: editor-facing surfaces in English (lang=en). Graphics style = channel DNA (YTs/YTCR/ytcr-dna/index.html): acid-yellow accent on near-black, Playfair Display headlines, Inter body.",
+ "lang": "en",
+ "mode_default": "cut_review",
+ "style": {
+  "ivory": "#EFEFEF",
+  "red": "#FF3B30",
+  "mut": "#888888",
+  "bg": "#101010",
+  "panel": "rgba(16,16,16,.86)",
+  "accent": "#F0FF02",
+  "accent2": "#FFD700",
+  "font_stack": "'Playfair Display',Georgia,'Times New Roman',serif",
+  "font_body": "'Inter',Helvetica,Arial,sans-serif",
+  "mockup_style": "ytcr_dna",
+  "draft_badge": "DRAFT · redraw in channel style"
+ },
+ "_style_note": "style.red = error colour of review graphics (arrows «where the error is», fix drafts) — #FF3B30 (DNA --error is pure #FF0000; softened for 4K overlays). Channel accent (acid yellow) = style.accent #F0FF02, gold = accent2; ivory = DNA --white #EFEFEF, mut = DNA --muted.",
+ "ch_marker_colors": ["Blue", "Cyan", "Yellow", "Green", "Orange", "Red"],
+ "_ch_marker_colors_note": "No Magenta for chapters — Magenta is Roman's note colour (UXP Note @ playhead).",
+ "rules_text": "CHANNEL RULES (Core Realty, Dubai real estate): English on-screen titles are primary. Numbers and currency on screen must match the voice-over and the facts. Area, community and developer names are spelled the way the developer / Dubai Land Department (DLD) writes them (Emaar, DAMAC, Sobha, JVC, Palm Jebel Ali, Business Bay…). Lower thirds are consistent: Name · role · company. Arabic signage in real-world b-roll is NOT an error. Do not nitpick currency FORMAT — both «AED 2M» and «500K+ AED» appear in channel graphics; flag only a wrong number, a wrong currency, or a mismatch with the voice-over. Taste, layout and pacing are never edit notes.",
+ "tz_classes": {
+  "keep": ["typo", "grammar", "fact", "currency", "language", "mismatch", "foreign_trace", "structure"],
+  "drop": ["design", "taste", "pacing", "layout"]
+ },
+ "sources_default": ["Dubai Land Department (DLD)", "RERA", "Dubai Statistics Center", "DXBinteract", "Property Finder", "Bayut", "Reuters", "Bloomberg", "Gulf News", "Khaleej Times", "The National"],
+ "latin_whitelist": ["Emaar", "DAMAC", "Sobha", "Nakheel", "Meraas", "Aldar", "Binghatti", "Ellington", "Azizi", "Danube", "Omniyat", "JVC", "JLT", "JBR", "DIFC", "Palm Jumeirah", "Palm Jebel Ali", "The Oasis", "Dubai Marina", "Business Bay", "Dubai Hills", "Deira", "Ajman", "Sharjah", "DLD", "RERA", "Ejari", "Oqood", "NOC", "DEWA", "DFM", "off-plan", "sqft", "ROI", "AED", "Dh", "Golden Visa", "Etisalat", "e&", "MTN", "Core Realty", "INTRUST", "Sudan", "Khartoum", "taekwondo", "COVID", "Maple", "SID", "Khalid"],
+ "lexicon": ["Emaar", "DAMAC", "Sobha", "Nakheel", "Meraas", "Aldar", "Binghatti", "Ellington", "Azizi", "Danube", "Omniyat", "JVC", "JLT", "JBR", "DIFC", "Palm Jumeirah", "Palm Jebel Ali", "The Oasis", "Dubai Marina", "Business Bay", "Dubai Hills", "Deira", "Ajman", "Sharjah", "DLD", "RERA", "Ejari", "Oqood", "NOC", "DEWA", "DFM", "off-plan", "sqft", "ROI", "AED", "Dh", "Golden Visa", "Etisalat", "e&", "MTN", "Core Realty", "INTRUST", "Sudan", "Khartoum", "taekwondo", "COVID", "Maple", "SID", "Khalid"],
+ "currency": {
+  "canon": "AED 2M",
+  "code_before": true,
+  "suffix": ["K", "M", "B"],
+  "decimal": ".",
+  "group": ","
+ },
+ "verdict": {
+  "enabled": true,
+  "kind": "editorial",
+  "acts_llm": false,
+  "propose_chapters": false
+ },
+ "probe": {"own_logo": "Core Realty"},
+ "ocr_langs": ["en-US"],
+ "terms_base_file": null,
+ "sensitivity": null,
+ "structure_rules": null,
+ "doc": {
+  "tab_tz_template": "Edit notes · {ver}",
+  "nav_template": "Cut review {ver} · by timecode"
+ },
+ "drive": {"materials_folder": "Review_materials"},
+ "notes_cycle": false,
+ "fact_check": {"max_claims": 30}
+}

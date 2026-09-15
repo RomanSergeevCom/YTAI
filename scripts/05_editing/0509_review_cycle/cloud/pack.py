@@ -30,6 +30,7 @@ from cloudlib import (P, W6, IN, OUT, CROPS, WF_JUDGE, KINDS, ensure_dirs, warn,
                       batch_out_path, screens_list, screens_map, vlm_map, llm_map, probes_map, vo, candidates_load,
                       existing_tz_lines, film, rules, sources, derive_findings, needs_skeptic, line_bbox, match_line,
                       union_bbox, fid_fact, qid, _clip)
+from _bootstrap import T  # noqa: E402  (cloudlib уже положил stages/ и shared/ в sys.path)
 
 MAX_SCREENS = 50
 MAX_CANDS = 60
@@ -39,6 +40,21 @@ FOREIGN_RE = re.compile(r'shutterstock|getty|alamy|istock|depositphotos|adobe st
                         r'\.com\b|\bsource:|\bphoto:|\bcredit|watermark|образец|sample', re.I)
 LAT = re.compile(r'[A-Za-z]')
 CYR = re.compile(r'[А-Яа-яЁё]')
+# EN-канал: «чужое письмо» = кириллица + арабское (доля от всех букв экрана) → local_flags.foreign_ratio
+FOREIGN_SCRIPT = re.compile(r'[А-Яа-яЁё؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]')
+LETTER = re.compile(r'[^\W\d_]')
+
+
+def excluded_screens():
+    """Экраны, пересекающие P.EXCLUSIONS (известные не-ошибки ката): в J-пакеты не идут → summary.excluded."""
+    if not P.EXCLUSIONS:
+        return []
+    out = []
+    for e in screens_list():
+        why = P.in_exclusion(e.get('t0'), e.get('t1'))
+        if why:
+            out.append({'id': e['id'], 'tc': e.get('tc'), 'reason': why})
+    return out
 
 
 # ── экраны → записи пакета ─────────────────────────────────────────────────
@@ -76,6 +92,8 @@ def build_screen_recs(ids=None):
     seen_text = {}
     recs = []
     for e in ev:
+        if P.EXCLUSIONS and P.in_exclusion(e.get('t0'), e.get('t1')):
+            continue                                     # известная не-ошибка ката → summary.excluded, не судим
         sid = e['id']
         text = e.get('text_best') or ''
         key = norm_text(text)
@@ -97,10 +115,16 @@ def build_screen_recs(ids=None):
             'numbers_screen': _nums(text), 'numbers_vo': _nums(voice),
             'probe_foreign': pf, 'dup_of': dup,
         }
+        if P.LANG == 'en':                               # EN-канал: доля латиницы ≈ 1 и ничего не значит — важна доля чужого письма
+            letters = len(LETTER.findall(text))
+            flags['foreign_ratio'] = round(len(FOREIGN_SCRIPT.findall(text)) / letters, 2) if letters else 0.0
         hint = {}
         if _aslist(l.get('currency_numbers')):
             hint['currency'] = [_short(x) for x in _aslist(l['currency_numbers'])[:4]]
-        if _aslist(l.get('english_only')):
+        if P.LANG == 'en':
+            if _aslist(l.get('foreign_script')):
+                hint['foreign_script'] = [_short(x) for x in _aslist(l['foreign_script'])[:4]]
+        elif _aslist(l.get('english_only')):
             hint['english'] = [_short(x) for x in _aslist(l['english_only'])[:4]]
         if _aslist(l.get('facts_to_check')):
             hint['facts'] = [_short(x) for x in _aslist(l['facts_to_check'])[:4]]
@@ -165,6 +189,9 @@ def header(kind):
     summary = {'auto_confirmed': sum(1 for c in cands if c.get('route') == 'auto_confirm'),
                'dropped': sum(1 for c in cands if c.get('route') == 'drop'),
                'cloud': sum(1 for c in cands if c.get('route') == 'cloud')}
+    excluded = excluded_screens()
+    if excluded:                                        # только при P.EXCLUSIONS: шапка RU-пакетов без них не меняется
+        summary['excluded'] = excluded
     return {'kind': kind, 'film': film(), 'rules': rules(), 'existing_tz': existing_tz_lines(), 'summary': summary}
 
 
@@ -228,7 +255,7 @@ def build_j_packs(st, ids=None, tag=None, quiet=False):
             pack = {'batch_id': bid, 'sha8': sha, **header('J'),
                     'n_screens': len(part), 'n_candidates': sum(len(r['candidates']) for r in part),
                     'range_tc': f'{part[0]["tc"]}–{part[-1]["tc"]}',
-                    'hires_note': 'кадры не приложены намеренно: суди по тексту; сомнение в буквах → need_frames',
+                    'hires_note': T('a2.pack_hires_note'),
                     'screens': part}
             p = IN / f'{bid}.json'
             save_json(p, pack)
@@ -288,6 +315,8 @@ def build_facts(st, quiet=False):
     for sid, l in llm.items():
         if not re.search(r'\d', str(l.get('ocr') or '')):
             continue
+        if P.EXCLUSIONS and P.in_exclusion(l.get('t0'), l.get('t1')):
+            continue                                     # экран в известном исключении — факты не проверяем
         for s in _aslist(l.get('facts_to_check')):
             if len(items) >= max_claims:
                 break
@@ -377,7 +406,7 @@ def build_crops(st, quiet=False):
             return
         keys.add(k)
         items.append({'screen_id': sid, 'cand_id': cid or '', 'tc': scr[sid].get('tc'),
-                      'what_to_look_at': _clip(what or 'прочитать текст буква в букву', 300),
+                      'what_to_look_at': _clip(what or T('a2.pack_look_default'), 300),
                       'on_screen_text': _clip(text or (cands.get(cid) or {}).get('on_screen_text') or scr[sid].get('text_best'), 200)})
 
     for bid, b in sorted(done_batches(st, 'J').items()):
@@ -394,7 +423,7 @@ def build_crops(st, quiet=False):
     for c in cands.values():
         if c.get('route') == 'cloud' and (c.get('need_frame') or c.get('zoom_wanted')):
             add(c.get('screen_id'), c['cand_id'],
-                (c.get('route_reason') or '') + ' — прочитать буква в букву, видна ли ошибка', c.get('on_screen_text'))
+                (c.get('route_reason') or '') + T('a2.pack_look_suffix'), c.get('on_screen_text'))
     if not items:
         if not quiet:
             print('V: вопросов к кадрам нет')
@@ -432,9 +461,9 @@ def build_crops(st, quiet=False):
             for j, it in enumerate([x for x in items if x.get('image')][k:k + 16]):
                 r, c = divmod(j, 4)
                 it['image'] = str(sp)
-                it['cell'] = f'ряд {r + 1}, колонка {c + 1} (подпись {it["q_id"]})'
+                it['cell'] = T('a2.pack_cell', r=r + 1, c=c + 1, q=it['q_id'])
     pack = {'batch_id': bid, 'sha8': sha, 'kind': 'V', 'film': film(), 'images': images, 'items': items,
-            'note': 'открывать Read только перечисленные images; на контактном листе ячейка подписана q_id'}
+            'note': T('a2.pack_v_note')}
     p = IN / f'{bid}.json'
     save_json(p, pack)
     st['batches'][bid] = {'status': 'pending', 'kind': 'V', 'in': str(p), 'out': str(OUT / f'{bid}.json'),
@@ -450,9 +479,10 @@ def skeptic_digest(findings):
     for f in findings:
         ev = ''
         if f.get('fact'):
-            ev = f"факт: {f['fact'].get('status')} · {f['fact'].get('correct_value') or ''} · {f['fact'].get('source_url') or ''}".strip(' ·')
+            ev = (T('a2.pack_ev_fact') + f"{f['fact'].get('status')} · {f['fact'].get('correct_value') or ''} · {f['fact'].get('source_url') or ''}").strip(' ·')
         if f.get('crop'):
-            ev = (ev + ' | ' if ev else '') + f"кроп: видно={f['crop'].get('error_visible')} · «{f['crop'].get('text_as_seen')}» · {f['crop'].get('answer')}"
+            ev = (ev + ' | ' if ev else '') + T('a2.pack_ev_crop', vis=f['crop'].get('error_visible'),
+                                                  seen=f['crop'].get('text_as_seen'), ans=f['crop'].get('answer'))
         out.append({'finding_id': f['finding_id'], 'screen_id': f.get('screen_id'), 'tc': f.get('tc'),
                     'kind': f.get('kind'), 'on_screen_text': f.get('on_screen_text'), 'fix_text': f.get('fix_text'),
                     'problem': f.get('problem'), 'why': f.get('why'), 'existing_tz': f.get('existing_tz') or '',
@@ -519,7 +549,9 @@ def print_call(st):
         'skeptic': skeptic,
         'film': film(), 'rules': rules(), 'sources': sources(),
         'out_dir': str(OUT), 'existing_tz_file': str(write_existing_tz()),
-        'project': P.CODE, 'concurrency': 4}}
+        'project': P.CODE, 'lang': P.LANG, 'concurrency': 4}}
+    if P.EXCLUSIONS:                                   # wf_judge.js: заведомые не-ошибки карточки (RU без exclusions — вызов как был)
+        call['args']['exclusions'] = P.EXCLUSIONS
     print('Workflow(' + json.dumps(call, ensure_ascii=False, indent=1) + ')')
 
 

@@ -12,12 +12,17 @@ import json, os, re, sys
 from pathlib import Path
 
 os.environ.setdefault('HF_HOME', str(Path.home() / 'YTAI/models/huggingface'))
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG  # noqa: E402
 
 WORDS = P.WORDS
 MODEL = 'mlx-community/Qwen3-8B-4bit'
 OUT = W6 / 'llm_v6.json'
-SUBJECT = P.get('film_subject', 'о рубинах')     # чем фильм — идёт в промпт корректора
+SUBJECT = P.get('film_subject', T('a1.llm_subject_default'))     # чем фильм — идёт в промпт корректора
+RULES = ''
+if LANG == 'en':
+    # «documentary{subject}»: пустая тема не оставляет висячий пробел; правила — из профиля канала
+    SUBJECT = f' {str(SUBJECT).strip()}' if str(SUBJECT or '').strip() else ''
+    RULES = str(P.profile('rules_text') or '').strip() or T('a1.llm_rules_default')
 P.banner('llm')
 
 from mlx_lm import load, generate
@@ -33,24 +38,9 @@ def vo(t0, t1, pad=6.0):
     return ' '.join(w for w, s, e in ws if t0 - pad <= s <= t1 + pad)
 
 
-PROMPT = """/no_think Ты корректор и факт-чекер русскоязычного YouTube-фильма {subject}.
-Экран #{id} (таймкод {tc}). Текст на экране — два независимых распознавания:
-OCR: {ocr}
-VLM: {vlm}
-Что за графика: {desc}
-Озвучка в этот момент: {vo}
-
-Правила канала: валюта — знак ПЕРЕД числом и сокращение: «$30,3 МЛН» (НЕ «30 300 000 $»); русский титр главный, английский допустим только вторым/меньше; термины и имена — без опечаток.
-Игнорируй артефакты распознавания (обрезанные буквы, путаницу латиницы/кириллицы у OCR), если второе распознавание их не подтверждает.
-
-Ответь СТРОГО одним JSON-объектом:
-{{"typos": ["<слово с ошибкой → правильно>", ...],
- "grammar": ["<замечание или пусто>"],
- "currency_numbers": ["<нарушение формата: как на экране → как надо>"],
- "english_only": ["<английский текст/термин без русского перевода>"],
- "facts_to_check": ["<конкретное проверяемое утверждение: число/дата/имя>"],
- "mismatch_with_vo": "<экран противоречит озвучке — или пусто>",
- "severity": "none|low|high"}}"""
+# ru — канон YTUVI (правила зашиты в промпт); en — английский фильм: правила из профиля (rules_text),
+# english_only всегда пуст, вместо него foreign_script — чужой алфавит в графике канала (не в реальном b-roll)
+PROMPT = T('a1.llm_prompt')
 
 ev = json.load(open(W6 / 'screens_v6.json', encoding='utf-8'))
 vlm = {}
@@ -80,7 +70,7 @@ for i, e in enumerate(jobs):
     v = vlm.get(e['id'], {})
     msg = PROMPT.format(subject=SUBJECT, id=e['id'], tc=e['tc'], ocr=' | '.join(e['texts_all'])[:600],
                         vlm=(v.get('vlm_text') or '—')[:600], desc=(v.get('vlm_desc') or '—')[:200],
-                        vo=vo(e['t0'], e['t1'])[:900])
+                        vo=vo(e['t0'], e['t1'])[:900], rules=RULES)
     prompt = tok.apply_chat_template([{'role': 'user', 'content': msg}], add_generation_prompt=True)
     r = generate(model, tok, prompt=prompt, max_tokens=400, sampler=sampler)
     r = re.sub(r'<think>.*?</think>', '', r, flags=re.S)
@@ -91,7 +81,12 @@ for i, e in enumerate(jobs):
             parsed = json.loads(m.group(0))
         except Exception:
             parsed = {'raw': r[:300]}
-    rec = {'id': e['id'], 't0': e['t0'], 't1': e['t1'], 'tc': e['tc'], 'chapter': e['chapter'],
+    if LANG == 'en' and isinstance(parsed, dict) and 'raw' not in parsed:
+        # английский канал: «английский без перевода» не бывает ошибкой — даже если модель что-то туда положила
+        parsed['english_only'] = []
+        if not isinstance(parsed.get('foreign_script'), list):
+            parsed['foreign_script'] = [parsed['foreign_script']] if parsed.get('foreign_script') else []
+    rec ={'id': e['id'], 't0': e['t0'], 't1': e['t1'], 'tc': e['tc'], 'chapter': e['chapter'],
            'best_frame': e['best_frame'], 'ocr': e['text_best'][:300],
            'vlm': (v.get('vlm_text') or '')[:300], **parsed}
     res.append(rec)

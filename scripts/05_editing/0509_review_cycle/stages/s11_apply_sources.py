@@ -7,11 +7,13 @@
 (библиограф-агент: сверка md5 с архивом Digital_Originals + ссылка на сам PDF в Drive-зеркале).
 Выход: pravki_v2.json — у каждой картинки-материала строка src, которую док и лист печатают
 как «📚 источник: …». Идемпотентно.
+Язык src — LANG (shared/i18n_strings/fix.py): RU-литералы прежние байт-в-байт; на EN (YTCR) —
+source_title_en / source_title библиографа, если есть, иначе source_title_ru.
 """
 import json
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG  # noqa: E402
 if (W6 / 'sources_research.json').exists():
     src = json.load(open(W6 / 'sources_research.json'))
 else:
@@ -24,7 +26,9 @@ INFO = {}
 for it in src['items']:
     f = fixes.get(it['img'], {})
     it = {**it, **f}
-    line = it['source_title_ru'].strip()
+    title = ((it.get('source_title_en') or it.get('source_title') or it['source_title_ru']) if LANG == 'en'
+             else it['source_title_ru'])
+    line = title.strip()
     links = [x for x in (it.get('drive_link'), it.get('url')) if x]
     if it.get('license'):
         line += f" · {it['license']}"
@@ -37,9 +41,9 @@ for it in src['items']:
 BOOKS = json.load(open(W6 / 'book_links.json')) if (W6 / 'book_links.json').exists() else {}
 # названия книг/журналов по имени PDF: дефолты архива UVI + карточка (book_titles) сверху
 BOOK_TITLE = {
-    'SSEF_ACG_1_Ruby': 'SSEF «Advanced Coloured Gemstones», книга 1 «Ruby» (Швейцарский геммологический институт)',
-    'SSEF_ACG_3_Corundum_Treatments': 'SSEF «Advanced Coloured Gemstones», книга 3 «Corundum Treatments»',
-    '1965-07_JoG_v9n11': 'журнал Gem-A «The Journal of Gemmology», июль 1965, т.9 №11',
+    'SSEF_ACG_1_Ruby': T('fix.book_ssef_acg_1'),
+    'SSEF_ACG_3_Corundum_Treatments': T('fix.book_ssef_acg_3'),
+    '1965-07_JoG_v9n11': T('fix.book_jog_1965'),
     **dict(P.get('book_titles', {}) or {}),
 }
 import re as _re
@@ -56,17 +60,17 @@ OLD_AUTO = {
 
 def auto_src(img):
     if img.startswith('v6_cafe_'):
-        return 'кадр рендера v1 @39:46 — общий план в кафе'
+        return T('fix.src_cafe')
     if img.startswith(('v6_err_', 'ann_')):
-        return 'кадр рендера v1 + наша отметка ошибки (стрелка — слой V5)'
+        return T('fix.src_err')
     if img.startswith('fix_'):
-        return 'наш драфт исправления поверх кадра v1 (слой V3) — перерисовать в стиле канала'
+        return T('fix.src_fix')
     if img.startswith(('map_', 'mapfull_')):
-        return 'наш драфт — перерисовать в стиле канала · карта: Natural Earth 50m (public domain)'
+        return T('fix.src_map')
     if img.startswith(('term_', 'termgrp_', 'sub_', 'prog_', 'info_', 'card_', 'mock_')):
-        return 'наш драфт — перерисовать в стиле канала'
+        return T('fix.src_draft')
     if img.startswith('chapter_'):
-        return 'стоп-кадр заставки главы из рендера v1'
+        return T('fix.src_chapter')
     return None
 
 
@@ -80,7 +84,7 @@ for p in pr['all']:
                 key = base.replace('_RESTORED', '')
                 link = BOOKS.get(base + '.pdf') or BOOKS.get(key + '.pdf')
                 if link:
-                    mr['src'] = f"{BOOK_TITLE.get(key, base)} — файл книги в архиве: {link}"
+                    mr['src'] = T('fix.book_file', title=BOOK_TITLE.get(key, base), link=link)
                     n += 1
                     break
             continue

@@ -9,7 +9,7 @@ usage: s5_selfcheck.py [frames|ocr|vlm|llm|all]
 import json, re, sys
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG  # noqa: E402
 
 # Раньше тут стояло 2440 — число кадров ПЕРВОГО ката. На кате другой длины условие
 # не выполнялось никогда: стадия стирала кадры и перегоняла 4K заново три раза подряд,
@@ -89,11 +89,13 @@ def check_vlm():
         bad.append(f'vlm: {len(recs)}/{len(ev)} экранов')
     if len(notext) > len(ev) * .35:
         bad.append(f'vlm: NO TEXT у {len(notext)} экранов — модель не читает кадры?')
-    # кириллица должна присутствовать в большинстве транскрипций
-    cyr = sum(1 for r in recs.values() if re.search(r'[А-Яа-я]', r.get('vlm_text', '')))
-    rep['vlm']['cyrillic'] = cyr
+    # алфавит языка канала должен присутствовать в большинстве транскрипций:
+    # ru — кириллица (ключ отчёта 'cyrillic'), en — латиница (ключ 'latin')
+    alpha_re, alpha_key = (r'[A-Za-z]', 'latin') if LANG == 'en' else (r'[А-Яа-я]', 'cyrillic')
+    cyr = sum(1 for r in recs.values() if re.search(alpha_re, r.get('vlm_text', '')))
+    rep['vlm'][alpha_key] = cyr
     if recs and cyr < len(recs) * .4:
-        bad.append(f'vlm: кириллица только в {cyr}/{len(recs)} — транскрибирует не то')
+        bad.append(T('a1.selfcheck_vlm_alpha', n=cyr, total=len(recs)))
 
 
 def check_llm():

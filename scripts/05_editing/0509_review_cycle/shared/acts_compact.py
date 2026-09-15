@@ -21,9 +21,15 @@
   fund_piece_max_sec  — самый длинный непрерывный кусок спикера фонда (карточка: ключ из fund_speaker_key), иначе n/a.
 
 usage: ~/YTAI/environment/.venv_llm/bin/python acts_compact.py [--act N] [--force] [--max-tokens 4000] [--no-llm]
-          [--checks-only] [--channel YTCH] [--out path] [--checks-out path]
+          [--checks-only] [--channel YTCH] [--out path] [--checks-out path] [--screens path]
   --act N        только акт N (1-based); --no-llm — экстрактивная сводка без модели (быстрая проверка формы);
   --checks-only  только structure_checks; --channel — взять structure_rules другого канала (тест на чужом кате).
+
+Без модели по профилю: verdict.acts_llm = false (редакторский вердикт, YTCR) → Qwen не грузится, акты экстрактивные
+(extractive_acts, обычный python3): summary = начало + конец акта (≤120 слов), theses = 5 предложений «[M:SS] …»,
+равномерно по акту, claims = предложения с цифрами / суммами {text, numbers, tc}, screens = тексты экранов акта из
+work/{cut}/screens_v6.json [{tc, text}] (≤25), model = 'extractive'. Профиль без ключа (YTCH) — Qwen, как было.
+Названия актов по умолчанию и n/a-проверка — через i18n (e.act_default / e.chapter_default / e.no_structure_rules).
 env: YTAI_CARD=<review_card.json>; YTAI_WORK_DIR — куда писать (тесты); HF_HOME по умолчанию ~/YTAI/models/huggingface.
 """
 import argparse
@@ -37,7 +43,7 @@ from pathlib import Path
 
 os.environ.setdefault('HF_HOME', str(Path.home() / 'YTAI/models/huggingface'))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'stages'))
-from _bootstrap import P, W6, ROOT  # noqa: E402
+from _bootstrap import P, W6, ROOT, T  # noqa: E402
 
 MODEL = 'mlx-community/Qwen3-8B-4bit'
 YTAI = ROOT.parent.parent.parent
@@ -93,12 +99,12 @@ def load_acts(ws):
     acts = []
     if raw:
         for i, a in enumerate(raw):
-            t0, title = (a[0], a[1]) if isinstance(a, (list, tuple)) else (a.get('t0', a.get('sec', 0)), a.get('title', f'Акт {i + 1}'))
+            t0, title = (a[0], a[1]) if isinstance(a, (list, tuple)) else (a.get('t0', a.get('sec', 0)), a.get('title', T('e.act_default', n=i + 1)))
             acts.append({'act': i + 1, 't0': float(t0), 'title': str(title)})
     else:
         names = dict(P.get('ch_name') or {})
         for i, (t0, n) in enumerate(P.CHAPTERS):
-            acts.append({'act': i + 1, 't0': float(t0), 'title': names.get(n, f'Глава {n}')})
+            acts.append({'act': i + 1, 't0': float(t0), 'title': names.get(n, T('e.chapter_default', n=n))})
     acts.sort(key=lambda a: a['t0'])
     for i, a in enumerate(acts):
         a['t1'] = acts[i + 1]['t0'] if i + 1 < len(acts) else float(total)
@@ -218,6 +224,68 @@ def extractive(text):
             'claims': [{'text': s, 'numbers': re.findall(r'\d+', s)[:6]} for s in sents if re.search(r'\d', s)][:12]}
 
 
+SENT_END = re.compile(r'[.!?…]["»”)]*$')
+NUM_RX = re.compile(r'\d[\d,.]*\s*(?:%|k\b|m\b|million|billion|thousand|hundred|aed|dirhams?|usd|\$|€|тыс\w*|млн|руб\w*|₽)?', re.I)
+MONEY_WORDS = re.compile(r'\b(?:million|billion|thousand|hundred|dirhams?|aed|dollars?|percent|half)\b', re.I)
+
+
+def act_sentences(ws, a, gap=1.5, max_words=40):
+    """предложения акта по словам: конец — знак препинания, пауза > gap или max_words → [(s, текст)]"""
+    out, cur, t0, prev_e = [], [], None, None
+    for w in ws:
+        if not (a['t0'] - 0.01 <= w['s'] < a['t1']):
+            continue
+        if cur and (w['s'] - prev_e > gap or len(cur) >= max_words):
+            out.append((t0, ' '.join(cur))); cur = []
+        if not cur:
+            t0 = w['s']
+        cur.append(str(w['w']).strip())
+        prev_e = w['e']
+        if SENT_END.search(cur[-1]):
+            out.append((t0, ' '.join(cur))); cur = []
+    if cur:
+        out.append((t0, ' '.join(cur)))
+    return [(s, re.sub(r'\s+', ' ', t).strip()) for s, t in out if t.strip()]
+
+
+def load_screens(path):
+    """screens_v6.json (s1_screens) → [(t0, текст)]; нет файла / битый → []"""
+    try:
+        d = json.load(open(path, encoding='utf-8'))
+    except Exception:
+        return []
+    rows = d if isinstance(d, list) else (d.get('screens') or [])
+    out = []
+    for x in rows:
+        if not isinstance(x, dict):
+            continue
+        txt = re.sub(r'\s+', ' ', str(x.get('text_best') or x.get('text') or '')).strip()
+        if txt and x.get('t0') is not None:
+            out.append((float(x['t0']), txt))
+    return sorted(out)
+
+
+def extractive_acts(ws, a, screens):
+    """акт без модели (profile verdict.acts_llm = false): начало+конец, 5 предложений по всему акту, факты с числами, экраны"""
+    sents = act_sentences(ws, a)
+    words = [w['w'] for w in ws if a['t0'] - 0.01 <= w['s'] < a['t1']]
+    if len(words) <= 120:
+        summ = ' '.join(words)
+    else:
+        summ = ' '.join(words[:75]) + ' … ' + ' '.join(words[-40:])
+    long = [x for x in sents if len(x[1].split()) >= 6] or sents
+    k = min(5, len(long))
+    picks = sorted({round(i * (len(long) - 1) / max(1, k - 1)) for i in range(k)}) if k else []
+    theses = [f'[{tc(long[i][0])}] {long[i][1]}' for i in picks]
+    claims = []
+    for s, t in sents:
+        nums = [m.group(0).strip() for m in NUM_RX.finditer(t)]
+        if nums or MONEY_WORDS.search(t):
+            claims.append({'text': t, 'numbers': nums[:6], 'tc': tc(s)})
+    scr = [{'tc': tc(t0), 'text': txt[:120]} for t0, txt in screens if a['t0'] - 0.01 <= t0 < a['t1']]
+    return {'summary': summ, 'theses': theses, 'claims': claims[:15], 'screens': scr[:25]}
+
+
 class LLM:
     def __init__(self):
         from mlx_lm import generate, load
@@ -252,7 +320,7 @@ def structure_checks(ws, acts, rules, names):
         return ' '.join(x['w'] for x in ws[max(0, i - k):i + k + 1])
 
     if not rules:
-        return [{'rule': 'structure_rules', 'status': 'n/a', 'ok': None, 'detail': 'в профиле канала нет structure_rules'}]
+        return [{'rule': 'structure_rules', 'status': 'n/a', 'ok': None, 'detail': T('e.no_structure_rules')}]
     # 1. вход фонда
     n_min = rules.get('fund_entry_min')
     if n_min and rules.get('fund_rx'):
@@ -335,7 +403,11 @@ def main():
     ap.add_argument('--channel')
     ap.add_argument('--out', default=str(W6 / 'acts_compact.json'))
     ap.add_argument('--checks-out', default=str(W6 / 'structure_checks.json'))
+    ap.add_argument('--screens', default=str(W6 / 'screens_v6.json'))
     a = ap.parse_args()
+    # профиль verdict.acts_llm = false (редакторский вердикт) → без модели; профиль без ключа (YTCH) — как было
+    editorial = P.profile('verdict.acts_llm') is False
+    no_llm = a.no_llm or editorial
 
     ws, paras = load_words()
     if not ws:
@@ -370,13 +442,15 @@ def main():
     if a.act and not todo:
         raise SystemExit(f'нет акта {a.act} (всего {len(acts)})')
     llm = None
+    screens = load_screens(a.screens) if editorial else []
+    model = 'extractive' if editorial else MODEL
     count = (lambda t: max(1, len(t) // 3))
     results = dict(old)
     for act in todo:
         ptxt = act_paragraphs(ws, paras, act, names)
         text = '\n'.join(ptxt)
         h = hashlib.sha1(text.encode('utf-8')).hexdigest()[:10]
-        if not a.force and act['act'] in old and old[act['act']].get('hash') == h and (old[act['act']].get('llm') or a.no_llm):
+        if not a.force and act['act'] in old and old[act['act']].get('hash') == h and (old[act['act']].get('llm') or no_llm):
             print(f'  акт {act["act"]} «{act["title"]}» — без изменений, пропуск')
             continue
         t_start = time.time()
@@ -384,6 +458,8 @@ def main():
                'speakers_share': speakers_share(ws, act, names), 'hash': h, 'words': len(text.split())}
         if not text.strip():
             rec.update({'summary': '', 'theses': [], 'claims': [], 'windows': 0, 'llm': False})
+        elif editorial:
+            rec.update(extractive_acts(ws, act, screens), windows=1, llm=False)
         elif a.no_llm:
             rec.update(extractive(text), windows=1, llm=False)
         else:
@@ -416,7 +492,7 @@ def main():
             rec.update({k: final[k] for k in ('summary', 'theses', 'claims')}, windows=len(wins), llm=ok_llm)
         rec['sec'] = round(time.time() - t_start, 1)
         results[act['act']] = rec
-        P.write_json_atomic(out_p, {'schema': 'acts-compact-v1', 'code': P.CODE, 'cut_version': P.CUT_VERSION, 'model': MODEL,
+        P.write_json_atomic(out_p, {'schema': 'acts-compact-v1', 'code': P.CODE, 'cut_version': P.CUT_VERSION, 'model': model,
                                     'acts': [results[k] for k in sorted(results)]})
         print(f'  акт {act["act"]} «{act["title"]}» {act["tc_range"]}: слов {rec["words"]} · окон {rec.get("windows", 0)} · '
               f'{"модель" if rec.get("llm") else "экстракт"} · {rec["sec"]} с · тезисов {len(rec.get("theses", []))} · '

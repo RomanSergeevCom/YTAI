@@ -34,7 +34,7 @@ import time
 from pathlib import Path
 
 os.environ.setdefault('HF_HOME', str(Path.home() / 'YTAI/models/huggingface'))
-from _bootstrap import P, W6  # noqa: E402
+from _bootstrap import P, W6, T, LANG  # noqa: E402
 
 MODEL = 'mlx-community/Qwen2.5-VL-7B-Instruct-4bit'
 HIRES = W6 / 'hires'
@@ -49,18 +49,30 @@ ZOOM_MIN_W = 96           # кроп уже этого (px, до масштаб�
 MAX_TOK_YESNO = 48
 MAX_TOK_ZOOM = 40
 
-Q_FOREIGN = ("This is a frame from a Russian-language YouTube video about gemstones. Does the frame contain any "
-             "FOREIGN element that does not belong to the video's own graphics: a watermark or stock-site logo, "
-             "a third-party brand or TV channel logo, Chinese/Japanese/Korean or other non-Russian characters, "
-             "a mouse cursor, burned-in subtitles or captions from another video, a source credit line? "
-             "The channel's own small 'uvi' logo, the presenter and the video's own Russian titles do NOT count. "
-             "Answer strictly in the form: YES: <what and where> — or NO.")
+# Q_FOREIGN / Q_ZOOM — по языку канала (shared/i18n_strings/a1.py); en: свой логотип — профиль probe.own_logo
+if LANG == 'en':
+    OWN_LOGO = str(P.profile('probe.own_logo') or P.CHANNEL or 'this channel')
+    Q_FOREIGN = T('a1.probe_q_foreign', own_logo=OWN_LOGO)
+else:
+    Q_FOREIGN = T('a1.probe_q_foreign')
 Q_CUTOFF = ("Is any text in this frame cut off by the frame edge, partially hidden behind a person or object, "
             "or caught mid-animation (letters half-drawn, a word still typing in, a line missing its end)? "
             "Answer strictly: YES: <which text> — or NO.")
-Q_ZOOM = ("This is a zoomed crop of one text line from a video frame. Transcribe the text EXACTLY, letter by letter, "
-          "as it is written (Russian Cyrillic or Latin). Keep the letter case. Do NOT correct spelling, do NOT add "
-          "or translate words. Output only the text.")
+Q_ZOOM = T('a1.probe_q_zoom')
+
+
+def ocr_lang_args():
+    """--langs для bin/vision_ocr_ru из профиля канала ocr_langs (список или «en-US,ru-RU»); пусто — без аргументов"""
+    v = P.profile('ocr_langs')
+    if isinstance(v, str) and v.strip().startswith('['):
+        try:
+            v = json.loads(v)
+        except ValueError:
+            pass
+    if isinstance(v, (list, tuple)):
+        v = ','.join(str(x).strip() for x in v if str(x).strip())
+    v = str(v or '').strip()
+    return ['--langs', v] if v else []
 
 
 def parse_ids(spec, all_ids):
@@ -106,7 +118,8 @@ def local_ocr(path):
     if not OCR_BIN.exists():
         return ''
     try:
-        p = subprocess.run([str(OCR_BIN)], input=str(path) + '\n', capture_output=True, text=True, timeout=60)
+        p = subprocess.run([str(OCR_BIN), *ocr_lang_args()], input=str(path) + '\n', capture_output=True, text=True,
+                           timeout=60)
         d = json.loads(p.stdout.strip().splitlines()[-1])
         return ' | '.join(l['t'] for l in d.get('lines', []) if l.get('t'))
     except Exception as ex:                        # noqa: BLE001
@@ -129,16 +142,32 @@ def zoom_words_from_candidates(path):
 
 
 def zoom_words_fallback(screens):
-    """без candidates.json: слова ≥4 букв вне словаря (каталог + озвучка, pymorphy при наличии)"""
+    """без candidates.json: слова ≥4 букв вне словаря (каталог + озвучка, pymorphy при наличии).
+    en: латинские слова ≥4 букв вне озвучки и вне P.LEXICON (лексикон профиля + latin_whitelist + canon_words), без pymorphy."""
+    vocab = set()
+    for seg in json.load(open(P.WORDS, encoding='utf-8'))['segments']:
+        for w in seg.get('words') or []:
+            vocab.add(re.sub(r'[^\w]', '', w['w'].lower()))
+    if LANG == 'en':
+        lex = set(P.LEXICON)
+        for entry in P.LEXICON:                    # «Dubai Hills Estate» → и целиком, и по словам
+            lex.update(t.lower() for t in tokens(entry))
+        out = {}
+        for e in screens:
+            for li, l in enumerate(e['lines_best']):
+                for t in tokens(l['t']):
+                    if len(t) < 4 or not re.fullmatch(r'[A-Za-z]+', t):
+                        continue
+                    tl = t.lower()
+                    if tl in vocab or tl in lex:
+                        continue
+                    out.setdefault(e['id'], []).append((li, t))
+        return out
     try:
         import pymorphy3
         morph = pymorphy3.MorphAnalyzer()
     except Exception:                              # noqa: BLE001
         morph = None
-    vocab = set()
-    for seg in json.load(open(P.WORDS, encoding='utf-8'))['segments']:
-        for w in seg.get('words') or []:
-            vocab.add(re.sub(r'[^\w]', '', w['w'].lower()))
     out = {}
     for e in screens:
         for li, l in enumerate(e['lines_best']):

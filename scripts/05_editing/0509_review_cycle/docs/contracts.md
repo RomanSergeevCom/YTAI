@@ -22,8 +22,14 @@
 | `render`? | path | лёгкая копия ката для UXP (если не `src`) |
 | `words` | path | транскрипт `{CODE}_{cut}.words.json` (wordrole) |
 | `duration_sec` | float | длительность ката |
-| `fps` | int | 25 |
+| `fps` | int \| float | 25 · 29.97 · 23.976 · 59.94 — NTSC-частоты считаются точной дробью `P.FPS_EXACT` (29.97 → 30000/1001): сетка tc таймлайна, стиллы, главы |
 | `frames_tolerance`? | int | допуск числа кадров 1 fps |
+| `lang`? | `"ru"` \| `"en"` \| `""` | язык поверхностей монтажёра; пусто/нет — `profile.lang`, иначе `ru`. Окружение `YTAI_LANG` перебивает |
+| `language`? | str | язык озвучки для whisper (`--language`); нет — `lang` → `profile.lang`; `auto` не передаётся никогда. RU-карточка без ключей — без флага, как раньше |
+| `exclusions`? | `[{t0, t1, reason}]` | заведомые не-ошибки ката (дыра футажа, недоделанные экраны): кандидаты в интервале → drop `known_exclusion`, экраны не пакуются в облако, находки не становятся ТЗ (`P.in_exclusion`, пересечение с границами включительно). Записи с `t0`/`t1` = null — заметка, в фильтр не идут (card check предупреждает) |
+| `align_against`? | `[path]` | words.json прошлых версий/плана для стадии `align` (n-gram кат ↔ база → `work/{cut}/align.json`) |
+| `chapters_plan`? | path | план частей `ytai-part-v1` (`part.chapter_markers[]` + `part.base_segments[]`) → стадия `chapters` ставит главы ката через align с прошлым рендером (первый не-сценовый words.json из `align_against`) |
+| `canon_words`? | `[str]` | слова фильма, которые не опечатка (входят в `P.LEXICON` вместе с `profile.lexicon` + `latin_whitelist`) |
 | `chapters` | `[[sec, "NN"], …]` | границы глав ката |
 | `ch_name` | `{ "NN": "Название", … }` | имена глав |
 | `ch_img`? | `{ "NN": "file.jpg" }` | кадр-карточка главы |
@@ -58,6 +64,12 @@
 | `tz_classes` | `{keep: [...], drop: [...]}` — какие классы находок попадают в ТЗ |
 | `sources_default` | авторитеты факт-чека по умолчанию |
 | `latin_whitelist` | латинские токены, которые не считаются «английским без перевода» |
+| `lang`? | `ru` (по умолчанию) \| `en` — язык поверхностей монтажёра канала (YTCR = `en`); карточка `lang` перебивает. §10 |
+| `lexicon`? | `[str]` — слова канала, которые не опечатка и не «чужой язык» (EN-словарь роутера; `P.LEXICON` = lexicon + latin_whitelist + card canon_words, нижний регистр) |
+| `currency`? | EN: `{canon: "AED 2M", code_before: bool, suffix: ["K","M","B"], decimal: ".", group: ","}` — канон суммы для EN-правил роутера (`rule_currency_en`); формат-варианты того же значения — не ошибка |
+| `verdict`? | `{enabled, kind: "editorial", acts_llm: false, propose_chapters: false}` — редакторский вердикт без `structure_rules` (YTCR): стадия `acts` идёт `--no-llm` на Mac, `verdict` — один облачный агент (`verdict_call.py`, EN-промпт по `args.lang`) |
+| `probe`? | `{own_logo: "Core Realty"}` — собственный логотип канала: зонд s3b и роутер не считают его чужим следом (drop `own_logo`) |
+| `ocr_langs`? | `["en-US"]` — языки Apple Vision для s2 (`bin/vision_ocr_ru --langs en-US`); нет — `ru-RU,en-US`. Список — подсказка Vision, кириллицу он всё равно прочтёт |
 | `terms_base` | общие термины канала (та же структура, что `review_terms.json`) |
 | `sensitivity`? | YTCH: `{policy: "fund_confirm", mark: "⚠️", never_cut: true, patterns: [...]}` |
 | `structure_rules`? | YTCH: `{fund_entry_min, teaser_rule, last_sound_rule}` |
@@ -129,6 +141,17 @@ TERM_EXTRA, TERM_RX, LOC_RX, MAP_WINDOWS, place_family`.
    "fix_local": "ВЫСОКАЯ", "signals": ["ocr=vlm=zoom", "vo_match:0.91"], "route": "auto_confirm|cloud|drop",
    "route_reason": "три чтения совпали, исправление из озвучки", "need_frame": false} ]
 ```
+Правила выбираются по языку: RU — прежние (typo/grammar/language «английский без перевода»/currency по канону YTUVI) +
+общие fact/mismatch/foreign_trace; EN (`lang en`) — `rule_typo_en` (pyspellchecker в `.venv_llm`, фолбэк
+`/usr/share/dict/web2`; исправление из озвучки или словаря), `rule_language_en` (кириллица/арабское письмо в графике
+канала; латинское слово с кириллическими двойниками = артефакт OCR), `rule_currency_en` (`profile.currency`) + те же общие.
+`route_reason` у auto_confirm уходит в находку как `problem` — у EN он английский. Классы drop (`drop_class`):
+`known_exclusion` (card exclusions) · `real_world_text` (вывеска/документ реального мира по vlm_desc) · `ocr_homoglyph` ·
+`own_logo` (+ прежние). EN-сигналы: `fixes:N`, `figure_vs_vo`, `currency_vs_vo`, `mixed_currency`, `script:cyrillic|arabic`,
+`vlm=cyr`, `llm:foreign_script`, `homoglyph_mix:…`. Находка auto_confirm у EN хранит сигналы в `signals`, а не в `why`
+(«📚 SOURCE» монтажёра их не показывает); у RU `why` = сигналы, как было.
+`work/{cut}/llm_v6.json` (s4): у EN `english_only` всегда пуст, чужой алфавит графики — `foreign_script: [str]`.
+`prep_check_vlm.json` (s5): доля алфавита VLM — ключ `cyrillic` (ru) / `latin` (en), порог 40 %.
 
 ## 7. Облако — один проход `cloud/wf_judge.js`
 
@@ -145,10 +168,16 @@ TERM_EXTRA, TERM_RX, LOC_RX, MAP_WINDOWS, place_family`.
   "summary": {"auto_confirmed": n, "dropped": m, "cloud": k}, "n_screens", "n_candidates", "range_tc",
   "screens": [ {"id": "s031", "tc": "5:12", "t0": 312, "t1": 318, "chapter": "03", "frame": "h0313.jpg",
                 "ocr_lines": [{"i": 0, "t": "…"}], "ocr_last"?: "…", "vlm_text": "…", "vlm_desc": "…", "vo": "…",
-                "local_flags": {"typo_susp": [...], "latin_ratio": 0.1, "numbers_screen": [...], "numbers_vo": [...],
-                                "probe_foreign": false, "dup_of": null, "llm"?: {currency, english, facts, mismatch}},
+                "local_flags": {"typo_susp": [...], "latin_ratio": 0.1, "foreign_ratio"?: 0.0, "numbers_screen": [...],
+                                "numbers_vo": [...], "probe_foreign": false, "dup_of": null,
+                                "llm"?: {currency, english | foreign_script (en), facts, mismatch}},
                 "candidates": [ {"cand_id", "kind", "text", "line_idx", "fix_local", "route_reason", "signals"} ] } ] }
 ```
+EN-пакет: `foreign_ratio` (доля нелатинского письма), `llm.foreign_script`, `summary.excluded: [{id, tc, reason}]`
+(экраны в card exclusions не пакуются), `hires_note` по-английски. Args воркфлоу: `lang` (`P.LANG`; только `"en"` включает
+английские промпты/схемы, любое другое значение — русский текст байт-в-байт) и `exclusions` (`P.EXCLUSIONS`, только если
+непусто — агентам «не выносить», скептику код T). Судья видит у EN метки `FIX-NN`; collect/derive_findings нормализуют их
+обратно в ключи `ТЗ-NN` (данные не меняются).
 Без `candidates.json` пакеты собираются с пустыми `candidates[]` (предупреждение в stderr). Экран, уже покрытый
 done-батчем с тем же хешем записи, второй раз не пакуется; done-батчи не трогаются.
 
@@ -214,3 +243,40 @@ markers, min_builder, chapter_markers, bin, created, note}`, `segments[{segment_
 color, source_file, source_path, clip_id, kind, use, speaker, source_in_sec, source_out_sec, timeline_in_sec, timeline_out_sec,
 item_marker?}]`, `tracks`, `audio_policy`, `required_imports`, `counts`, `dropped`. Слои: V1 оригинал · V2 футажи ·
 V3 инфографика · V4 плашки ТЗ · V5 стрелки · V6 структура; маркеры секвенции = только главы.
+`part.fps` = `P.FPS_EXACT` (29.97 → 30000/1001); все `timeline_in/out_sec` и маркеры глав лежат на этой сетке (допуск
+0.02 кадра), стиллы ≤ floor(4.8·fps) кадров. Язык маркеров/шапки/summary — i18n (§10), номер ТЗ на поверхности — `tz_label`.
+
+## 10. Язык поверхностей (i18n) и регрессия
+
+`shared/i18n.py`: `LANG` = карточка `lang` → профиль `lang` → `ru` (окружение `YTAI_LANG` перебивает; всё, кроме `en`, = `ru`).
+`T(key, **kw)` — строка на LANG (`str.format(**kw)` при kw); неизвестный ключ или ключ без `en` при LANG=en → `KeyError`
+(никакой тихой подстановки русского). `TL(lang, key)` — явный язык; `tz_label(num)` → `ТЗ-07` / `FIX-07` (ключи данных
+`ТЗ-NN` во всех JSON не меняются). Стадии: `from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label`; shared/cloud:
+`import i18n` (STAGE/shared в sys.path). Облачные JS получают `args.lang`.
+Таблицы — `shared/i18n_strings/<owner>.py`, `STRINGS = {'<owner>.key': {'ru': …, 'en': …}}`; owner = имя файла до первого
+`_`; ключ обязан начинаться с `<owner>.`; дубль ключа между файлами → `ImportError`. RU-значения — байт-в-байт прежние
+литералы. Общие ключи `core.*`: метки блоков `core.lbl_now|do|list|where|source|timeline|comment`, классы
+`core.kind_up.<kind>` / `core.kind_low.<kind>`, диф опечатки `core.was_pre|was_mid|was_post`, `core.chapter`,
+`core.draft_badge`, `core.tz_prefix`. Операторские логи и продюсерские поверхности Романа (phone_brief, producer_page,
+селфчек, stdout стадий) остаются русскими.
+
+Регрессия (0 токенов):
+- `python3 shared/golden.py compare [--only STEP]` — RU-цепочка на песочной копии YTUVI02 (`~/YTAI_work/_golden/`, входы
+  заморожены в `_golden_in/`, эталон `examples/ytuvi02_golden/golden.json`) — любой байт расхождения = FAIL. Реальный
+  YTUVI02 только читается (find -newer до/после). `snapshot` пересъёмка, `rehash` после правки нормализации.
+- `python3 examples/ytcr_en_fixture/run_fixture.py` — EN-цепочка на синтетике YTCR (20 экранов, 29.97, исключение) во
+  временной копии: s2-пересборка → route → pack → канон ответа облака (`cloud_canned.json`) → collect → apply → terms →
+  format_tz → графика (HTML) → review_json → mockbuild → дампы вкладок/листа; проверки: нет language auto_confirm на
+  английских титрах, INFRASTRUCTURE, кириллическая С → language (drop ocr_homoglyph), кириллический титр → auto_confirm,
+  исключение → drop и без ТЗ, сетка 29.97, mock error 0, нет кириллицы в поверхностях монтажёра вне текста с экрана.
+  Входы пересобирает `build_fixture.py`.
+- `review.py selftest` гоняет обе + полноту таблиц i18n (у каждого ключа с `ru` есть `en`).
+
+## 11. Стадия `chapters` → `work/{cut}/chapters_proposal.json`
+
+`shared/chapters_from_plan.py --apply` (после `align`, только при `card.chapters_plan`): `{schema: "chapters-proposal-v1",
+status: ok | inversion, chapters[{n, name, sec, frame, tc, method, …}], missing, warnings, inversions, card_patch{chapters,
+ch_name}}`; `ok` → бэкап `review_card.json.bak-chapters-<ts>` и замена `chapters`/`ch_name` в карточке; `inversion` (exit 2) →
+карточка не трогается, решает Роман. После применения `review.py` перепомечает `chapter` у `screens_v6.json` и
+`audit_findings.json` по новым границам (без OCR). Если главы меняются после прохода дальше — `run --only chapters`, затем
+`run --from terms`.

@@ -33,17 +33,18 @@ import subprocess
 import sys
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T  # noqa: E402
 
 ERR = W6 / 'err_frames'
 WORDS = P.WORDS
-KIND_RU = {'typo': 'ОПЕЧАТКА', 'grammar': 'ГРАММАТИКА', 'fact': 'ФАКТ-ОШИБКА', 'currency': 'ФОРМАТ ВАЛЮТЫ/ЧИСЛА',
-           'language': 'АНГЛИЙСКИЙ БЕЗ ПЕРЕВОДА', 'mismatch': 'ЭКРАН ≠ ОЗВУЧКА', 'design': 'ВЁРСТКА',
-           'foreign_trace': 'ЧУЖОЙ СЛЕД В КАДРЕ', 'check_source': 'ПРОВЕРИТЬ ИСХОДНИК', 'other': 'ПРАВКА'}
+# названия классов — core.kind_up.* (язык карточки/профиля; RU = прежние литералы)
+KIND_RU = {k: T(f'core.kind_up.{k}') for k in ('typo', 'grammar', 'fact', 'currency', 'language', 'mismatch', 'design',
+                                               'foreign_trace', 'check_source', 'other')}
+KIND_OTHER = T('core.kind_up.other')
 FIXABLE = {'typo', 'grammar', 'currency', 'fact'}        # где рисуем правильную плашку на V3
 SEV = {'high': 0, 'medium': 1, 'low': 2}
 AUDIT_SOURCES = {'audit_v6', 'audit'}
-CHECK_SOURCE_FIX = 'проверить исходник титра'
+CHECK_SOURCE_FIX = T('c1.s8.check_source_fix')
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--findings', help='audit_findings.json (v8) или audit_findings_v6.json (легаси)')
@@ -215,6 +216,23 @@ def load_findings(path):
     return conf
 
 
+# ── исключения карточки: известные не-ошибки ката (дыра в футаже, недоделанные экраны) ─
+EXCLUDED = []                                               # [(finding, reason)] — в ТЗ не идут
+
+
+def drop_excluded(conf):
+    if not P.EXCLUSIONS:
+        return conf
+    keep = []
+    for f in conf:
+        why = P.in_exclusion(f['t0'], f['t1'])
+        if why:
+            EXCLUDED.append((f, why))
+        else:
+            keep.append(f)
+    return keep
+
+
 # ── классовый фильтр профиля ───────────────────────────────────────────────
 _classes = P.profile('tz_classes') or {}
 KEEP = set(_classes.get('keep') or [])
@@ -283,7 +301,7 @@ def fingerprint(fs):
 
 
 # ── сборка ─────────────────────────────────────────────────────────────────
-conf = load_findings(a.findings)
+conf = drop_excluded(load_findings(a.findings))
 by_screen = {}
 for f in conf:
     if f['screen_id']:
@@ -299,31 +317,32 @@ def build_entry(num, sid, fs, main, t0, t1, draws):
     lines, now, do, srcs = [], [], [], []
     for f in fs:
         fix = f.get('fix_text') or ''
-        kr = KIND_RU.get(f['kind'], 'ПРАВКА')
-        lines.append(f"[{kr}] «{f['on_screen_text']}»" + (f" → «{fix}»" if fix else '') + f". {f['problem']}"
-                     + (f" Источник: {f['evidence']}" if f.get('evidence') else ''))
-        now.append({'h': f"«{f['on_screen_text']}» — {kr.lower()}" if f['on_screen_text'] else kr.lower(),
+        kr = KIND_RU.get(f['kind'], KIND_OTHER)
+        lines.append(T('c1.s8.line_head', kind=kr, text=f['on_screen_text'])
+                     + (T('c1.s8.line_fix', fix=fix) if fix else '') + f". {f['problem']}"
+                     + (T('c1.s8.line_src', src=f['evidence']) if f.get('evidence') else ''))
+        now.append({'h': T('c1.now_h', text=f['on_screen_text'], kind=kr.lower()) if f['on_screen_text'] else kr.lower(),
                     'items': [f['problem']] if f['problem'] else []})
         if fix:
-            do.append(fix if f['kind'] == 'check_source' else f'Заменить титр на «{fix}»')
+            do.append(fix if f['kind'] == 'check_source' else T('c1.do_replace', fix=fix))
         if f.get('evidence'):
             srcs.append(f['evidence'])
     anc = anchor(t0, t1)
     fn = num.replace('ТЗ-', 'tz')
-    kr_main = KIND_RU.get(main['kind'], 'ПРАВКА')
+    kr_main = KIND_RU.get(main['kind'], KIND_OTHER)
     return {
         'notes': ['audit_v6'], 'v1_tc': tc(t0), 'tc_range': f'{tc(t0)}–{tc(t1)}',
-        'title': f"{kr_main}: «{main['on_screen_text'][:38]}»" + ('…' if len(main['on_screen_text']) > 38 else ''),
+        'title': T('c1.title', kind=kr_main, text=main['on_screen_text'][:38]) + ('…' if len(main['on_screen_text']) > 38 else ''),
         'category': 'graphics', 'source': 'audit_v6', 'class': main['kind'], 'screen_id': sid,
         'finding_ids': [f['finding_id'] for f in fs], 'audit_fp': fingerprint(fs),
-        'est': f"На экране @{tc(t0)}: «{main['on_screen_text']}».",
-        'nado': ('\n'.join(lines) + f"\nЯкорь озвучки: «{anc}»."
-                 + (f"\nДрафт исправления — на V3 (fix_{fn}.png), стрелка — на V5." if draws else '\nСтрелка «где ошибка» — на V5.')),
-        'parts': {'now': now, 'do': do, 'where': [f'{tc(t0)}–{tc(t1)}' + (f' · якорь: «{anc}»' if anc else '')],
-                  'src': srcs, 'tl': ['стрелка «где ошибка» — слой V5 ревью-секвенции']
-                  + ([f'драфт исправленного титра — слой V3 (fix_{fn}.png)'] if draws else [])},
-        'material_rich': [{'t': f'Кадр {tc(t0)} с отметкой ошибки (стрелка)', 'img': f'v6_err_{sid}.jpg'}]
-                         + ([{'t': f'Драфт исправленного титра ({(main.get("fix_draw") or fix_main)[:40]})', 'img': f'fix_{fn}.png'}]
+        'est': T('c1.s8.est', tc=tc(t0), text=main['on_screen_text']),
+        'nado': ('\n'.join(lines) + T('c1.s8.nado_anchor', anc=anc)
+                 + (T('c1.s8.nado_draft', fn=fn) if draws else T('c1.s8.nado_arrow'))),
+        'parts': {'now': now, 'do': do, 'where': [f'{tc(t0)}–{tc(t1)}' + (T('c1.where_anchor', anc=anc) if anc else '')],
+                  'src': srcs, 'tl': [T('c1.tl_arrow')]
+                  + ([T('c1.tl_draft', fn=fn)] if draws else [])},
+        'material_rich': [{'t': T('c1.s8.mat_frame', tc=tc(t0)), 'img': f'v6_err_{sid}.jpg'}]
+                         + ([{'t': T('c1.s8.mat_draft', fix=(main.get("fix_draw") or fix_main)[:40]), 'img': f'fix_{fn}.png'}]
                             if draws else []),
         # опечатки/грамматика/валюта → строка «было → стало», в которой doc_tab красит изменённые знаки
         'typo': [pp for pp in (typo_pair(f, tc(t0)) for f in fs if f['kind'] in ('typo', 'grammar', 'currency')) if pp],
@@ -344,6 +363,9 @@ for sid, fs in sorted(by_screen.items(), key=lambda kv: min(f['t0'] for f in kv[
             dropped.append(f'{f["kind"]}@{sid}')
     ex = None
     if own_i is None:
+        for f in fs:                                        # EN-агент мог назвать ТЗ «FIX-07» — ключ данных всё равно «ТЗ-07»
+            if (f['existing_tz'] or '').startswith('FIX-'):
+                f['existing_tz'] = 'ТЗ-' + f['existing_tz'][4:]
         ex = next((f['existing_tz'] for f in fs if re.match(r'^ТЗ-\d+', f['existing_tz'] or '')), None)
         if ex and ex not in labels:
             print(f'⚠️ {sid}: existing_tz «{ex}» нет в pravki — считаю новой находкой')
@@ -388,12 +410,12 @@ for sid, fs in sorted(by_screen.items(), key=lambda kv: min(f['t0'] for f in kv[
         if nums:
             ent['num'] = n_new
         new_entries.append(ent)
-        added.append(f'{num} · {tc(t0)} · {KIND_RU.get(main["kind"], "ПРАВКА")}: «{main["on_screen_text"][:40]}»')
+        added.append(f'{num} · {tc(t0)} · {KIND_RU.get(main["kind"], KIND_OTHER)}: «{main["on_screen_text"][:40]}»')
     bb = main.get('bbox') or screen_bbox(sid, None, main['on_screen_text']) or {'x': 0.1, 'y': 0.1, 'w': 0.8, 'h': 0.2}
     annotations.append({
         'tz': num, 'kind': main['kind'], 'screen_id': sid, 't0': t0, 't1': t1, 'frame': main['frame'],
         'bbox': [bb['x'], bb['y'], bb['w'], bb['h']],
-        'text': (f"«{main['on_screen_text'][:60]}» → «{fix_main[:60]}»" if fix_main else main['problem'][:120]),
+        'text': (T('c1.s8.ann_text', was=main['on_screen_text'][:60], now=fix_main[:60]) if fix_main else main['problem'][:120]),
         'fix': ({'text': main['fix_draw']} if main.get('fix_draw') else
                 (None if 'fix_draw' in main else
                  ({'text': fix_main} if main['kind'] in FIXABLE and fix_main and len(fix_main) <= 60 else None))),
@@ -418,7 +440,12 @@ n_old = len(allp)
 print(f'pravki ({PRAVKI.name}): было {n_old} ТЗ, новых {len(new_entries)}'
       + (f' (ТЗ-{n_old + 1:02d}…ТЗ-{n_old + len(new_entries):02d})' if new_entries else '')
       + f', обновлено на месте {len(updated)}, не тронуто {len(untouched)}, стрелок {len(annotations)}'
-        f' (к существующим ТЗ: {sum(1 for an in annotations if an["existing"])}, перенесено {len(carried)})')
+        f' (к существующим ТЗ: {sum(1 for an in annotations if an["existing"])}, перенесено {len(carried)})'
+      + (f', исключено по exclusions карточки {len(EXCLUDED)}' if P.EXCLUSIONS else ''))
+if EXCLUDED:
+    from collections import Counter as _C
+    print('excluded: ' + '; '.join(f'{r} — {n}' for r, n in _C(r for _f, r in EXCLUDED).most_common())
+          + f' ({", ".join(sorted({f["kind"] + "@" + str(f["screen_id"]) for f, _r in EXCLUDED})[:8])})')
 if added:
     print('добавить:\n  ' + '\n  '.join(added))
 if updated:

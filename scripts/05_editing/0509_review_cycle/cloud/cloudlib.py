@@ -38,6 +38,10 @@ except SystemExit:
     if os.environ.get('YTAI_CLOUD_NO_CARD') != '1':
         raise
     P = W6 = M = CLOUD = STAGE_ROOT = None
+_shared = str(ROOT / 'shared')
+if _shared not in sys.path:
+    sys.path.insert(0, _shared)
+import i18n  # noqa: E402  (после _bootstrap: язык из карточки; без карточки — YTAI_LANG / 'ru')
 
 IN = CLOUD / 'in' if CLOUD else None
 OUT = CLOUD / 'out' if CLOUD else None
@@ -51,7 +55,7 @@ LEGACY_FINDINGS_PATH = W6 / 'audit_findings_v6.json' if W6 else None
 WF_JUDGE = HERE / 'wf_judge.js'
 KINDS = ('typo', 'grammar', 'fact', 'currency', 'language', 'mismatch', 'foreign_trace')
 SKEPTIC_CODES = ('T', 'V', 'H', 'C', 'F', 'D')
-CHECK_SOURCE_FIX = 'проверить исходник титра'
+CHECK_SOURCE_FIX = i18n.T('b.check_source_fix')   # RU «проверить исходник титра»; finalize() берёт T() на момент вызова
 
 
 def ensure_dirs():
@@ -279,11 +283,22 @@ def existing_tz_lines():
     out = []
     for i, p in enumerate(allp):
         title = re.sub(r'\s+', ' ', str(p.get('title') or '')).strip()[:90]
-        line = f"{tz_label(p, i)} · {p.get('v1_tc') or p.get('tc_range') or '?'} · {title}"
+        lab = tz_label(p, i)
+        if i18n.LANG == 'en' and lab.startswith('ТЗ-'):
+            lab = i18n.tz_label(lab)          # англоязычный судья видит FIX-07; в находки вернётся ТЗ-07 (norm_existing_tz)
+        line = f"{lab} · {p.get('v1_tc') or p.get('tc_range') or '?'} · {title}"
         if p.get('status') == 'rejected':
-            line += ' (снята Романом)'
+            line += i18n.T('b.tz_rejected_suffix')
         out.append(line)
     return out
+
+
+def norm_existing_tz(s):
+    """existing_tz от агента → внутренний ключ «ТЗ-NN» (EN-судья отвечает «FIX-NN»); RU-ответы не меняются."""
+    s = (s or '').strip()
+    if s[:4].upper() == 'FIX-':
+        return 'ТЗ-' + s[4:]
+    return s
 
 
 # ── карточка / профиль ─────────────────────────────────────────────────────
@@ -636,7 +651,7 @@ def derive_findings(st, legacy=None):
                 line_idx=c.get('line_idx'), fix_text=v.get('fix_text') or c.get('fix_local') or '',
                 problem=_clip(v.get('reason') or c.get('route_reason') or ''), why=_clip(v.get('reason') or ''),
                 severity=v.get('severity') or 'medium', route='cloud', verdict=v.get('verdict') or 'confirm',
-                confidence=v.get('confidence'), existing_tz=(v.get('existing_tz') or '').strip(),
+                confidence=v.get('confidence'), existing_tz=norm_existing_tz(v.get('existing_tz')),
                 run_id=run_id, batch_id=bid))
         for i, n in enumerate(o.get('new_findings') or [], 1):
             fid = fid_new(bid, i)
@@ -645,7 +660,7 @@ def derive_findings(st, legacy=None):
                 on_screen_text=n.get('on_screen_text') or '', line_idx=n.get('line_idx'),
                 fix_text=n.get('fix_text') or '', problem=_clip(n.get('problem') or ''), why=_clip(n.get('why') or ''),
                 severity=n.get('severity') or 'medium', route='cloud', verdict='new_finding', confidence=None,
-                existing_tz=(n.get('existing_tz') or '').strip(), run_id=run_id, batch_id=bid))
+                existing_tz=norm_existing_tz(n.get('existing_tz')), run_id=run_id, batch_id=bid))
 
     # auto_confirm кандидаты (0 токенов)
     for c in cands_list:
@@ -654,8 +669,10 @@ def derive_findings(st, legacy=None):
                 finding_id=c['cand_id'], screen_id=c.get('screen_id'), kind=c.get('kind') or 'other',
                 on_screen_text=c.get('on_screen_text') or '', line_idx=c.get('line_idx'),
                 fix_text=c.get('fix_local') or '', problem=_clip(c.get('route_reason') or ''),
-                why=', '.join(c.get('signals') or []), severity=c.get('severity') or 'medium',
-                route='auto_confirm', verdict='confirm', confidence=None, existing_tz='', run_id=None, batch_id=None))
+                # why → «📚 ИСТОЧНИК» у монтажёра: RU как было (сигналы роутера); EN — сигналы отдельным полем, в ТЗ не идут
+                why=', '.join(c.get('signals') or []) if i18n.LANG != 'en' else '', severity=c.get('severity') or 'medium',
+                route='auto_confirm', verdict='confirm', confidence=None, existing_tz='', run_id=None, batch_id=None,
+                **({'signals': list(c.get('signals') or [])} if i18n.LANG == 'en' else {})))
 
     # F: факты
     facts_ok = []
@@ -781,7 +798,7 @@ def finalize(f, scr):
     if sk:
         if sk.get('code') == 'H':
             f['kind'] = 'check_source'
-            f['fix_text'] = CHECK_SOURCE_FIX
+            f['fix_text'] = i18n.T('b.check_source_fix')
             if eff in ('pending_frame', 'pending_fact', 'unclear'):
                 eff = 'confirm'
         elif sk.get('real') is False and sk.get('code') in ('T', 'V', 'C', 'F', 'D'):

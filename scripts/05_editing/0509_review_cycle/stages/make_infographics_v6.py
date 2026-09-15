@@ -13,10 +13,11 @@
 Все PNG 3840×2160 → {project}/00_Setup/05_Review/mockups/ (+src/*.html).
 usage: make_infographics_v6.py [A B C D E F G | all]
 """
-import json, math, re, sys
+import json, math, os, re, sys
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402
+import i18n  # noqa: E402  (has() — есть ли перевод иконки категории)
 from render import render  # noqa: E402
 from terms_catalog import TERMS, LOCS, PLACE, PLACES, TERM_EXTRA, place_family  # noqa: E402
 from make_infographics_v6_data import SUB, CH_ACCENT, CH_NAME, PROG, CH_BOUNDS, NEW_CH  # noqa: E402
@@ -43,7 +44,12 @@ body {{ color:{IVORY}; font-family:{FONT}; position:relative; }}
 .draft {{ position:absolute; right:48px; bottom:36px; font-family:Helvetica,Arial,sans-serif;
   font-size:26px; color:rgba(255,255,255,.45); letter-spacing:.12em; }}
 """
-DRAFT = '<div class="draft">DRAFT · ПЕРЕРИСОВАТЬ В СТИЛЕ КАНАЛА</div>'
+# бейдж драфта — из профиля канала (style.draft_badge), иначе core.draft_badge. Русская графика канона пишет его
+# капсом (у YTUVI в профиле строчными), английская — как в профиле.
+DRAFT_TXT = str(P.profile('style.draft_badge') or T('core.draft_badge'))
+if LANG == 'ru':
+    DRAFT_TXT = DRAFT_TXT.upper()
+DRAFT = f'<div class="draft">{DRAFT_TXT}</div>'
 STAGES = set(sys.argv[1:]) or {'all'}
 
 
@@ -55,7 +61,8 @@ def page(name, body, css='', draft=True):
     html = f'<!doctype html><meta charset="utf-8"><style>{BASE_CSS}{css}</style>{body}{DRAFT if draft else ""}'
     p = SRC / f'{name}.html'
     p.write_text(html)
-    render(p, OUT / f'{name}.png', alpha=True)
+    if os.environ.get('YTAI_RENDER_HTML_ONLY') != '1':     # =1: только HTML в src/, без chrome (golden-регрессия)
+        render(p, OUT / f'{name}.png', alpha=True)
     print('✓', name, flush=True)
 
 
@@ -86,13 +93,13 @@ def term_body(key):
     _, _, title, sub, definition = TERM_BY_KEY[key]
     x = TERM_EXTRA.get(key) or {}
     if x.get('lead') == 'en' and x.get('en'):
-        lbl = x.get('lbl') or 'ТЕРМИН · ЧТО НАПИСАНО В КАДРЕ'
+        lbl = x.get('lbl') or T('d.ig.term_lbl_onscreen')
         # оригинал уже стоит заголовком — во второй строке его не повторяем
         sub_en = sub.split('·', 1)[-1].strip() if '·' in sub else sub
         head = (f'<div class="h">{x["en"][0].upper()}</div><div class="ru">{title}</div>'
                 f'<div class="s">{sub_en}</div>')
     else:
-        lbl = 'ТЕРМИН'
+        lbl = T('d.ig.term_lbl')
         head = f'<div class="h">{title}</div><div class="s">{sub}</div>'
     return lbl, f'{head}<div class="d">{definition}</div>'
 
@@ -118,7 +125,7 @@ if want('A'):
                 continue
             seen.add(name)
             page(name, f"""
-<div class="tp grp"><div class="lbl">ТЕРМИНЫ</div>{''.join(term_item(k) for k in g['keys'])}</div>""", GRP_CSS)
+<div class="tp grp"><div class="lbl">{T('d.ig.terms_lbl')}</div>{''.join(term_item(k) for k in g['keys'])}</div>""", GRP_CSS)
 
 # ═══════════════════════════ B. мини-карты ═══════════════════════════
 # точки: lat, lon, подпись (координаты сверены fact-агентом — facts_v6.json при наличии)
@@ -165,6 +172,19 @@ COUNTRY_RU = {'Myanmar': 'МЬЯНМА', 'Thailand': 'ТАИЛАНД', 'Cambodia
               'Nepal': 'НЕПАЛ', 'Malaysia': 'МАЛАЙЗИЯ', 'Indonesia': 'ИНДОНЕЗИЯ', 'Kazakhstan': 'КАЗАХСТАН',
               'Uzbekistan': 'УЗБЕКИСТАН', 'Turkmenistan': 'ТУРКМЕНИСТАН', 'Iraq': 'ИРАК', 'Turkey': 'ТУРЦИЯ',
               'Russia': 'РОССИЯ', 'Mongolia': 'МОНГОЛИЯ', 'Angola': 'АНГОЛА', 'Botswana': 'БОТСВАНА', 'Namibia': 'НАМИБИЯ'}
+# английские подписи точек и городов (LANG=en): русские имена выше — данные канала UVI, в английскую графику не идут
+POINTS_EN = {'mogok': 'Mogok', 'monghsu': 'Mong Hsu', 'montepuez': 'Montepuez', 'chanthaburi': 'Chanthaburi',
+             'pailin': 'Pailin', 'ratnapura': 'Ratnapura', 'lucyen': 'Luc Yen', 'jegdalek': 'Jegdalek', 'pamir': 'Pamir',
+             'hunza': 'Hunza', 'winza': 'Winza', 'longido': 'Longido', 'andilamena': 'Andilamena', 'mangare': 'Mangare',
+             'chimwadzulu': 'Chimwadzulu', 'aappaluttoq': 'Aappaluttoq', 'kashmir': 'Kashmir', 'songea': 'Songea'}
+CITIES_EN = {'Янгон': 'Yangon', 'Мандалай': 'Mandalay', 'Бангкок': 'Bangkok', 'Коломбо': 'Colombo', 'Ханой': 'Hanoi',
+             'Мапуту': 'Maputo', 'Найроби': 'Nairobi', 'Дар-эс-Салам': 'Dar es Salaam', 'Антананариву': 'Antananarivo',
+             'Дакка': 'Dhaka', 'Пномпень': 'Phnom Penh', 'Ченнаи': 'Chennai', 'Лилонгве': 'Lilongwe', 'Пемба': 'Pemba',
+             'Додома': 'Dodoma', 'Кабул': 'Kabul', 'Душанбе': 'Dushanbe', 'Исламабад': 'Islamabad', 'Сринагар': 'Srinagar'}
+
+
+def country_label(name):
+    return COUNTRY_RU.get(name, name.upper()) if LANG == 'ru' else name.upper()
 
 _geo = None
 
@@ -184,7 +204,7 @@ HL = {'burma': ['Myanmar'], 'mogok': ['Myanmar'], 'monghsu': ['Myanmar'], 'thai'
 
 def make_map(region, pts, label, mw=1180, mh=760, facts=None, hl=(), nolabel=()):
     """SVG карты региона: суша Natural Earth, страны подписаны, точки месторождений красным."""
-    lon0, lon1, lat0, lat1 = REGIONS[region]
+    lon0, lon1, lat0, lat1 = REGIONS.get(region, REGIONS['world'])   # регион карточки вне таблицы — мир
     # равнопромежуточная проекция с правильными пропорциями (масштаб по долготе × cos средней широты)
     cosm = math.cos(math.radians((lat0 + lat1) / 2))
     k = min(mw / ((lon1 - lon0) * cosm), mh / (lat1 - lat0))
@@ -224,7 +244,8 @@ def make_map(region, pts, label, mw=1180, mh=760, facts=None, hl=(), nolabel=())
                     cy = sum(P(c[1], c[0])[1] for c in vis) / len(vis)
                     best_ring = (cx, cy)
         if best_ring and (best_area > mw * mh * 0.004 or name in hl):
-            labels.append((best_area + (1e9 if name in hl else 0), best_ring[0], best_ring[1], COUNTRY_RU.get(name, name.upper())))
+            labels.append((best_area + (1e9 if name in hl else 0), best_ring[0], best_ring[1], country_label(name)))
+    pts = [k for k in pts if k in POINTS]        # точка карточки без координат в таблице — не рисуем (раньше KeyError)
     # точки — сначала, чтобы подписи стран их обходили
     placed = []
     for k in pts:
@@ -250,14 +271,16 @@ def make_map(region, pts, label, mw=1180, mh=760, facts=None, hl=(), nolabel=())
                    f'stroke="rgba(242,234,216,{".8" if h else ".55"})" stroke-width="{3 if h else 2}"/>' for d, h in paths)
     labels = labels if isinstance(labels, str) else ''
     cities = ''
-    for nm, la, lo in CITIES[region]:
+    for nm, la, lo in CITIES.get(region, []):
         if lon0 <= lo <= lon1 and lat0 <= la <= lat1:
             x, y = P(la, lo)
+            nm = nm if LANG == 'ru' else CITIES_EN.get(nm, nm)
             cities += (f'<circle cx="{x:.0f}" cy="{y:.0f}" r="6" fill="rgba(242,234,216,.7)"/>'
                        f'<text x="{x + 14:.0f}" y="{y + 10:.0f}" fill="rgba(242,234,216,.7)" font-size="26" font-family="Helvetica,Arial">{nm}</text>')
     dots = ''
     for k in pts:
         la, lo, nm = POINTS[k]
+        nm = nm if LANG == 'ru' else POINTS_EN.get(k, nm)
         if facts and k in facts:
             la, lo = facts[k]['lat'], facts[k]['lon']
         if not (lon0 <= lo <= lon1 and lat0 <= la <= lat1):
@@ -293,7 +316,7 @@ if want('B'):
     for key, rx, region, pts, label in LOCS:
         region = LOC_REGION.get(key, region)
         p = PLACE[key]
-        head = (f'<div class="lbl">ГДЕ ЭТО</div><div class="h">{label}</div>'
+        head = (f'<div class="lbl">{T("d.ig.where_lbl")}</div><div class="h">{label}</div>'
                 f'<div class="s">{p["sub"]}</div>')
         svg = make_map(region, pts, label, facts=facts, hl=HL.get(key, ()))
         page(f'map_{key}', f"""
@@ -317,18 +340,24 @@ FULL_CSS = f"""
 .mf .n b {{ color:{IVORY}; font-size:46px; display:block; }}
 .mf .n span {{ color:{MUT}; }}
 """
-if want('B'):
+# Большие карты «Мьянма» и «рубиновый пояс» — данные фильмов UVI о рубинах (русский текст): только для русской
+# графики и только когда каталог мест карточки их упоминает. Раньше рисовались на любом фильме любого канала.
+_USED_PLACES = set(PLACE) | {pt for p in PLACES for pt in (p.get('points') or [])}
+BURMA_PTS = ['mogok', 'monghsu']
+BELT_PTS = ['mogok', 'monghsu', 'montepuez', 'chanthaburi', 'pailin', 'ratnapura', 'lucyen', 'jegdalek',
+            'pamir', 'hunza', 'winza', 'longido', 'songea', 'andilamena', 'mangare', 'chimwadzulu', 'kashmir']
+if want('B') and LANG == 'ru' and _USED_PLACES & set(BURMA_PTS):
     # полноразмерная карта Мьянмы (замена рисованного блоба info_mogok_map, 052)
-    notes = ('<div class="n"><b>МОГОК</b><span>долина в Мьянме — «голубиная кровь», эталонный цвет</span></div>'
+    notes =('<div class="n"><b>МОГОК</b><span>долина в Мьянме — «голубиная кровь», эталонный цвет</span></div>'
              '<div class="n"><b>МОНГ СУ (Mong Hsu)</b><span>месторождение в Мьянме — массовая добыча с 1990-х, почти всё гретое</span></div>')
     page('mapfull_burma', f"""
 <div class="mf"><div class="side"><div class="lbl">ГДЕ ЭТО</div><div class="h">МЬЯНМА <span style="color:{RED}">(БИРМА)</span></div>
  <div style="font-size:40px;color:{MUT}">одна страна — два разных месторождения</div>{notes}</div>
- {make_map('burma', ['mogok', 'monghsu'], '', mw=1900, mh=1150, hl=['Myanmar'])}</div>""", FULL_CSS)
+ {make_map('burma', BURMA_PTS, '', mw=1900, mh=1150, hl=['Myanmar'])}</div>""", FULL_CSS)
+if want('B') and LANG == 'ru' and _USED_PLACES & set(BELT_PTS):
     # рубиновый пояс В ТРИ ШАГА — страны загораются по мере перечисления в озвучке 19:30–19:40
     # (замена английского титра ката 19:33–19:40 и стопки из 7 мини-карт на 19:40)
-    belt_pts = ['mogok', 'monghsu', 'montepuez', 'chanthaburi', 'pailin', 'ratnapura', 'lucyen', 'jegdalek',
-                'pamir', 'hunza', 'winza', 'longido', 'songea', 'andilamena', 'mangare', 'chimwadzulu', 'kashmir']
+    belt_pts = BELT_PTS
     # на общей карте подписываем только опорные точки: остальные читаются по подсветке страны
     belt_nolabel = ['winza', 'longido', 'songea', 'mangare', 'chimwadzulu', 'andilamena', 'pailin',
                     'chanthaburi', 'hunza', 'kashmir', 'jegdalek', 'pamir']
@@ -370,7 +399,7 @@ if want('C'):
         acc = CH_ACCENT[ch - 1]
         page(f'sub_{i + 1:02d}', f"""
 <div class="sw"><div class="sbar" style="background:{acc}"></div>
- <div><div class="snum" style="color:{acc}">ГЛАВА {ch:02d} · {CH_NAME[ch - 1]}</div>
+ <div><div class="snum" style="color:{acc}">{T('core.chapter')} {ch:02d} · {CH_NAME[ch - 1]}</div>
   <div class="sname"><span class="tri">▸</span>{label}</div></div></div>""", SUB_CSS, draft=False)
 
 # ═══════════════════════════ D. прогресс перечислений (V6) ═══════════════════════════
@@ -399,7 +428,7 @@ if want('D'):
                 f'<div class="it">{j} · {it}</div></div>' for j, it in enumerate(items, 1))
             page(f'prog_{ch}_{k}', f"""
 <div class="pg" style="border-top:12px solid {acc}">
- <div class="h"><span>{title}</span><b>{f"{k} из {n}" if k else "ЧТО ДАЛЬШЕ"}</b></div>{rows}
+ <div class="h"><span>{title}</span><b>{T('d.ig.prog_k_of_n', k=k, n=n) if k else T('d.ig.prog_next')}</b></div>{rows}
  <div class="bar"><i style="width:{k / n * 100:.0f}%;background:{acc}"></i></div></div>""", PROG_CSS, draft=False)
 
 # ═══════════════════════════ E. прозрачные версии тёмных драфтов (V3) ═══════════════════════════
@@ -417,13 +446,19 @@ CENTER_CSS = f"""
 .col .t {{ font-size:54px; font-weight:bold; margin-top:10px; }}
 .col .d {{ font-size:38px; color:{MUT}; margin-top:18px; line-height:1.45; }}
 """
-if want('E'):
+# E — прозрачные драфты фильма UVI о рубинах (русский текст): только русская графика и только если каталог
+# терминов карточки несёт эти темы. Раньше рисовались на любом фильме.
+_E_MOHS = LANG == 'ru' and 'mohs' in TERM_BY_KEY
+_E_SYNTH = LANG == 'ru' and bool({'verneuil', 'flux', 'hydro'} & set(TERM_BY_KEY))
+_E_TREAT = LANG == 'ru' and bool({'heat', 'diffusion', 'leadglass'} & set(TERM_BY_KEY))
+if want('E') and _E_MOHS:
     page('info_mohs_what_t', f"""
 <div class="cp"><h1>ЧТО ТАКОЕ <span class="r">ШКАЛА МООСА</span></h1>
  <div class="body">Шкала твёрдости минералов от 1 до 10: каждый следующий царапает предыдущий.<br>
  Придумана Фридрихом Моосом в 1812 году.<br>
  Шкала <span class="r">нелинейна</span>: между 9 (корунд) и 10 (алмаз) разрыв больше, чем между 1 и 9.</div></div>""",
          CENTER_CSS)
+if want('E') and _E_SYNTH:
     page('info_synthesis_list_t', f"""
 <div class="cp"><h1>3 СПОСОБА <span class="r">ВЫРАСТИТЬ РУБИН</span></h1>
  <div class="sub">⬇ отсюда начинаются типы искусственных камней</div>
@@ -433,6 +468,7 @@ if want('E'):
   <div class="col"><div class="n">2</div><div class="t">ФЛЮС</div><div class="d">раствор во флюсе,<br>месяцы роста</div></div>
   <div class="col"><div class="n">3</div><div class="t">ГИДРОТЕРМАЛЬНЫЙ</div><div class="d">автоклав: затравка,<br>давление, раствор</div></div>
  </div></div>""", CENTER_CSS)
+if want('E') and _E_TREAT:
     tr = [('НАГРЕВ', 'норма рынка, стабильный цвет', IVORY),
           ('ЗАПОЛНЕНИЕ ТРЕЩИН', 'масла, смолы, стекло — нестабильно', IVORY),
           ('ФЛЮСОВОЕ ЗАЛЕЧИВАНИЕ', 'синтетика нарастает в трещинах', IVORY),
@@ -468,7 +504,13 @@ FIX_CSS = f"""
   font-size:30px; font-weight:bold; padding:10px 22px; border-radius:12px; letter-spacing:.08em; }}
 """
 LT_COL = {'cut': '#C1272D', 'insert': '#2E8B3E', 'graphics': '#D9A521', 'structure': '#D97721', 'color': '#3A6FB5', 'check': '#777777'}
-LT_ICO = {'cut': '✂️ РЕЗАТЬ', 'insert': '➕ ВСТАВИТЬ', 'graphics': '🎨 ГРАФИКА', 'structure': '🧭 СТРУКТУРА', 'color': '🎛 ОБРАБОТКА', 'check': '🔍 РАЗОБРАНО'}
+
+
+def lt_ico(cat):
+    """иконка+категория LT-плашки ТЗ (d.ig.lt_ico.<cat>); неизвестная категория — пусто, как раньше"""
+    key = f'd.ig.lt_ico.{cat}'
+    return T(key) if i18n.has(key) else ''
+
 LT_CSS = f"""
 .lt {{ position:absolute; left:120px; right:120px; bottom:100px; background:rgba(10,10,14,.88); border-radius:32px;
   padding:56px 70px 56px 0; display:flex; align-items:flex-start; gap:60px; }}
@@ -480,8 +522,18 @@ LT_CSS = f"""
 """
 KIND_COL = {'typo': '#C1272D', 'grammar': '#C1272D', 'fact': '#C1272D', 'currency': '#D9A521', 'language': '#D9A521',
             'mismatch': '#D97721', 'design': '#3A6FB5', 'other': '#D9A521'}
-KIND_RU = {'typo': 'ОПЕЧАТКА', 'grammar': 'ГРАММАТИКА', 'fact': 'ФАКТ-ОШИБКА', 'currency': 'ФОРМАТ ЧИСЛА/ВАЛЮТЫ',
-           'language': 'ПЕРЕВЕСТИ', 'mismatch': 'ЭКРАН ≠ ОЗВУЧКА', 'design': 'ВЁРСТКА', 'other': 'ПРАВКА'}
+
+
+def ann_kind(kind):
+    """заголовок плашки стрелки «ТЗ-07 · <класс>». currency/language на графике звучат иначе, чем в ТЗ (d.ig.*);
+    остальные — core.kind_up. Русская графика знала только 8 классов (прочие → ПРАВКА) — так и остаётся;
+    английская называет и foreign_trace/structure/check_source своими именами."""
+    if kind in ('currency', 'language'):
+        return T(f'd.ig.kind_{kind}')
+    if kind in ('typo', 'grammar', 'fact', 'mismatch', 'design', 'other') or (
+            LANG == 'en' and i18n.has(f'core.kind_up.{kind}')):
+        return T(f'core.kind_up.{kind}')
+    return T('core.kind_up.other')
 
 
 def clean_sp(t):
@@ -526,7 +578,11 @@ def sample_colours(frame, bbox):
 # v7 (Роман 10.09): «хочется сумму цифрами показать, чтобы размер числа понять» — у цен два варианта
 # оформления (Роман выбирает); «если ошибка в орфографии — выделяй ещё то, что исправляешь» — изменённые
 # буквы драфта другим цветом с подчёркиванием (диф по typo-записи ТЗ: было → стало).
-PRICE_VARIANTS = {'ТЗ-21b': ('$30 300 000', '$30,3 МЛН'), 'ТЗ-21d': ('$34 800 000', '$34,8 МЛН')}
+# Варианты цен — из карточки (price_variants {"ТЗ-21b": ["$30 300 000", "$30,3 МЛН"]}); зашитые две цены — данные
+# YTUVI01 и идут только ему: на другом фильме его ТЗ-21b получило бы чужие суммы.
+PRICE_VARIANTS = ({k: tuple(v) for k, v in (P.get('price_variants') or {}).items()} if isinstance(P.get('price_variants'), dict)
+                  else {'ТЗ-21b': ('$30 300 000', '$30,3 МЛН'), 'ТЗ-21d': ('$34 800 000', '$34,8 МЛН')}
+                  if P.CODE == 'YTUVI01' else {})
 _PR_ALL = json.load(open(MONT / 'pravki_v2.json'))['all']
 
 
@@ -606,7 +662,7 @@ if want('G'):
   <line x1="{ax:.0f}" y1="{ay:.0f}" x2="{tx:.0f}" y2="{ty:.0f}" stroke="{col}" stroke-width="12" marker-end="url(#arr)"/>
 </svg>
 <div class="plate" style="left:{px:.0f}px; top:{py:.0f}px; border-left:14px solid {col}">
-  <div class="h" style="color:{col}">{num} · {KIND_RU.get(a['kind'], 'ПРАВКА')}</div><div class="t">{a['text']}</div></div>"""
+  <div class="h" style="color:{col}">{tz_label(num)} · {ann_kind(a['kind'])}</div><div class="t">{a['text']}</div></div>"""
             page(f'ann_tz{num[3:]}', body, ANN_CSS, draft=False)
             # нарисованное исправление (V3): патч поверх ошибочного элемента + правильный текст
             fx = a.get('fix')
@@ -630,21 +686,21 @@ if want('G'):
                 # тогда драфт нечитаем (ТЗ-68: светло-серое по бежевому). Подменяем на чёрный/слоновую кость.
                 if abs(_lum(col_t) - _lum(bgc)) < 0.30:
                     col_t = BG if _lum(bgc) > 0.5 else IVORY
-                L, T = x * 3840, y * 2160
-                patch = (f'<div class="fixpatch" style="left:{L - pad:.0f}px; top:{T - pad:.0f}px; '
+                L, Ty = x * 3840, y * 2160                       # Ty, не T: T — это i18n.T (перетёр бы его для H/I)
+                patch = (f'<div class="fixpatch" style="left:{L - pad:.0f}px; top:{Ty - pad:.0f}px; '
                          f'width:{pw + 2 * pad:.0f}px; height:{max(fh, txt_h) + 2 * pad:.0f}px; background:{bgc}; border-radius:8px"></div>')
 
                 def badge(extra=''):          # fix.badge='above' — плашка над заплаткой (если снизу идёт другой текст)
-                    top = T - pad - 16 - 56 if fx.get('badge') == 'above' else T + fh + pad + 16
+                    top = Ty - pad - 16 - 56 if fx.get('badge') == 'above' else Ty + fh + pad + 16
                     return (f'<div class="fixbadge" style="left:{L:.0f}px; top:{top:.0f}px">'
-                            f'✔ ИСПРАВЛЕНО · {num}{extra} · драфт</div>')
+                            f'{T("d.ig.fix_badge", num=tz_label(num), extra=extra)}</div>')
                 spans = fix_spans(num, fx['text'])
                 hl_col = '#1F4FD1' if _lum(bgc) > 0.55 else '#FFD23F'
                 # fix.font='sans' — плашки ката в гротеске (белые подписи), чтобы драфт не выглядел сменой шрифта
                 ff = "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; " if fx.get('font') == 'sans' else ''
-                body = (patch + f'<div class="fixtxt" style="{ff}left:{L:.0f}px; top:{T + (fh - txt_h) / 2:.0f}px; '
+                body = (patch + f'<div class="fixtxt" style="{ff}left:{L:.0f}px; top:{Ty + (fh - txt_h) / 2:.0f}px; '
                         f'font-size:{fs:.0f}px; color:{col_t}">{hl_html(fx["text"], spans, hl_col).replace(chr(10), "<br>")}</div>'
-                        + badge(' · подчёркнуто — исправлено' if spans else ''))
+                        + badge(T('d.ig.fix_underlined') if spans else ''))
                 page(f'fix_tz{num[3:]}', body, FIX_CSS, draft=False)
                 pv = PRICE_VARIANTS.get(num)
                 if pv:                                          # цены: вариант А и вариант Б
@@ -652,22 +708,22 @@ if want('G'):
                     W = w * 3840
                     fa = min(fh * 0.78, W / (len(digits) * 0.62))
                     page(f'fix_tz{num[3:]}_A', patch + f'<div class="fixtxt" style="left:{L:.0f}px; '
-                         f'top:{T + (fh - fa) / 2:.0f}px; font-size:{fa:.0f}px; color:{col_t}">{esc(digits)}</div>'
-                         + badge(' · вариант А: все цифры'), FIX_CSS, draft=False)
+                         f'top:{Ty + (fh - fa) / 2:.0f}px; font-size:{fa:.0f}px; color:{col_t}">{esc(digits)}</div>'
+                         + badge(T('d.ig.fix_var_a')), FIX_CSS, draft=False)
                     fb = min(fh * 0.58, W / (len(short) * 0.62))
                     fb2 = fb * 0.40
-                    tb = T + (fh - fb - fb2 * 1.15) / 2
+                    tb = Ty + (fh - fb - fb2 * 1.15) / 2
                     page(f'fix_tz{num[3:]}_B', patch
                          + f'<div class="fixtxt" style="left:{L:.0f}px; top:{tb:.0f}px; font-size:{fb:.0f}px; color:{col_t}">{esc(short)}</div>'
                          + f'<div class="fixtxt" style="left:{L:.0f}px; top:{tb + fb * 1.08:.0f}px; font-size:{fb2:.0f}px; color:{col_t}">{esc(digits)}</div>'
-                         + badge(' · вариант Б: «МЛН» + цифрами'), FIX_CSS, draft=False)
+                         + badge(T('d.ig.fix_var_b')), FIX_CSS, draft=False)
         # LT-плашки для новых ТЗ (стиль v5)
         pravki = json.load(open(MONT / 'pravki_v2.json'))['all']
         start = int(audit.get('new_tz_from', 33))
         for i, p in enumerate(pravki):
             if p.get('status') == 'rejected':
                 continue
-            num = f'ТЗ-{i + 1:02d}'
+            num = tz_label(i + 1)                          # «ТЗ-07» / «FIX-07» — надпись на плашке
             col = LT_COL.get(p['category'], '#777')
             # на плашке — только «что сделать» (Роман 10.09: сплошной текст не читается)
             pt = p.get('parts') or {}
@@ -683,7 +739,7 @@ if want('G'):
             if len(nado) > 400:
                 nado = nado[:397] + '…'
             page(f'tz_lt_{i + 1:02d}', f'<div class="lt"><div class="bar" style="background:{col}"></div>'
-                 f'<div class="num">{num}<div class="cat" style="color:{col}">{LT_ICO.get(p["category"], "")}</div></div>'
+                 f'<div class="num">{num}<div class="cat" style="color:{col}">{lt_ico(p["category"])}</div></div>'
                  f'<div class="txt"><b>{esc(p["title"])}.</b> {esc(nado)}</div></div>', LT_CSS)
 
 # ═══════════ H. КАРТА СТРУКТУРЫ: главы + подглавы одним кадром (Роман 10.09) ═══════════
@@ -745,14 +801,14 @@ def _struct_blocks(here=None, subs=True):
         items = [(s, l) for s, ch, l in SUB if a <= s < b]
         li = ''.join('<li><span class="t">%s</span><span><span class="a">▸</span> %s</span></li>'
                      % (_tc(s), l) for s, l in items) if subs else ''
-        none = '' if (items or not subs) else '<div class="none">▸ подтем в кате нет — добавить</div>'
-        plus = '<span class="plus">➕ СОЗДАТЬ</span>' if n in NEW_CH else ''
-        now = '<span class="now">ВЫ ЗДЕСЬ</span>' if here == n else ''
+        none = '' if (items or not subs) else f'<div class="none">{T("d.ig.sm_none")}</div>'
+        plus = f'<span class="plus">{T("d.ig.sm_plus")}</span>' if n in NEW_CH else ''
+        now = f'<span class="now">{T("d.ig.here")}</span>' if here == n else ''
         out.append(
             '<div class="chb %s"><div class="bar" style="background:%s"></div><div class="bd">'
-            '<div class="lab" style="color:%s">ГЛАВА %02d<span class="tc">%s–%s</span>%s%s</div>'
+            '<div class="lab" style="color:%s">%s %02d<span class="tc">%s–%s</span>%s%s</div>'
             '<div class="nm">%s</div>%s%s</div></div>'
-            % ('on' if here == n else '', acc, acc, n, _tc(a), _tc(b), plus, now,
+            % ('on' if here == n else '', acc, acc, T('core.chapter'), n, _tc(a), _tc(b), plus, now,
                CH_NAME[n - 1], ('<ul>%s</ul>' % li) if li else '', none))
     return out
 
@@ -762,21 +818,19 @@ if want('H'):
     # шапка и легенда — из карточки проекта: было зашито «10 ГЛАВ · 36 ПОДГЛАВ · кат 40:40»
     # и номера ТЗ первого фильма, то есть карта структуры врала на любом другом кате.
     half = (len(bl) + 1) // 2
-    _legend = ['<div class="lgi">«Карта выпуска» — 2–3 сек на каждой смене главы</div>',
-               f'<div class="lgi">плашка подглавы «ГЛАВА NN ▸ подтема» на каждом титульном экране ({len(SUB)})</div>']
-    _legend += [f'<div class="lgi">прогресс перечисления гл.{k}: {v[0]} — обзор ДО и подсветка '
-                f'следующего пункта ({len(v[1])} шт)</div>' for k, v in sorted(PROG.items())]
-    _legend += [f'<div class="lgi">гл.{n:02d} — заставки нет в кате, создать</div>' for n in sorted(NEW_CH)]
+    _legend = [f'<div class="lgi">{T("d.ig.sm_legend_map")}</div>',
+               f'<div class="lgi">{T("d.ig.sm_legend_sub", n=len(SUB))}</div>']
+    _legend += [f'<div class="lgi">{T("d.ig.sm_legend_prog", k=k, title=v[0], n=len(v[1]))}</div>'
+                for k, v in sorted(PROG.items())]
+    _legend += [f'<div class="lgi">{T("d.ig.sm_legend_new", n=n)}</div>' for n in sorted(NEW_CH)]
     _html = (
-        '<div class="sm"><div class="hd"><h1>СТРУКТУРА ВЫПУСКА: <span class="r">'
-        f'{len(CH_BOUNDS)} ГЛАВ · {len(SUB)} ПОДГЛАВ</span></h1>'
-        f'<div class="s">кат {_tc(CH_BOUNDS[-1][1])} · главы = заставки · '
-        'подглавы = титульные экраны подтем</div></div>'
+        '<div class="sm"><div class="hd"><h1>' + T('d.ig.sm_h1', nch=len(CH_BOUNDS), nsub=len(SUB)) + '</h1>'
+        f'<div class="s">{T("d.ig.sm_sub", tc=_tc(CH_BOUNDS[-1][1]))}</div></div>'
         '<div class="cols"><div class="col">' + ''.join(bl[:half]) +
-        '<div class="lg"><div class="lgh">ЧТО ДОБАВЛЯЕМ ПО СТРУКТУРЕ</div>' + ''.join(_legend) + '</div>'
+        f'<div class="lg"><div class="lgh">{T("d.ig.sm_legend_h")}</div>' + ''.join(_legend) + '</div>'
         '</div><div class="col">' + ''.join(bl[half:]) + '</div></div>'
-        '<div class="foot2"><span>➕ = заставки нет в кате, создать</span>'
-        '<span>DRAFT · ПЕРЕРИСОВАТЬ В СТИЛЕ КАНАЛА</span></div></div>')
+        f'<div class="foot2"><span>{T("d.ig.sm_foot_plus")}</span>'
+        f'<span>{DRAFT_TXT}</span></div></div>')
     page('info_structure_map', _html, STRUCT_CSS, draft=False)
     VM_CSS = STRUCT_CSS + """
 .vm { position:absolute; inset:0; background:%s; display:flex; flex-direction:column;
@@ -800,15 +854,15 @@ if want('H'):
             '<div class="row %s"><div class="n" style="color:%s">%02d</div>'
             '<div class="nm">%s</div>%s</div>'
             % ('on' if n == hn else '', CH_ACCENT[n - 1], n, CH_NAME[n - 1],
-               '<span class="here">ВЫ ЗДЕСЬ</span>' if n == hn else '')
+               '<span class="here">%s</span>' % T('d.ig.here') if n == hn else '')
             for a, b, n in CH_BOUNDS)
         page('info_videomap_ch%02d' % hn,
-             '<div class="vm"><h1>КАРТА <span class="r">ВЫПУСКА</span></h1>'
-             '<div class="s">2–3 сек на каждой смене главы</div>'
+             '<div class="vm"><h1>%s</h1>'
+             '<div class="s">%s</div>'
              '<div class="list">%s</div></div>'
-             '<div class="foot2"><span>ТЗ-30 · пример «вы здесь» на главе %02d</span>'
-             '<span>DRAFT · ПЕРЕРИСОВАТЬ В СТИЛЕ КАНАЛА</span></div>'
-             % (rows, hn), VM_CSS, draft=False)
+             '<div class="foot2"><span>%s</span>'
+             '<span>%s</span></div>'
+             % (T('d.ig.vm_h1'), T('d.ig.vm_sub'), rows, T('d.ig.vm_foot', n=hn), DRAFT_TXT), VM_CSS, draft=False)
 
 
 # ═══════════ I. КАРТА НАЗВАНИЙ: что звучит → как подписываем (Роман 11.09) ═══════════
@@ -839,15 +893,22 @@ def _nrow(said, sub_said, screen, sub_scr):
 
 def _namecard(name, title, rows, note, foot):
     half = (len(rows) + 1) // 2
-    head = '<div class="hdr2"><span class="a">ЧТО ЗВУЧИТ В ОЗВУЧКЕ</span><span>ЧТО СТАВИМ НА ЭКРАН</span></div>'
+    head = (f'<div class="hdr2"><span class="a">{T("d.ig.nm_head_said")}</span>'
+            f'<span>{T("d.ig.nm_head_screen")}</span></div>')
     page(name,
-         '<div class="sm"><div class="hd"><h1>КАРТА <span class="r">НАЗВАНИЙ</span></h1>'
+         f'<div class="sm"><div class="hd"><h1>{T("d.ig.nm_h1")}</h1>'
          f'<div class="s">{title}</div></div>'
          f'<div class="cols"><div class="col">{head}{"".join(rows[:half])}'
-         f'<div class="lg"><div class="lgh">ПРАВИЛО</div><div class="lgi">{note}</div></div></div>'
+         f'<div class="lg"><div class="lgh">{T("d.ig.nm_rule")}</div><div class="lgi">{note}</div></div></div>'
          f'<div class="col">{head}{"".join(rows[half:])}</div></div>'
          f'<div class="foot2"><span>{foot}</span>'
-         '<span>DRAFT · ПЕРЕРИСОВАТЬ В СТИЛЕ КАНАЛА</span></div></div>', NAME_CSS, draft=False)
+         f'<span>{DRAFT_TXT}</span></div></div>', NAME_CSS, draft=False)
+
+
+def _since(tc, n):
+    """«с 3:02 · 5 раз» / «… 3 раза» (ru), «from 3:02 · 5×» (en)"""
+    few = 2 <= n % 10 <= 4 and n not in (12, 13, 14)
+    return T('d.ig.nm_since_few' if few else 'd.ig.nm_since', tc=tc, n=n)
 
 
 if want('I'):
@@ -875,9 +936,9 @@ if want('I'):
         pl = PLACE[k]
         said = pl['ru'] + (f' / {pl["old"]}' if pl.get('old') else '')
         n = cnt_l[k]
-        sub_said = f'с {first_l[k]} · {n} раз' + ('а' if 2 <= n % 10 <= 4 and n not in (12, 13, 14) else '')
+        sub_said = _since(first_l[k], n)
         if pl.get('en'):
-            sub_said += ' · в кадре: ' + ', '.join(pl['en'][:2])
+            sub_said += T('d.ig.nm_on_screen') + ', '.join(pl['en'][:2])
         if pl.get('parent'):
             screen = pl['ru']
             sub_scr = pl.get('sub', '').split(' — ')[0]
@@ -885,10 +946,8 @@ if want('I'):
             screen = pl['label']
             sub_scr = pl.get('sub', '')[:70]
         rows.append(_nrow(said, sub_said, screen, sub_scr))
-    _namecard('info_namemap_places', f'МЕСТА · {len(rows)} названий — страна, город, месторождение', rows,
-              'Современное имя первым, старое в скобках. Город и месторождение всегда подписаны своей страной. '
-              'Пояснение про переименование — один раз, на первом упоминании.',
-              'ТЗ-76 · канон названий мест')
+    _namecard('info_namemap_places', T('d.ig.nm_places_title', n=len(rows)), rows,
+              T('d.ig.nm_places_note'), T('d.ig.nm_places_foot'))
 
     trows = []
     order = {t[0]: i for i, t in enumerate(TERMS)}
@@ -897,17 +956,14 @@ if want('I'):
         x = TERM_EXTRA.get(k) or {}
         n = cnt_t[k]
         said = (x['en'][0] if x.get('lead') == 'en' and x.get('en') else ttl)
-        sub_said = f'с {first_t.get(k, "")} · {n} раз' + ('а' if 2 <= n % 10 <= 4 and n not in (12, 13, 14) else '')
+        sub_said = _since(first_t.get(k, ''), n)
         if x.get('read'):
-            sub_said += f' · читается «{x["read"]}»'
+            sub_said += T('d.ig.nm_read', r=x['read'])
         trows.append(_nrow(said, sub_said, ttl, sub))
     half = (len(trows) + 1) // 2
-    _namecard('info_namemap_terms', f'ТЕРМИНЫ 1–{half} из {len(trows)} — по порядку появления', trows[:half],
-              'Русское название крупно, оригинал мелко под ним, одна строка объяснения простыми словами. '
-              'Если надпись видна в кадре по-английски — ведём оригиналом и переводим рядом.',
-              'ТЗ-75 · канон терминов')
-    _namecard('info_namemap_terms_2', f'ТЕРМИНЫ {half + 1}–{len(trows)} из {len(trows)}', trows[half:],
-              'Тот же канон: русское имя крупно, оригинал мелко, объяснение одной строкой.',
-              'ТЗ-75 · канон терминов')
+    _namecard('info_namemap_terms', T('d.ig.nm_terms_title', h=half, n=len(trows)), trows[:half],
+              T('d.ig.nm_terms_note'), T('d.ig.nm_terms_foot'))
+    _namecard('info_namemap_terms_2', T('d.ig.nm_terms2_title', a=half + 1, n=len(trows)), trows[half:],
+              T('d.ig.nm_terms2_note'), T('d.ig.nm_terms_foot'))
 
 print('\nготово →', OUT)

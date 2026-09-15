@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, LANG  # noqa: E402
 
 SP = W6 / 'polish'
 SP.mkdir(parents=True, exist_ok=True)
@@ -52,6 +52,12 @@ def locate(parts, line):
 
 
 def main():
+    if LANG == 'en':
+        # локальная полировка — русский промпт Qwen; в EN остаётся только кодовый lint/guard.
+        # «строк 0» — сигнал review.py st_polish: s14/merge не запускать
+        print('EN: local polish skipped (guard only)')
+        print('polish todo: ТЗ 0, строк 0 (EN)')
+        return 0
     lint_p = W6 / 'lint_v7.json'
     if not lint_p.exists():
         print('lint_v7.json нет — сначала s10_format_tz.py')

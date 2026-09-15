@@ -106,7 +106,8 @@ def flags_of(sid):
     r = llm.get(sid) or {}
     out = []
     for key, label in (('typos', 'опечатка'), ('currency_numbers', 'валюта/число'),
-                       ('english_only', 'англ. без перевода'), ('facts_to_check', 'проверить факт')):
+                       ('english_only', 'англ. без перевода'), ('foreign_script', 'чужой алфавит'),
+                       ('facts_to_check', 'проверить факт')):
         for v in (r.get(key) or [])[:3]:
             v = str(v).strip()
             if not v or 'артефакт' in v.lower() or 'не опечатка' in v.lower():

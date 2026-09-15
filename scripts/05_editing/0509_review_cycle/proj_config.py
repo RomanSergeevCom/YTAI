@@ -120,6 +120,11 @@ RENDER = resolve(get('render', SRC))            # лёгкая копия для
 WORDS = resolve(_need('words'))                 # транскрипт с пословными таймкодами
 FILM = str(get('film', ''))
 FPS = float(get('fps', 25))
+# NTSC-частоты точной дробью: 29.97 в карточке = 30000/1001 (иначе за 30 минут tc уезжает на ~2 кадра)
+_NTSC = ((29.97, 30000), (23.976, 24000), (59.94, 60000))
+FPS_RATIONAL = next(((num, 1001) for approx, num in _NTSC if abs(FPS - approx) < 0.01),
+                    (int(FPS), 1) if FPS == int(FPS) else (FPS, 1))
+FPS_EXACT = next((num / 1001 for approx, num in _NTSC if abs(FPS - approx) < 0.01), FPS)
 
 # ── рабочие папки фильма (данные, не код) ──────────────────────────────────
 WORK = Path(resolve(get('work_dir', ''))) if get('work_dir') else REVIEW_DIR / 'work' / CUT_VERSION
@@ -159,6 +164,63 @@ def profile(path, default=None):
             return default
         cur = cur[part]
     return cur
+
+
+# ── язык поверхностей (shared/i18n.py берёт его отсюда) ──────────────────────
+def _jsonish(v, default):
+    """значение из окружения YTAI_<KEY> приходит строкой — списки/словари разбираем как JSON"""
+    if isinstance(v, str):
+        try:
+            return json.loads(v)
+        except ValueError:
+            return default
+    return default if v is None else v
+
+
+LANG = 'en' if str(get('lang') or PROFILE.get('lang') or 'ru').strip().lower() == 'en' else 'ru'
+
+
+# ── исключения: известные не-ошибки ката (дыра в футаже, недоделанные экраны) ─
+def _exclusions():
+    out = []
+    for e in _jsonish(get('exclusions'), []) or []:
+        if not isinstance(e, dict) or e.get('t0') is None or e.get('t1') is None:
+            continue                                      # без таймкодов — заметка, в фильтр не идёт
+        try:
+            t0, t1 = float(e['t0']), float(e['t1'])
+        except (TypeError, ValueError):
+            continue
+        out.append({'t0': min(t0, t1), 't1': max(t0, t1), 'reason': str(e.get('reason') or '')})
+    return out
+
+
+EXCLUSIONS = _exclusions()
+
+
+def in_exclusion(t0, t1=None):
+    """→ reason первого исключения, которое пересекается с [t0, t1] (границы включительно), иначе None."""
+    if t0 is None:
+        return None
+    t0 = float(t0)
+    t1 = t0 if t1 is None else float(t1)
+    a, b = min(t0, t1), max(t0, t1)
+    for e in EXCLUSIONS:
+        if a <= e['t1'] and b >= e['t0']:
+            return e['reason'] or 'exclusion'
+    return None
+
+
+# ── лексикон: слова, которые не опечатка и не «английский без перевода» ──────
+def _lexicon():
+    words = []
+    for src in (PROFILE.get('lexicon'), PROFILE.get('latin_whitelist'), _jsonish(get('canon_words'), [])):
+        if isinstance(src, str):
+            src = [src]
+        words += [str(w) for w in (src or []) if str(w).strip()]
+    return {w.strip().lower() for w in words}
+
+
+LEXICON = _lexicon()
 
 
 # ── длительность и ожидаемое число кадров (fps=1) ──────────────────────────

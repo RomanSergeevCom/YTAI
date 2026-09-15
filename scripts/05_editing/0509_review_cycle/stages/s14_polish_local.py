@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 os.environ.setdefault('HF_HOME', str(Path.home() / 'YTAI/models/huggingface'))
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, LANG  # noqa: E402
 SP = W6 / 'polish'  # рабочие файлы полировки ТЗ
 MODEL = 'mlx-community/Qwen3-8B-4bit'
 TC = re.compile(r'(?<![\d:])~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?(?![\d:])')
@@ -94,6 +94,9 @@ def ok(orig, out):
 
 
 def main():
+    if LANG == 'en':                                    # промпт и JUNK — русские; EN: только кодовый guard
+        print('EN: local polish skipped (guard only)')
+        return 0
     todo = json.load(open(SP / 'local_todo.json'))
     data = json.load(open(SP / 'r3_data.json'))
     from mlx_lm import generate, load

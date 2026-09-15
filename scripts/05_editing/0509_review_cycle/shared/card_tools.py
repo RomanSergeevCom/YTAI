@@ -73,7 +73,43 @@ def check(card_path):
         problems.append(f'нет профиля канала {prof}')
     if not card.get('ocr_anchors'):
         problems.append('ocr_anchors пусты — селфчек OCR будет пропущен (заполни 2–3 фразы, которые точно есть в кате)')
+    problems += soft_warnings(card)
     return card, problems
+
+
+WARN = 'предупреждение: '
+
+
+def soft_warnings(card):
+    """мягкие проверки новых ключей (fps дробный, exclusions, lang) — предупреждения, не отказ"""
+    out = []
+    fps = card.get('fps')
+    if fps is not None and (isinstance(fps, bool) or not isinstance(fps, (int, float)) or fps <= 0):
+        out.append(f'{WARN}fps = {fps!r} — ожидается число > 0 (25, 29.97, 23.976)')
+    if 'lang' in card and card.get('lang') not in ('ru', 'en', '', None):          # пусто = как в профиле канала
+        out.append(f'{WARN}lang = {card.get("lang")!r} — ожидается "ru" или "en" (иное считается ru)')
+    exc = card.get('exclusions')
+    if exc is not None:
+        if not isinstance(exc, list):
+            out.append(f'{WARN}exclusions — ожидается список {{t0, t1, reason}}, а не {type(exc).__name__}')
+        else:
+            for i, e in enumerate(exc):
+                if not isinstance(e, dict):
+                    out.append(f'{WARN}exclusions[{i}] — не объект {{t0, t1, reason}}')
+                    continue
+                t0, t1 = e.get('t0'), e.get('t1')
+                if not str(e.get('reason') or '').strip():
+                    out.append(f'{WARN}exclusions[{i}] без reason')
+                if t0 is None or t1 is None:
+                    out.append(f'{WARN}exclusions[{i}] без t0/t1 — игнорируется, пока не заданы таймкоды')
+                    continue
+                if not all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in (t0, t1)):
+                    out.append(f'{WARN}exclusions[{i}]: t0/t1 должны быть секундами (числа), а не {t0!r}/{t1!r}')
+                elif t1 < t0:
+                    out.append(f'{WARN}exclusions[{i}]: t1 ({t1}) < t0 ({t0})')
+                elif card.get('duration_sec') and t0 > float(card['duration_sec']):
+                    out.append(f'{WARN}exclusions[{i}]: t0 {t0} за концом ката ({card["duration_sec"]} с)')
+    return out
 
 
 def main():
@@ -93,7 +129,7 @@ def main():
             print('  ⚠️', p)
         print(f'{args.card}: {card.get("code")} · {card.get("channel")} · {card.get("mode")} · '
               f'{"OK" if not problems else str(len(problems)) + " замечаний"}')
-        return 1 if any(not x.startswith('ocr_anchors') and not x.startswith('внешний id') for x in problems) else 0
+        return 1 if any(not x.startswith(('ocr_anchors', 'внешний id', WARN)) for x in problems) else 0
     review_dir = Path(args.project_dir) / '00_Setup' / '05_Review'
     review_dir.mkdir(parents=True, exist_ok=True)
     out = review_dir / 'review_card.json'

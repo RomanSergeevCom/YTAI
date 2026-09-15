@@ -1,0 +1,68 @@
+{
+ "schema": "review-card-v1",
+ "project": "ytcrfx",
+ "code": "YTCRFX",
+ "channel": "YTCR",
+ "lang": "en",
+ "language": "en",
+ "mode": "cut_review",
+ "cut_version": "v1",
+ "project_name": "YTCRFX_Fixture",
+ "words": "words.json",
+ "duration_sec": 600,
+ "fps": 29.97,
+ "frames_tolerance": 2,
+ "chapters": [
+  [
+   0,
+   "01"
+  ],
+  [
+   300,
+   "02"
+  ]
+ ],
+ "ch_name": {
+  "01": "[1] Hook, Epic",
+  "02": "[2] Setup"
+ },
+ "ch_img": {},
+ "sub": [],
+ "prog": {},
+ "new_ch": [],
+ "film": "English-language documentary interview on the Core Realty Dubai channel (synthetic fixture): a Sudanese engineer who became a Dubai real-estate broker",
+ "film_subject": "Dubai real estate broker story",
+ "sources": [],
+ "ocr_anchors": [],
+ "llm_anchors": {},
+ "work_dir": "work/v1",
+ "pravki_dir": "pravki",
+ "mockups_dir": "mockups",
+ "doc_id": "FIXTURE_DOC",
+ "tab_title": "Edit notes · v1",
+ "nav_tab": "Cut review v1 · by timecode",
+ "notes_sheet_id": "FIXTURE_SHEET",
+ "sheet_url": "https://docs.google.com/spreadsheets/d/FIXTURE_SHEET",
+ "materials_id": "FIXTURE_MATERIALS",
+ "project_folder_id": "FIXTURE_PROJECT",
+ "sprint_folder_id": "FIXTURE_SPRINT",
+ "shots_remote": "",
+ "frozen_tabs": [],
+ "terms_file": "review_terms.json",
+ "ctl_dir": "/tmp/ytai_fixture_ctl",
+ "exclusions": [
+  {
+   "t0": 500,
+   "t1": 520,
+   "reason": "missing footage (fixture: known black gap)"
+  },
+  {
+   "t0": null,
+   "t1": null,
+   "reason": "note without timecodes — ignored by the filter"
+  }
+ ],
+ "notes": [
+  "synthetic EN fixture for review.py selftest — never a real project"
+ ]
+}

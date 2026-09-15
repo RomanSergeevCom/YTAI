@@ -10,10 +10,20 @@
 """
 import difflib
 import re
+import sys
+from pathlib import Path
 
 _TOK = re.compile(r'\d+(?:[   .,]\d+)*|.', re.S)
-PRE = 'было «'
-MID = '» → стало «'
+try:
+    import i18n  # noqa: E402  (обычно shared/ уже в sys.path через _bootstrap)
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'shared'))
+    import i18n  # noqa: E402
+
+# язык — по карточке/профилю (i18n.LANG): ru «было «…» → стало «…»», en «was “…” → now “…”»
+PRE = i18n.T('core.was_pre')
+MID = i18n.T('core.was_mid')
+POST = i18n.T('core.was_post')
 
 
 def _tokens(s):
@@ -45,7 +55,7 @@ def diff_spans(was, now):
 
 
 def typo_line(was, now):
-    return f'{PRE}{was}{MID}{now}»'
+    return f'{PRE}{was}{MID}{now}{POST}'
 
 
 def typo_offsets(was):

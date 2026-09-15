@@ -286,6 +286,19 @@ class Review:
         p = YTAI / 'YTs' / ch / 'review_profile.json'
         return json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}
 
+    def lang(self) -> str:
+        """язык поверхностей — как proj_config.LANG: YTAI_LANG → карточка lang → профиль lang → ru"""
+        v = os.environ.get('YTAI_LANG') or self.card.get('lang') or self.profile().get('lang') or 'ru'
+        return 'en' if str(v).strip().lower() == 'en' else 'ru'
+
+    def verdict_cfg(self) -> dict:
+        v = self.profile().get('verdict')
+        return v if isinstance(v, dict) else {}
+
+    def verdict_on(self) -> bool:
+        """вердикт/акты нужны: структурные правила канала (YTCH) ИЛИ редакторский вердикт профиля (verdict.enabled, YTCR)"""
+        return bool(self.profile().get('structure_rules')) or bool(self.verdict_cfg().get('enabled'))
+
 
 class Fatal(Exception):
     """Гейт закрыт намертво — дальше вести нельзя."""
@@ -350,6 +363,9 @@ def st_download(r: Review):
     if not remote:
         raise Fatal(f'ката нет ({s}) и cut_drive в карточке пуст — положи кат или укажи gdrive-путь')
     dst = s or (r.review_dir / 'cut' / Path(remote).name)
+    if r.dry:                                  # dry-run: только показать команду, ничего не создавать
+        r.run_cmd([RCLONE, 'copyto', remote, dst, '--progress', '--stats-one-line', '--stats', '30s'], 'download', 180)
+        return True, f'[dry] скачал бы {Path(remote).name} → {dst}'
     dst.parent.mkdir(parents=True, exist_ok=True)
     rc, out = r.run_cmd([RCLONE, 'copyto', remote, dst, '--progress', '--stats-one-line', '--stats', '30s'], 'download', 180)
     if rc != 0:
@@ -371,11 +387,13 @@ def st_frames(r: Review):
     if not s or not s.exists():
         raise Fatal('нет ката для кадров')
     hires = r.work / 'hires'
-    hires.mkdir(parents=True, exist_ok=True)
     need = r.expect_frames() - int(r.card.get('frames_tolerance', 2))
     have = _count(hires, 'h*.jpg')
     if have >= need:
         return True, f'кадры уже есть: {have}'
+    if r.dry:                                  # dry-run не стирает недокачанные кадры
+        return True, f'[dry] перегнал бы кадры: есть {have}, нужно ≥{need}'
+    hires.mkdir(parents=True, exist_ok=True)
     for f in hires.glob('h*.jpg'):
         f.unlink()
     argv = [FFMPEG, '-hide_banner', '-v', 'error']
@@ -410,7 +428,10 @@ def st_transcript(r: Review):
         raise Fatal('нет ката для транскрибации')
     base = w.name.replace('.words.json', '') if w else f'{r.code}_{r.cut}'
     argv = [PY_TR, EXTRA / 'wordrole_transcribe.py', '--media', s, '--plain', '--out-dir', r.review_dir, '--base', base]
-    lang = r.card.get('language')
+    # язык озвучки: card.language → card.lang → profile.lang; «auto» не передаём никогда (whisper путает языки),
+    # ключей нет — флага нет (RU-проекты без ключа ведут себя как раньше)
+    lang = next((str(v) for v in (r.card.get('language'), r.card.get('lang'), r.profile().get('lang'))
+                 if v and str(v).strip().lower() != 'auto'), None)
     if lang:
         argv += ['--language', lang]
     rc, out = r.run_cmd(argv, 'transcript', 180)
@@ -520,7 +541,8 @@ def st_cloud(r: Review):
     r.S['cloud']['batches'] = cloud_state(r).get('batches', {})
     if pend:
         rc, call = r.run_cmd([PY, pack, '--print-call'], 'cloud_call', 5)
-        (r.cloud / 'CALL.txt').write_text(call, encoding='utf-8')
+        if not r.dry:
+            (r.cloud / 'CALL.txt').write_text(call, encoding='utf-8')
         r.S['cloud']['awaiting'] = pend
         r.save()
         raise AwaitCloud(f'{len(pend)} пакетов ждут воркфлоу — вызов в {r.cloud / "CALL.txt"}: review.py cloud judge --print-call')
@@ -540,34 +562,42 @@ def _cloud_compound(r: Review, script: Path, stage: str, out_name: str, apply_ar
     out = r.cloud / 'out' / out_name
     if not out.exists():
         rc, call = r.run_cmd([PY, script, *(call_args or ['--print-call'])], f'{stage}_call', 5)
-        (r.cloud / f'CALL_{stage}.txt').write_text(call, encoding='utf-8')
+        if not r.dry:
+            (r.cloud / f'CALL_{stage}.txt').write_text(call, encoding='utf-8')
         raise AwaitCloud(f'нет {out.name} — выполни вызов из {r.cloud / f"CALL_{stage}.txt"}')
     rc, res = r.run_cmd([PY, script, *apply_args], f'{stage}_apply', 10)
     return rc == 0, (res.strip().splitlines()[-1][:120] if res.strip() else f'{out_name} применён')
 
 
 def st_verdict(r: Review):
-    if not r.profile().get('structure_rules'):
-        return True, 'вердикт-агент не нужен (нет structure_rules в профиле)'
+    if not r.verdict_on():
+        # без ключа verdict в профиле (YTUVI/YTCH/YTEVO) — прежний литерал: его показывает страница продюсера
+        return True, ('вердикт-агент не нужен (нет structure_rules в профиле)' if 'verdict' not in r.profile()
+                      else 'вердикт-агент не нужен (нет structure_rules / verdict.enabled в профиле)')
     return _cloud_compound(r, SHARED / 'verdict_call.py', 'verdict', 'verdict.json', ['--apply'])
 
 
 def v_verdict(r: Review) -> bool:
-    return not r.profile().get('structure_rules') or (r.cloud / 'out' / 'verdict.json').exists()
+    return not r.verdict_on() or (r.cloud / 'out' / 'verdict.json').exists()
 
 
 def st_acts(r: Review):
-    if not r.profile().get('structure_rules'):
-        return True, 'acts_compact не нужен (нет structure_rules)'
+    if not r.verdict_on():
+        return True, ('acts_compact не нужен (нет structure_rules)' if 'verdict' not in r.profile()
+                      else 'acts_compact не нужен (нет structure_rules / verdict.enabled)')
     script = SHARED / 'acts_compact.py'
     if not script.exists():
         return True, 'acts_compact.py нет — пропуск'
+    if not r.profile().get('structure_rules'):
+        # редакторский вердикт (profile verdict.enabled, YTCR): акты экстрактивно, без Qwen — на Mac, секунды
+        rc, out = r.run_cmd([PY, script, '--no-llm'], 'acts', 20)
+        return rc == 0, 'acts_compact.json (--no-llm, редакторский вердикт) + structure_checks.json'
     rc, out = r.run_cmd([PY_LLM, script], 'acts', 120)
     return rc == 0, 'acts_compact.json + structure_checks.json'
 
 
 def v_acts(r: Review) -> bool:
-    return not r.profile().get('structure_rules') or (r.work / 'acts_compact.json').exists()
+    return not r.verdict_on() or (r.work / 'acts_compact.json').exists()
 
 
 def st_align(r: Review):
@@ -582,6 +612,86 @@ def st_align(r: Review):
 
 def v_align(r: Review) -> bool:
     return not r.card.get('align_against') or (r.work / 'align.json').exists()
+
+
+def rebuild_screen_chapters(r: Review) -> int:
+    """главы в карточке поменялись → поле chapter у экранов screens_v6.json и находок audit_findings.json
+    по тем же правилам, что proj_config.chapter (int-секунда начала, порядок карточки). OCR не перегоняется:
+    s2_ocr_hires ставит главу при сборке инвентаря, а пересборка на Mac могла бы догнать OCR недостающих кадров.
+    → сколько записей перепомечено."""
+    bounds = [(int(float(t)), str(n)) for t, n in (r.card.get('chapters') or [[0, '01']])]
+
+    def chap(sec):
+        c = bounds[0][1] if bounds else '01'
+        for t, n in bounds:
+            if sec >= t:
+                c = n
+        return c
+
+    changed, by_sid = 0, {}
+    for name, key in (('screens_v6.json', None), ('audit_findings.json', 'findings')):
+        p = r.work / name
+        if not p.exists():
+            continue
+        try:
+            d = json.loads(p.read_text(encoding='utf-8'))
+        except Exception:
+            continue
+        rows = d.get(key) if key and isinstance(d, dict) else d
+        n = 0
+        for e in rows if isinstance(rows, list) else []:
+            if not isinstance(e, dict) or 'chapter' not in e:
+                continue
+            if key is None and e.get('t0') is not None:
+                c = chap(float(e['t0']))
+                by_sid[e.get('id')] = c
+            elif e.get('screen_id') in by_sid:
+                c = by_sid[e['screen_id']]
+            elif e.get('t0') is not None:
+                c = chap(float(e['t0']))
+            else:
+                continue
+            if e['chapter'] != c:
+                e['chapter'] = c
+                n += 1
+        if n:
+            tmp = p.with_suffix('.json.tmp')
+            tmp.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding='utf-8')
+            os.replace(tmp, p)
+        changed += n
+    return changed
+
+
+def st_chapters(r: Review):
+    """главы ката по плану частей (card.chapters_plan): chapters_from_plan --apply через align.json с прошлым рендером.
+    После смены глав стадии terms → … → review_json идут дальше по порядку сами; если главы переставлены позже
+    (план поправлен) — `run --only chapters`, затем `run --from terms`."""
+    if not r.card.get('chapters_plan'):
+        return True, 'chapters: в карточке нет chapters_plan — пропуск'
+    script = SHARED / 'chapters_from_plan.py'
+    if not script.exists():
+        return True, 'chapters_from_plan.py нет — пропуск'
+    if not (r.work / 'align.json').exists() and not r.dry:
+        return True, 'chapters: нет align.json (стадия align / card.align_against) — пропуск, главы карточки не тронуты'
+    rc, out = r.run_cmd([PY, script, '--apply'], 'chapters', 10)
+    if r.dry:
+        return True, '[dry] chapters_from_plan --apply'
+    head = out.strip().splitlines()[0][:110] if out.strip() else 'chapters_proposal.json'
+    if rc == 2:
+        msg = '⛔ инверсия порядка глав: карточка не тронута — chapters_proposal.json, решает Роман'
+        r.note(msg)
+        r.tg(f'⛔ <b>{r.code}</b>: {msg}')
+        return True, msg
+    if rc != 0:
+        return False, f'chapters_from_plan rc={rc}: {out[-200:]}'
+    r.card = json.loads(r.card_path.read_text(encoding='utf-8'))
+    n = rebuild_screen_chapters(r)
+    return True, f'{head} · chapter перепомечен у {n} записей'
+
+
+def v_chapters(r: Review) -> bool:
+    return (not r.card.get('chapters_plan') or (r.work / 'chapters_proposal.json').exists()
+            or not (r.work / 'align.json').exists())
 
 
 def st_mt_structure(r: Review):
@@ -661,6 +771,8 @@ def v_format_tz(r: Review) -> bool:
 
 
 def st_polish(r: Review):
+    if r.lang() == 'en':                       # s14 — русская модель-полировщик строк; английский ТЗ не полируем
+        return True, 'EN: polish skipped'
     if lint_long(r) == 0:
         return True, 'полировка не нужна (lint 0)'
     rc0, out0 = r.run_cmd([PY, STAGES_DIR / 'polish_todo.py'], 'polish_todo', 5)
@@ -889,7 +1001,8 @@ STAGES_CUT = [
     ('cloud',         'mac',   st_cloud,         v_cloud,         'HARD'),
     ('apply',         'mac',   st_apply,         v_apply,         'HARD'),
     ('align',         'mac',   st_align,         v_align,         'SOFT'),
-    ('risk',          'mac',   st_risk,          v_risk,          'SOFT'),
+    ('chapters',      'mac',   st_chapters,      v_chapters,      'SOFT'),
+    ('risk',         'mac',   st_risk,          v_risk,          'SOFT'),
     ('acts',          'mac',   st_acts,          v_acts,          'SOFT'),
     ('verdict',       'mac',   st_verdict,       v_verdict,       'SOFT'),
     ('terms',         'mac',   st_terms,         v_terms,         'HARD'),
@@ -938,7 +1051,11 @@ STAGE_DESC = {
     'cloud': ('pack → Workflow wf_judge (J≤4, F, V, S) → collect', 'все пакеты done, покрытие 100 %'),
     'apply': ('s8_apply_audit: классовый фильтр, одна ТЗ на экран', 'audit_v6.json + pravki'),
     'align': ('align: n-gram кат ↔ план/прошлые версии (card.align_against)', 'align.json'),
+    'chapters': ('chapters_from_plan --apply: главы ката по плану частей (card.chapters_plan) через align; chapter экранов '
+                 'перепомечается', 'chapters_proposal.json (инверсия → карточка не тронута)'),
     'risk': ('risk_registry (YTCH): ⚠️ на подтверждение фонда, не ⛔', 'risk.json'),
+    # тексты существующих стадий не менять: их показывает RU-страница продюсера (golden producer_page);
+    # EN-поведение acts (--no-llm при verdict.enabled), verdict (редакторский) и polish (пропуск) — README «Грабли», contracts §2
     'acts': ('acts_compact Qwen3-8B по актам + проверки структуры (YTCH)', 'acts_compact.json'),
     'verdict': ('1 облачный агент: вердикт, обязательные правки, структура (YTCH)', 'verdict.json применён'),
     'design_review': ('1 облачный агент по контактному листу мокапов', 'design_review.json применён'),
@@ -979,12 +1096,93 @@ LOAD_FLAG = Path.home() / '.cache' / 'ytai' / 'LOAD.json'
 HEAVY = {'frames': 15, 'ocr': 10, 'transcript': 20, 'vlm': 90, 'llm': 40, 'probe': 70, 'render': 10, 'segment': 30, 'acts': 40, 'polish': 30}
 
 
+LOAD_STALE_MIN = 60           # чужой флаг старше started + expected_min + 60 мин считаем брошенным
+
+
+def _flag_read() -> dict | None:
+    """LOAD.json → dict; нет файла → None; битый JSON → {} (чужой: не наш и не снимаем)."""
+    try:
+        return json.loads(LOAD_FLAG.read_text(encoding='utf-8'))
+    except FileNotFoundError:
+        return None
+    except Exception:
+        return {}
+
+
+def _flag_ours(r: Review, cur: dict | None) -> bool:
+    return bool(cur) and cur.get('job') == 'review' and cur.get('code') == r.code
+
+
+def _flag_stale(cur: dict) -> bool:
+    """started + expected_min + 60 мин уже прошли (время старта нечитаемо — берём mtime файла)."""
+    started = None
+    try:
+        started = datetime.fromisoformat(str(cur.get('started'))).timestamp()
+    except (TypeError, ValueError):
+        try:
+            started = LOAD_FLAG.stat().st_mtime
+        except OSError:
+            return True
+    try:
+        exp = float(cur.get('expected_min') or 0)
+    except (TypeError, ValueError):
+        exp = 0.0
+    return time.time() > started + (exp + LOAD_STALE_MIN) * 60
+
+
+def foreign_load(r: Review) -> dict | None:
+    """Живой чужой флаг нагрузки (другая работа или другой фильм) → его содержимое, иначе None."""
+    cur = _flag_read()
+    if cur is None or _flag_ours(r, cur) or _flag_stale(cur):
+        return None
+    return cur
+
+
+def wait_load(r: Review, reason: str, max_wait_min: float = 480) -> bool:
+    """Очередь на Memex: пока лежит живой чужой LOAD.json — стоим (checkpoint + heartbeat, сон 60 с).
+    TG — один раз «занят» и один раз «свободен» за эпизод ожидания. → True (свободно) / False (таймаут)."""
+    t0 = time.time()
+    waited = False
+    while True:
+        cur = foreign_load(r)
+        if cur is None:
+            if waited:
+                r.log(f'▶ wait_load ({reason}): Memex свободен — начинаю {r.code}')
+                r.tg(f'▶ Memex свободен — начинаю {r.code}')
+            return True
+        if not waited:
+            job, started, exp = cur.get('job') or '?', cur.get('started') or '?', cur.get('expected_min') or '?'
+            if cur.get('code') and cur.get('code') != r.code:
+                job = f'{job} {cur.get("code")}'
+            r.log(f'⏳ wait_load ({reason}): LOAD.json занят — {job} (с {started}, ~{exp} мин), жду')
+            r.tg(f'⏳ Memex занят: {job} (с {started}, ~{exp} мин) — {r.code} в очереди')
+            waited = True
+        if time.time() - t0 >= max_wait_min * 60:
+            r.log(f'🛑 wait_load ({reason}): Memex занят дольше {max_wait_min:.0f} мин — выхожу (rc 5)')
+            r.tg(f'🛑 {r.code}: Memex занят дольше {max_wait_min:.0f} мин ({cur.get("job") or "?"}) — прогон не начат, '
+                 f'повтори review.py memex start позже')
+            return False
+        r.checkpoint('wait_load')
+        r.beat()
+        time.sleep(60)
+
+
 def load_flag(r: Review, stage: str | None, expected_min: int = 0):
     """Флаг нагрузки для мониторинга Memex (memex-temp-check.sh читает его и подписывает тревоги
-    «идёт разбор {CODE}: {stage}»). stage=None — снять флаг."""
+    «идёт разбор {CODE}: {stage}»). stage=None — снять флаг. Чужой живой флаг не перезаписывается
+    и не снимается (очередь — wait_load). dry-run флаг не трогает."""
+    if r.dry:
+        return
     try:
+        cur = _flag_read()
         if stage is None:
-            LOAD_FLAG.unlink(missing_ok=True)
+            if cur is not None and _flag_ours(r, cur):
+                LOAD_FLAG.unlink(missing_ok=True)
+            elif cur is not None:
+                r.log(f'   LOAD.json чужой ({cur.get("job")}/{cur.get("code")}) — не снимаю')
+            return
+        if cur is not None and not _flag_ours(r, cur) and not _flag_stale(cur):
+            r.log(f'   LOAD.json занят ({cur.get("job")}/{cur.get("code")}) — свой флаг «{stage}» не пишу')
             return
         LOAD_FLAG.parent.mkdir(parents=True, exist_ok=True)
         LOAD_FLAG.write_text(json.dumps({'job': 'review', 'code': r.code, 'stage': stage, 'started': now(),
@@ -1087,21 +1285,33 @@ def cmd_run(r: Review, a) -> int:
     r.pidf.write_text(str(os.getpid()))
     r.stop_f.unlink(missing_ok=True)
     r.log(f'######## {r.code} run {sel[0]}…{sel[-1]} pid={os.getpid()} host={a.host} version={version()}')
-    if a.host == 'memex':
-        heavy = [s for s in sel if s in HEAVY]
-        r.tg(f'🔥 <b>Memex</b>: начинаю локальный разбор <b>{r.code}</b> ({" → ".join(heavy) or "стадии без моделей"}), '
-             f'ожидаемо ~{sum(HEAVY[s] for s in heavy) // 60} ч {sum(HEAVY[s] for s in heavy) % 60} мин. '
-             f'Тревоги о температуре в это время — это рендер, не сбой. Пауза: review.py memex pause')
     rc = 0
     # --from S / --only S = регенерация: выбранные стадии гоняются заново, даже если артефакты на месте;
     # resume / run без флагов = продолжить, пропуская готовое по артефактам.
     force_range = bool(a.start or a.only or a.force or a.force_all)
+    # очередь Memex: чужой живой LOAD.json (другая работа / другой фильм) — ждём, а не грузим вторую модель
+    queue = a.host == 'memex' and not getattr(a, 'no_wait_load', False) and not r.dry     # dry-run очередь не ждёт
+    max_wait = float(getattr(a, 'max_wait_min', 480) or 480)
     try:
+        if queue and not wait_load(r, 'старт прогона', max_wait):
+            rc = 5
+            sel = []
+        if a.host == 'memex' and sel:
+            heavy = [s for s in sel if s in HEAVY]
+            r.tg(f'🔥 <b>Memex</b>: начинаю локальный разбор <b>{r.code}</b> ({" → ".join(heavy) or "стадии без моделей"}), '
+                 f'ожидаемо ~{sum(HEAVY[s] for s in heavy) // 60} ч {sum(HEAVY[s] for s in heavy) % 60} мин. '
+                 f'Тревоги о температуре в это время — это рендер, не сбой. Пауза: review.py memex pause')
         for name, host, fn, vfn, gate in stages:
             if name not in sel:
                 continue
+            if queue and name in HEAVY and host == 'memex' and not wait_load(r, f'стадия {name}', max_wait):
+                rc = 5
+                break
             if not run_stage(r, name, host, fn, vfn, gate, force=force_range):
                 rc = 4 if r.st(name).get('status') == 'awaiting_cloud' else 1
+                if r.dry:                         # dry-run показывает весь план, а не стоит на первой закрытой стадии
+                    r.log(f'[dry] {name}: гейт не закрылся бы — дальше по списку')
+                    continue
                 break
     except Stopped:
         r.log('STOP — состояние сохранено; продолжить: review.py resume')
@@ -1112,7 +1322,7 @@ def cmd_run(r: Review, a) -> int:
         r.save()
         if not r.dry:
             write_ticket(r)
-    if a.host == 'memex':
+    if a.host == 'memex' and rc != 5:                     # rc 5 = не дождались очереди, нагрузку не давали
         r.tg(f'🧊 <b>Memex</b>: локальный разбор <b>{r.code}</b> закончен (rc={rc}) — нагрузка снята.')
     print_status(r)
     return rc
@@ -1405,6 +1615,39 @@ def cmd_selftest(a) -> int:
     else:
         rows.append(('golden YTEVO02 (диск не смонтирован — пропуск)', True, ''))
 
+    # (a) RU golden: цепочка YTUVI02 на песочной копии байт-в-байт с эталоном (только при подключённом T7-Blue)
+    gold_real = Path('/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate/00_Setup/05_Review')
+    gold_json = ROOT / 'examples/ytuvi02_golden/golden.json'
+    if gold_real.exists() and gold_json.exists() and (Path.home() / 'YTAI_work/_golden/YTUVI02/_golden_in').exists():
+        rc = subprocess.run([PY, SHARED / 'golden.py', 'compare'], capture_output=True, text=True, timeout=1800)
+        bad_steps = [ln.strip() for ln in rc.stdout.splitlines() if ln.strip().startswith('✗')]
+        ok('golden RU YTUVI02: все шаги идентичны', rc.returncode == 0 and 'ИТОГ golden: идентично' in rc.stdout,
+           '; '.join(bad_steps)[:180] or (rc.stdout + rc.stderr).strip()[-180:])
+    else:
+        rows.append(('golden RU YTUVI02 (диск/эталон не на месте — пропуск)', True, ''))
+
+    # (b) EN-фикстура YTCR: route → облако (канон) → apply → format_tz → review_json → mockbuild во временной копии
+    fx = ROOT / 'examples/ytcr_en_fixture/run_fixture.py'
+    if fx.exists():
+        rc = subprocess.run([PY, fx, '--json'], capture_output=True, text=True, timeout=1800)
+        line = next((ln for ln in reversed(rc.stdout.splitlines()) if ln.startswith('ROWS ')), '')
+        try:
+            for name, good, msg in json.loads(line[5:]):
+                ok(name, good, msg)
+        except ValueError:
+            ok('EN-фикстура YTCR: прогон', False, (rc.stdout + rc.stderr).strip()[-200:])
+    else:
+        ok('EN-фикстура YTCR: run_fixture.py на месте', False, str(fx))
+
+    # (c) i18n: таблицы грузятся (владельцы/дубли), у каждого ключа с ru есть en
+    try:
+        sys.path.insert(0, str(SHARED))
+        import i18n as _i18n
+        miss = sorted(k for k, v in _i18n.STRINGS.items() if 'ru' in v and 'en' not in v)
+        ok(f'i18n: {len(_i18n.STRINGS)} ключей, у каждого ru есть en', not miss, ', '.join(miss[:8]))
+    except Exception as e:
+        ok('i18n: таблицы грузятся', False, f'{type(e).__name__}: {e}'[:200])
+
     print(f'selftest {version()} · {now()}')
     for name, good, msg in rows:
         print(f'{"✅" if good else "✗ "} {name}' + (f'  — {msg}' if msg else ''))
@@ -1430,6 +1673,8 @@ def main() -> int:
     p.add_argument('--force-all', action='store_true'); p.add_argument('--dry-run', action='store_true')
     p.add_argument('--host', default='mac', choices=['mac', 'memex']); p.add_argument('--tg', action='store_true')
     p.add_argument('--no-drive', action='store_true'); p.add_argument('--no-doc', action='store_true')
+    p.add_argument('--no-wait-load', action='store_true', help='host memex: не ждать чужой LOAD.json (очередь Memex)')
+    p.add_argument('--max-wait-min', type=float, default=480, help='host memex: сколько ждать чужую нагрузку, мин (таймаут → rc 5)')
 
     p = sp.add_parser('stage'); p.add_argument('--project', required=True); p.add_argument('name')
     p.add_argument('action', choices=['start', 'pause', 'resume', 'stop', 'status'])
@@ -1464,7 +1709,8 @@ def main() -> int:
         return 0
     if a.cmd == 'resume':
         class A:  # noqa: D401
-            start = until = only = None; force = force_all = dry_run = no_drive = no_doc = tg = False; host = 'mac'
+            start = until = only = None; force = force_all = dry_run = no_drive = no_doc = tg = no_wait_load = False; host = 'mac'
+            max_wait_min = 480
         return cmd_run(r, A())
     if a.cmd == 'run':
         return cmd_run(r, a)

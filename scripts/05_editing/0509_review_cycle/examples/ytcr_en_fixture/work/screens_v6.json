@@ -1,0 +1,546 @@
+[
+ {
+  "id": "s001",
+  "t0": 12,
+  "t1": 16,
+  "dur": 5,
+  "tc": "0:12",
+  "chapter": "01",
+  "best_sec": 16,
+  "best_frame": "h0017.jpg",
+  "last_frame": "h0017.jpg",
+  "text_best": "DUBAI INFRASTURCTURE BOOM",
+  "lines_best": [
+   {
+    "t": "DUBAI INFRASTURCTURE BOOM",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "DUBAI INFRASTURCTURE BOOM"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s002",
+  "t0": 30,
+  "t1": 34,
+  "dur": 5,
+  "tc": "0:30",
+  "chapter": "01",
+  "best_sec": 34,
+  "best_frame": "h0035.jpg",
+  "last_frame": "h0035.jpg",
+  "text_best": "СORE REALTY",
+  "lines_best": [
+   {
+    "t": "СORE REALTY",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "СORE REALTY"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s003",
+  "t0": 48,
+  "t1": 52,
+  "dur": 5,
+  "tc": "0:48",
+  "chapter": "01",
+  "best_sec": 52,
+  "best_frame": "h0053.jpg",
+  "last_frame": "h0053.jpg",
+  "text_best": "KHALID ALI | Founder · Core Realty",
+  "lines_best": [
+   {
+    "t": "KHALID ALI",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   },
+   {
+    "t": "Founder · Core Realty",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.71,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "KHALID ALI | Founder · Core Realty"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s004",
+  "t0": 66,
+  "t1": 70,
+  "dur": 5,
+  "tc": "1:06",
+  "chapter": "01",
+  "best_sec": 70,
+  "best_frame": "h0071.jpg",
+  "last_frame": "h0071.jpg",
+  "text_best": "Welcome to Dubai | مرحبا بكم في دبي",
+  "lines_best": [
+   {
+    "t": "Welcome to Dubai",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   },
+   {
+    "t": "مرحبا بكم في دبي",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.71,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "Welcome to Dubai | مرحبا بكم في دبي"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s005",
+  "t0": 84,
+  "t1": 88,
+  "dur": 5,
+  "tc": "1:24",
+  "chapter": "01",
+  "best_sec": 88,
+  "best_frame": "h0089.jpg",
+  "last_frame": "h0089.jpg",
+  "text_best": "Palm Jebel Ali · off-plan · sqft",
+  "lines_best": [
+   {
+    "t": "Palm Jebel Ali · off-plan · sqft",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "Palm Jebel Ali · off-plan · sqft"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s006",
+  "t0": 102,
+  "t1": 106,
+  "dur": 5,
+  "tc": "1:42",
+  "chapter": "01",
+  "best_sec": 106,
+  "best_frame": "h0107.jpg",
+  "last_frame": "h0107.jpg",
+  "text_best": "AED 2.5M",
+  "lines_best": [
+   {
+    "t": "AED 2.5M",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "AED 2.5M"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s007",
+  "t0": 120,
+  "t1": 124,
+  "dur": 5,
+  "tc": "2:00",
+  "chapter": "01",
+  "best_sec": 124,
+  "best_frame": "h0125.jpg",
+  "last_frame": "h0125.jpg",
+  "text_best": "AED 25M",
+  "lines_best": [
+   {
+    "t": "AED 25M",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "AED 25M"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s008",
+  "t0": 138,
+  "t1": 142,
+  "dur": 5,
+  "tc": "2:18",
+  "chapter": "01",
+  "best_sec": 142,
+  "best_frame": "h0143.jpg",
+  "last_frame": "h0143.jpg",
+  "text_best": "Сделка закрыта",
+  "lines_best": [
+   {
+    "t": "Сделка закрыта",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "Сделка закрыта"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s009",
+  "t0": 156,
+  "t1": 160,
+  "dur": 5,
+  "tc": "2:36",
+  "chapter": "01",
+  "best_sec": 160,
+  "best_frame": "h0161.jpg",
+  "last_frame": "h0161.jpg",
+  "text_best": "THE FIRST DEAL",
+  "lines_best": [
+   {
+    "t": "THE FIRST DEAL",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "THE FIRST DEAL"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s010",
+  "t0": 174,
+  "t1": 178,
+  "dur": 5,
+  "tc": "2:54",
+  "chapter": "01",
+  "best_sec": 178,
+  "best_frame": "h0179.jpg",
+  "last_frame": "h0179.jpg",
+  "text_best": "Brokerage Licnese",
+  "lines_best": [
+   {
+    "t": "Brokerage Licnese",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "Brokerage Licnese"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s011",
+  "t0": 192,
+  "t1": 196,
+  "dur": 5,
+  "tc": "3:12",
+  "chapter": "01",
+  "best_sec": 196,
+  "best_frame": "h0197.jpg",
+  "last_frame": "h0197.jpg",
+  "text_best": "SHWARMA HOUSSE",
+  "lines_best": [
+   {
+    "t": "SHWARMA HOUSSE",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "SHWARMA HOUSSE"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s012",
+  "t0": 210,
+  "t1": 214,
+  "dur": 5,
+  "tc": "3:30",
+  "chapter": "01",
+  "best_sec": 214,
+  "best_frame": "h0215.jpg",
+  "last_frame": "h0215.jpg",
+  "text_best": "ETISALAT · 2009",
+  "lines_best": [
+   {
+    "t": "ETISALAT · 2009",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "ETISALAT · 2009"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s013",
+  "t0": 228,
+  "t1": 232,
+  "dur": 5,
+  "tc": "3:48",
+  "chapter": "01",
+  "best_sec": 232,
+  "best_frame": "h0233.jpg",
+  "last_frame": "h0233.jpg",
+  "text_best": "MOVED TO DUBAI IN 2008",
+  "lines_best": [
+   {
+    "t": "MOVED TO DUBAI IN 2008",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "MOVED TO DUBAI IN 2008"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s014",
+  "t0": 246,
+  "t1": 250,
+  "dur": 5,
+  "tc": "4:06",
+  "chapter": "01",
+  "best_sec": 250,
+  "best_frame": "h0251.jpg",
+  "last_frame": "h0251.jpg",
+  "text_best": "BUSINESS BAY | shutterstock",
+  "lines_best": [
+   {
+    "t": "BUSINESS BAY",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   },
+   {
+    "t": "shutterstock",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.71,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "BUSINESS BAY | shutterstock"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s015",
+  "t0": 318,
+  "t1": 322,
+  "dur": 5,
+  "tc": "5:18",
+  "chapter": "02",
+  "best_sec": 322,
+  "best_frame": "h0323.jpg",
+  "last_frame": "h0323.jpg",
+  "text_best": "CHAPTER 2 · SUDAN",
+  "lines_best": [
+   {
+    "t": "CHAPTER 2 · SUDAN",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "CHAPTER 2 · SUDAN"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s016",
+  "t0": 336,
+  "t1": 340,
+  "dur": 5,
+  "tc": "5:36",
+  "chapter": "02",
+  "best_sec": 340,
+  "best_frame": "h0341.jpg",
+  "last_frame": "h0341.jpg",
+  "text_best": "KHARTOUM, SUDAN",
+  "lines_best": [
+   {
+    "t": "KHARTOUM, SUDAN",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "KHARTOUM, SUDAN"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s017",
+  "t0": 354,
+  "t1": 358,
+  "dur": 5,
+  "tc": "5:54",
+  "chapter": "02",
+  "best_sec": 358,
+  "best_frame": "h0359.jpg",
+  "last_frame": "h0359.jpg",
+  "text_best": "Integrity is everything",
+  "lines_best": [
+   {
+    "t": "Integrity is everything",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "Integrity is everything"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s018",
+  "t0": 372,
+  "t1": 376,
+  "dur": 5,
+  "tc": "6:12",
+  "chapter": "02",
+  "best_sec": 376,
+  "best_frame": "h0377.jpg",
+  "last_frame": "h0377.jpg",
+  "text_best": "War Test & Fundamentals",
+  "lines_best": [
+   {
+    "t": "War Test & Fundamentals",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "War Test & Fundamentals"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s019",
+  "t0": 505,
+  "t1": 509,
+  "dur": 5,
+  "tc": "8:25",
+  "chapter": "02",
+  "best_sec": 509,
+  "best_frame": "h0510.jpg",
+  "last_frame": "h0510.jpg",
+  "text_best": "UNFINSHED TITEL HERE",
+  "lines_best": [
+   {
+    "t": "UNFINSHED TITEL HERE",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "UNFINSHED TITEL HERE"
+  ],
+  "faces_avg": 0.0
+ },
+ {
+  "id": "s020",
+  "t0": 540,
+  "t1": 544,
+  "dur": 5,
+  "tc": "9:00",
+  "chapter": "02",
+  "best_sec": 544,
+  "best_frame": "h0545.jpg",
+  "last_frame": "h0545.jpg",
+  "text_best": "The Big Check",
+  "lines_best": [
+   {
+    "t": "The Big Check",
+    "c": 1.0,
+    "x": 0.18,
+    "y": 0.62,
+    "bw": 0.55,
+    "bh": 0.07
+   }
+  ],
+  "texts_all": [
+   "The Big Check"
+  ],
+  "faces_avg": 0.0
+ }
+]

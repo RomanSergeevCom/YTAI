@@ -31,9 +31,16 @@ import base64
 import io
 import json
 import re
+import sys
 import urllib.parse
 from collections import Counter
 from pathlib import Path
+
+try:
+    import i18n  # noqa: E402
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import i18n  # noqa: E402
 
 KIND_RU = {'typo': 'опечатка', 'grammar': 'грамматика', 'fact': 'факт-ошибка',
            'currency': 'формат валюты/числа', 'language': 'английский без перевода',
@@ -48,6 +55,14 @@ SEV_RANK = {'high': 0, 'medium': 1, 'low': 2}
 TITLE_CLASS = [('ОПЕЧАТ', 'typo'), ('ФАКТ', 'fact'), ('ГРАММАТ', 'grammar'), ('ВАЛЮТ', 'currency'),
                ('ЧИСЛ', 'currency'), ('АНГЛ', 'language'), ('ПЕРЕВОД', 'language'), ('ОЗВУЧ', 'mismatch'),
                ('ВЁРСТ', 'design'), ('ВЕРСТ', 'design'), ('СТРУКТУР', 'structure'), ('ВЫРЕЗ', 'cut')]
+# EN-заголовки (s8/s10 на английском канале: «TYPO: “…”», «SCREEN ≠ VOICE: …») — проверяются ПОСЛЕ русских,
+# целым словом; значения — из core.kind_up.* (en)
+_EN_KINDS = ('typo', 'grammar', 'fact', 'currency', 'language', 'mismatch', 'foreign_trace', 'structure',
+             'check_source', 'design')
+EN_KIND_UP = {i18n.TL('en', f'core.kind_up.{k}'): k for k in _EN_KINDS}
+TITLE_CLASS_EN = list(EN_KIND_UP.items()) + [('MISMATCH', 'mismatch'), ('LAYOUT', 'design'), ('CUT', 'cut')]
+# метка блока «✅ СДЕЛАТЬ» в поле nado: русская и английская (core.lbl_do)
+DO_LABELS = (i18n.TL('ru', 'core.lbl_do'), i18n.TL('en', 'core.lbl_do'))
 # маркеры блоков в поле nado — на них заканчивается блок «✅ СДЕЛАТЬ»
 NADO_MARKERS = ('❌', '📍', '📚', '🎞', '🗺', '⏱', '📌', '🔗', '🎬', '📎', '❓')
 
@@ -104,12 +119,19 @@ def _class_from_title(title):
     for key, cls in TITLE_CLASS:
         if key in head:
             return cls
+    for key, cls in TITLE_CLASS_EN:
+        if re.search(r'(?<![A-Z])' + re.escape(key) + r'(?![A-Z])', head):
+            return cls
     return ''
 
 
 def _strip_class_prefix(title):
     t = (title or '').strip()
     m = re.match(r'^([А-ЯЁA-Z0-9 /\-\.]{3,40}):\s*(.+)$', t)
+    if not m:                                   # EN-префиксы вне класса знаков выше («SCREEN ≠ VOICE: …»)
+        for key in EN_KIND_UP:
+            if t.startswith(key + ':'):
+                return t[len(key) + 1:].strip()
     return m.group(2).strip() if m else t
 
 
@@ -184,10 +206,12 @@ def do_lines(p):
     if out:
         return out
     nado = str(p.get('nado') or '')
-    i = nado.find('✅ СДЕЛАТЬ')
+    lbl, i = DO_LABELS[0], nado.find(DO_LABELS[0])
+    if i < 0:
+        lbl, i = DO_LABELS[1], nado.find(DO_LABELS[1])
     if i < 0:
         return out
-    block = nado[i + len('✅ СДЕЛАТЬ'):]
+    block = nado[i + len(lbl):]
     for ln in block.split('\n'):
         s = ln.strip().lstrip('·').strip()
         if not s:

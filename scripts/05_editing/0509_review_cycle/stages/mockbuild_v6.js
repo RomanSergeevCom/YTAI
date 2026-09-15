@@ -39,6 +39,18 @@ const doc = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 const part = doc.part;
 const segs = doc.segments;
 
+// сетка квантования мока = fps части (make_review_v6 кладёт P.FPS_EXACT: 25 / 29.97002997…): при зашитых 25
+// мок сносил бы tc части 29.97 на чужую сетку. 25p — значение по умолчанию мока, вывод не меняется.
+const partFps = Number(part.fps);
+if (ppro._quant && partFps > 0) ppro._quant.fps = partFps;
+const offGrid = [];
+for (const s of segs) {
+  for (const k of ['timeline_in_sec', 'timeline_out_sec']) {
+    const f = s[k] * (partFps > 0 ? partFps : 25);
+    if (Math.abs(f - Math.round(f)) > 0.02) offGrid.push(`${s.segment_id}.${k}=${s[k]}`);
+  }
+}
+
 function mkClip(name, dur, still) {
   const c = new ppro._MockClipProjectItem(name, '/abs/' + name);
   c._durationSec = dur || 60;
@@ -72,5 +84,10 @@ const LOG = { info: (m) => logs.info.push(m), warn: (m) => logs.warn.push(m), er
   console.log(`item_marker log lines: ${im} (segments with item_marker: ${segs.filter((s) => s.item_marker).length})`);
   const bad = segs.filter((s) => s.timeline_out_sec <= s.timeline_in_sec || s.source_out_sec <= s.source_in_sec);
   console.log(`degenerate segments: ${bad.length}`);
-  process.exit(result && result.sequence && result.placed === segs.length && logs.error.length === 0 ? 0 : 1);
+  if (offGrid.length) {                    // печать только при нарушении: stdout 25p-прогона не меняется
+    console.log(`off-grid tc (fps ${partFps}): ${offGrid.length}`);
+    offGrid.slice(0, 10).forEach((m) => console.log('  OFFGRID', m));
+  }
+  process.exit(result && result.sequence && result.placed === segs.length && logs.error.length === 0
+    && offGrid.length === 0 ? 0 : 1);
 })().catch((e) => { console.error('THROW', e); process.exit(2); });

@@ -9,12 +9,22 @@ import re
 import sys
 from pathlib import Path
 
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'shared'))
+    from i18n import LANG  # noqa: E402
+except Exception:                                   # noqa: BLE001 — страж должен работать и без карточки
+    LANG = 'ru'
+
 TC1 = re.compile(r'(?<![\d:])\d{1,2}:\d{2}(?![\d:])')
 TCR = re.compile(r'(?<![\d:])~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?(?![\d:])')
 URL = re.compile(r'https?://[^\s;,)»"]+')
 KEYS = {'now', 'do', 'list', 'where', 'src', 'tl'}
+# фикстуры YTUVI01. MUST — фрагменты, которые правка обязана сохранить: требуются, только если они ЕСТЬ в оригинале.
+# ALLOW_TC (потеря таймкода → warn, а не HARD) — номера ТЗ русского фильма: в EN не применяются (страж строже).
 MUST = {'ТЗ-12': ['23.976', 'Interpret'], 'ТЗ-17': ['оставить ВТОРОЙ', '25:48'], 'ТЗ-30': ['КАРТА ВЫПУСКА']}
 ALLOW_TC = {'ТЗ-04', 'ТЗ-07', 'ТЗ-10', 'ТЗ-17', 'ТЗ-37', 'ТЗ-38', 'ТЗ-55', 'ТЗ-71', 'ТЗ-73', 'ТЗ-23', 'ТЗ-41'}
+if LANG == 'en':
+    ALLOW_TC = set()
 
 
 def strings(parts, errs=None):
@@ -79,7 +89,7 @@ def guard(num, orig, prop):
         if len(s0) > 230 and not s0.lstrip('▸ ').startswith('http'):
             warn.append(f'длинная строка ({len(s0)} зн.): ' + s0[:90] + '…')
     for lit in MUST.get(num, []):
-        if lit not in sp:
+        if lit in so and lit not in sp:
             hard.append('нет обязательного фрагмента: ' + lit)
     return hard, warn
 

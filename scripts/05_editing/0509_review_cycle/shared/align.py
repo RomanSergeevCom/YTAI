@@ -3,19 +3,35 @@
 """align.py — n-gram сверка транскрипта ката с планом / прошлыми версиями / исходниками (наследник a4_align_v4, a2_align).
 
 usage: align.py [--cut words.json] --against <words.json|assembly.json> [...] [--n 4] [--min-match 6]
-                [--hole-sec 5] [--hole-words 8] [--out W6/align.json] [--quiet]
+                [--hole-sec 5] [--hole-words 8] [--dup-min 8] [--out W6/align.json] [--quiet]
 
 Кат по умолчанию — P.WORDS (карточка фильма, env YTAI_CARD). Базы:
   • words.json (wordrole: segments[].words[{w,s,e}] в секундах) — прошлая версия ката, план, другой рендер;
   • *_Claude4_assembly.json (segments[].{scene, source_file, words[{w,s,e "M:SS.sss"}]}) — исходники съёмки:
     адрес каждого куска ката = сцена · файл · src-TC.
+Таймкоды слов в обоих файлах — числа-секунды (wordrole) или строки «M:SS.sss» (assembly); слово без s/e (или
+start/end) пропускается. Все времена в выходе — секунды (float, 2 знака).
 Выход W6/align.json:
-  {cut, cut_words, speech_end, bases: {tag: {file, kind, coverage_pct, covered_sec, spans, cut_map, new, unused, moved}}}
-  cut_map — спаны ката, найденные в базе [{cut_t0, cut_t1, tag, base_t0, base_t1, words, text}]
-            (для исходников tag = «сцена|файл»);
-  new     — речь ката, которой в базе нет (дыры ≥ hole-sec и ≥ hole-words слов): CTA, графика, чужие синхроны;
-  unused  — речь базы, не вошедшая в кат (та же логика по оси базы; для исходников — по каждому файлу);
-  moved   — спаны, идущие в базе не по порядку (перестановки > 8 с).
+  {cut, cut_words, speech_end, dup_min_words, opening_sec, duplicates, bases: {tag: {file, kind, coverage_pct,
+   covered_sec, spans, cut_map, new, unused, moved, reused}}}
+  cut_words     — слов в кате (после нормализации), speech_end — конец последнего слова ката;
+  duplicates    — дословные повторы ВНУТРИ ката: один и тот же прогон ≥ dup_min_words нормализованных слов звучит
+                  дважды, куски не перекрываются [{first_t0, first_t1, second_t0, second_t1, words, text,
+                  first_in_opening}]; first_in_opening = первое вхождение в открытии (до 2-й главы карточки, без глав —
+                  первые opening_sec=90 с): эхо хука, скорее всего намеренное;
+  bases[tag]    — tag = имя файла базы без .words:
+    file, kind      — путь базы и 'words' | 'assembly';
+    coverage_pct    — доля слов ката, попавших в найденные спаны; covered_sec — их суммарная длина; spans — число спанов;
+    cut_map         — спаны «кат ↔ база» по порядку ката [{cut_t0, cut_t1, tag, base_t0, base_t1, words, text}]
+                      (cut_* — ось ката, base_* — ось базы; для исходников tag = «сцена|файл»; соседние куски склеены,
+                      если зазоры < 2 с по кату и < 20 с по базе — внутри спана пословное соответствие не гарантировано,
+                      его восстанавливает потребитель, напр. chapters_from_plan.py);
+    new             — речь ката, которой в базе нет (дыры ≥ hole-sec и ≥ hole-words слов): CTA, графика, чужие синхроны
+                      [{t0, t1, sec, words, text}];
+    unused          — речь базы, не вошедшая в кат (та же логика по оси базы; для исходников — по каждому файлу, +tag);
+    moved           — спаны > 8 с, идущие в базе не по порядку [{cut_t0, cut_t1, tag, base_t0, base_t1, text}];
+    reused          — один и тот же кусок базы использован в кате дважды (пересечение по базе ≥ 3 с, куски ката не
+                      пересекаются) [{cut_a_t0, cut_a_t1, cut_b_t0, cut_b_t1, base_t0, base_t1, overlap_sec, text}].
 coverage_pct считается по словам ката, попавшим в найденные спаны. Сводка в консоль — строка на базу.
 """
 import argparse
@@ -55,8 +71,9 @@ def load_base(path):
         tag = f'{seg.get("scene", "")}|{seg.get("source_file", "")}' if is_asm else Path(path).stem
         for w in seg.get('words') or []:
             n = norm(w.get('w', ''))
-            if n:
-                out.append((n, w['w'], tag, tosec(w['s']), tosec(w['e'])))
+            s, e = w.get('s', w.get('start')), w.get('e', w.get('end'))
+            if n and s is not None and e is not None:
+                out.append((n, w['w'], tag, tosec(s), tosec(e)))
     if not is_asm:
         out.sort(key=lambda x: x[3])
     return ('assembly' if is_asm else 'words'), out
@@ -154,6 +171,63 @@ def moved(spans):
     return out
 
 
+def duplicates(cw, min_words=8, opening_sec=90.0):
+    """Дословные повторы внутри ката: прогон ≥ min_words нормализованных слов, звучащий дважды без перекрытия.
+    Период внутри одной фразы («trying and being scared, trying and being scared») не повтор: второе вхождение
+    обязано начинаться после конца первого. → [{first_t0, first_t1, second_t0, second_t1, words, text, first_in_opening}]"""
+    N = max(2, int(min_words))
+    if len(cw) < 2 * N:
+        return []
+    idx = collections.defaultdict(list)
+    for i in range(len(cw) - N + 1):
+        idx[tuple(x[0] for x in cw[i:i + N])].append(i)
+    seen, out, runs = set(), [], []
+
+    def inside(a0, n):                                   # прогон [a0, a0+n) целиком внутри уже найденного вхождения
+        return any(r0 <= a0 and a0 + n <= r0 + rn for r0, rn in runs)
+
+    for i in range(len(cw) - N + 1):
+        pos = idx.get(tuple(x[0] for x in cw[i:i + N])) or []
+        if len(pos) < 2:
+            continue
+        for j in pos:
+            if j < i + N or (i, j) in seen:
+                continue
+            ln = N
+            while j + ln < len(cw) and i + ln < j and cw[i + ln][0] == cw[j + ln][0]:
+                ln += 1
+            for k in range(ln):
+                seen.add((i + k, j + k))
+            if inside(i, ln) and inside(j, ln):          # сдвинутая копия уже найденного повтора («A, A, A» внутри фразы)
+                continue
+            runs += [(i, ln), (j, ln)]
+            out.append({'first_t0': round(cw[i][3], 2), 'first_t1': round(cw[i + ln - 1][4], 2),
+                        'second_t0': round(cw[j][3], 2), 'second_t1': round(cw[j + ln - 1][4], 2), 'words': ln,
+                        'text': ' '.join(x[1] for x in cw[i:i + ln])[:150], 'first_in_opening': cw[i][3] < opening_sec})
+    out.sort(key=lambda x: (x['first_t0'], x['second_t0']))
+    return out
+
+
+def reused(cut_map, min_overlap=3.0):
+    """Один кусок базы дважды в кате: пересечение по оси базы ≥ min_overlap с, по оси ката куски не пересекаются."""
+    s = sorted(cut_map, key=lambda m: m['base_t0'])
+    out = []
+    for a_i, a in enumerate(s):
+        for b in s[a_i + 1:]:
+            if b['base_t0'] >= a['base_t1']:
+                break
+            if b['tag'] != a['tag']:
+                continue
+            ov = min(a['base_t1'], b['base_t1']) - max(a['base_t0'], b['base_t0'])
+            if ov >= min_overlap and (a['cut_t1'] <= b['cut_t0'] or b['cut_t1'] <= a['cut_t0']):
+                x, y = sorted((a, b), key=lambda m: m['cut_t0'])
+                out.append({'cut_a_t0': x['cut_t0'], 'cut_a_t1': x['cut_t1'], 'cut_b_t0': y['cut_t0'], 'cut_b_t1': y['cut_t1'],
+                            'base_t0': round(max(a['base_t0'], b['base_t0']), 2), 'base_t1': round(min(a['base_t1'], b['base_t1']), 2),
+                            'overlap_sec': round(ov, 1), 'text': y['text']})
+    out.sort(key=lambda x: x['cut_a_t0'])
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--cut', default=P.WORDS)
@@ -162,6 +236,7 @@ def main():
     ap.add_argument('--min-match', type=int, default=6)
     ap.add_argument('--hole-sec', type=float, default=5.0)
     ap.add_argument('--hole-words', type=int, default=8)
+    ap.add_argument('--dup-min', type=int, default=8)
     ap.add_argument('--out', default=str(W6 / 'align.json'))
     ap.add_argument('--quiet', action='store_true')
     a = ap.parse_args()
@@ -171,8 +246,12 @@ def main():
     if len(cw) < a.n:
         raise SystemExit(f'в кате {a.cut} слишком мало слов ({len(cw)})')
     total = cw[-1][4]
-    res = {'cut': str(a.cut), 'cut_words': len(cw), 'speech_end': round(total, 2), 'bases': {}}
-    lines = [f'[align] {P.CODE} {P.CUT_VERSION} · кат {Path(a.cut).name}: слов {len(cw)}, речь до {tc(total)}']
+    opening = float(P.CHAPTERS[1][0]) if len(P.CHAPTERS) > 1 else 90.0
+    dups = duplicates(cw, a.dup_min, opening)
+    res = {'cut': str(a.cut), 'cut_words': len(cw), 'speech_end': round(total, 2), 'dup_min_words': a.dup_min,
+           'opening_sec': opening, 'duplicates': dups, 'bases': {}}
+    lines = [f'[align] {P.CODE} {P.CUT_VERSION} · кат {Path(a.cut).name}: слов {len(cw)}, речь до {tc(total)} · '
+             f'дословных повторов ≥{a.dup_min} слов: {len(dups)} (в открытии {sum(1 for x in dups if x["first_in_opening"])})']
     for bp in a.against:
         kind, bw = load_base(bp)
         if not bw:
@@ -191,7 +270,8 @@ def main():
                    for m in fwd]
         pct = round(100.0 * covered_words / max(1, len(cw)), 1)
         res['bases'][tag] = {'file': str(bp), 'kind': kind, 'coverage_pct': pct, 'covered_sec': round(cov_sec, 1),
-                             'spans': len(fwd), 'cut_map': cut_map, 'new': new, 'unused': unused, 'moved': mv}
+                             'spans': len(fwd), 'cut_map': cut_map, 'new': new, 'unused': unused, 'moved': mv,
+                             'reused': reused(cut_map)}
         extra = ''
         if kind == 'assembly':
             sc = collections.Counter()
@@ -200,7 +280,7 @@ def main():
             extra = ' · сцены: ' + ', '.join(f'{k} {v:.0f}с' for k, v in sc.most_common(6))
         lines.append(f'  vs {tag} ({kind}, слов {len(bw)}): покрытие {pct}% ({cov_sec:.0f}с) · спанов {len(fwd)} · '
                      f'нового в кате {len(new)} ({sum(x["sec"] for x in new):.0f}с) · не вошло из базы {len(unused)} '
-                     f'({sum(x["sec"] for x in unused):.0f}с) · перестановок {len(mv)}{extra}')
+                     f'({sum(x["sec"] for x in unused):.0f}с) · перестановок {len(mv)} · повторно из базы {len(res["bases"][tag]["reused"])}{extra}')
     P.write_json_atomic(a.out, res)
     lines.append(f'  → {a.out}')
     print('\n'.join(lines)[:2000], flush=True)

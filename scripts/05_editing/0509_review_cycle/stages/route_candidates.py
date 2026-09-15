@@ -24,16 +24,24 @@ usage:
   … route_candidates.py --explain s031                                                # сигналы одного экрана
 Без pymorphy3 (`.venv_llm/bin/pip install pymorphy3 pymorphy3-dicts-ru`) работает в урезанном режиме:
 словарь = каталог + карточка + озвучка (предупреждение в stdout).
+
+Язык (LANG = карточка lang → профиль lang → ru): ru — правила ниже без изменений; en — rule_typo_en (латиница,
+pyspellchecker==0.9.0, фолбэк /usr/share/dict/web2), rule_language_en (кириллица/арабское письмо),
+rule_currency_en (AED/Dh/dirham/$ ↔ озвучка), rule_fact/rule_mismatch/rule_foreign — общие; русские
+rule_typo/rule_grammar/rule_language/rule_currency для en не запускаются. Экран в P.EXCLUSIONS → любой
+кандидат drop «known_exclusion: <reason>» (оба языка).
 """
 import argparse
 import difflib
 import json
+import math
+import os
 import re
 import sys
 from collections import Counter, OrderedDict
 from pathlib import Path
 
-from _bootstrap import P, W6, M  # noqa: E402
+from _bootstrap import P, W6, M, T, LANG  # noqa: E402
 import terms_catalog as TC  # noqa: E402
 
 # ── пороги (все константы здесь) ───────────────────────────────────────────
@@ -62,18 +70,26 @@ GEM_SHAPE_K = 0.0020      # коэффициент формы (овал/поду
 WEIGHT_TOL = 2.0          # расхождение веса и оценки по размерам во столько раз → факт в облако
 MATCH_SIM_KIND = 0.35     # --eval: похожесть текстов при совпавшем классе
 MATCH_SIM_ANY = 0.6       # --eval: похожесть текстов при любом классе
+# EN-ветка (LANG == 'en')
+CAPS_ACRONYM_MAX = 5      # ALL-CAPS токен не длиннее — аббревиатура (RERA, DAMAC), не опечатка
+SPELL_MAX_ED = 2          # исправление словарём — ближайший уровень правок, не дальше двух
+VLM_READ_RATIO = 0.75     # VLM-токен считается чтением того же слова от такой похожести
+MONEY_TOL = 0.02          # сумма экрана ≈ сумма озвучки (доля)
+MONEY_MIX_WIN = 90.0      # одна сумма в разных валютах на экранах ближе стольких секунд — смешение валют
 
 OUT = W6 / 'candidates.json'
 OUT_SUMMARY = W6 / 'candidates_summary.json'
 
 # ── словарь ────────────────────────────────────────────────────────────────
-try:
-    import pymorphy3
-    MORPH = pymorphy3.MorphAnalyzer()
-except Exception:                                   # noqa: BLE001
-    MORPH = None
-    print('⚠️ pymorphy3 не установлен — словарь = каталог + карточка + озвучка '
-          '(.venv_llm/bin/pip install pymorphy3 pymorphy3-dicts-ru)', flush=True)
+MORPH = None
+if LANG != 'en':                                    # EN: русская морфология не нужна (словарь — pyspellchecker)
+    try:
+        import pymorphy3
+        MORPH = pymorphy3.MorphAnalyzer()
+    except Exception:                               # noqa: BLE001
+        MORPH = None
+        print('⚠️ pymorphy3 не установлен — словарь = каталог + карточка + озвучка '
+              '(.venv_llm/bin/pip install pymorphy3 pymorphy3-dicts-ru)', flush=True)
 
 CYR = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
 _HOMO = {'a': 'а', 'c': 'с', 'e': 'е', 'o': 'о', 'p': 'р', 'x': 'х', 'y': 'у', 'k': 'к', 'm': 'м', 't': 'т',
@@ -210,6 +226,8 @@ CATALOG_WORDS = _catalog_words()
 CATALOG_STEMS = {w[:max(6, len(w) - 2)] for w in CATALOG_WORDS
                  if len(w) >= 7 and is_cyr(w) and (MORPH is None or not MORPH.word_is_known(w))}
 LATIN_WHITELIST = [str(x) for x in (P.profile('latin_whitelist', []) or [])] + list(TC.CANON_WORDS)
+_own_logo = P.profile('probe.own_logo', []) or []                              # профиль: probe.own_logo (строка или список)
+OWN_LOGOS = LATIN_WHITELIST + [str(x) for x in ([_own_logo] if isinstance(_own_logo, str) else _own_logo)]
 _EN_FORMS = set()
 for _p in TC.PLACES:
     _EN_FORMS |= {t.lower() for e in (_p.get('en') or []) for t in tokens(e)}
@@ -251,6 +269,131 @@ def known(tok):
     if MORPH is not None and MORPH.word_is_known(t):
         return True
     return False
+
+
+# ── EN: словарь, письменность, известность слова ───────────────────────────
+RX_ARABIC = re.compile(r'[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]')
+_CYR2LAT = {'А': 'A', 'В': 'B', 'Е': 'E', 'К': 'K', 'М': 'M', 'Н': 'H', 'О': 'O', 'Р': 'P', 'С': 'C', 'Т': 'T',
+            'Х': 'X', 'У': 'Y', 'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x', 'у': 'y', 'к': 'k',
+            'і': 'i', 'ј': 'j', 'ѕ': 's'}                       # кириллица, неотличимая от латиницы
+_CYR_HOMO = set(_CYR2LAT)
+EN_UNIT_WORDS = {'sqft', 'sqm', 'bhk', 'psf', 'aed', 'dhs', 'usd', 'eur', 'gbp', 'kwh', 'roi', 'etc'}
+# вывеска/улица/фото в описании VLM — текст реального мира, не титр; но «title/caption/overlay…» = графика монтажёра
+RX_REAL_WORLD = re.compile(r'\b(photo|photograph|street|road|signs?|signage|signboard|storefront|shop\s?front|billboard|'
+                           r'licen[cs]e plate|number plate|facade|real[- ]world)\b', re.I)
+RX_EDITOR_GFX = re.compile(r'\b(title|titles|lower[- ]third|caption|captions|subtitles?|overlay|graphics?|infographic|'
+                           r'chart|diagram|map|animated|animation|headline|text box|kinetic)\b', re.I)
+
+
+def cyr_to_lat(s):
+    return ''.join(_CYR2LAT.get(ch, ch) for ch in s)
+
+
+def damerau(a, b):
+    """расстояние правки с перестановкой соседних букв (OSA)"""
+    la, lb = len(a), len(b)
+    d = [[0] * (lb + 1) for _ in range(la + 1)]
+    for i in range(la + 1):
+        d[i][0] = i
+    for j in range(lb + 1):
+        d[0][j] = j
+    for i in range(1, la + 1):
+        for j in range(1, lb + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+            if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
+                d[i][j] = min(d[i][j], d[i - 2][j - 2] + 1)
+    return d[la][lb]
+
+
+class EnDict:
+    """EN-словарь: pyspellchecker==0.9.0 (импорт только в EN-ветке) → /usr/share/dict/web2 с предупреждением."""
+    WEB2 = Path('/usr/share/dict/web2')
+    _SUFFIXES = (("'s", ''), ('ies', 'y'), ('es', ''), ('s', ''), ('ed', ''), ('ed', 'e'), ('ing', ''), ('ing', 'e'),
+                 ('ly', ''), ('er', ''), ('ers', ''))
+
+    def __init__(self):
+        self._near = {}
+        self.sp, self.words = None, set()
+        try:
+            from spellchecker import SpellChecker
+            self.sp = SpellChecker(language='en', distance=SPELL_MAX_ED)
+            self.name = 'pyspellchecker'
+        except Exception:                           # noqa: BLE001
+            self.name = 'web2'
+            if self.WEB2.exists():
+                self.words = {w.strip().lower() for w in self.WEB2.read_text(encoding='utf-8', errors='ignore').splitlines()
+                              if w.strip()}
+            print('⚠️ pyspellchecker не установлен — EN-словарь = /usr/share/dict/web2 '
+                  '(.venv_llm/bin/python -m pip install pyspellchecker==0.9.0)', flush=True)
+
+    def known(self, w):
+        w = w.lower()
+        if self.sp is not None:
+            return w in self.sp
+        if w in self.words:
+            return True
+        return any(w.endswith(suf) and len(w) - len(suf) >= 3 and (w[:-len(suf)] + rep) in self.words
+                   for suf, rep in self._SUFFIXES)
+
+    @staticmethod
+    def _edits1(w):
+        letters = 'abcdefghijklmnopqrstuvwxyz'
+        splits = [(w[:i], w[i:]) for i in range(len(w) + 1)]
+        return ({a + b[1:] for a, b in splits if b} | {a + b[1] + b[0] + b[2:] for a, b in splits if len(b) > 1}
+                | {a + c + b[1:] for a, b in splits if b for c in letters} | {a + c + b for a, b in splits for c in letters})
+
+    def nearest(self, w):
+        """известные слова на ближайшем уровне правок (1, иначе 2), без самого слова; кэш по слову"""
+        w = w.lower()
+        if w not in self._near:
+            if self.sp is not None:
+                res = set(self.sp.candidates(w) or ())
+            else:
+                e1 = self._edits1(w)
+                res = {x for x in e1 if x in self.words}
+                if not res and len(w) <= 12:
+                    res = {y for x in e1 for y in self._edits1(x) if y in self.words}
+            self._near[w] = {x for x in res if x != w}
+        return self._near[w]
+
+    def correction(self, w):
+        near = self.nearest(w)
+        if not near:
+            return None
+        if self.sp is not None:
+            return max(sorted(near), key=self.sp.word_usage_frequency)
+        return min(near)
+
+
+_EN_DICT = None
+
+
+def en_dict():
+    global _EN_DICT
+    if _EN_DICT is None:
+        _EN_DICT = EnDict()
+    return _EN_DICT
+
+
+EN_KNOWN_EXTRA = set()                              # EN: лексикон канала + карточка (фильм/гость) + озвучка + единицы
+if LANG == 'en':
+    for _s in list(P.LEXICON) + [str(P.get('film', '') or ''), str(P.get('film_subject', '') or ''), P.PROJECT_NAME]:
+        EN_KNOWN_EXTRA |= {t.lower() for t in tokens(_s)}
+    EN_KNOWN_EXTRA |= {t.lower() for _w in WORDS for t in tokens(_w[0])}
+    EN_KNOWN_EXTRA |= EN_UNIT_WORDS
+
+
+def known_en(tok):
+    """EN: словарь EN | лексикон/латинский белый список профиля | карточка | каталог | озвучка (токены)"""
+    t = tok.lower()
+    return t in CATALOG_WORDS or t in EN_KNOWN_EXTRA or en_dict().known(t)
+
+
+def real_world(sc):
+    """описание VLM — фото/улица/вывеска и ни слова о графике монтажёра → текст реального мира"""
+    d = sc.vlm_desc or ''
+    return bool(RX_REAL_WORLD.search(d)) and not RX_EDITOR_GFX.search(d)
 
 
 # ── исправления ────────────────────────────────────────────────────────────
@@ -977,10 +1120,10 @@ def rule_fact(sc):
                     said = bool(rx and rx.search(vo))
                     if said:
                         out.append(cand(sc, 'fact', l['t'], li, l['t'].replace(tok, symb), [f'chem_symbol:{tok}→{symb}', 'vo_names_element'],
-                                        'auto_confirm', f'символ элемента пишется «{symb}» (каталог канала), озвучка называет элемент'))
+                                        'auto_confirm', T('a2.fact_chem_said', symb=symb)))
                     else:
                         out.append(cand(sc, 'fact', l['t'], li, l['t'].replace(tok, symb), [f'chem_symbol:{tok}→{symb}'],
-                                        'cloud', f'похоже на символ элемента «{symb}» в неверном регистре'))
+                                        'cloud', T('a2.fact_chem_case', symb=symb)))
     # VLM мог прочитать символ кириллицей («СР»): сверяем с OCR через сигнатуру
     # 2) места: канон написания и порядка «СОВРЕМЕННОЕ (СТАРОЕ)»
     for p in TC.PLACES:
@@ -1000,20 +1143,20 @@ def rule_fact(sc):
                         agree = bool(vt) and vt.lower() == tok.lower()
                         out.append(cand(sc, 'typo', tok, li, fix, [f'places_canon:{cw}', 'diff_confusable_only',
                                                                   'ocr=vlm' if agree else f'vlm:{vt}'],
-                                        'cloud', f'написание места расходится с каноном «{cw}» только в Й/И, Ё/Е — OCR тут ненадёжен',
+                                        'cloud', T('a2.fact_place_confusable', cw=cw),
                                         need_frame=True, zoom_wanted=True))
                 if old and tok.lower().startswith(old.lower()[:5]) and not any(
                         sig(cw).lower() in sig(text) for cw in canon_words):
                     out.append(cand(sc, 'fact', l['t'], li, p.get('label', ''), [f'places_old_name:{old}'], 'auto_confirm',
-                                    f'старое имя без современного: канон «{p.get("label")}»'))
+                                    T('a2.fact_place_old', label=p.get('label'))))
             if old and re.search(re.escape(old) + r'\s*\(\s*' + re.escape(p['ru']), l['t'], re.I):
                 out.append(cand(sc, 'fact', l['t'], li, p.get('label', ''), ['places_order'], 'auto_confirm',
-                                f'порядок имён: современное первым — «{p.get("label")}»'))
+                                T('a2.fact_place_order', label=p.get('label'))))
     # 3) контрольные цифры штрихкодов: только EAN-13 / UPC-A; суммы «30 300 000» (группы по 3, знак валюты) — не код
     for li, l in enumerate(sc.lines):
         for m in re.finditer(r'(?<![\d$€])(\d[\d ]{10,16}\d)(?!\d)', l['t']):
             digits = re.sub(r'\D', '', m.group(1))
-            if re.fullmatch(r'\d{1,3}(?: \d{3})+', m.group(1).strip()) or RX_MONEY.search(l['t']):
+            if re.fullmatch(r'\d{1,3}(?: \d{3})+', m.group(1).strip()) or (RX_MONEY_EN if LANG == 'en' else RX_MONEY).search(l['t']):
                 continue
             if len(digits) in (12, 13):
                 r = ean_check(digits)
@@ -1021,7 +1164,7 @@ def rule_fact(sc):
                     fixed = digits[:-1] + str(r[1])
                     out.append(cand(sc, 'fact', m.group(1), li, m.group(1)[:-1] + str(r[1]),
                                     [f'ean{len(digits)}_check:{digits[-1]}→{r[1]}'], 'auto_confirm',
-                                    f'контрольная цифра EAN-{len(digits)} не сходится: должна быть {r[1]} ({fixed})'))
+                                    T('a2.fact_ean', n=len(digits), d=r[1], fixed=fixed)))
     # 4) вес ↔ размеры камня
     ct = re.search(r'(\d+[.,]\d+)\s*(ct|кар)\b', text + ' ' + vlm, re.I)
     dims = re.search(r'(\d+[.,]\d+)\s*[x×х]\s*(\d+[.,]\d+)\s*[x×х]\s*(\d+[.,]\d+)', text + ' ' + vlm, re.I)
@@ -1032,15 +1175,18 @@ def rule_fact(sc):
         if w > 0 and est > 0 and (w / est > WEIGHT_TOL or est / w > WEIGHT_TOL):
             out.append(cand(sc, 'fact', f'{ct.group(0)} · {dims.group(0)}', -1, '',
                             [f'weight_vs_dims: est≈{est:.2f} ct vs {w} ct'], 'cloud',
-                            f'вес не сходится с размерами: {L}×{Wd}×{H} мм ≈ {est:.2f} ct (корунд, SG {GEM_SG}), на экране {w} ct'))
+                            T('a2.fact_weight', L=L, Wd=Wd, H=H, est=est, sg=GEM_SG, w=w)))
     # 5) всё остальное с числами/именами/датами — в облако (документ/карта — с кадром)
-    nums = screen_numbers(text)
+    nums = screen_numbers_en(text, with_money=True) if LANG == 'en' else screen_numbers(text)
     is_map = bool(re.search(r'\bmap\b', sc.vlm_desc, re.I))
     is_doc = bool(re.search(r'certificate|document|report|scan|photo|table|tag|label', sc.vlm_desc, re.I))
     date = re.search(r'\b\d{1,2}\s+[A-Za-zА-Яа-я]{3,}\s+\d{4}\b|\b(19|20)\d{2}\b', text)
     phone = re.search(r'\+\d[\d\s-]{8,}\d', text)
     legal = re.search(r'\bЗАКОН(?!Н)\w{0,3}\b|\bФЗ\b|\bКОДЕКС\w*|\bГОСТ\b|\bУКАЗ\w{0,2}\b|\bСТАТЬ[ЯИ]\b|№\s*\d', text)
-    unit_nums = re.findall(r'\d+(?:[.,]\d+)?\s*(?:ct|кар|мм|mm|г\b|кг|нм|°|проб|k\b)', text, re.I)
+    if LANG == 'en':                                  # EN: площадь (sqft / sq ft / m²) — тоже единица
+        unit_nums = re.findall(r'\d+(?:[.,]\d+)?\s*(?:sq\.?\s?ft|sqft|ft²|sq\.?\s?m\b|sqm|m²|ct|mm|km|°|k\b)', text, re.I)
+    else:
+        unit_nums = re.findall(r'\d+(?:[.,]\d+)?\s*(?:ct|кар|мм|mm|г\b|кг|нм|°|проб|k\b)', text, re.I)
     trigger = []
     if date:
         trigger.append(f'date:{date.group(0)}')
@@ -1060,18 +1206,19 @@ def rule_fact(sc):
             lines_n = [l['t'] for l in sc.lines]
         shown = ' · '.join(lines_n)[:200] or text[:120]
         out.append(cand(sc, 'fact', shown, -1, '', trigger + ([f'llm:{sc.llm.get("severity")}'] if sc.llm.get('severity') else []),
-                        'cloud', ('карта: проверить положение меток и подписи' if is_map else
-                                  'числа/имена/даты на экране — проверить факты' + (' (документ — смотреть кадр)' if is_doc else '')),
+                        'cloud', (T('a2.fact_map') if is_map else
+                                  T('a2.fact_numbers') + (T('a2.fact_doc_suffix') if is_doc else '')),
                         need_frame=is_map or is_doc))
     return out
 
 
 def rule_mismatch(sc):
     out = []
-    nums = screen_numbers(sc.ocr_text)
+    en = LANG == 'en'                                 # EN: 1,850 = 1850, «2.5 million», суммы — в rule_currency_en
+    nums = screen_numbers_en(sc.ocr_text) if en else screen_numbers(sc.ocr_text)
     if not nums or len(nums) > MAX_NUMBERS_TITLE:
         return out
-    vals, ranges, factors = vo_numbers(sc.t0, sc.t1)
+    vals, ranges, factors = vo_numbers_en(sc.t0, sc.t1) if en else vo_numbers(sc.t0, sc.t1)
     if not vals and not ranges and not factors:
         return out
     unmatched, competing = [], []
@@ -1100,7 +1247,7 @@ def rule_mismatch(sc):
                 sigs.append(f'factor_screen:×{r:g}')
     if fired:
         out.append(cand(sc, 'mismatch', sc.ocr_text[:100], -1, '', sigs, 'cloud',
-                        'числа на экране не совпадают с озвучкой ±8 с — сверить пару', need_frame=False))
+                        T('a2.mismatch_vo'), need_frame=False))
     return out
 
 
@@ -1108,22 +1255,493 @@ def rule_foreign(sc):
     out = []
     if sc.probe.get('foreign'):
         note = (sc.probe.get('foreign_note') or '')[:160]
-        own = [w for w in LATIN_WHITELIST if len(w) >= 3 and re.search(r'(?<![a-z])' + re.escape(w.lower()) + r'(?![a-z])', note.lower())]
+        own = [w for w in OWN_LOGOS if len(w) >= 3 and re.search(r'(?<![a-z])' + re.escape(w.lower()) + r'(?![a-z])', note.lower())]
         if own:
             out.append(cand(sc, 'foreign_trace', note[:120], -1, '', ['probe:foreign', f'own_logo:{own[0]}'], 'drop',
-                            'зонд принял за чужой след собственный логотип канала (latin_whitelist)', drop_class='own_logo'))
+                            T('a2.foreign_own_logo'), drop_class='own_logo'))
         else:
             out.append(cand(sc, 'foreign_trace', note[:120], -1, '', ['probe:foreign'],
-                            'cloud', 'зонд VLM видит чужой элемент в кадре (вотермарк/логотип/курсор/чужие субтитры)',
+                            'cloud', T('a2.foreign_probe'),
                             need_frame=True))
     for li, l in enumerate(sc.lines):
         tiny = l['bh'] <= TINY_H and l['bw'] <= 0.12
         corner = (l['x'] <= CORNER or l['x'] + l['bw'] >= 1 - CORNER) and (l['y'] <= CORNER or l['y'] + l['bh'] >= 1 - CORNER)
         if tiny and corner and l['c'] >= OCR_CONF_TRUST and not whitelisted(l['t']):
             out.append(cand(sc, 'foreign_trace', l['t'], li, '', ['tiny_corner_text'], 'cloud',
-                            'мелкая надпись в углу кадра — возможный чужой след', need_frame=True))
+                            T('a2.foreign_tiny_corner'), need_frame=True))
     # cut_off зонда — не самостоятельная находка («титр за головой ведущей — приём», вёрстка = не класс ТЗ);
     # он лишь подкрепляет drop OCR-обрезков: сигнал вешается на typo-кандидаты экрана в build()
+    return out
+
+
+# ══ EN-правила (LANG == 'en') ═══════════════════════════════════════════════
+def find_correction_en(tok, t0, t1):
+    """→ (слово озвучки, ratio, начало) или None: похожее слово озвучки в окне VO_PAD_TYPO, ≤2 правок"""
+    t = tok.lower()
+    best = None
+    for w in vo_words(t0, t1, VO_PAD_TYPO):
+        for v in tokens(w[0]):
+            v = v.lower()
+            if len(v) < 3 or v == t or not is_lat(v) or abs(len(v) - len(t)) > CORR_LEN_DIFF:
+                continue
+            r = ratio(t, v)
+            if r >= CORR_RATIO and damerau(t, v) <= SPELL_MAX_ED and (best is None or r > best[1]):
+                best = (v, r, w[1])
+    return best
+
+
+def vlm_longer_known_en(sc, work):
+    """VLM читает длинное известное слово с тем же началом (≥5 букв) → OCR обрезал"""
+    w = work.lower()
+    for v in sc.vlm_tokens:
+        vl = v.lower()
+        if len(vl) > len(w) and len(w) >= 5 and vl.startswith(w[:5]) and is_lat(vl) and known_en(vl):
+            if len(os.path.commonprefix([vl, w])) >= max(5, len(w) - 2):
+                return v
+    return None
+
+
+def rule_typo_en(sc):
+    """латинские токены ≥4 букв без цифр (ALL-CAPS ≤5 — аббревиатура). Известно: словарь EN, озвучка, лексикон
+    профиля, карточка, каталог. auto_confirm — только если OCR и VLM читают токен одинаково И исправление ровно одно
+    (ближайший уровень правок ≤2, вместе с исправлением из озвучки); иначе cloud. Текст реального мира → drop."""
+    out = []
+    if sc.vlm_notext and all(l['c'] < OCR_CONF_TRUST for l in sc.lines):
+        out.append(cand(sc, 'typo', sc.ocr_text[:60], -1, '', ['vlm:NO TEXT', 'ocr_conf<0.5'], 'drop',
+                        T('a2.typo_ocr_noise'), drop_class='ocr_noise'))
+        return out
+    if sc.is_typing_prefix():
+        out.append(cand(sc, 'typo', sc.ocr_text[:60], -1, '', ['typing_prefix', f'same_title_as:{sc.typing_of}'], 'drop',
+                        T('a2.typo_typing_prefix', sid=sc.typing_of), drop_class='typing_anim'))
+        return out
+    real = real_world(sc)
+    ed = en_dict()
+    seen = set()
+    for li, line in enumerate(sc.lines):
+        for tok in tokens(line['t']):
+            if len(tok) < TYPO_MIN_LEN or re.search(r'\d', tok):
+                continue
+            sigs = [f'conf:{line["c"]}']
+            work = tok
+            if RX_MIXED.fullmatch(tok):                       # кириллические двойники в латинском слове — артефакт OCR
+                work = cyr_to_lat(tok)
+                sigs.append('homoglyph_mix')
+            if not is_lat(work) or work.lower() in seen:
+                continue
+            wl = work.lower()
+            seen.add(wl)
+            if work.isupper() and len(work) <= CAPS_ACRONYM_MAX:
+                continue
+            vt, vr = sc.vlm_match(work)
+            conf_hit = next(((w, r) for w, r in TC.CONFUSABLES if is_lat(str(w)) and wl.startswith(str(w).lower())), None)
+            if conf_hit:
+                wrong, right = conf_hit
+                fx = case_like(str(right).lower() + wl[len(wrong):], tok)
+                same = bool(vt) and vt.lower() == wl
+                sigs += [f'confusable:{wrong}→{right}', 'ocr=vlm' if same else f'vlm:{vt}']
+                if same:
+                    out.append(cand(sc, 'typo', tok, li, fx, sigs, 'auto_confirm',
+                                    T('a2.typo_confusable_auto', wrong=wrong, right=right), zoom_wanted=False))
+                else:
+                    out.append(cand(sc, 'typo', tok, li, fx, sigs, 'cloud', T('a2.typo_confusable_cloud', wrong=wrong, right=right),
+                                    need_frame=True, zoom_wanted=True))
+                continue
+            if known_en(work):
+                continue
+            if real:
+                out.append(cand(sc, 'typo', tok, li, '', sigs + ['vlm_desc:real_world'], 'drop', T('a2.typo_real_world'),
+                                drop_class='real_world_text'))
+                continue
+            pool = {t.lower() for t in sc.all_tokens | sc.neigh_tokens}
+            full = [w for w in pool if w.startswith(wl) and len(w) > len(wl) and is_lat(w) and known_en(w)]
+            if full:
+                out.append(cand(sc, 'typo', tok, li, '', sigs + [f'prefix_of:{sorted(full)[0]}'], 'drop',
+                                T('a2.typo_prefix_anim'), drop_class='typing_anim'))
+                continue
+            sigs.append('unknown:' + ed.name)
+            sigs.append(f'stable:{sc.stable(tok)}/{sc.sec_count}s')
+            vo_fix = find_correction_en(work, sc.t0, sc.t1)
+            near = ed.nearest(wl)
+            fixes = set(near) | ({vo_fix[0]} if vo_fix else set())
+            fix_word = vo_fix[0] if vo_fix else ed.correction(wl)
+            fix = case_like(fix_word, tok) if fix_word else ''
+            if vo_fix:
+                sigs.append(f'vo_match:{vo_fix[1]:.2f} ({vo_fix[0]} @{tc(vo_fix[2])})')
+            if near:
+                sigs.append(f'{ed.name}:' + ','.join(sorted(near)[:4]))
+            sigs.append(f'fixes:{len(fixes)}')
+            gl = glued(work, sc.t0, sc.t1)
+            z = sc.zoom(li, tok)
+            readings = {'ocr': wl, 'vlm': (vt or '').lower() if vr >= VLM_READ_RATIO else ''}
+            if z:
+                readings['zoom_vlm'] = (z.get('vlm') or '').lower()
+                readings['zoom_ocr'] = (z.get('ocr') or '').lower()
+            agree = [k for k, v in readings.items() if v and v == wl]
+            sigs.append('='.join(agree) if len(agree) > 1 else 'ocr_only')
+            zoom_wanted = z is None
+            split = sc.vlm_split_of(work)
+            if split and not gl:
+                out.append(cand(sc, 'typo', tok, li, case_like(split, tok), sigs + ['vlm_split'], 'drop',
+                                T('a2.typo_vlm_split'), drop_class='ocr_artifact', zoom_wanted=True))
+                continue
+            longer = vlm_longer_known_en(sc, work)
+            if longer and not vo_fix and not gl:
+                out.append(cand(sc, 'typo', tok, li, case_like(longer, tok), sigs + [f'ocr_truncated:{longer}'], 'drop',
+                                T('a2.typo_ocr_truncated'), drop_class='ocr_truncated', zoom_wanted=True))
+                continue
+            if gl:
+                split_rx = r'\b' + re.escape(gl.split()[0]) + r'\s+' + re.escape(gl.split()[-1]) + r'\b'
+                if re.search(split_rx, sc.vlm_text, flags=re.I):
+                    out.append(cand(sc, 'typo', tok, li, case_like(gl, tok), sigs + ['glued_vo', 'vlm_split'], 'drop',
+                                    T('a2.typo_vlm_split'), drop_class='ocr_artifact', zoom_wanted=True))
+                else:
+                    out.append(cand(sc, 'typo', tok, li, case_like(gl, tok), sigs + ['glued_vo'], 'cloud',
+                                    T('a2.typo_glued_vo'), need_frame=True, zoom_wanted=zoom_wanted))
+                continue
+            vlm = readings['vlm']
+            vlm_agrees = 'vlm' in agree or 'zoom_vlm' in agree
+            zv = readings.get('zoom_vlm', '')
+            zoom_against = bool(z) and bool(zv) and zv != wl and readings.get('zoom_ocr', '') != wl
+            if not vlm_agrees:
+                if vlm and is_lat(vlm) and known_en(vlm) and line['c'] < OCR_CONF_TRUST:
+                    out.append(cand(sc, 'typo', tok, li, case_like(vlm, tok), sigs + ['vlm_known'], 'drop',
+                                    T('a2.typo_vlm_known_low_conf'), drop_class='ocr_artifact', zoom_wanted=zoom_wanted))
+                elif zoom_against and is_lat(zv) and known_en(zv):
+                    out.append(cand(sc, 'typo', tok, li, case_like(zv, tok), sigs + ['zoom_contradicts_ocr'], 'drop',
+                                    T('a2.typo_zoom_known'), drop_class='ocr_artifact', zoom_wanted=False))
+                elif not vlm and not z and (line['c'] < OCR_CONF_TRUST or line['bh'] < TINY_LINE_H):
+                    out.append(cand(sc, 'typo', tok, li, fix, sigs + ['vlm_missing', f'line_h:{line["bh"]:.3f}'], 'drop',
+                                    T('a2.typo_vlm_missing_weak'), drop_class='ocr_artifact', zoom_wanted=True))
+                elif not vlm and not z:
+                    out.append(cand(sc, 'typo', tok, li, fix, sigs + ['vlm_missing'], 'cloud', T('a2.typo_vlm_missing'),
+                                    need_frame=True, zoom_wanted=True))
+                else:
+                    alt = case_like(vlm, tok) if vlm and is_lat(vlm) and known_en(vlm) else ''
+                    out.append(cand(sc, 'typo', tok, li, fix or alt, sigs + [f'reads_other:vlm={vlm}'], 'cloud',
+                                    T('a2.typo_readings_differ'), need_frame=True, zoom_wanted=zoom_wanted))
+                continue
+            if zoom_against:
+                out.append(cand(sc, 'typo', tok, li, fix, sigs + ['zoom_contradicts_ocr'], 'cloud', T('a2.typo_zoom_differs'),
+                                need_frame=True, zoom_wanted=False))
+            elif fix and len(fixes) == 1:
+                out.append(cand(sc, 'typo', tok, li, fix, sigs, 'auto_confirm',
+                                T('a2.typo_auto', tok=tok, fix=fix, src=T('a2.src_vo') if vo_fix else T('a2.src_dict')),
+                                zoom_wanted=False))
+            elif fix:
+                out.append(cand(sc, 'typo', tok, li, fix, sigs, 'cloud', T('a2.typo_many_fixes', n=len(fixes)),
+                                need_frame=True, zoom_wanted=zoom_wanted))
+            else:
+                out.append(cand(sc, 'typo', tok, li, '', sigs + ['no_correction'], 'cloud', T('a2.typo_no_fix'),
+                                need_frame=True, zoom_wanted=zoom_wanted))
+    return out
+
+
+def rule_language_en(sc):
+    """кириллица в титре/графике → auto_confirm (если второе чтение VLM тоже видит кириллицу, иначе cloud);
+    арабское письмо → cloud; латинское слово с кириллическими двойниками — артефакт OCR → drop; текст реального
+    мира → drop. Русское «английский без перевода» для en не существует."""
+    out = []
+    if sc.vlm_notext and all(l['c'] < OCR_CONF_TRUST for l in sc.lines):
+        return out
+    homo, cyr_lines, arab_lines = [], [], []
+    for li, l in enumerate(sc.lines):
+        real_cyr = []
+        for tok in tokens(l['t']):
+            if RX_MIXED.fullmatch(tok) or (is_cyr(tok) and all(ch in _CYR_HOMO for ch in tok)):
+                homo.append(tok)
+            elif is_cyr(tok) and len(tok) >= 2:
+                real_cyr.append(tok)
+        if real_cyr:
+            cyr_lines.append((li, l['t'], real_cyr))
+        if RX_ARABIC.search(l['t']):
+            arab_lines.append((li, l['t']))
+    vlm_cyr = [t for t in tokens(sc.vlm_text) if is_cyr(t) and len(t) >= 2 and not all(ch in _CYR_HOMO for ch in t)]
+    vlm_arab = bool(RX_ARABIC.search(sc.vlm_text))
+    fs = sc.llm.get('foreign_script')
+    llm_sig = ['llm:foreign_script'] if (fs if not isinstance(fs, str) else fs.strip()) else []
+    real = real_world(sc)
+    if homo:
+        uniq = list(dict.fromkeys(homo))
+        out.append(cand(sc, 'language', ' '.join(uniq)[:120], -1, ' '.join(cyr_to_lat(t) for t in uniq)[:120],
+                        ['homoglyph_mix:' + ','.join(uniq[:6])], 'drop', T('a2.lang_homoglyph'), drop_class='ocr_homoglyph'))
+    if cyr_lines or vlm_cyr:
+        text = ' · '.join(t for _li, t, _r in cyr_lines) or ' '.join(vlm_cyr)
+        sigs = ['script:cyrillic', 'ocr:' + ','.join(t for _li, _t, r in cyr_lines for t in r)[:80],
+                'vlm=cyr' if vlm_cyr else 'vlm≠cyr'] + llm_sig
+        if real:
+            out.append(cand(sc, 'language', text[:120], -1, '', sigs + ['vlm_desc:real_world'], 'drop',
+                            T('a2.lang_real_world'), drop_class='real_world_text'))
+        elif cyr_lines and vlm_cyr:
+            out.append(cand(sc, 'language', text[:120], -1, '', sigs, 'auto_confirm', T('a2.lang_cyr_auto')))
+        else:
+            out.append(cand(sc, 'language', text[:120], -1, '', sigs, 'cloud', T('a2.lang_cyr_cloud'), need_frame=True))
+    if arab_lines or vlm_arab:
+        text = ' · '.join(t for _li, t in arab_lines) or sc.vlm_text.replace('\n', ' | ')[:120]
+        sigs = ['script:arabic', 'ocr' if arab_lines else 'vlm_only'] + llm_sig
+        if real:
+            out.append(cand(sc, 'language', text[:120], -1, '', sigs + ['vlm_desc:real_world'], 'drop',
+                            T('a2.lang_real_world'), drop_class='real_world_text'))
+        else:
+            out.append(cand(sc, 'language', text[:120], -1, '', sigs, 'cloud', T('a2.lang_arabic'), need_frame=True))
+    return out
+
+
+# ── EN: суммы и числа ──────────────────────────────────────────────────────
+EN_CUR = r'AED|DHS|Dhs|dhs|DH|Dh|[Dd]irhams?|DIRHAMS?|USD|US\$|\$|EUR|€|GBP|£'
+EN_SCALE = r'(?:\s?(?:K|k|MN|Mn|mn|M|m|BN|Bn|bn|B|b)(?![A-Za-z²³])|\s(?:thousand|million|billion)\b)?'
+_EN_SCALE_V = {'k': 1e3, 'thousand': 1e3, 'm': 1e6, 'mn': 1e6, 'million': 1e6, 'b': 1e9, 'bn': 1e9, 'billion': 1e9}
+_EN_UNITS = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9,
+             'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15, 'sixteen': 16,
+             'seventeen': 17, 'eighteen': 18, 'nineteen': 19}
+_EN_TENS = {'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50, 'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90}
+_EN_BIG = {'thousand': 1e3, 'million': 1e6, 'billion': 1e9}
+_EN_PLURAL = {'dozens': (24, 99), 'hundreds': (200, 999), 'thousands': (2000, 9999), 'millions': (2e6, 9.99e6),
+              'billions': (2e9, 9.99e9)}
+RX_VO_NUM = re.compile(r'^(?P<cur>[$€£])?(?P<n>\d[\d,]*(?:\.\d+)?)(?P<suf>k|mn|m|bn|b)?$', re.I)
+RX_MONEY_EN = re.compile(r'[$€£]|\b(?:USD|AED|EUR|GBP|Dhs?|DH)\b', re.I)
+_EN_RX = {}
+
+
+def _en_num_pat():
+    dec = str(P.profile('currency.decimal', '.') or '.')
+    grp = str(P.profile('currency.group', ',') or ',')
+    return rf'\d{{1,3}}(?:{re.escape(grp)}\d{{3}})+(?:{re.escape(dec)}\d+)?|\d+(?:{re.escape(dec)}\d+)?', dec, grp
+
+
+def en_rx():
+    if not _EN_RX:
+        num, dec, grp = _en_num_pat()
+        _EN_RX.update(num=num, dec=dec, grp=grp,
+                      money=re.compile(rf'(?<![A-Za-z])(?P<pre>{EN_CUR})\s?(?P<n1>{num})(?P<s1>{EN_SCALE})'
+                                       rf'|(?<![\w.,])(?P<n2>{num})(?P<s2>{EN_SCALE})\s?(?P<post>{EN_CUR})(?![A-Za-z])'),
+                      number=re.compile(rf'(?<![\w.,])({num})(?![\d])'),
+                      num_scale=re.compile(rf'({num})({EN_SCALE})'))
+    return _EN_RX
+
+
+def _en_float(s):
+    rx = en_rx()
+    return float(s.replace(rx['grp'], '').replace(rx['dec'], '.'))
+
+
+def cur_code(s):
+    s = (s or '').strip().lower().strip('.,;:!?()')
+    if s in ('aed', 'dh', 'dhs') or s.startswith('dirham'):
+        return 'AED'
+    if s in ('$', 'usd', 'us$', 'bucks') or s.startswith('dollar'):
+        return 'USD'
+    if s in ('€', 'eur') or s.startswith('euro'):
+        return 'EUR'
+    if s in ('£', 'gbp', 'quid') or s.startswith('pound'):
+        return 'GBP'
+    return None
+
+
+def screen_money_en(text):
+    """суммы на экране → [(значение, валюта, как написано, (start, end))]; формат не проверяется"""
+    out = []
+    for m in en_rx()['money'].finditer(text or ''):
+        n, s, c = (m.group('n1'), m.group('s1'), m.group('pre')) if m.group('pre') else (m.group('n2'), m.group('s2'), m.group('post'))
+        try:
+            v = _en_float(n) * _EN_SCALE_V.get((s or '').strip().lower(), 1.0)
+        except ValueError:
+            continue
+        out.append((v, cur_code(c), m.group(0).strip(), m.span()))
+    return out
+
+
+def _vo_toks_en(t0, t1, pad):
+    out = []
+    for w in vo_words(t0, t1, pad):
+        s = w[0].strip().lower().strip('.,;:!?()"“”‘’\'–—')
+        parts = s.split('-') if re.fullmatch(r'[a-z]+(?:-[a-z]+)+', s) else [s]      # twenty-five
+        out += [(p, w[1]) for p in parts if p]
+    return out
+
+
+def vo_amounts_en(t0, t1, pad=VO_PAD_MISMATCH):
+    """числа озвучки → [{'v', 'cur', 'money', 'parts', 'text', 't'}]: «2.5 million dirhams», «$2.5M», «two and a half million»"""
+    toks = _vo_toks_en(t0, t1, pad)
+    out, i, n = [], 0, len(toks)
+    while i < n:
+        s = toks[i][0]
+        nxt0 = toks[i + 1][0] if i + 1 < n else ''
+        if not (RX_VO_NUM.match(s) or s in _EN_UNITS or s in _EN_TENS
+                or (s in ('a', 'half') and (nxt0 in _EN_BIG or nxt0 in ('hundred', 'half')))):
+            i += 1
+            continue
+        j, total, cur, parts, scaled, code, point, frac, raw = i, 0.0, 0.0, [], False, None, False, 1.0, []
+        while j < n:
+            s = toks[j][0]
+            m = RX_VO_NUM.match(s)
+            if m:
+                digits = m.group('n').replace(',', '')
+                if point:
+                    cur += float('0.' + digits.replace('.', ''))
+                    point = False
+                elif cur and not raw[-1:] == ['and']:
+                    break                                          # «2015 2016» — два разных числа
+                else:
+                    cur += float(digits)
+                parts.append(float(digits))
+                code = code or cur_code(m.group('cur') or '')
+                if m.group('suf'):
+                    total += (cur or 1.0) * _EN_SCALE_V[m.group('suf').lower()]
+                    cur, scaled = 0.0, True
+            elif s in _EN_UNITS or s in _EN_TENS:
+                v = _EN_UNITS.get(s, _EN_TENS.get(s))
+                if point:
+                    frac *= 10
+                    cur += v / frac
+                else:
+                    cur += v
+                parts.append(float(v))
+            elif s == 'point' and (cur or total):
+                point, frac = True, 1.0
+            elif s == 'hundred':
+                cur = (cur or 1.0) * 100
+            elif s in _EN_BIG:
+                total += (cur or 1.0) * _EN_BIG[s]
+                cur, scaled = 0.0, True
+            elif s == 'half':
+                if cur == 0 and total:
+                    total *= 1.5
+                else:
+                    cur += 0.5
+            elif s in ('a', 'and'):
+                pass
+            else:
+                break
+            raw.append(s)
+            j += 1
+        while raw and raw[-1] in ('a', 'and'):
+            raw.pop()
+        value = total + cur
+        nxt = toks[j][0] if j < n else ''
+        prev = toks[i - 1][0] if i > 0 else ''
+        code = code or cur_code(nxt) or cur_code(prev)
+        if value > 0:
+            text = ' '.join(raw) + (f' {nxt}' if cur_code(nxt) else '')
+            out.append({'v': value, 'cur': code, 'money': bool(code) or scaled, 'parts': parts, 'text': text,
+                        't': toks[i][1]})
+        i = max(j, i + 1)
+    return out
+
+
+def vo_numbers_en(t0, t1, pad=VO_PAD_MISMATCH):
+    """как vo_numbers, но для английской озвучки: (значения, порядки, множители «N times»)"""
+    vals, ranges, factors = set(), [], []
+    for a in vo_amounts_en(t0, t1, pad):
+        vals.add(a['v'])
+        vals.update(a['parts'])
+    toks = _vo_toks_en(t0, t1, pad)
+    for k, (s, _t) in enumerate(toks):
+        prev = toks[k - 1][0] if k else ''
+        prev_num = bool(RX_VO_NUM.match(prev)) or prev in _EN_UNITS or prev in _EN_TENS
+        if s in _EN_PLURAL and not prev_num:
+            ranges.append(_EN_PLURAL[s])
+        elif s in ('twice', 'double', 'doubled'):
+            factors.append((2, 2))
+        elif s in ('triple', 'tripled'):
+            factors.append((3, 3))
+        elif s == 'times' and prev:
+            m = RX_VO_NUM.match(prev)
+            v = float(m.group('n').replace(',', '')) if m else _EN_UNITS.get(prev, _EN_TENS.get(prev))
+            if v:
+                factors.append((v, v))
+    return vals, ranges, factors
+
+
+def screen_numbers_en(text, with_money=False):
+    """числа экрана (EN: 1,850 = 1850); денежные суммы сверяет rule_currency_en — без with_money их тут нет"""
+    money = screen_money_en(text)
+    out = [(v, raw) for v, _c, raw, _sp in money] if with_money else []
+    spans = [sp for _v, _c, _r, sp in money]
+    for m in en_rx()['number'].finditer(text or ''):
+        if any(a <= m.start() < b for a, b in spans):
+            continue
+        raw = m.group(1)
+        try:
+            v = _en_float(raw)
+        except ValueError:
+            continue
+        after = text[m.end():m.end() + 8]
+        has_unit = bool(re.match(r'\s?(sq\.?\s?ft|sqft|ft²|sq\.?\s?m\b|sqm|m²|m2\b|%|°|k\b|m\b|b\b|bn\b|mn\b|km\b|x\b|×)',
+                                 after, re.I))
+        if v < 10 and float(v).is_integer() and not has_unit:
+            continue
+        if re.fullmatch(r'0\d', raw):
+            continue
+        out.append((v, raw.strip()))
+    return out
+
+
+def _money_close(a, b):
+    return abs(a - b) <= MONEY_TOL * max(abs(a), abs(b), 1)
+
+
+def _money_competing(v, x):
+    """та же величина с ошибкой: в пределах ×10 или сдвиг разряда (25M ↔ 2.5M, 250K ↔ 2.5M)"""
+    if v <= 0 or x <= 0:
+        return False
+    r = v / x
+    return 0.1 <= r <= 10 or any(abs(r - 10 ** k) <= MONEY_TOL * 10 ** k for k in (-3, -2, 2, 3))
+
+
+def _fmt_money_like(raw, value):
+    """та же запись, что на экране, с другим числом: «AED 25M» + 2.5e6 → «AED 2.5M»"""
+    rx = en_rx()
+    m = rx['num_scale'].search(raw)
+    if not m:
+        return raw
+    scale = _EN_SCALE_V.get((m.group(2) or '').strip().lower(), 1.0)
+    if scale > 1:
+        num = f'{value / scale:.2f}'.rstrip('0').rstrip('.')
+    else:
+        num = f'{value:,.2f}'.rstrip('0').rstrip('.')
+    num = num.replace(',', '\x00').replace('.', rx['dec']).replace('\x00', rx['grp'])
+    return raw[:m.start(1)] + num + raw[m.end(1):]
+
+
+def rule_currency_en(all_screens):
+    """суммы AED/Dh/dirham/$/€/£ на экране. Кандидат (cloud) — только если число или валюта расходятся с озвучкой
+    ±8 с, либо одна сумма показана в разных валютах; формат (профиль currency.canon) — информационно, не проверяем."""
+    out, shown = [], []
+    for sc in all_screens:
+        for li, l in enumerate(sc.lines):
+            for v, code, raw, _sp in screen_money_en(l['t']):
+                shown.append((sc, li, v, code, raw, l['t']))
+    for sc, li, v, code, raw, line in shown:
+        money_vo = [a for a in vo_amounts_en(sc.t0, sc.t1) if a['money'] and a['v'] > 0]
+        if not money_vo:
+            continue
+        vo_sig = 'vo:' + ','.join(f"{a['cur'] or ''}{a['v']:g}" for a in money_vo)[:120]
+        base = [f'screen:{code or ""}{v:g}', vo_sig]
+        same = [a for a in money_vo if _money_close(a['v'], v)]
+        if same:
+            codes = sorted({a['cur'] for a in same if a['cur']})
+            if code and codes and code not in codes:
+                vo_txt = next(a['text'] for a in same if a['cur'])
+                out.append(cand(sc, 'currency', line, li, '', base + ['currency_vs_vo'], 'cloud',
+                                T('a2.cur_code_vs_vo', screen=raw, vo=vo_txt)))
+            continue
+        comp = [a for a in money_vo if (not a['cur'] or not code or a['cur'] == code) and _money_competing(v, a['v'])]
+        if comp:
+            best = min(comp, key=lambda a: abs(math.log10(v / a['v'])))
+            out.append(cand(sc, 'currency', line, li, line.replace(raw, _fmt_money_like(raw, best['v'])),
+                            base + ['figure_vs_vo'], 'cloud', T('a2.cur_figure_vs_vo', screen=raw, vo=best['text'])))
+    used = set()
+    for i, (sc, li, v, code, raw, line) in enumerate(shown):
+        if not code or i in used:
+            continue
+        others = [k for k in range(i + 1, len(shown)) if k not in used and shown[k][3] and shown[k][3] != code
+                  and _money_close(shown[k][2], v) and abs(shown[k][0].t0 - sc.t0) <= MONEY_MIX_WIN]
+        if others:
+            used.update(others)
+            items = ' · '.join(f'{x[0].e["tc"]} «{x[4]}»' for x in [shown[i]] + [shown[k] for k in others])
+            screens = list(dict.fromkeys([sc.id] + [shown[k][0].id for k in others]))
+            out.append(cand(sc, 'currency', items, li, '', ['mixed_currency:' + ','.join(sorted({code} | {shown[k][3] for k in others}))],
+                            'cloud', T('a2.cur_mixed', items=items), screens=screens))
     return out
 
 
@@ -1236,7 +1854,7 @@ def apply_feedback(cands):
             if (r.get('class') or r.get('kind')) != c['kind']:
                 continue
             if ratio(sig(r.get('text') or r.get('on_screen_text') or ''), sig(c['on_screen_text'])) >= FEEDBACK_SIM:
-                c['route'], c['route_reason'], c['drop_class'] = 'drop', 'Роман отклонял: ' + (r.get('reason') or '')[:80], 'feedback'
+                c['route'], c['route_reason'], c['drop_class'] = 'drop', T('a2.feedback_rejected') + (r.get('reason') or '')[:80], 'feedback'
                 c['signals'].append('feedback_rejected')
                 n += 1
                 break
@@ -1246,12 +1864,27 @@ def apply_feedback(cands):
 ALL = [Screen(i) for i in range(len(SCREENS))]
 
 
+RULES_EN = (rule_typo_en, rule_language_en, rule_fact, rule_mismatch, rule_foreign)   # RU-only: grammar/language/typo
+
+
 def build():
     cands = []
-    for sc in ALL:
-        for rule in (rule_typo, rule_grammar, rule_language, rule_fact, rule_mismatch, rule_foreign):
-            cands += rule(sc)
-    cands += rule_currency(ALL)
+    if LANG == 'en':
+        for sc in ALL:
+            for rule in RULES_EN:
+                cands += rule(sc)
+        cands += rule_currency_en(ALL)
+    else:
+        for sc in ALL:
+            for rule in (rule_typo, rule_grammar, rule_language, rule_fact, rule_mismatch, rule_foreign):
+                cands += rule(sc)
+        cands += rule_currency(ALL)
+    if P.EXCLUSIONS:                                  # известные не-ошибки ката (дыра в футаже, недоделанные экраны)
+        for c in cands:
+            why = P.in_exclusion(c['t0'], c['t1'])
+            if why:
+                c['route'], c['route_reason'], c['drop_class'] = 'drop', T('a2.known_exclusion', reason=why), 'known_exclusion'
+                c['signals'].append('known_exclusion')
     for c in cands:                                   # обрезка по зонду — сигнал к словам этого экрана
         pr = PROBES.get(c['screen_id']) or {}
         if pr.get('cut_off') and c['kind'] == 'typo':
@@ -1405,20 +2038,34 @@ def explain(sid, cands):
     print('  VLM:', sc.vlm_text.replace('\n', ' / ')[:300])
     print('  VLM desc:', sc.vlm_desc[:160])
     print('  VO ±8:', vo_text(sc.t0, sc.t1, 8)[:300])
-    vals, ranges, factors = vo_numbers(sc.t0, sc.t1)
-    print('  числа экрана:', screen_numbers(sc.ocr_text), '| озвучка:', sorted(vals), ranges, factors)
-    print('  токены ≥4:')
-    for tok in sorted({t for t in tokens(sc.ocr_text) if len(t) >= TYPO_MIN_LEN and (is_cyr(t) or RX_MIXED.fullmatch(t))}):
-        w = homo_to_cyr(tok) if RX_MIXED.fullmatch(tok) else tok
-        k = known(w)
-        corr = None if k else find_correction(w, sc.t0, sc.t1)
-        vt, vr = sc.vlm_match(w)
-        print(f'    {tok:<20} known={k} vlm={vt}({vr:.2f}) stable={sc.stable(tok)}/{sc.sec_count} corr={corr}')
+    if LANG == 'en':
+        vals, ranges, factors = vo_numbers_en(sc.t0, sc.t1)
+        print('  числа экрана:', screen_numbers_en(sc.ocr_text), '| суммы:', [(v, c, r) for v, c, r, _s in screen_money_en(sc.ocr_text)],
+              '| озвучка:', sorted(vals), ranges, factors, '| суммы озвучки:',
+              [(a['v'], a['cur'], a['text']) for a in vo_amounts_en(sc.t0, sc.t1)])
+        print(f'  токены ≥4 (EN, словарь {en_dict().name}):')
+        for tok in sorted({t for t in tokens(sc.ocr_text) if len(t) >= TYPO_MIN_LEN and (is_lat(t) or RX_MIXED.fullmatch(t))}):
+            w = cyr_to_lat(tok)
+            k = known_en(w)
+            vt, vr = sc.vlm_match(w)
+            print(f'    {tok:<20} known={k} vlm={vt}({vr:.2f}) stable={sc.stable(tok)}/{sc.sec_count} '
+                  f'near={sorted(en_dict().nearest(w))[:5] if not k else []} vo={None if k else find_correction_en(w, sc.t0, sc.t1)}')
+    else:
+        vals, ranges, factors = vo_numbers(sc.t0, sc.t1)
+        print('  числа экрана:', screen_numbers(sc.ocr_text), '| озвучка:', sorted(vals), ranges, factors)
+        print('  токены ≥4:')
+        for tok in sorted({t for t in tokens(sc.ocr_text) if len(t) >= TYPO_MIN_LEN and (is_cyr(t) or RX_MIXED.fullmatch(t))}):
+            w = homo_to_cyr(tok) if RX_MIXED.fullmatch(tok) else tok
+            k = known(w)
+            corr = None if k else find_correction(w, sc.t0, sc.t1)
+            vt, vr = sc.vlm_match(w)
+            print(f'    {tok:<20} known={k} vlm={vt}({vr:.2f}) stable={sc.stable(tok)}/{sc.sec_count} corr={corr}')
     if sc.probe:
         print('  probe:', json.dumps(sc.probe, ensure_ascii=False)[:400])
     if sc.llm:
-        print('  llm:', json.dumps({k: sc.llm.get(k) for k in ('typos', 'currency_numbers', 'english_only', 'severity')},
-                                   ensure_ascii=False)[:300])
+        llm_keys = ('typos', 'currency_numbers', 'foreign_script', 'severity') if LANG == 'en' else \
+            ('typos', 'currency_numbers', 'english_only', 'severity')
+        print('  llm:', json.dumps({k: sc.llm.get(k) for k in llm_keys}, ensure_ascii=False)[:300])
     mine = [c for c in cands if sid in c.get('screens', [c['screen_id']])]
     print(f'  кандидаты ({len(mine)}):')
     for c in mine:

@@ -12,7 +12,7 @@ import json, os, sys
 from pathlib import Path
 
 os.environ.setdefault('HF_HOME', str(Path.home() / 'YTAI/models/huggingface'))
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T  # noqa: E402
 
 HIRES = W6 / 'hires'
 OUT = W6 / 'vlm_v6.jsonl'
@@ -23,10 +23,8 @@ from mlx_vlm import load, generate
 from mlx_vlm.prompt_utils import apply_chat_template
 from mlx_vlm.utils import load_config
 
-Q_TEXT = ("Transcribe ALL text visible in this video frame EXACTLY as written — keep the original "
-          "language (Russian Cyrillic or English), letter case, digits, punctuation and currency signs. "
-          "One text block per line. Do not translate, do not correct spelling. "
-          "If there is no text, answer: NO TEXT.")
+# язык оригинала — по LANG (shared/i18n_strings/a1.py): ru — кириллица/английский, en — английский (AED, $ …)
+Q_TEXT = T('a1.vlm_q_text')
 Q_DESC = ("In one sentence (English, max 25 words): what kind of on-screen graphic is this "
           "(title card / lower third / map / diagram / chart / photo / video with caption) and what is shown?")
 

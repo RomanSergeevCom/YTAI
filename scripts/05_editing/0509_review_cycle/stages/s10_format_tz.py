@@ -23,7 +23,7 @@ import re
 import sys
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG  # noqa: E402
 from make_infographics_v6_data import (SUB, CH_NAME, CH_BOUNDS, NEW_CH, PROG, PROG_T,  # noqa: E402
                                        PROG_FINAL, PROG_NOTE)
 from terms_catalog import TERMS, LOCS, PLACE, TERM_EXTRA, place_family  # noqa: E402
@@ -33,8 +33,8 @@ from typo_diff import typo_line  # noqa: E402
 PRAVKI = M / 'pravki_v2.json'
 # был зашитый путь прошлого проекта: скрипт не падал, а молча терял цитаты озвучки
 WORDS = P.WORDS
-LBL = {'now': '❌ СЕЙЧАС', 'do': '✅ СДЕЛАТЬ', 'list': '📋 СПИСОК', 'where': '📍 ГДЕ',
-       'src': '📚 ИСТОЧНИК', 'tl': '🎬 НА ТАЙМЛАЙНЕ'}
+LBL = {'now': T('core.lbl_now'), 'do': T('core.lbl_do'), 'list': T('core.lbl_list'), 'where': T('core.lbl_where'),
+       'src': T('core.lbl_source'), 'tl': T('core.lbl_timeline')}
 ORDER = ['now', 'do', 'list', 'where', 'src', 'tl']
 IND = '     '           # продолжение блока
 IND2 = '        '       # пункт списка под заголовком
@@ -45,9 +45,15 @@ TC_RE = re.compile(rf'(?<![\d:]){TC}(?![\d:])')
 # пункт «TC ▸ …»: допускаем «@», «~» и дробные секунды (~2:47.4), чтобы хвост «.4» не уехал в текст
 ITEM_RE = re.compile(r'^@?(~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?)(?![\d:])\s*(?:▸|—|·|:|-)?\s*(.+)$')
 URL_RE = re.compile(r'https?://[^\s;,)»]+')
-KIND_RU = {'typo': 'опечатка', 'grammar': 'грамматика', 'fact': 'факт-ошибка',
-           'currency': 'формат валюты/числа', 'language': 'английский без перевода',
-           'mismatch': 'экран ≠ озвучка', 'design': 'вёрстка', 'other': 'правка'}
+# названия классов — core.kind_low/kind_up. RU — прежний набор (прочие классы в RU по-старому «правка»/«ПРАВКА»,
+# чтобы русские поверхности не сдвинулись), EN — все классы канона.
+_KINDS_RU = ('typo', 'grammar', 'fact', 'currency', 'language', 'mismatch', 'design')
+_KINDS = _KINDS_RU if LANG == 'ru' else _KINDS_RU + ('foreign_trace', 'check_source', 'structure')
+KIND_RU = {**{k: T(f'core.kind_low.{k}') for k in _KINDS}, 'other': T('core.kind_low.other')}
+KIND_LOW_OTHER = T('core.kind_low.other')
+# YTUVI-фикстуры (списки ТЗ-30/75/76, карточки ADD_MAT) — русские тексты под номера ТЗ русских фильмов; в EN не
+# применяются вовсе, в RU — только когда есть их данные (sub в карточке, термины/места, картинка в mockups)
+FIXTURES = LANG == 'ru'
 
 pr = json.load(open(PRAVKI))
 allp = pr['all']
@@ -63,7 +69,10 @@ for f in finds:
         by_screen.setdefault(f['screen_id'], []).append(f)
 tz2screen = {a['tz']: a['screen_id'] for a in audit['annotations'] if not a.get('existing')}
 tz_has_fix = {a['tz'] for a in audit['annotations'] if a.get('fix')}
-TJ = json.load(open(W6 / 'terms_v6.json'))
+if LANG == 'en' and not (W6 / 'terms_v6.json').exists():       # EN: термины/места — русская YTUVI-механика
+    TJ = {'terms': [], 'locs': [], 'en_screens': [], 'stats': {}}
+else:
+    TJ = json.load(open(W6 / 'terms_v6.json'))
 
 _ws = []
 if Path(WORDS).exists():
@@ -88,6 +97,8 @@ def anchor_words(t0, t1):
 
 
 ABBR = re.compile(r'(?:\b(?:англ|лат|ср|напр|см|рис|стр|г|гг|в|вв|др|пр|ок|т\.\s?е|т\.\s?ч|т\.\s?к|№)\.)$', re.I)
+if LANG == 'en':
+    ABBR = re.compile(r'(?:\b(?:e\.g|i\.e|etc|vs|approx|incl|no|mr|mrs|ms|dr|st|jr|sr|inc|ltd|co|u\.s|u\.a\.e|aed|min|max)\.)$', re.I)
 
 
 def short_why(t, lim=220):
@@ -104,8 +115,7 @@ def short_why(t, lim=220):
     return t[:lim - 1].rsplit(' ', 1)[0] + '…'
 
 
-KIND_UP = {'typo': 'ОПЕЧАТКА', 'grammar': 'ГРАММАТИКА', 'fact': 'ФАКТ-ОШИБКА', 'currency': 'ФОРМАТ ВАЛЮТЫ/ЧИСЛА',
-           'language': 'АНГЛИЙСКИЙ БЕЗ ПЕРЕВОДА', 'mismatch': 'ЭКРАН ≠ ОЗВУЧКА', 'design': 'ВЁРСТКА', 'other': 'ПРАВКА'}
+KIND_UP = {**{k: T(f'core.kind_up.{k}') for k in _KINDS}, 'other': T('core.kind_up.other')}
 
 
 def audit_title(f):
@@ -114,7 +124,7 @@ def audit_title(f):
     raw = clean(re.sub(r'\[([^\]]*)\]', r'\1', raw))
     if len(raw) > 64:
         raw = raw[:62].rsplit(' ', 1)[0].rstrip(' ,;:/·—') + '…'
-    return f"{KIND_UP.get(f.get('kind'), 'ПРАВКА')}: «{raw}»"
+    return T('c1.title', kind=KIND_UP.get(f.get('kind'), T('core.kind_up.other')), text=raw)
 
 
 def money(s):
@@ -143,7 +153,7 @@ def src_el(t, urls):
         return None
     if len(chunks) <= 1 and not urls:
         return chunks[0]
-    return {'h': chunks[0] if chunks else 'ссылки', 'items': chunks[1:] + urls}
+    return {'h': chunks[0] if chunks else T('c1.s10.links'), 'items': chunks[1:] + urls}
 
 
 # ── генераторы списков из данных ──
@@ -447,10 +457,14 @@ ADD_MAT = {
 
 
 def add_cards(p):
-    """дописать карточку-рендер, если её ещё нет (оверрайды и GEN_MAT не трогаем)"""
+    """дописать карточку-рендер, если её ещё нет (оверрайды и GEN_MAT не трогаем).
+    Фикстура YTUVI: только RU и только если сама картинка есть в mockups — у другого фильма тот же номер ТЗ
+    не должен получить «мини-карту МОГОК»."""
+    if not FIXTURES:
+        return
     have = {m.get('img') for m in (p.get('material_rich') or [])}
     for img, cap in ADD_MAT.get(p['num'], []):
-        if img not in have:
+        if img not in have and (Path(P.MOCK) / img).exists():
             p.setdefault('material_rich', []).append({'t': cap, 'img': img})
 
 
@@ -473,8 +487,21 @@ GEN_TITLE = {'ТЗ-75': title_terms, 'ТЗ-76': title_locs}
 
 
 # ── сборка parts ──
+ANCHOR_RE = (r'якорь(?: озвучки)?:\s*«(.+?)»' if LANG == 'ru' else r'(?:voice )?anchor:\s*“(.+?)”')
+ANCHOR_LINE_RE = (r'\n?Якорь(?: озвучки)?:.*?(?=\n|$)' if LANG == 'ru' else r'\n?(?:Voice )?anchor:.*?(?=\n|$)')
+SRC_LINE_RE = (r'Источник:\s*(.+?)(?=\n|$)' if LANG == 'ru' else r'Source:\s*(.+?)(?=\n|$)')
+DO_VERBS = tuple(T('c1.s10.do_verbs'))
+
+
+def is_instruction(fix):
+    """«исправление» — не титр, а инструкция: RU — по началу строки (как было), EN — глагол целым словом"""
+    if LANG == 'ru':
+        return fix.lower().startswith(DO_VERBS)
+    return bool(re.match(r'(?:' + '|'.join(DO_VERBS) + r')\b', fix.lower()))
+
+
 def anchor_of(p):
-    m = re.search(r'якорь(?: озвучки)?:\s*«(.+?)»', p.get('nado', ''), re.S | re.I)
+    m = re.search(ANCHOR_RE, p.get('nado', ''), re.S | re.I)
     return clean(m.group(1)) if m else ''
 
 
@@ -487,12 +514,12 @@ def parts_from_audit(p):
     now, do, srcs = [], [], []
     for f in fs:
         txt = clean(f['on_screen_text'])
-        kind = KIND_RU.get(f['kind'], 'правка')
-        now.append({'h': f'«{txt}» — {kind}' if txt else kind, 'items': [short_why(f['problem'])]})
+        kind = KIND_RU.get(f['kind'], KIND_LOW_OTHER)
+        now.append({'h': T('c1.now_h', text=txt, kind=kind) if txt else kind, 'items': [short_why(f['problem'])]})
         fix = clean(f.get('fix_text_final') or f.get('fix_text'))
         if fix:
-            do.append(f'Заменить титр на «{fix}»' if len(fix) <= 70 and not fix[:1].islower()
-                      and not fix.lower().startswith(('заменить', 'убрать', 'сдвинуть', 'перерисовать', 'добавить'))
+            do.append(T('c1.do_replace', fix=fix) if len(fix) <= 70 and not fix[:1].islower()
+                      and not is_instruction(fix)
                       else fix)
         el = src_el(*split_src(f.get('evidence')))
         if el:
@@ -501,10 +528,10 @@ def parts_from_audit(p):
     t0 = min(int(float(f['t0'])) for f in fs)
     t1 = max(int(float(f['t1'])) for f in fs)
     a = anchor_words(t0, t1) or anchor_of(p)
-    where = [p['tc_range'] + (f' · якорь: «{a}»' if a else '')]
-    tl = ['стрелка «где ошибка» — слой V5 ревью-секвенции']
+    where = [p['tc_range'] + (T('c1.where_anchor', anc=a) if a else '')]
+    tl = [T('c1.tl_arrow')]
     if p['num'] in tz_has_fix:
-        tl.append(f"драфт исправленного титра — слой V3 (fix_{p['num'].replace('ТЗ-', 'tz')}.png)")
+        tl.append(T('c1.tl_draft', fn=p['num'].replace('ТЗ-', 'tz')))
     return {'now': now, 'do': do, 'where': where, 'src': srcs, 'tl': tl}
 
 
@@ -512,20 +539,21 @@ def parts_from_legacy(p):
     """Разовый разбор старого nado (если parts ещё нет)."""
     body = p.get('nado', '')
     anchor = anchor_of(p)
-    body = re.sub(r'\n?Якорь(?: озвучки)?:.*?(?=\n|$)', '', body, flags=re.S | re.I)
+    body = re.sub(ANCHOR_LINE_RE, '', body, flags=re.S | re.I)
     src = []
-    m = re.search(r'Источник:\s*(.+?)(?=\n|$)', body, re.S)
+    m = re.search(SRC_LINE_RE, body, re.S)
     if m:
         t, u = split_src(m.group(1))
         src.append({'h': t, 'items': u} if u else t)
         body = body.replace(m.group(0), '')
     do = [clean(x) for x in body.split('\n') if clean(x)]
     now = [clean(p.get('est'))] if clean(p.get('est')) else []
-    where = [(p.get('tc_range') or p.get('v1_tc', '')) + (f' · якорь: «{anchor}»' if anchor else '')]
+    where = [(p.get('tc_range') or p.get('v1_tc', '')) + (T('c1.where_anchor', anc=anchor) if anchor else '')]
     return {'now': now, 'do': do, 'where': where, 'src': src, 'tl': []}
 
 
-FIX_LINE = re.compile(r'^(?:Заменить титр на|Исправить на|Перерисовать титул:?)\s*«(.+?)»')
+FIX_LINE = (re.compile(r'^(?:Заменить титр на|Исправить на|Перерисовать титул:?)\s*«(.+?)»') if LANG == 'ru' else
+            re.compile(r'^(?:Replace the on-screen text with|Replace the title with|Fix to|Redraw the title:?)\s*“(.+?)”'))
 
 
 def apply_typo(p):
@@ -544,7 +572,7 @@ def apply_typo(p):
         return bool(m) and any(m.group(1) in n or n in m.group(1) for n in nows)
     do = [v for v in do if not dup(v)]
     items = [f"{t['tc']} ▸ {typo_line(t['was'], t['now'])}" for t in ty]
-    do.insert(0, {'h': p.get('typo_h') or 'Исправить (в доке изменённые знаки выделены красным):', 'items': items,
+    do.insert(0, {'h': p.get('typo_h') or T('c1.s10.typo_h'), 'items': items,
                   '_typo': True})
     p['parts']['do'] = do
 
@@ -663,12 +691,17 @@ for num, ov in OVERRIDES.items():
 
 # ── 3. списки из данных + опечатки + рендер + lint ──
 LINT = {}
+# фикстура-список применяется только при своих данных: ТЗ-30 — подглавы карточки (sub), ТЗ-75 — термины, ТЗ-76 — места
+GEN_DATA = {'ТЗ-30': FIXTURES and bool(SUB),
+            'ТЗ-75': FIXTURES and bool(TJ.get('terms')) and bool(TERMS),
+            'ТЗ-76': FIXTURES and bool(TJ.get('locs')) and bool(PLACE)}
 for p in allp:
-    if p['num'] in GEN_LIST:
+    gen_on = GEN_DATA.get(p['num'], False)
+    if p['num'] in GEN_LIST and gen_on:
         p['parts']['list'] = GEN_LIST[p['num']]()
-    if p['num'] in GEN_TITLE:
+    if p['num'] in GEN_TITLE and gen_on:
         p['title'] = GEN_TITLE[p['num']]()
-    if p['num'] in GEN_MAT:                       # правый столбец: карточка на каждый термин/место
+    if p['num'] in GEN_MAT and gen_on:            # правый столбец: карточка на каждый термин/место
         p['material_rich'] = GEN_MAT[p['num']]()
     add_cards(p)
     apply_typo(p)

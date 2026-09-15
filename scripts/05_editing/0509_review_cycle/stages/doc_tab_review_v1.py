@@ -28,7 +28,8 @@ import sys
 import time
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG  # noqa: E402
+from i18n import has as i18n_has  # noqa: E402
 from doctab_lib import get_doc, iter_tabs  # noqa: E402
 from doctab_lib import batch_update as _batch_update  # noqa: E402
 
@@ -36,23 +37,39 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--upload', action='store_true')
 ap.add_argument('--no-images', action='store_true')
 ap.add_argument('--dry-run', action='store_true')
+ap.add_argument('--dump-requests', metavar='FILE',
+                help='собрать вкладку на офлайн-двойнике Docs (shared/fake_docs.py): запросы → FILE, без Google API')
 a = ap.parse_args()
+_FD = None
+if a.dump_requests:
+    sys.path.insert(0, str(ROOT / 'shared'))
+    from fake_docs import FakeDocs  # noqa: E402
+    _FD = FakeDocs()
+    get_doc, _batch_update = _FD.get_doc, _FD.batch_update
 
 DOC_ID = P.need('doc_id')
-TAB_TITLE = P.get('nav_tab') or 'Ревью v1 по видео'
+TAB_TITLE = P.get('nav_tab') or T('c2.nav_tab_default').replace('{ver}', P.CUT_VERSION)
 THUMBS = W6 / 'thumbs'
 SHOTS_REMOTE = P.get('shots_remote', 'gdrive:YTUVI_plan_v3_shots').rstrip('/') + '/nav'
 WIDTHS = [24, 58, 40, 230, 160, 164]          # сумма 676pt — как на вкладке ТЗ
 FONT = 9
 IMG_W = 150
-HDR = ['№', '⏱ TC', 'Статус', 'Транскрибация', 'Экран (кадры из ката)', 'Находки / что показать']
+HDR = list(T('c2.nav_hdr'))                   # № | ⏱ TC | Статус | Транскрибация | Экран | Находки (EN — свои)
 CH_BG = {'red': 0.85, 'green': 0.93, 'blue': 0.85}
 SUB_BG = {'red': 0.94, 'green': 0.97, 'blue': 0.94}
 HDR_BG = {'red': 0.90, 'green': 0.90, 'blue': 0.92}
 GAP = 12.0                                    # ближе этого границы кусков склеиваем
-KIND_RU = {'typo': 'опечатка', 'grammar': 'грамматика', 'fact': 'факт', 'currency': 'валюта/число',
-           'language': 'англ. без перевода', 'mismatch': 'экран ≠ озвучка', 'design': 'вёрстка',
-           'other': 'правка'}
+QO, QC = T('c2.qo'), T('c2.qc')               # «…» (ru) / “…” (en) вокруг экранного текста
+
+
+def kind_name(k):
+    """класс находки для ячейки: короткие имена навигатора (c2.nav_kind.*); прочие классы — как есть (ru)
+    или общим core.kind_low.* (en)"""
+    if i18n_has(f'c2.nav_kind.{k}'):
+        return T(f'c2.nav_kind.{k}')
+    if LANG == 'en' and i18n_has(f'core.kind_low.{k}'):
+        return T(f'core.kind_low.{k}')
+    return k
 
 
 def u16(s):
@@ -168,7 +185,7 @@ def screen_cell(es):
         v = vlm.get(e['id']) or {}
         text = (v.get('vlm_text') or e['text_best'] or '').strip()
         lines = [l.strip() for l in re.split(r'\n|\s\|\s', text) if l.strip()][:4]
-        out.append(f'{e["tc"]} · {e["id"]}' + (f'\n«{" / ".join(lines)}»' if lines else ' (без текста)'))
+        out.append(f'{e["tc"]} · {e["id"]}' + (f'\n{QO}{" / ".join(lines)}{QC}' if lines else T('c2.nav_no_text')))
     return '\n'.join(out)
 
 
@@ -178,15 +195,15 @@ def find_cell(es, t0, t1):
         for f in by_screen.get(e['id'], []):
             mark = '❌' if f.get('confirmed') else '⏳'
             fix = (f.get('fix_text_final') or f.get('fix_text') or '').replace('\n', ' / ')
-            line = f'{mark} {KIND_RU.get(f.get("kind"), f.get("kind"))}: {f.get("problem", "")[:150]}'
+            line = f'{mark} {kind_name(f.get("kind"))}: {f.get("problem", "")[:150]}'
             if fix:
-                line += f'\n✅ «{fix[:120]}»'
+                line += f'\n✅ {QO}{fix[:120]}{QC}'
             if not f.get('confirmed'):
-                line += '\n(ждёт проверки линзами)'
+                line += T('c2.nav_pending')
             out.append(line)
-    tt = [f'💡 термин {t["key"]}: плашка на {t["tc"]}' for t in terms.get('terms', [])
+    tt = [T('c2.nav_term', name=t["key"], tc=t["tc"]) for t in terms.get('terms', [])
           if t0 <= float(t['t']) < t1][:4]
-    ll = [f'🗺 локация {t["key"]}: мини-карта на {t["tc"]}' for t in terms.get('locs', [])
+    ll = [T('c2.nav_loc', name=t["key"], tc=t["tc"]) for t in terms.get('locs', [])
           if t0 <= float(t['t']) < t1][:3]
     return '\n'.join(out + tt + ll)
 
@@ -202,8 +219,8 @@ for i, b in enumerate(bounds):
             nf = sum(1 for f in findings if any(e['id'] == f.get('screen_id')
                                                 for e in screens_in(float(t), CH_END[n])))
             rows.append({'kind': 'ch',
-                         'cells': ['', tc(t), '', f'[{int(n)}. {CH_NAME.get(n, "ГЛАВА " + n)} · {tc(t)}–{tc(CH_END[n])}]',
-                                   '', f'{nf} находок в главе' if nf else ''],
+                         'cells': ['', tc(t), '', f'[{int(n)}. {CH_NAME.get(n, T("core.chapter") + " " + n)} · {tc(t)}–{tc(CH_END[n])}]',
+                                   '', T('c2.nav_ch_findings', n=nf) if nf else ''],
                          'imgs': []})
     # подглава
     for s, c, t in SUB:
@@ -222,17 +239,17 @@ for i, b in enumerate(bounds):
         continue
     num += 1
     rows.append({'kind': 'row', 'cells': [
-        f'{num:02d}', f'{tc(b)}–{tc(t1)}', '', txt or '(без озвучки)', screen_cell(es), find_cell(es, b, t1)],
+        f'{num:02d}', f'{tc(b)}–{tc(t1)}', '', txt or T('c2.nav_no_voice'), screen_cell(es), find_cell(es, b, t1)],
         'imgs': [e['id'] for e in es]})
 
 head = [
-    (1, f'{P.CODE} · {TAB_TITLE} — кат v1 целиком, {tc(DUR)}', {}),
-    (0, 'Как читать:', {'bold': True}),
-    (0, '▸ кат в его хронологии: главы — строки с заливкой, подглавы и пункты перечислений — строками ▸', {}),
-    (0, '▸ «Транскрибация» — полная расшифровка озвучки без пропусков; «Экран» — что в этот момент на экране', {}),
-    (0, '▸ «Находки»: ❌ подтверждённая ошибка и ✅ как должно быть; 💡 термин и 🗺 локация — где нужна плашка или карта', {}),
-    (0, '▸ «Статус» — твоя колонка: ✅ согласен / ⚠️ поправить / ❌ убрать. По ней собираем следующую версию ТЗ', {}),
-    (0, f'Короткое ТЗ монтажёру (только правки) — вкладка «{P.get("tab_title", "ТЗ монтажёру")}».', {}),
+    (1, T('c2.nav_head_title', code=P.CODE, tab=TAB_TITLE, dur=tc(DUR), ver=P.CUT_VERSION), {}),
+    (0, T('c2.how_to_read'), {'bold': True}),
+    (0, T('c2.nav_head_1'), {}),
+    (0, T('c2.nav_head_2'), {}),
+    (0, T('c2.nav_head_3'), {}),
+    (0, T('c2.nav_head_4'), {}),
+    (0, T('c2.nav_head_tz', tab=P.get("tab_title", T('c2.nav_head_tz_default'))), {}),
 ]
 
 print(f'строк: {len(rows)} (глав {sum(r["kind"] == "ch" for r in rows)}, '
@@ -397,3 +414,5 @@ elif not a.no_images:
 
 print(f'✅ вкладка «{TAB_TITLE}» собрана: '
       f'https://docs.google.com/document/d/{DOC_ID}/edit?tab={tab_id}', flush=True)
+if _FD is not None:
+    _FD.dump(a.dump_requests, {'tab_title': TAB_TITLE})

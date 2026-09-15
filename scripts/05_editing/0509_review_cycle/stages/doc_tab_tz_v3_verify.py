@@ -9,7 +9,7 @@ import re
 import sys
 from pathlib import Path
 
-from _bootstrap import P, W6, M, HERE, ROOT  # noqa: E402
+from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402
 from doctab_lib import DOCS, get_doc, iter_tabs  # noqa: E402
 from typo_diff import diff_spans, typo_line, typo_offsets  # noqa: E402
 
@@ -24,7 +24,9 @@ pravki = json.load(open(M / 'pravki_v2.json'))['all']
 shots = json.load(open(M / 'shots_ids.json'))
 proj = json.load(open(M / 'proj_material_ids.json')) if (M / 'proj_material_ids.json').exists() else {}
 drive_clips = json.load(open(M / 'drive_clips.json'))
-act = [(f'ТЗ-{i + 1:02d}', p) for i, p in enumerate(pravki) if p.get('status') != 'rejected']
+act = [(tz_label(i + 1), p) for i, p in enumerate(pravki) if p.get('status') != 'rejected']   # ТЗ-07 / FIX-07
+NUM_RE = re.compile(rf'^{re.escape(T("core.tz_prefix"))}-\d\d$')
+DEC = T('c2.decision_prefix').rstrip()                                                         # '❓ РЕШЕНИЕ РОМАНА:'
 
 doc = get_doc(DOC_ID)
 tab = next((t for t in iter_tabs(doc) if t['tabProperties'].get('title') == TAB_TITLE), None)
@@ -55,7 +57,7 @@ rows = tables[0]['table']['tableRows']
 n_tz = len(act)
 ck(f'строк {n_tz + N_CH + 1} (шапка + {n_tz} ТЗ + {N_CH} глав)', len(rows) == n_tz + N_CH + 1, f'={len(rows)}')
 col0 = [cell_text(r['tableCells'][0]).strip() for r in rows]
-row_of = {c: r for c, r in zip(col0, rows) if re.match(r'^ТЗ-\d\d$', c)}
+row_of = {c: r for c, r in zip(col0, rows) if NUM_RE.match(c)}
 exp_nums = {n for n, _ in act}
 ck(f'все {n_tz} номеров ТЗ', set(row_of) == exp_nums,
    f'нет: {sorted(exp_nums - set(row_of))} лишние: {sorted(set(row_of) - exp_nums)}' if set(row_of) != exp_nums else '')
@@ -148,24 +150,32 @@ for n, p in act:
 ck(f'опечатки: изменённые знаки красным ({n_typo} правок)', n_typo > 0 and not bad_typo, '; '.join(bad_typo))
 
 # ── v8 (Роман 11.09): карточка на каждый термин/место + канон названий ──
-for num in ('ТЗ-75', 'ТЗ-76'):
+N75, N76 = tz_label(75), tz_label(76)      # номера карт названий YTUVI01; проверки ниже — только когда их термины есть
+for num in (N75, N76):
     if num not in row_of:
         continue
     p_ = dict(act)[num]
     exp = len(p_.get('material_rich') or [])
     got = len(imgs_in(row_of[num]['tableCells'][4]))
     ck(f'{num}: карточка на каждый пункт ({exp})', got == exp, f'в доке {got}')
-bad_canon = [ln for ln in t3.get('ТЗ-76', '').split('\n')
-             if re.match(r'^\s*МЬЯНМА\s·', ln) and 'БИРМА' not in ln]
-ck('ТЗ-76: страна везде «МЬЯНМА (БИРМА)»', not bad_canon, f'{bad_canon[:2]}' if bad_canon else '')
-no_orig = [ln for ln in (t3.get('ТЗ-75', '') + t3.get('ТЗ-76', '')).split('\n')
-           if re.search(r'\d{1,2}:\d{2}.*в кадре по-английски', ln) and '«' not in ln]
-ck('строки «в кадре по-английски» показывают оригинал', not no_orig, f'{no_orig[:2]}' if no_orig else '')
+if 'МЬЯНМА' in t3.get(N76, ''):
+    bad_canon = [ln for ln in t3.get(N76, '').split('\n')
+                 if re.match(r'^\s*МЬЯНМА\s·', ln) and 'БИРМА' not in ln]
+    ck(f'{N76}: страна везде «МЬЯНМА (БИРМА)»', not bad_canon, f'{bad_canon[:2]}' if bad_canon else '')
+if 'в кадре по-английски' in t3.get(N75, '') + t3.get(N76, ''):
+    no_orig = [ln for ln in (t3.get(N75, '') + t3.get(N76, '')).split('\n')
+               if re.search(r'\d{1,2}:\d{2}.*в кадре по-английски', ln) and '«' not in ln]
+    ck('строки «в кадре по-английски» показывают оригинал', not no_orig, f'{no_orig[:2]}' if no_orig else '')
 
 # Роман 11.09: «не вижу просто объяснение» — у каждого переименования должно быть, что это такое
-no_why = [ln for ln in t3.get('ТЗ-75', '').split('\n')
-          if re.search(r'было «.+» — стало «', ln) and ' · ' not in ln.split('стало')[1]]
-ck('ТЗ-75: у каждого переименования есть объяснение', not no_why, f'{no_why[:2]}' if no_why else '')
+# «было «X» — стало «Y» · …» из core-ключей (ru: было « » — стало «; en: was “ ” — now “)
+_NOW = T('core.was_mid').split('→', 1)[1].strip()                                  # 'стало «' / 'now “'
+RENAME_RE = re.compile(re.escape(T('core.was_pre')) + '.+' + re.escape(T('core.was_post')) + ' — ' + re.escape(_NOW))
+_NOW_WORD = _NOW.rstrip(' «“"')                                                    # 'стало' / 'now'
+if N75 in t3:
+    no_why = [ln for ln in t3[N75].split('\n')
+              if RENAME_RE.search(ln) and ' · ' not in ln.split(_NOW_WORD)[1]]
+    ck(f'{N75}: у каждого переименования есть объяснение', not no_why, f'{no_why[:2]}' if no_why else '')
 
 dups = [n for n, p in act if p.get('roman_comment') and t3[n].count('💬') != len(p['roman_comment'])]
 ck('💬 комменты Романа без дублей', not dups, f'{dups}' if dups else '')
@@ -185,7 +195,7 @@ n_links = full.count('drive.google.com')
 ck(f'ссылок в таблице = {exp_links}', n_links == exp_links, f'={n_links}')
 
 exp_dec = sum(1 for _, p in act if p.get('decision'))
-ck(f'{exp_dec} решений в строках', full.count('❓ РЕШЕНИЕ РОМАНА:') == exp_dec, f"={full.count('❓ РЕШЕНИЕ РОМАНА:')}")
+ck(f'{exp_dec} решений в строках', full.count(DEC) == exp_dec, f"={full.count(DEC)}")
 
 bad = [n for n, ok, _ in checks if not ok]
 print('\nALL PASS' if not bad else f'\nFAIL: {bad}')
