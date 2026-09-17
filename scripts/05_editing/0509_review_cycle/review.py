@@ -860,15 +860,21 @@ def st_mock(r: Review):
         # автономный Memex без node / мок-панели: сборку не проверяем, но и цепочку не роняем (честная пометка)
         msg = 'mock: node или 0500_uxp нет на этом хосте — проверочная сборка НЕ выполнена (прогнать на маке: run --only mock)'
         r.tg(f'⚠️ <b>{r.code}</b>: {msg}')
+        if not r.dry:
+            (r.work / 'mock_result.json').write_text(json.dumps({'ok': None, 'skipped': msg, 'at': now()}, ensure_ascii=False))
         return True, msg
     rc, out = r.run_cmd([NODE, STAGES_DIR / 'mockbuild_v6.js'], 'mock', 10)
     ok = rc == 0 and 'error 0' in out
     m = re.search(r'placed=(\d+)', out)
+    if ok and not r.dry:
+        (r.work / 'mock_result.json').write_text(json.dumps({'ok': True, 'placed': m.group(1) if m else None, 'at': now()}))
     return ok, f'mock: placed {m.group(1) if m else "?"}, {"0 ошибок" if ok else "есть ошибки"}'
 
 
 def v_mock(r: Review) -> bool:
-    return True
+    # раньше всегда True: run_stage засчитывал mock «по артефактам» и проверочная сборка не запускалась вовсе (17.09)
+    res, rj = r.work / 'mock_result.json', r.review_dir / f'{r.code}_review_v6.json'
+    return res.exists() and (not rj.exists() or res.stat().st_mtime >= rj.stat().st_mtime)
 
 
 def st_previews(r: Review):
@@ -903,7 +909,7 @@ def st_drive(r: Review):
 
 
 def v_drive(r: Review) -> bool:
-    return bool(r.S['surfaces'].get('drive'))
+    return not _ext(r, 'materials_id') or bool(r.S['surfaces'].get('drive'))
 
 
 def st_sheet(r: Review):
@@ -915,7 +921,8 @@ def st_sheet(r: Review):
 
 
 def v_sheet(r: Review) -> bool:
-    return bool(r.S['surfaces'].get('sheet'))
+    return (not (_ext(r, 'notes_sheet_id') or (r.pravki / 'notes_sheet.json').exists())
+            or bool(r.S['surfaces'].get('sheet')))
 
 
 def edits_guard(r: Review, surface: str):
@@ -942,7 +949,7 @@ def st_doc_tz(r: Review):
 
 
 def v_doc_tz(r: Review) -> bool:
-    return bool(r.S['surfaces'].get('doc_tz'))
+    return not _ext(r, 'doc_id') or bool(r.S['surfaces'].get('doc_tz'))
 
 
 def st_doc_nav(r: Review):
@@ -956,7 +963,7 @@ def st_doc_nav(r: Review):
 
 
 def v_doc_nav(r: Review) -> bool:
-    return bool(r.S['surfaces'].get('doc_nav'))
+    return not _ext(r, 'doc_id') or bool(r.S['surfaces'].get('doc_nav'))
 
 
 def st_verify(r: Review):
@@ -969,7 +976,7 @@ def st_verify(r: Review):
 
 
 def v_verify(r: Review) -> bool:
-    return (r.S['surfaces'].get('doc_tz') or {}).get('verify') == 'ALL PASS'
+    return not _ext(r, 'doc_id') or (r.S['surfaces'].get('doc_tz') or {}).get('verify') == 'ALL PASS'
 
 
 def st_doc_qc(r: Review):

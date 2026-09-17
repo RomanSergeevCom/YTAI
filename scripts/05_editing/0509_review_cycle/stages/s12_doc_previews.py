@@ -198,7 +198,7 @@ def load_common():
 def render():
     pr, ann_by_tz, ann_by_screen, seg_t = load_common()
     ovr = load_ovr()
-    shots = json.load(open(M / 'shots_ids.json'))
+    shots = json.load(open(M / 'shots_ids.json')) if (M / 'shots_ids.json').exists() else {}   # без Drive (автономно) файла нет
     man = {'imgs': {}, 'tz': {}}
 
     def r_overlay(img, num, o, p):
