@@ -419,14 +419,43 @@ def v_ocr(r: Review) -> bool:
     return _screens(r) > 0 and (r.work / 'ocr_hires.jsonl').exists()
 
 
+def _src_stamp(s: Path) -> str:
+    st = s.stat()
+    return f'{st.st_size}:{int(st.st_mtime)}'
+
+
+def _transcript_stale(r: Review, s: Path, base: str) -> list:
+    """Кэш транскрайбера (_wordrole_work/{base}_*, {base}.* в 05_Review) от ДРУГОГО файла ката с тем же именем.
+    17.09 YTCR04: новая версия ката под тем же именем v5 — wordrole отдал WAV/слова/диаризацию черновика за 1 с.
+    Штамп источника (размер:mtime) пишется после транскрибации; нет штампа — устаревшим считаем кэш старше ката."""
+    work = r.review_dir / '_wordrole_work'
+    stamp_f = work / f'{base}.src_stamp'
+    files = sorted(work.glob(f'{base}_*')) + sorted(r.review_dir.glob(f'{base}.*'))
+    files = [f for f in files if f.is_file() and f != stamp_f]
+    if not files:
+        return []
+    if stamp_f.exists():
+        return [] if stamp_f.read_text().strip() == _src_stamp(s) else files
+    src_mtime = s.stat().st_mtime
+    return files if any(f.stat().st_mtime < src_mtime for f in files) else []
+
+
 def st_transcript(r: Review):
     s = r.src()
     w = r.words()
+    base = w.name.replace('.words.json', '') if w else f'{r.code}_{r.cut}'
+    if s and s.exists() and not r.dry:
+        stale = _transcript_stale(r, s, base)
+        if stale:
+            dst = r.review_dir / '_wordrole_work' / f'_stale_{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+            dst.mkdir(parents=True, exist_ok=True)
+            for f in stale:
+                shutil.move(str(f), str(dst / f.name))
+            r.note(f'transcript: кэш от другого файла ката ({len(stale)} файлов) перенесён в {dst.name} — транскрибирую заново')
     if w and w.exists():
         return True, f'транскрипт на месте: {w.name}'
     if not s or not s.exists():
         raise Fatal('нет ката для транскрибации')
-    base = w.name.replace('.words.json', '') if w else f'{r.code}_{r.cut}'
     argv = [PY_TR, EXTRA / 'wordrole_transcribe.py', '--media', s, '--plain', '--out-dir', r.review_dir, '--base', base]
     # язык озвучки: card.language → card.lang → profile.lang; «auto» не передаём никогда (whisper путает языки),
     # ключей нет — флага нет (RU-проекты без ключа ведут себя как раньше)
@@ -435,6 +464,9 @@ def st_transcript(r: Review):
     if lang:
         argv += ['--language', lang]
     rc, out = r.run_cmd(argv, 'transcript', 180)
+    if rc == 0 and w.exists() and not r.dry:
+        (r.review_dir / '_wordrole_work').mkdir(exist_ok=True)
+        (r.review_dir / '_wordrole_work' / f'{base}.src_stamp').write_text(_src_stamp(s))
     return (rc == 0 and w.exists()), f'{w.name} ({"есть" if w.exists() else "нет"})'
 
 
@@ -823,6 +855,12 @@ def v_review_json(r: Review) -> bool:
 
 
 def st_mock(r: Review):
+    uxp = Path.home() / 'YTAI/scripts/05_editing/0500_uxp/src/parts/partsBuilder.js'
+    if not (shutil.which(NODE) or Path(NODE).exists()) or not uxp.exists():
+        # автономный Memex без node / мок-панели: сборку не проверяем, но и цепочку не роняем (честная пометка)
+        msg = 'mock: node или 0500_uxp нет на этом хосте — проверочная сборка НЕ выполнена (прогнать на маке: run --only mock)'
+        r.tg(f'⚠️ <b>{r.code}</b>: {msg}')
+        return True, msg
     rc, out = r.run_cmd([NODE, STAGES_DIR / 'mockbuild_v6.js'], 'mock', 10)
     ok = rc == 0 and 'error 0' in out
     m = re.search(r'placed=(\d+)', out)
@@ -1254,7 +1292,39 @@ def run_stage(r: Review, name: str, host: str, fn, vfn, gate: str, force: bool =
     return False
 
 
+AUTO_CLOUD_ROUNDS = 4          # автономный режим: сколько раз подряд самому выполнить Workflow на одной стадии
+
+
+def auto_cloud(r: Review, stage: str) -> bool:
+    """Автономный режим: выполнить напечатанный стадией Workflow({...}) безголовым Claude (shared/headless_claude.py,
+    launchd gui-домен Memex). Агенты сами пишут cloud/out/*.json; после возврата стадия перезапускается и сама
+    собирает результат (collect) или печатает следующий вызов (F/V/S, повтор pending)."""
+    call_f = r.cloud / ('CALL.txt' if stage == 'cloud' else f'CALL_{stage}.txt')
+    if not call_f.exists():
+        r.log(f'☁️ auto_cloud {stage}: нет {call_f.name}')
+        return False
+    sys.path.insert(0, str(SHARED))
+    import headless_claude as HC
+    try:
+        call = HC.extract_workflow_call(call_f.read_text(encoding='utf-8'))
+    except ValueError as e:
+        r.log(f'☁️ auto_cloud {stage}: {e} ({call_f.name})')
+        return False
+    r.log(f'☁️ auto_cloud {stage}: headless Claude выполняет Workflow из {call_f.name}')
+    rc, text = HC.run(HC.workflow_prompt(call, f'{r.code} {stage}'),
+                      add_dirs=[str(r.review_dir), str(ROOT), str(YTAI / 'YTs')],
+                      timeout_min=180, label=f'{r.project}-{stage}', stop_file=r.stop_f,
+                      log_file=r.logs / f'{stage}_headless.log')
+    (r.logs / f'{stage}_headless_last.txt').write_text(text, encoding='utf-8')
+    if rc == 130:
+        raise Stopped(stage)
+    ok = rc == 0 and 'WORKFLOW_DONE' in text
+    r.log(f'☁️ auto_cloud {stage}: rc={rc} {"ok" if ok else "без WORKFLOW_DONE — стадия сама проверит, что вернулось"}')
+    return ok
+
+
 def cmd_run(r: Review, a) -> int:
+    autonomous = bool(getattr(a, 'autonomous', False)) or (r.ctl / 'AUTONOMOUS').exists() and a.host == 'memex'
     stages = stages_for(r)
     names = [s[0] for s in stages]
     sel = names[:]
@@ -1269,7 +1339,7 @@ def cmd_run(r: Review, a) -> int:
                 r.st(s)['status'] = 'todo'
         if a.until:
             sel = sel[:sel.index(a.until) + 1]
-    if a.host == 'memex':
+    if a.host == 'memex' and not autonomous:
         sel = [s for s in sel if dict((n, h) for n, h, *_ in stages)[s] == 'memex']
     if a.no_drive:
         sel = [s for s in sel if s != 'drive']
@@ -1284,7 +1354,10 @@ def cmd_run(r: Review, a) -> int:
             pass
     r.pidf.write_text(str(os.getpid()))
     r.stop_f.unlink(missing_ok=True)
-    r.log(f'######## {r.code} run {sel[0]}…{sel[-1]} pid={os.getpid()} host={a.host} version={version()}')
+    if autonomous and not r.dry:
+        (r.ctl / 'AUTONOMOUS').write_text(now())             # сторож поднимает прогон тоже с --autonomous
+    r.log(f'######## {r.code} run {sel[0]}…{sel[-1]} pid={os.getpid()} host={a.host}'
+          f'{" autonomous" if autonomous else ""} version={version()}')
     rc = 0
     # --from S / --only S = регенерация: выбранные стадии гоняются заново, даже если артефакты на месте;
     # resume / run без флагов = продолжить, пропуская готовое по артефактам.
@@ -1307,7 +1380,20 @@ def cmd_run(r: Review, a) -> int:
             if queue and name in HEAVY and host == 'memex' and not wait_load(r, f'стадия {name}', max_wait):
                 rc = 5
                 break
-            if not run_stage(r, name, host, fn, vfn, gate, force=force_range):
+            rounds = 0
+            while True:
+                if run_stage(r, name, host, fn, vfn, gate, force=force_range and rounds == 0):
+                    ok_stage = True
+                    break
+                ok_stage = False
+                if (autonomous and not r.dry and r.st(name).get('status') == 'awaiting_cloud'
+                        and rounds < AUTO_CLOUD_ROUNDS):
+                    rounds += 1
+                    r.tg(f'☁️ <b>{r.code}</b>: {name} — облачный проход запускаю сам (headless Claude, раунд {rounds})')
+                    auto_cloud(r, name)
+                    continue
+                break
+            if not ok_stage:
                 rc = 4 if r.st(name).get('status') == 'awaiting_cloud' else 1
                 if r.dry:                         # dry-run показывает весь план, а не стоит на первой закрытой стадии
                     r.log(f'[dry] {name}: гейт не закрылся бы — дальше по списку')
@@ -1324,6 +1410,10 @@ def cmd_run(r: Review, a) -> int:
             write_ticket(r)
     if a.host == 'memex' and rc != 5:                     # rc 5 = не дождались очереди, нагрузку не давали
         r.tg(f'🧊 <b>Memex</b>: локальный разбор <b>{r.code}</b> закончен (rc={rc}) — нагрузка снята.')
+    if autonomous and not r.dry and rc == 0 and sel and sel[-1] == names[-1]:
+        (r.ctl / 'AUTONOMOUS').unlink(missing_ok=True)
+        r.tg(f'🏁 <b>{r.code}</b>: автономный разбор на Memex закончен целиком — ТЗ, таймлайн ревью и бриф готовы. '
+             f'На маке: review.py memex pull --all')
     print_status(r)
     return rc
 
@@ -1674,6 +1764,8 @@ def main() -> int:
     p.add_argument('--host', default='mac', choices=['mac', 'memex']); p.add_argument('--tg', action='store_true')
     p.add_argument('--no-drive', action='store_true'); p.add_argument('--no-doc', action='store_true')
     p.add_argument('--no-wait-load', action='store_true', help='host memex: не ждать чужой LOAD.json (очередь Memex)')
+    p.add_argument('--autonomous', action='store_true',
+                   help='host memex: вся цепочка на Memex, облачные проходы — headless Claude (shared/headless_claude.py)')
     p.add_argument('--max-wait-min', type=float, default=480, help='host memex: сколько ждать чужую нагрузку, мин (таймаут → rc 5)')
 
     p = sp.add_parser('stage'); p.add_argument('--project', required=True); p.add_argument('name')

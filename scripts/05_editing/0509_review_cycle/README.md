@@ -123,6 +123,26 @@ YTEVO02 — только как справка; `ytuvi02_golden/` — этало
 тревоги температуры как «идёт разбор»), в TG уходят «🔥 начинаю разбор … ожидаемо N ч» и «🧊 закончен». Регрессия перед
 любым commit/push — `review.py selftest` (секунда, 0 токенов). `--from S` / `--only S` гоняют стадии заново, `resume` — по артефактам.
 
+### Автономный режим — вся цепочка на Memex (17.09.2026)
+
+`memex start --autonomous` (= `review.py run --host memex --autonomous`): после «глаз» Memex сам идёт дальше —
+route → облако → apply → align → chapters → acts → verdict → ТЗ → графика → таймлайн → mock → превью → бриф в TG →
+страница продюсера. Ноутбук можно закрыть. Стадия, упёршаяся в `AwaitCloud`, сама выполняет напечатанный `Workflow({...})`
+через `shared/headless_claude.py` (≤4 раундов на стадию: J → F/V/S → pending), затем повторяется и собирает `cloud/out/`.
+- **Почему launchd:** через ssh/nohup `claude -p` пишет «Not logged in» — OAuth в связке ключей, а её видит только
+  GUI-сессия. `headless_claude.run()` грузит задачу в `launchctl bootstrap gui/<uid>` и ждёт маркер кода выхода.
+  Проверка входа: `python3 shared/headless_claude.py --ping` на Memex.
+- Флаг `~/.cache/<project>/AUTONOMOUS`: сторож поднимает упавший прогон тоже с `--autonomous` и выходит, когда
+  закрыта `producer_page`; снимается при успешном финише (🏁 в TG).
+- `memex push` возит `0500_uxp/src` + `tests/mocks` (мок-сборка) и файлы карточки вне 05_Review (`align_against`,
+  `chapters_plan`) в `aux/` с переписанными путями. Нет `node` на хосте — `mock` честно помечается «не выполнена».
+- Внешние поверхности (Drive, лист, док) пишутся только при заполненных id в карточке — как и на маке.
+- Забрать результат на мак: `memex pull --all` (pravki, cloud, mockups, `{CODE}_review_v6.json`, бриф; главы и длительность
+  из карточки Memex вливаются в карточку мака).
+- **Грабля кэша транскрипта (исправлено):** wordrole кэширует WAV/слова/диаризацию по имени `{CODE}_{cut}` — новая версия ката
+  под тем же именем получала транскрипт старой за 1 с. `st_transcript` сверяет штамп источника (`_wordrole_work/{base}.src_stamp`,
+  без штампа — mtime) и переносит чужой кэш в `_wordrole_work/_stale_*`.
+
 ## Правила
 
 - Классы ТЗ: только `typo · grammar · fact · currency · language · mismatch · foreign_trace` (+`structure` у YTCH);

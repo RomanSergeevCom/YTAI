@@ -18,6 +18,25 @@ rsync -a "$YTAI_DIR/scripts/999_extra/infographic/render.py" "$MX_HOST:~/YTAI/sc
 rsync -a "$YTAI_DIR/scripts/999_extra/wordrole_transcribe.py" "$MX_HOST:~/YTAI/scripts/999_extra/"
 rsync -a "$YTAI_DIR/scripts/999_extra/bin/vision_ocr_ru" "$MX_HOST:~/YTAI/scripts/999_extra/bin/" 2>/dev/null || echo "  (vision_ocr_ru: бинарь собран на Memex отдельно — не перезаписываю)"
 rsync -a "$YTAI_DIR/YTs/$CHANNEL/" --include 'review_*.json' --exclude '*' "$MX_HOST:~/YTAI/YTs/$CHANNEL/"
+# автономный режим: мок-сборка таймлайна тем же кодом панели (partsBuilder + моки Premiere)
+UXP_DIR="$YTAI_DIR/scripts/05_editing/0500_uxp"
+if [ -d "$UXP_DIR/src" ]; then
+  mx "mkdir -p ~/YTAI/scripts/05_editing/0500_uxp/tests" >/dev/null
+  rsync -a --delete --exclude 'node_modules' "$UXP_DIR/src/" "$MX_HOST:~/YTAI/scripts/05_editing/0500_uxp/src/"
+  rsync -a --delete "$UXP_DIR/tests/mocks/" "$MX_HOST:~/YTAI/scripts/05_editing/0500_uxp/tests/mocks/"
+fi
+# файлы, на которые ссылается карточка вне 05_Review (план частей для глав, прошлые транскрипты для align) → aux/
+mx "mkdir -p $MX_REVIEW/aux" >/dev/null
+python3 - "$CARD" <<'EOF' > /tmp/review_card.aux.txt
+import json, sys, os
+card = json.load(open(sys.argv[1])); rd = os.path.dirname(os.path.abspath(sys.argv[1]))
+refs = list(card.get('align_against') or []) + ([card['chapters_plan']] if card.get('chapters_plan') else [])
+for p in refs:
+    a = p if os.path.isabs(p) else os.path.normpath(os.path.join(rd, p))
+    if os.path.exists(a):
+        print(a)
+EOF
+while read -r AUXF; do [ -n "$AUXF" ] && rsync -a "$AUXF" "$MX_HOST:$MX_REVIEW_ABS/aux/"; done < /tmp/review_card.aux.txt
 # карточка в Memex-варианте
 python3 - "$CARD" "$CODE" "$CUT" <<'EOF' > /tmp/review_card.memex.json
 import json, sys, os
@@ -30,6 +49,10 @@ card['src'] = f'cut/{os.path.basename(src)}' if src else ''
 card['render'] = ''
 card['words'] = os.path.basename(card.get('words', f'{code}_{cut}.words.json'))
 card['mockups_dir'] = ''
+if card.get('align_against'):
+    card['align_against'] = [f'aux/{os.path.basename(p)}' for p in card['align_against']]
+if card.get('chapters_plan'):
+    card['chapters_plan'] = f'aux/{os.path.basename(card["chapters_plan"])}'
 card['_memex'] = 'вариант карточки для Memex: пути относительно 05_Review; сгенерирован push.sh'
 print(json.dumps(card, ensure_ascii=False, indent=1))
 EOF

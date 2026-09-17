@@ -7,7 +7,12 @@ mx "cat ~/YTAI/$REL_STAGE/VERSION 2>/dev/null" >/dev/null || { echo "на Memex 
 LOCAL_SHA=$(git -C "$YTAI_DIR" rev-parse --short HEAD 2>/dev/null || echo dev)
 MX_SHA=$(mx "cat ~/YTAI/$REL_STAGE/VERSION")
 [ "$LOCAL_SHA" = "$MX_SHA" ] || echo "⚠️ дрейф версии: локально $LOCAL_SHA, Memex $MX_SHA — push.sh перед стартом"
-RUN="cd $MX_REVIEW && YTAI_TG=1 nohup caffeinate -dims python3 ~/YTAI/$REL_STAGE/review.py run --project $MX_ROOT --host memex --tg >> $MX_REVIEW/logs/memex_run.out 2>&1 < /dev/null &"
+# --autonomous: вся цепочка на Memex (route → облако через headless Claude → ТЗ → графика → таймлайн → бриф);
+#   без флага — только стадии «глаз» (download…selfcheck), дальше мак.
+AUTO=""; for a in "${@:2}"; do [ "$a" = "--autonomous" ] && AUTO="--autonomous"; done
+CTLR="\$HOME/.cache/$(cardval project)"
+RUN="cd $MX_REVIEW && YTAI_TG=1 nohup caffeinate -dims python3 ~/YTAI/$REL_STAGE/review.py run --project $MX_ROOT --host memex --tg $AUTO >> $MX_REVIEW/logs/memex_run.out 2>&1 < /dev/null &"
 WD="cd $MX_REVIEW && nohup bash ~/YTAI/$REL_STAGE/memex/watchdog.sh $MX_ROOT >> $MX_REVIEW/logs/watchdog.out 2>&1 < /dev/null &"
-mx "rm -f \$HOME/.cache/$(cardval project)/STOP; $RUN sleep 2; $WD sleep 1; pgrep -fl 'review.py run' | head -3"
-echo "запущено на Memex: разбор + сторож. Статус: review.py memex status; пауза: memex pause; забрать: memex pull"
+FLAG="mkdir -p $CTLR; rm -f $CTLR/STOP; $( [ -n "$AUTO" ] && echo "date > $CTLR/AUTONOMOUS;" || echo "rm -f $CTLR/AUTONOMOUS;" )"
+mx "$FLAG $RUN sleep 2; $WD sleep 1; pgrep -fl 'review.py run' | head -3"
+echo "запущено на Memex: разбор${AUTO:+ (автономно, вся цепочка)} + сторож. Статус: review.py memex status; пауза: memex pause; забрать: memex pull${AUTO:+ --all}"
