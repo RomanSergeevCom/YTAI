@@ -3,38 +3,45 @@
  "project": "YTUVI02",
  "real": "/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate/00_Setup/05_Review",
  "sandbox": "/Users/romansergeev/YTAI_work/_golden/YTUVI02/00_Setup/05_Review",
- "taken": "2026-09-15T17:54:41",
- "code_version": "9caca79",
+ "taken": "2026-09-22T00:27:44",
+ "code_version": "c4e0931",
  "inputs": {
   "YTUVI02_v1.words.json": "ba7efddebec7b9df834d40ad98c8c6c9f4e93be3",
-  "pravki/drive_clips.json": "5f36b2ea290645ee34d943220a14b54ee5ea5be5",
+  "pravki/drive_clips.json": "9564a5660d8d7f5748377011015e9607a113c8b6",
+  "pravki/drive_originals_ids.json": "0799f7a42cc5161393d6036a6bcf2eb9f2cb5df5",
   "pravki/nav_ids.json": "054ce1b44f8e0e53c36a5027edccc0fa83727caf",
+  "pravki/pravki_v2.before_addmat_cleanup.json": "006b471c85945cd2f1f862c4e9600f8a310e544e",
   "pravki/pravki_v2.before_apply_2026-09-15.json": "8825872258123f99ef60f21b565e99ab46f794cf",
-  "pravki/pravki_v2.json": "edd7d6b1998bd161359cab365a2c74ca92f4bc2e",
-  "pravki/previews_v7.json": "e64169e59df9eba808924704291707040e259a1b",
+  "pravki/pravki_v2.before_v3_apply.json": "3e3b56244e078cd584b5a50163a38de6949f83df",
+  "pravki/pravki_v2.json": "e34020781069f7f068cc6351269e4972b9c5f475",
+  "pravki/previews_v7.json": "de3e2b9e98ce41aafece7f8817c94d3e80b1fd40",
   "pravki/proj_material_ids.TEST_2026-09-15.json": "7ed92702f696a8280a86435c0a6f09d995ccc156",
-  "pravki/proj_material_ids.json": "0633346f719b3d00df5f8b673fdffac8f1f9e8d0",
+  "pravki/proj_material_ids.json": "985cbdcbceb4a377fe080f7a68b31544bd14dca8",
   "pravki/shots_ids.TEST_2026-09-15.json": "62778677ac6cc192125f33dc8473270a731e0cfe",
-  "pravki/shots_ids.json": "80942c21a83e47f3d50a2901d85818db0b231bac",
-  "pravki/tz_overrides.json": "aa3926181774166320be5c0e2e0d496839fc401c",
-  "review_card.json": "882a379a95675e43c969699843931d8891bed520",
-  "review_state.json": "aaac92cc79e885a756608f8958602f73ad3079ba",
+  "pravki/shots_ids.json": "dc2313650ef4fae6012f57511b3fa69eb2c40649",
+  "pravki/tz_overrides.before_renumber.json": "50ee3d7ebb47c3eebca6b5ee8140fe39b24b77c1",
+  "pravki/tz_overrides.json": "fe7fc1b98e271b97d783f3b4af403ba6cdf5dff5",
+  "review_card.json": "da56989bd836e25c46a522171b91cb9a2a06fae3",
+  "review_state.json": "0116c0e41c3566f1dcfbbd7a8f0ddb4dc69df5d9",
   "work/v1/audit_findings.json": "6dd3e06c069b9ab6ea8d0de7a99a1903913bc8e4",
   "work/v1/audit_findings_v6.json": "6d479ba54c929ca66d45506e24dd971ff7b3cfb3",
   "work/v1/audit_raw_wf_0965c2cf.json": "c214c7c83e0182ea6c9493c19faaa1d614ca795a",
   "work/v1/audit_v6.json": "c89945260490fc330b0bad899f04a978b1866431",
   "work/v1/candidates.json": "77991f1c87e8808b9de9d063c1d3d9ca13e81e1a",
   "work/v1/candidates_summary.json": "f0269992b9d8cb586acd1f95f872b9f93f56781c",
+  "work/v1/doc_edits_12301.json": "d769b63340a6f86eb3cbaa95432815fb33ca13f9",
+  "work/v1/doc_edits_12335.json": "3b1ac18610bcf9f7ccf611b1240aee06d48eefa6",
+  "work/v1/doc_edits_12369.json": "bcd40210347af9afcb0b7e53a3cad1e892b6970f",
   "work/v1/doc_edits_48.json": "6b0e676391e6cf708826389f26c1e4dd31219741",
-  "work/v1/doc_qc.json": "283d5b71af476d87fbd7afaaae56be7ecb80466d",
-  "work/v1/lint_v7.json": "175a15de011ec1227666da8159a84f4edbdf5f5f",
+  "work/v1/doc_qc.json": "993229640f009d0b3774853e05993e9452453dfe",
+  "work/v1/lint_v7.json": "f30fe49db20870efed81576a533818fd79b3f868",
   "work/v1/llm_v6.json": "ce15abfb89d8ac61fdc8507a469244d83c00773f",
   "work/v1/ocr_hires.jsonl": "e7dd009fc722f163f940a2fa3d1a6f8c70fa0ff4",
   "work/v1/prep_check_all.json": "878d329a832e8df269af38b99701b48e774027b1",
   "work/v1/prep_check_llm.json": "99844f964e24a40d124789ad9db31dd0d381b4b7",
   "work/v1/prep_check_ocr.json": "ca1d86df335a7d1bd12162f822196fef4f393dc8",
   "work/v1/prep_check_vlm.json": "6989200cb3ec46880bc6f099a0005ec95b6bd699",
-  "work/v1/preview_qc.json": "40be85a2d07bda06c3427c0972ea0b70241d4189",
+  "work/v1/preview_qc.json": "55fd771f827877e04b634f4f7ba813f568ba0d51",
   "work/v1/probes.jsonl": "2bf3a62b529d73786f03dea75b432afbfbe7e532",
   "work/v1/screens_v6.json": "b7a6422c909a9b610059efb5814e5a2239985b91",
   "work/v1/terms_v6.json": "d06414ca4278434e5e5120fbd2b150b836a445ff",
@@ -46,9 +53,9 @@
    "rc": 0,
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "eedc94c984d1a6325bca8b986349445161e1c80f",
-    "work/v1/candidates.json": "65204bb37390fbf302a3f33f2939dd9f843bbc19",
-    "work/v1/candidates_summary.json": "f0269992b9d8cb586acd1f95f872b9f93f56781c"
+    "_stdout.txt": "40fb0bc2f912dc3474ecbf089f10f033cd0ad877",
+    "work/v1/candidates.json": "3668405be79d55267da838404e90012e8c62cf2f",
+    "work/v1/candidates_summary.json": "f9473011845d3480c8ba92aaa464f249ef43dfb8"
    },
    "cmd": "<HOME>/YTAI/environment/.venv_llm/bin/python <STAGE>/stages/route_candidates.py --out <SB>/work/v1/candidates.json",
    "env": {}
@@ -58,9 +65,9 @@
    "rc": 0,
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "9252380d59554550afbccc3b3ee4767faeae5f76",
-    "pravki/pravki_v2.json": "edd7d6b1998bd161359cab365a2c74ca92f4bc2e",
-    "work/v1/audit_v6.json": "6fd29eae0ba0de5357d725a3d70f3f0b5ba47ed2"
+    "_stdout.txt": "c49917625ff77420aecf85ee8c8c3bebe19329ba",
+    "pravki/pravki_v2.json": "e34020781069f7f068cc6351269e4972b9c5f475",
+    "work/v1/audit_v6.json": "66ebd07306a56f4d93462c407f06ffd7ad02e2c9"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/s8_apply_audit.py",
    "env": {}
@@ -81,9 +88,9 @@
    "rc": 0,
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "f6b19e627bb797a6a4cdc6826540122de99eaf20",
-    "pravki/pravki_v2.json": "edd7d6b1998bd161359cab365a2c74ca92f4bc2e",
-    "work/v1/lint_v7.json": "175a15de011ec1227666da8159a84f4edbdf5f5f"
+    "_stdout.txt": "da7b69d2d121b7b84dce91e590c645ce80f74365",
+    "pravki/pravki_v2.json": "30ef80e6cd250d905e3f599535be2083d6311e65",
+    "work/v1/lint_v7.json": "f30fe49db20870efed81576a533818fd79b3f868"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/s10_format_tz.py",
    "env": {}
@@ -93,8 +100,8 @@
    "rc": 0,
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "cdaee9bddae595277f37a39849d211fd036485f9",
-    "pravki/pravki_v2.json": "edd7d6b1998bd161359cab365a2c74ca92f4bc2e"
+    "_stdout.txt": "630234be2826ad0855dc35c93d70e4b55b0a9e1e",
+    "pravki/pravki_v2.json": "30ef80e6cd250d905e3f599535be2083d6311e65"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/s11_apply_sources.py",
    "env": {}
@@ -104,7 +111,7 @@
    "rc": 0,
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "ab122a6004d7b5e8613a3e4b93c2e0800ab40792",
+    "_stdout.txt": "8b379bcf628fbc226c3e63de2253c18007ddcba6",
     "mockups/src/ann_tz01.html": "e520714a51466a53bc5a6e47660dc81d88d850ce",
     "mockups/src/ann_tz02.html": "e38c99ca53ed86f66f5a9aef684add2bd2e7037f",
     "mockups/src/ann_tz03.html": "157b740c87e13041ceef2769947a7ac7dee4a2a6",
@@ -312,13 +319,14 @@
     "mockups/src/tz_lt_08.html": "b650893fa747c76a7cec5741b47aa57d00456290",
     "mockups/src/tz_lt_09.html": "21f73539932497e633dc51bbcd71e83d132b6ec3",
     "mockups/src/tz_lt_10.html": "43660dcf0d4a5c2fb1afd6219af42e6073c03e32",
+    "mockups/src/tz_lt_100.html": "2f5f972dee866994a039498f5b308a16e7b40e2d",
     "mockups/src/tz_lt_11.html": "882cf56e844142db2621f74d604a7f98dd32ba74",
-    "mockups/src/tz_lt_12.html": "fff2ff9b77592486403d253395975d06dbfd500f",
-    "mockups/src/tz_lt_13.html": "127adb688326b4469b9e24cf8c546003bce83501",
+    "mockups/src/tz_lt_12.html": "7cb0e1986b62d9901786675b9765d63b56dd817a",
+    "mockups/src/tz_lt_13.html": "6e202514868d0ede9a45f0e06a014c56995a07b2",
     "mockups/src/tz_lt_14.html": "d4a9a277b91b1b75f5f814f2da3eefe04010ae2f",
     "mockups/src/tz_lt_15.html": "9fd59d166d6f6c4c96aeb312c29301c76e4f9e81",
     "mockups/src/tz_lt_16.html": "8a7e7cfdd1a86f4cb7efccebdaebc4ac9aaa2729",
-    "mockups/src/tz_lt_17.html": "53265dc6f2bda01fc3dc79c9b1a2047a19a2b44f",
+    "mockups/src/tz_lt_17.html": "b9b50c12346375d64741c044b65ee84fa9480042",
     "mockups/src/tz_lt_18.html": "fa9fd70cbff59be98f3b4c64d729547e127ae060",
     "mockups/src/tz_lt_19.html": "a86dea2d01f37a89e117ea6b4c2740431aa86489",
     "mockups/src/tz_lt_20.html": "e6ce066c87b0d3431c4372eb16efe65c94d8bd1e",
@@ -347,7 +355,58 @@
     "mockups/src/tz_lt_43.html": "e6a60e432b49c0975d6a3773f2051ed86ef3910a",
     "mockups/src/tz_lt_44.html": "c73af3ac8eb850f6e7d5cd59bfabea3195ee1cc2",
     "mockups/src/tz_lt_45.html": "9e95a9efe2fe4282d3bd91f9cd805ecb246600ee",
-    "mockups/src/tz_lt_46.html": "d73aeb7308d7970424fde312e497070cc6d65b9a"
+    "mockups/src/tz_lt_46.html": "d73aeb7308d7970424fde312e497070cc6d65b9a",
+    "mockups/src/tz_lt_47.html": "7489aab6f01fc1f2c0172bc2d738a0c8882a299d",
+    "mockups/src/tz_lt_48.html": "711d6eb2980db5d53f5f136871cb963e3065029a",
+    "mockups/src/tz_lt_49.html": "439352bc07b0971f0b2a8d5f68c24485469e70af",
+    "mockups/src/tz_lt_50.html": "cfdab3a34eb82bb6585b769d60284a71ef4e158b",
+    "mockups/src/tz_lt_51.html": "835a687ef0e6c3f36b5232495ce5731932c16647",
+    "mockups/src/tz_lt_52.html": "371d70479f14cfefdadd5ae83fa927b985b24f69",
+    "mockups/src/tz_lt_53.html": "e9c92d00ceade0dacadb4060d0533af32a47c79a",
+    "mockups/src/tz_lt_54.html": "b502e9525de108838e898461c4592d42adbbeebd",
+    "mockups/src/tz_lt_55.html": "50a292d2afaec0def07d89046bb19bc932bcc672",
+    "mockups/src/tz_lt_56.html": "ea0472204d08ef84f9fc087a6a23faf34cccdb51",
+    "mockups/src/tz_lt_57.html": "3cfb6a04e571a1f95fa6f105f5b66ba3017a97ee",
+    "mockups/src/tz_lt_58.html": "4d890a4406c241ebeaeaa43785455c46c726edcf",
+    "mockups/src/tz_lt_59.html": "a1fd7903eb58958ce3114b409d2643938b82988c",
+    "mockups/src/tz_lt_60.html": "b10e93b4420c2d4aa50c13e57f196f41df8e0a0b",
+    "mockups/src/tz_lt_61.html": "41581cce76e9087ed6b1a790aafa8034efd89733",
+    "mockups/src/tz_lt_62.html": "2f4a47afbcbe8c9103fc0a1359dc9483fbd7f181",
+    "mockups/src/tz_lt_65.html": "9ff7a19d98e56fa8e99841bb67099877c3c660cc",
+    "mockups/src/tz_lt_66.html": "c028eb7febb0eb22b0add95af0266a1e4ffe1035",
+    "mockups/src/tz_lt_67.html": "414bbd4f8d8ef839f7e968f7f1daca47e05270ed",
+    "mockups/src/tz_lt_68.html": "9a5a78bc45b199609d92f7b0b38c618e12ac1b89",
+    "mockups/src/tz_lt_69.html": "03e81ba18321ba17fbcbbf1da34e5205c460ea68",
+    "mockups/src/tz_lt_70.html": "e0d0019bb03ade847e4f44e0d0bce97c67f78231",
+    "mockups/src/tz_lt_71.html": "a12f45958adf07aff3e6e15d4c0397462bc05ba1",
+    "mockups/src/tz_lt_72.html": "47e830a8fee1fc6200fd47834a154e5cb1092649",
+    "mockups/src/tz_lt_73.html": "c1c01de4a9a2bfe7ab5ba3510dc07004a7380d39",
+    "mockups/src/tz_lt_74.html": "0a9a7e4c65e72befb12b2a14769b7a988bef5049",
+    "mockups/src/tz_lt_75.html": "d24ebc88a5c1f2b1c75858ff8eb83e127055b85e",
+    "mockups/src/tz_lt_76.html": "9029533729b3c835aefb51ad848d39efaf1b112c",
+    "mockups/src/tz_lt_77.html": "7a631744c2a2171bc6859e8c59df3794ec30f57f",
+    "mockups/src/tz_lt_78.html": "20030e8e998737f389ad53860756d77a6e4b5448",
+    "mockups/src/tz_lt_79.html": "78e2d45e8305b34e1675990c553af44990a6d977",
+    "mockups/src/tz_lt_80.html": "12a176c5ede3739891d43ef4fa8eb8bc83679159",
+    "mockups/src/tz_lt_81.html": "e331cbb64cd992c55dd28859d5f6e3120e3a1f18",
+    "mockups/src/tz_lt_82.html": "d6327655a10a1183dfa913af7fac8efc429ecd63",
+    "mockups/src/tz_lt_83.html": "cc4d5ec366e6805e137f40d765ab7072ee6f4e30",
+    "mockups/src/tz_lt_84.html": "b3e3ef91cdd7cc664b5b7fb7a639208c386faa60",
+    "mockups/src/tz_lt_85.html": "cdceb2e140ca11ed4e47e7e09e47308448f27167",
+    "mockups/src/tz_lt_86.html": "dc45dd818412a4b481e66e3140afdc1f1c9f48fe",
+    "mockups/src/tz_lt_87.html": "aaef149e6ed0ee5139308d44e23f4be3d32248c3",
+    "mockups/src/tz_lt_88.html": "5fb726699a77f82431d50b84c7ed8ffbcdc0b484",
+    "mockups/src/tz_lt_89.html": "5df5490488ce5b455f1c69283d728648774ef8e9",
+    "mockups/src/tz_lt_90.html": "9613cc5c7a464eae15e6112dd45855150f6e357f",
+    "mockups/src/tz_lt_91.html": "5197d508c7547c797d765647f87555ab1e8c27ef",
+    "mockups/src/tz_lt_92.html": "fcc46ed3f81d895edd6e9e5c49396bb14ab03d77",
+    "mockups/src/tz_lt_93.html": "5a4e342fc5a6e6a7b2a2df5e5ebf9de05c33c48f",
+    "mockups/src/tz_lt_94.html": "aee22ba50f634550f6398c881959b50cd1b80946",
+    "mockups/src/tz_lt_95.html": "20e214aa5286790689ea4bbd8c2d8b328a084b16",
+    "mockups/src/tz_lt_96.html": "4d86fd2c7d069cb4c63ce3fc70210b66e8c0f31d",
+    "mockups/src/tz_lt_97.html": "8c78f2ffd33ebe2cf36805cf615912f88389d3a2",
+    "mockups/src/tz_lt_98.html": "9fe1656891e2f8851d60f8c49666cc59aa9f621b",
+    "mockups/src/tz_lt_99.html": "a505102e3dda147d67fd232c7974691c111f19ca"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/make_infographics_v6.py all",
    "env": {
@@ -358,10 +417,10 @@
    "name": "review_json",
    "rc": 0,
    "outputs": {
-    "YTUVI02_review_v6.json": "ca0267f0884543561f77a147ed88fe6bff6bfcbf",
-    "YTUVI02_review_v6_summary.md": "8bc780c65f74c3ba7cdcd1fb156f51de14667e3d",
+    "YTUVI02_review_v6.json": "076956428925e56468977b04488f71c46a0ac8d3",
+    "YTUVI02_review_v6_summary.md": "8ac4843cdb5a9dfca466a27da5d3866ca34caf6e",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "941a8199216cea0be7d6c0f57b0b285a6466fa28"
+    "_stdout.txt": "7f65aec9d170b5c635bbe72478a114b5ecbcfff4"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/make_review_v6.py",
    "env": {}
@@ -371,7 +430,7 @@
    "rc": 0,
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "719af7dff9b314df0666da1e8d835cd77f370e22"
+    "_stdout.txt": "9797275e0747204940e863f71308610a481aeb2f"
    },
    "cmd": "/opt/homebrew/bin/node <STAGE>/stages/mockbuild_v6.js",
    "env": {}
@@ -380,9 +439,9 @@
    "name": "sheet_dump",
    "rc": 0,
    "outputs": {
-    "_dump/sheet_rows.json": "72d4732d62187356d1ac279da4d0ba800362056c",
+    "_dump/sheet_rows.json": "bc38d40b3a1a85faf408afc06322cb92037d1744",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "db45984b6324a1ff58a1c738331e9ec29ed0462e"
+    "_stdout.txt": "0011919bfe9e2cbb95c1edd79c3b1dc12d6b7fb5"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/tz_sheet.py --dump-rows <SB>/_dump/sheet_rows.json",
    "env": {}
@@ -391,9 +450,9 @@
    "name": "tz_dump",
    "rc": 0,
    "outputs": {
-    "_dump/tz_requests.json": "8bf367ea0c9f7f337c38cbbe6fe62bc886cdd3a8",
+    "_dump/tz_requests.json": "dbda5e9f325083335d4f90cda0306861566c077e",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "783781e302ec7d1f396c7d9bbb0a633c4433621c"
+    "_stdout.txt": "b368d7dc51f9b78449ab89afa100c43f939a1bbf"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/doc_tab_tz_v4.py --dump-requests <SB>/_dump/tz_requests.json",
    "env": {}
@@ -402,9 +461,9 @@
    "name": "nav_dump",
    "rc": 0,
    "outputs": {
-    "_dump/nav_requests.json": "9c7e1ffb18a33007d8e1b178d79c9f639ad62f73",
+    "_dump/nav_requests.json": "73b902953dfd9f500a83eabfb71265bcb054c108",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "19f2c253c344b0a82d503401ba4cd49752feddd9"
+    "_stdout.txt": "a4c0f33d24811d9459fd35181c6ae3b2e161895d"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/doc_tab_review_v1.py --dump-requests <SB>/_dump/nav_requests.json",
    "env": {}
@@ -413,9 +472,9 @@
    "name": "phone_brief",
    "rc": 0,
    "outputs": {
-    "YTUVI02_v1_brief.html": "f962b79ea844c3ad5c17ffac38cc6a0733801581",
+    "YTUVI02_v1_brief.html": "fb8672cf231cecc70576aac0b7efcd64e8f737aa",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "11ba5ec15b696de56c4b9018c73fe7d83526a1ad"
+    "_stdout.txt": "4bdbb9a4d9e4866956c3f823b0c3de8529714265"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/shared/phone_brief.py --out <SB>/YTUVI02_v1_brief.html",
    "env": {}
@@ -424,9 +483,9 @@
    "name": "producer_page",
    "rc": 0,
    "outputs": {
-    "YTUVI02_v1_review_producer.html": "29fb64ae09d135f5f147c904db10ac96df9e0779",
+    "YTUVI02_v1_review_producer.html": "5756160157ae91650eae448ce3b0610392107964",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "f7a91acf1fde28d6b0446a885b8908f9f5753e57",
+    "_stdout.txt": "d1778cce3dc4fe78bc30f11493bb37d93e1eb16b",
     "work/v1/review_page.html": "41654f25f64d19f2943f91612c9cf7fb6f114425"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/shared/producer_page.py --out <SB>/YTUVI02_v1_review_producer.html",
@@ -443,6 +502,5 @@
   "previews": "s7/s12 --render: кадры hires и PIL-композиты (картинки не копируются в песочницу)",
   "drive": "s9_materials_drive + s12 --upload/--apply — Google Drive API",
   "verify / doc_qc": "читают живой Google Doc / экспорт PDF — нет офлайн-режима"
- },
- "rehashed": "2026-09-15T17:59:58"
+ }
 }

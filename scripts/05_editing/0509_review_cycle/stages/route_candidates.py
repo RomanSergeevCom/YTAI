@@ -48,6 +48,11 @@ import terms_catalog as TC  # noqa: E402
 TYPO_MIN_LEN = 4          # кириллический токен короче — не кандидат в опечатки
 CORR_RATIO = 0.85         # SequenceMatcher.ratio() токен ↔ исправление
 CORR_LEN_DIFF = 2         # |len(токен) − len(исправление)| ≤
+AUTO_SAME_LEN = True      # auto_confirm опечатки — только при равной длине (замена/перестановка букв).
+#   OCR путает НАЧЕРТАНИЯ (Й/И, Ч/Т, Ь/Ы, М/И) — длина при этом не меняется: «ИСТОРИТЕСКОЙ» → «ИСТОРИЧЕСКОЙ».
+#   Вставка или удаление буквы значит, что словарь подобрал ДРУГОЕ слово, и на именах это стабильно врёт:
+#   YTUVI01 v2 (21.09.2026) — «Пьин»→«Пьи», «Чаук»→«Чак», «Яунг»→«Янг» (топонимы карты Могока), «Моосу»→«Мосу»
+#   (шкала Мооса), «РОБЕРТС»→«РОБЕРТАС», «БЕЗЕЛЬ»→«БЕНЗЕЛЬ», «КУЛЕТА»→«КУПЛЕТА» (огранка). Такие — в облако.
 VO_PAD_TYPO = 90.0        # окно озвучки для поиска исправления, с
 VO_PAD_MISMATCH = 8.0     # окно озвучки для чисел, с
 VO_PAD_FACT = 8.0         # окно озвучки для символа элемента, с
@@ -862,9 +867,16 @@ def rule_typo(sc):
                                     'отличие от исправления только в Й/И, Ё/Е, Щ/Ш или двойниках — OCR тут ненадёжен',
                                     need_frame=True, zoom_wanted=zoom_wanted))
                 elif corr and len(agree) >= 2:
-                    out.append(cand(sc, 'typo', tok, li, fix, sigs, 'auto_confirm',
-                                    f'чтения совпали ({"=".join(agree)}), исправление из {"озвучки" if corr[1] == "vo" else corr[1]}',
-                                    zoom_wanted=False))
+                    src = 'озвучки' if corr[1] == 'vo' else corr[1]
+                    if AUTO_SAME_LEN and len(corr[0]) != len(work):
+                        out.append(cand(sc, 'typo', tok, li, fix, sigs + [f'len_diff:{len(work)}→{len(corr[0])}'], 'cloud',
+                                        f'чтения совпали, но исправление из {src} другой длины — словарь мог подобрать '
+                                        f'другое слово (имена, топонимы, термины огранки); решить по кадру',
+                                        need_frame=True, zoom_wanted=zoom_wanted))
+                    else:
+                        out.append(cand(sc, 'typo', tok, li, fix, sigs, 'auto_confirm',
+                                        f'чтения совпали ({"=".join(agree)}), исправление из {src}',
+                                        zoom_wanted=False))
                 elif corr:
                     out.append(cand(sc, 'typo', tok, li, fix, sigs, 'cloud',
                                     'исправление найдено, но второго чтения нет', need_frame=True, zoom_wanted=zoom_wanted))
