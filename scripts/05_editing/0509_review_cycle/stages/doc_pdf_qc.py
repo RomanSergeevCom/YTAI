@@ -67,8 +67,9 @@ if LANG == 'ru':                                              # русский �
                re.compile(r'ночн\w+ разбор'), re.compile(r'\bревью\s*№')]
 # что сборщик вкладки пишет (doc_tab_tz_v3): шапка таблицы, префикс номера, «✅ СДЕЛАТЬ ·», «было «…» → стало»
 TZ_HDR = T('c2.tz_hdr')                                       # ['№', '⏱ TC', '', 'ТЗ монтажёру', 'Говорит', 'Материал / ссылки']
-# колонки и ширины — у сборщика вкладки (v3 16.09.2026: + «Говорит», дословная речь ката — её текст не проверяем)
-from doc_tab_tz_v3 import WIDTHS, C_TZ, C_SAY, C_MAT  # noqa: E402
+# колонки и ширины — у сборщика вкладки (v5 22.09.2026: 9 колонок, раскладка Романа).
+# Дословную речь («Говорит») и приёмку не проверяем — это не текст ТЗ.
+from doc_tab_tz_v3 import WIDTHS, C_TZ, C_SAY, C_MAT, C_ERR, C_DO, C_ROMAN, C_OK  # noqa: E402
 TZ_PREFIX = T('core.tz_prefix')                               # 'ТЗ' / 'FIX'
 DO_LABEL = T('core.lbl_do').split(' ', 1)[1] + ' ·'           # 'СДЕЛАТЬ ·' / 'DO ·'
 WASNOW_RE = re.compile(re.escape(T('core.was_pre')) + '.*?' + re.escape(T('core.was_mid').rstrip(' «“')))
@@ -194,7 +195,7 @@ def find_columns(pages):
     return aliases(xs)
 
 
-COL_NAMES = ['num', 'tc', 'cat', 'say', 'roman', 'ok', 'tz', 'mat', 'do']
+COL_NAMES = ['num', 'tc', 'cat', 'say', 'ok', 'tz', 'mat', 'do', 'roman']
 
 
 def col_of(f, cols):

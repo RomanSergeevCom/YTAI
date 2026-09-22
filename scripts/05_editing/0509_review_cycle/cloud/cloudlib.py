@@ -277,8 +277,26 @@ def tz_label(p, i):
     return f'ТЗ-{i + 1:02d}'
 
 
+def prev_pravki_load():
+    """ТЗ ПРОШЛОГО круга (card.prev_pravki) — их монтажёр и выполнял.
+
+    Без них судья не знает, о чём фильм просили в прошлый раз, и проверяет кат вслепую.
+    Цена этого на YTUVI01 v2 (22.09.2026): прошлое ТЗ-05 дословно говорило
+    «5:50–5:57 — Пенелопа Крус и Хавьер Бардем», монтажёр подписал этот кадр плашкой
+    «ДЖУЛИЯ РОБЕРТС» — и подмена прошла мимо, потому что existing_tz.txt был пуст.
+    """
+    v = os.environ.get('YTAI_PREV_PRAVKI') or (P.get('prev_pravki') if P else '')
+    if not v or M is None:
+        return []
+    p = Path(v)
+    if not p.is_absolute():
+        p = M.parent / v if (M.parent / v).exists() else M / Path(v).name
+    pr = load_json(p, None)
+    return pr['all'] if isinstance(pr, dict) and 'all' in pr else []
+
+
 def existing_tz_lines():
-    """«ТЗ-NN · tc · заголовок» по всем ТЗ (снятые Романом помечены)."""
+    """«ТЗ-NN · tc · заголовок» по всем ТЗ текущего круга + по ТЗ прошлого (снятые помечены)."""
     _pr, allp = pravki_load()
     out = []
     for i, p in enumerate(allp):
@@ -290,6 +308,17 @@ def existing_tz_lines():
         if p.get('status') == 'rejected':
             line += i18n.T('b.tz_rejected_suffix')
         out.append(line)
+    prev = prev_pravki_load()
+    if prev:
+        out.append('')
+        out.append(i18n.T('b.prev_tz_head', n=len(prev)))
+        for i, p in enumerate(prev):
+            if p.get('status') == 'rejected':
+                continue
+            title = re.sub(r'\s+', ' ', str(p.get('title') or '')).strip()[:90]
+            do = re.sub(r'\s+', ' ', str(p.get('nado') or '')).strip()[:260]
+            out.append(f"ПРОШЛОЕ ТЗ-{i + 1:02d} · {p.get('v1_tc') or p.get('tc_range') or '?'} · {title}"
+                       + (f' — {do}' if do else ''))
     return out
 
 

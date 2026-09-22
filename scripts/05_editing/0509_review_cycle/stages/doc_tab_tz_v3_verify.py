@@ -61,7 +61,7 @@ def ck(name, ok, detail=''):
 ck('одна таблица', len(tables) == 1, f'найдено {len(tables)}')
 rows = tables[0]['table']['tableRows']
 # v5 22.09.2026 (раскладка Романа): № | TC | кат. | Говорит | Комментарии Романа | ✅ | Описание ошибки | Материал | Как надо
-C_SAY, C_ROMAN, C_OK, C_ERR, C_MAT, C_DO = 3, 4, 5, 6, 7, 8
+C_SAY, C_OK, C_ERR, C_MAT, C_DO, C_ROMAN = 3, 4, 5, 6, 7, 8
 C_TZ = C_ERR
 HDR = [h.strip() for h in T('c2.tz_hdr')]
 # в шапке у каждой колонки свой номер («7 Описание ошибки») — просьба Романа
@@ -103,11 +103,16 @@ dec_pref = T('c2.decision_prefix').strip()
 stray = [n for n, r in row_of.items()
          if any(x in cell_text(r['tableCells'][j]) for j in (C_ERR, C_DO, C_MAT) for x in (dec_pref, '💬'))]
 ck('❓ решения и 💬 — только в колонке Романа', not stray, f'утекли: {sorted(stray)}' if stray else '')
-# чекбокс приёмки: ровно один список-галочка на строку ТЗ
+# приёмка: две строки-галочки «оставить» / «убрать». Состояние галочки Docs API не отдаёт,
+# поэтому проверяем именно ТЕКСТ — он и есть то, что снимает s13.
 def _has_cb(c):
     return sum(1 for el in c['content'] if 'paragraph' in el and el['paragraph'].get('bullet'))
-bad_cb = [n for n, r in row_of.items() if _has_cb(r['tableCells'][C_OK]) != 1]
-ck('чекбокс приёмки в каждой строке ТЗ', not bad_cb, f'нет/лишние: {sorted(bad_cb)}' if bad_cb else '')
+_ok_words = (T('c2.ok_keep'), T('c2.ok_drop'))
+bad_cb = [n for n, r in row_of.items()
+          if _has_cb(r['tableCells'][C_OK]) != 2
+          or not all(w in cell_text(r['tableCells'][C_OK]) for w in _ok_words)]
+ck('приёмка: две галочки «оставить / убрать» в каждой строке ТЗ', not bad_cb,
+   f'нет/лишние: {sorted(bad_cb)}' if bad_cb else '')
 
 # ── картинки ──
 def imgs_in(cell):
@@ -130,7 +135,9 @@ exp_imgs = N_CH + sum(1 for _, p in act for it in (p.get('material_rich') or [])
 # раскладе, и требовать их значит проваливать вкладку за решение о приватности.
 if str(P.get('shots_remote', '') or ''):
     ck(f'картинок ≥ {exp_imgs} (главы + превью/материал)', len(all_imgs) >= exp_imgs, f'={len(all_imgs)}')
-    no_img = [n for n, r in row_of.items() if not imgs_in(r['tableCells'][C_MAT])]
+    # драфт «было / стало» с 22.09.2026 живёт в «Как надо» — считаем по обеим колонкам
+    no_img = [n for n, r in row_of.items()
+              if not imgs_in(r['tableCells'][C_MAT]) and not imgs_in(r['tableCells'][C_DO])]
     ck('у каждого ТЗ есть картинка справа', not no_img, f'без картинки: {sorted(no_img)}' if no_img else '')
 else:
     print('—  картинки: shots_remote пуст (публичной папки кадров у фильма нет) — проверки пропущены')

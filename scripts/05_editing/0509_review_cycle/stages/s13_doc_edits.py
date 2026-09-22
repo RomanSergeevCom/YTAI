@@ -113,7 +113,7 @@ for k in act_rows:
 # «Говорит» (3) не читаем — это речь ката из words.json, Роман её не правит. Зато читаем его
 # собственную колонку (4) и чекбокс приёмки (5): раньше их просто не существовало, и всё, что он
 # дописывал, система видела только внутри общей ячейки ТЗ.
-COLS = {1: 'tc', 4: 'roman', 5: 'accepted', 6: 'tz', 7: 'material', 8: 'do'}
+COLS = {1: 'tc', 4: 'accepted', 5: 'tz', 6: 'material', 7: 'do', 8: 'roman'}
 for k, exp in exp_rows.items():
     act = act_rows.get(k)
     if not act:

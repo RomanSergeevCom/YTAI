@@ -3,8 +3,8 @@
  "project": "YTUVI02",
  "real": "/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate/00_Setup/05_Review",
  "sandbox": "/Users/romansergeev/YTAI_work/_golden/YTUVI02/00_Setup/05_Review",
- "taken": "2026-09-22T11:48:59",
- "code_version": "1ededf5",
+ "taken": "2026-09-22T12:53:15",
+ "code_version": "71f6023",
  "inputs": {
   "YTUVI02_v1.words.json": "ba7efddebec7b9df834d40ad98c8c6c9f4e93be3",
   "pravki/drive_clips.json": "9564a5660d8d7f5748377011015e9607a113c8b6",
@@ -455,9 +455,9 @@
    "name": "tz_dump",
    "rc": 0,
    "outputs": {
-    "_dump/tz_requests.json": "02e465cc633ee86f36accb62f27f4453b9e80e41",
+    "_dump/tz_requests.json": "eabfa4bbef88c2fa090447ba5146b703371e1130",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "899928a87c775e1f83498c18ea5c6acc880a0845"
+    "_stdout.txt": "c5a8f51f8d9c0e91331a45912500448043e43ee1"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/doc_tab_tz_v4.py --dump-requests <SB>/_dump/tz_requests.json",
    "env": {}

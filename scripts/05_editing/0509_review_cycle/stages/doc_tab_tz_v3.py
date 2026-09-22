@@ -54,8 +54,8 @@ FROZEN = ({tuple(x) for x in P.get('frozen_tabs', [])} | {tuple(x) for x in (P.p
 SHEET_URL = P.get('sheet_url') or ''
 # v5 (22.09.2026, раскладка Романа): 9 колонок. Прежние 676 pt больше не держим — у Романа
 # вкладка pageless, страница не ограничивает ширину; «Материал» ≥ 250 pt под превью (verify).
-WIDTHS = [30, 56, 20, 132, 134, 24, 176, 262, 262]        # = 1096 pt
-C_SAY, C_ROMAN, C_OK, C_ERR, C_MAT, C_DO = 3, 4, 5, 6, 7, 8
+WIDTHS = [30, 56, 20, 132, 90, 176, 262, 262, 134]        # = 1162 pt
+C_SAY, C_OK, C_ERR, C_MAT, C_DO, C_ROMAN = 3, 4, 5, 6, 7, 8
 C_TZ = C_ERR                              # прежнее имя: на него завязаны verify и doc_pdf_qc
 TECH_FONT = 6.5                           # техблок (conf, pymorphy, stable, ocr=…) — просьба Романа
 FONT = 9
@@ -136,10 +136,24 @@ def clip_link_line(text, drive_clips):
     return None
 
 
+def mat_slot(it):
+    """в какую колонку идёт материал: наш драфт исправления — в «Как надо», остальное — в «Материал».
+
+    Роман 22.09.2026: «было стало картинки — в 9 Как надо». Признак берём по имени файла
+    (`fix_*` ставит s12 для ВСЕХ драфтов, включая `_ATTACH`-варианты `fix_tz21b`), а не по
+    подписи: у шести драфтов фильма подпись пришла из auto_cap и слова «было / стало» в ней нет.
+    Явный `slot` в записи перебивает эвристику.
+    """
+    if it.get('slot') in ('do', 'mat'):
+        return it['slot']
+    return 'do' if str(it.get('img') or '').startswith('fix_') else 'mat'
+
+
 def mat_cell(p, shots_ids, proj_ids, drive_clips):
-    """→ (текст, [(индекс пустой строки под картинку, имя)], подписи, мелкие строки)"""
-    lines, imgs, caps, small = [], [], [], []
+    """→ {slot: (текст, [(индекс пустой строки, имя)], подписи, мелкие строки)} по двум колонкам"""
+    acc = {'mat': ([], [], [], []), 'do': ([], [], [], [])}
     for it in p.get('material_rich') or []:
+        lines, imgs, caps, small = acc[mat_slot(it)]
         disp = it.get('preview') or it.get('img')
         if disp and disp in shots_ids:
             imgs.append((len(lines), disp))
@@ -159,7 +173,7 @@ def mat_cell(p, shots_ids, proj_ids, drive_clips):
             if s:
                 lines.append(s)
                 small.append(s)
-    return '\n'.join(lines), imgs, caps, small
+    return {k: ('\n'.join(v[0]), v[1], v[2], v[3]) for k, v in acc.items()}
 
 
 def typo_words(p):
@@ -182,6 +196,7 @@ def tz_row(p, shots_ids, proj_ids, drive_clips):
     if tech:
         err += '\n' + tech
     do = p.get('nado_do') or ''
+    _do_off = len(do.split('\n')) + 1 if do else 0
     dec = T('c2.decision_prefix')                          # '❓ РЕШЕНИЕ РОМАНА: '
     roman, purple = [], []
     if p.get('decision'):
@@ -193,14 +208,21 @@ def tz_row(p, shots_ids, proj_ids, drive_clips):
     roman = '\n'.join(roman)
     bold = ([f'【{title}】'] + [l for l in LABELS if l in err or l in do]
             + ([dec.rstrip()] if p.get('decision') else []))
-    mat, imgs, caps, small = mat_cell(p, shots_ids, proj_ids, drive_clips)
+    cells_mat = mat_cell(p, shots_ids, proj_ids, drive_clips)
+    mat, imgs, caps, small = cells_mat['mat']
+    do_txt, do_imgs, do_caps, do_small = cells_mat['do']
+    if do_txt:
+        do = (do + '\n' + do_txt) if do else do_txt
+    imgs = [(C_MAT, li, n) for li, n in imgs] + [(C_DO, li + _do_off, n) for li, n in do_imgs]
+    caps += do_caps
+    small += do_small
     tech_lines = [l for l in tech.split('\n') if l.strip()]  # техблок — 6,5 pt серым в конце «Описания ошибки»
     hl = typo_words(p)
     say = (said(p.get('tc_range', ''), p['v1_tc'], hl=hl) if p.get('_sec') is not None
            else {'text': '', 'bold': [], 'hl': []})
     return {'kind': 'tz', 'num': p['num'], 'cat': p['category'],
             'cells': [p['num'], f"⏱ {p.get('tc_range', p['v1_tc'])}", CAT.get(p['category'], '·'),
-                      say['text'], roman, '', err, mat, do],
+                      say['text'], f"{T('c2.ok_keep')}\n{T('c2.ok_drop')}", err, mat, do, roman],
             'bold': bold, 'purple': purple, 'imgs': imgs, 'caps': caps, 'small': small,
             'tech': tech_lines, 'typo': p.get('typo') or [], 'say_bold': say['bold'],
             'say_hl': say.get('hl') or [], 'checkbox': True}
@@ -275,7 +297,7 @@ def build_rows(pravki_all, shots_ids, proj_ids, drive_clips):
         ch_cells[C_ERR] = label            # метка главы живёт в той же колонке, что и текст ТЗ
         rows.append({'kind': 'ch', 'label': label, 'color': ch['color'], 'cat': None,
                      'cells': ch_cells, 'bold': [], 'purple': [], 'caps': [], 'small': [],
-                     'typo': [], 'say_bold': [], 'imgs': [(-1, ch['img'])] if ch.get('img') else []})
+                     'typo': [], 'say_bold': [], 'imgs': [(C_MAT, -1, ch['img'])] if ch.get('img') else []})
         for p in by_ch.get(ci) or []:
             rows.append(tz_row(p, shots_ids, proj_ids, drive_clips))
     return rows, build_head(act, rejected)
@@ -416,12 +438,15 @@ def main(force=False):
             continue
         cell = trows[ri]['tableCells'][C_OK]
         a = cell['content'][0]['startIndex']
+        b = cell['content'][-1]['endIndex'] - 1
+        # ДВЕ строки-галочки: «оставить» и «убрать». Состояние галочки Docs API не отдаёт,
+        # поэтому решающее действие Романа — удалить лишнюю строку; её и читает s13.
         cb.append({'createParagraphBullets': {
-            'range': {'tabId': tab_id, 'startIndex': a, 'endIndex': a},
+            'range': {'tabId': tab_id, 'startIndex': a, 'endIndex': max(a, b)},
             'bulletPreset': 'BULLET_CHECKBOX'}})
     for i in range(0, len(cb), 400):
         batch_update(DOC_ID, cb[i:i + 400])
-    print(f'чекбоксы приёмки: {len(cb)}', flush=True)
+    print(f'приёмка: {len(cb)} строк по две галочки', flush=True)
 
     # ── картинки: превью в своём пустом абзаце (материал), у глав — в конец ячейки ──
     trows = [el for el in tab_body() if 'table' in el][-1]['table']['tableRows']
@@ -430,10 +455,11 @@ def main(force=False):
         r = rows[ri - 1]
         if not r['imgs']:
             continue
-        cell = trows[ri]['tableCells'][C_MAT]
-        base = cell['content'][0]['startIndex']
-        lines = str(r['cells'][C_MAT]).split('\n')
-        for li, name in sorted(r['imgs'], key=lambda x: -x[0]):
+        # картинки теперь в ДВУХ колонках: превью ошибки в «Материале», драфт «было / стало» — в «Как надо»
+        for cj, li, name in sorted(r['imgs'], key=lambda x: (-x[0], -x[1])):
+            cell = trows[ri]['tableCells'][cj]
+            base = cell['content'][0]['startIndex']
+            lines = str(r['cells'][cj]).split('\n')
             did = shots_ids.get(name)
             if not did:
                 continue
