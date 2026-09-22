@@ -1054,9 +1054,29 @@ def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict) -> dict:
     save_json_atomic(prof_p, prof)
 
     out_p = (project / "00_Setup" / "01_Ingest" / f"{code}_color_choice.json")
+    board = project / "00_Setup" / "01_Ingest" / f"{code}_lut_board.html"
     doc = load_json_safe(out_p) or {}
+    # Файл описывает САМ СЕБЯ: что за этап, чем закрыт, где артефакты и что
+    # дальше. Иначе через месяц по одному словарю экспозиций не восстановить,
+    # откуда он взялся и можно ли на него опираться.
     doc.update({
         "schema": "color-choice-v1",
+        "stage": {
+            "layer": "15_color",
+            "name": "Выбор цвета: проявка, покраска, экспозиция",
+            "done": True,
+            "decided_by": "roman",
+            "model": "три ступени: pre → проявка (по камере) → покраска (ДНК канала); "
+                     "экспозиция — число между проявкой и покраской, не лут",
+            "artifacts": {
+                "board": str(board),
+                "frames": str(board.parent / f"{code}_lut_board_files"),
+                "channel_profile": str(profile_path(project, code)),
+            },
+            "tool": "scripts/15_color/1502_lut_pick/lut_board.py",
+            "next": "проба Input LUT / Exposure в Premiere, затем раскладка "
+                    "по клипам и донор канала",
+        },
         "project": code,
         "_note": "Покадровый выбор Романа по этому съёмочному дню. Проявка и look "
                  "живут в профиле канала, здесь — только то, что свойство ДНЯ.",
