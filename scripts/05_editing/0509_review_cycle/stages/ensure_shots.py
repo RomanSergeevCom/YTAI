@@ -38,6 +38,13 @@ def wanted(pravki):
     for no, name in sorted((P.get('ch_img', {}) or {}).items()):
         if name:
             out.setdefault(name, 0)                    # 0 = глава, не ТЗ (в отчёте «глава NN»)
+    # шапка вкладки «Главы»: варианты заставки, варианты панели подглав, карта выпуска и обзорные
+    # панели перечислений. Их не держит ни одна ТЗ, поэтому раньше они молча не доезжали до Drive.
+    for name in (['ch_demo_a.jpg', 'ch_demo_b.jpg', 'ch_demo_c.jpg', 'prog_demo_a.jpg', 'prog_demo_b.jpg',
+                  'info_structure_map.png']
+                 + [f'prog_{no}_0.png' for no in sorted(P.get('prog', {}) or {})]):
+        if (Path(P.MOCK) / name).exists():
+            out.setdefault(name, 0)
     return out
 
 
