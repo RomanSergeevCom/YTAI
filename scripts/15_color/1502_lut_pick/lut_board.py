@@ -554,8 +554,16 @@ h1{font:800 26px/1.2 'Space Grotesk','Inter',sans-serif;margin:0 0 6px}
 /* Полоску убрал: при двух кандидатах она ничего не добавляет к числу, а на
    тёмном фоне теряется. Цену показывает само число — зелёным когда даром,
    красным когда куб платит тенями. */
-.sumc .cost{flex:0 0 96px;text-align:right;color:var(--ok);font-weight:600}
+.sumc .cost{flex:0 0 132px;white-space:nowrap;text-align:right;color:var(--ok);font-weight:600}
 .sumc .cost.bad{color:var(--bad)}
+.sumc .hdr{display:flex;gap:9px;margin-top:11px;padding-bottom:5px;
+           border-bottom:1px solid var(--line);
+           font:600 10.5px ui-monospace,monospace;color:#6b7488;
+           text-transform:uppercase;letter-spacing:.04em}
+.sumc .hdr .a{flex:1}
+.sumc .hdr .b{flex:0 0 132px;text-align:right}
+.sumc .tail{margin-top:9px;font:500 11.5px/1.5 ui-monospace,monospace;color:var(--dim)}
+.sumc .opt.on .nm:after{content:' — выбран';color:var(--acc);font-weight:700}
 .sumc .val{flex:0 0 60px;text-align:right}
 .sumc .tick{flex:0 0 14px;color:var(--acc)}
 /* Плашка «что выбрано сейчас» — одно место, где видно всё решение целиком. */
@@ -691,7 +699,7 @@ def build_html(ctx) -> str:
         cur = ctx.get("rec_dev", {}).get(camx["cam"])
         best = next((d for d in camx["develops"] if d["id"] == cur), camx["develops"][0])
         nowc.append((camx["cam"], short_name(best["id"]),
-                     f'{camx["gamma"]} · зажимает '
+                     f'{camx["gamma"]} · съедает '
                      f'{best["metrics"].get("black_share", 0)*100:.1f} % теней'))
     nowc.append(("покраска канала", short_name(ctx["rec_look"] or "—"),
                  f'{len(ctx["look_rows"] and ctx["look_rows"][0]["looks"] or [])} кандидатов показано'))
@@ -741,7 +749,9 @@ def build_html(ctx) -> str:
         best_bs = min((d["metrics"].get("black_share", 0) for d in camx["develops"]),
                       default=0.0)
         h.append(f'<div class=sumc><span class=cam>{esc(camx["cam"])}</span>'
-                 f'<span class=gam>{esc(camx["gamma"] or "?")}</span>')
+                 f'<span class=gam>{esc(camx["gamma"] or "?")}</span>'
+                 f'<div class=hdr><span class=a>кандидат проявки</span>'
+                 f'<span class=b>съедает теней</span></div>')
         for d in camx["develops"]:
             bs = d["metrics"].get("black_share", 0.0)
             on = (d["id"] == cur)
@@ -755,7 +765,14 @@ def build_html(ctx) -> str:
                      f'<span class=tick>{"✓" if on else ""}</span>'
                      f'<span class=nm>{esc(short_name(d["id"]))}</span>'
                      f'<span class="cost{" bad" if costly else ""}">'
-                     f'{"теней" if costly else "лучший ·"} {bs*100:.1f} %</span></div>')
+                     f'{bs*100:.1f} % в чёрное</span></div>')
+        fams = {(d.get("family") or "") for d in camx["develops"]}
+        has_legacy = any("legacy" in (d.get("variant") or "") for d in camx["develops"])
+        tail = ("Это один и тот же лут в двух вариантах автора: "
+                "<b>legacy</b> — более контрастный." if has_legacy and len(fams) == 1
+                else "<b>plus</b> и <b>minus</b> — два варианта автора под эту камеру.")
+        h.append(f'<div class=tail>{tail} Число — сколько кадра лут утапливает в '
+                 f'чистый чёрный: эту деталь не вернуть ничем.</div>')
         h.append('</div>')
     h.append('</div>')
     for cam in ctx["cams"]:
