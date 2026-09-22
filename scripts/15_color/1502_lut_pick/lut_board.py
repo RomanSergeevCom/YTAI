@@ -153,6 +153,7 @@ def extract(video, tc, out_jpg, luts=(), width=None, stops=0.0):
 
 
 PROBE_W = 320
+PERCLIP_W = 640      # ширина кадра в сетке «по каждому клипу»
 
 
 def probe_developed(by_cam, cam_info, source, mirror, probe_dir, jobs_n):
@@ -326,6 +327,36 @@ def look_candidates(luts, limit=MAX_LOOKS):
     return [pool[i] for i in sorted(set(idx))]
 
 
+def recommend_develop(devs):
+    """Моя рекомендация по проявке: меньше всего зажатых теней.
+
+    Это не вкус, а измеримый ущерб — зажатую тень не вернуть ничем, а лишний
+    пережог светов у log→709 кубов идёт по ролловфу и стоит дешевле.
+    Замер 22.09: на S-Log3 neutral топит 14.9 % тёмного кадра, neutral legacy —
+    0.01 %; на D-Log2 plus топит 55.7 %, minus — 0.11 %.
+    """
+    if not devs:
+        return None
+    return min(devs, key=lambda d: (d["metrics"].get("black_share", 0.0), d["id"]))
+
+
+def recommend_look(looks, look_metrics):
+    """Моя рекомендация по look: максимум характера при нуле повреждений.
+
+    Сначала отбрасываем всё, что режет картинку (пережог > 2 % или зажатое
+    чёрное > 1 %), потом из выживших берём самый насыщенный — насыщенность и
+    есть тот характер, ради которого look ставят. Единственное решение во всей
+    системе, которое действительно вкусовое; числа тут только отсекают вред.
+    """
+    ok = [l for l in looks
+          if look_metrics.get(l["id"], {}).get("clip", 99) <= 2.0
+          and look_metrics.get(l["id"], {}).get("black", 99) <= 1.0]
+    pool = ok or looks
+    if not pool:
+        return None
+    return max(pool, key=lambda l: look_metrics.get(l["id"], {}).get("sat", 0.0))
+
+
 # ───────────────────────────────────────────────────────── сбор ──
 
 def all_clips_by_cam(source: Path) -> dict:
@@ -464,7 +495,10 @@ h1{font:800 26px/1.2 'Space Grotesk','Inter',sans-serif;margin:0 0 6px}
 .sec .why{color:var(--dim);font-size:13.5px;margin:0 0 14px;max-width:1100px}
 .camttl{font:700 14px ui-monospace,monospace;color:var(--acc);margin:16px 0 4px}
 .gam{color:var(--dim);font:500 12.5px ui-monospace,monospace;margin:0 0 10px}
-.row{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
+.row{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;
+     /* 1110 картинок на одной file:// странице: без этого браузер считает
+        раскладку для всех сразу и прокрутка дёргается. */
+     content-visibility:auto;contain-intrinsic-size:170px 1400px}
 .cell{flex:0 0 232px}
 .cell img{display:block;width:232px;height:130px;object-fit:cover;border-radius:8px;
           border:2px solid transparent;background:#000}
@@ -647,6 +681,46 @@ def build_html(ctx) -> str:
             h.append(f'… и ещё {len(moved)-40}')
         h.append('</pre>')
 
+    # ── сетка по каждому клипу
+    h.append('<div class=sec><h2><span class=ic>🎬</span>Каждый клип — '
+             f'{len(ctx["per_clip"])} штук, мой выбор уже отмечен</h2>')
+    h.append(f'<p class=why>Здесь <b>весь день</b>, а не выборка, и в каждой строке '
+             f'уже стоит моё предложение — правь только то, с чем не согласен. '
+             f'Кадры показывают <b>итог</b>: проявка + экспозиция + look '
+             f'(<code>{esc(ctx["rec_look"] or "без look")}</code>), то есть ровно то, '
+             f'что ляжет на таймлайн.<br>'
+             f'Экспозицию предлагаю только там, где найдено лицо: без лица мерить '
+             f'нечего, и трогать её — значит гадать. Такие клипы стоят на нуле '
+             f'и помечены.</p>')
+    for row in ctx["per_clip"]:
+        tag = ''
+        if not row["face"]:
+            tag = ' · <span style="color:var(--dim)">лица нет, экспозиция не трогается</span>'
+        elif row.get("over"):
+            tag = (f' · промах {row["miss"]:+.2f} — <span style="color:var(--warn)">'
+                   f'лестницы не хватает</span>')
+        elif row.get("miss") is not None:
+            tag = f' · промах {row["miss"]:+.2f} стопа'
+        h.append(f'<div class=lbl>{esc(row["key"])} · {esc(row["cam"])}{tag}</div>')
+        h.append('<div class=row>')
+        h.append(f'<div class="cell base"><img loading="lazy" decoding="async" '
+                 f'width="232" height="130" src="{esc(row["orig_rel"])}" alt="лог">'
+                 f'<div class="nm">исходник (лог)</div>'
+                 f'<div class="m">до проявки</div></div>')
+        h.append('<div class=arrow>→</div>')
+        for st in row["steps"]:
+            nm = ("0 (как снято)" if abs(st["stop"]) < 1e-6
+                  else f'{st["stop"]:+.1f} стопа')
+            mine = abs(st["stop"] - row["mine"]) < 1e-6
+            h.append(f'<div class="cell pick" data-expo="{st["stop"]}" '
+                     f'data-clip="{esc(row["clip_key"])}">'
+                     f'<img loading="lazy" decoding="async" width="232" height="130" '
+                     f'src="{esc(st["rel"])}" alt="{esc(nm)}">'
+                     f'<div class="nm">{esc(nm)}</div>'
+                     f'<div class="m">{"мой выбор" if mine else "&nbsp;"}</div></div>')
+        h.append('</div>')
+    h.append('</div>')
+
     # ── ступень 4: покраска
     h.append('<div class=sec><h2><span class=ic>🎨</span>Ступень 4 · Покраска — '
              'ДНК канала</h2>')
@@ -677,11 +751,21 @@ def build_html(ctx) -> str:
 
     # таблица «клип → стоп → яркость лица»: по ней страница считает медиану
     # того, что Роман выбрал, и это и есть выученная цель.
+    mine_json = json.dumps({
+        "develop": {c: d for c, d in (ctx.get("rec_dev") or {}).items() if d},
+        "look": ctx.get("rec_look"),
+        "expo": {r["clip_key"]: r["mine"] for r in ctx["per_clip"]},
+    }, ensure_ascii=False)
     expo_luma = json.dumps(
         {r["clip_key"]: {str(st["stop"]): round(st["m"]["luma"], 1) for st in r["steps"]}
          for r in ctx["expo_rows"]}, ensure_ascii=False)
     h.append(f"""<script>
-var CH = {{develop:{{}}, look:null, expo:{{}}}};
+// Моё предложение проставлено СРАЗУ, по всем ступеням и по каждому клипу.
+// MINE — копия, по ней страница показывает, что именно правил Роман.
+var MINE = {mine_json};
+var CH = {{develop: Object.assign({{}}, MINE.develop),
+           look: MINE.look,
+           expo: Object.assign({{}}, MINE.expo)}};
 var EXPO_LUMA = {expo_luma};
 
 function refresh(){{
@@ -699,9 +783,13 @@ function refresh(){{
   for(var k in CH.expo){{ var v=EXPO_LUMA[k]; if(v&&v[CH.expo[k]]!==undefined) lm.push(v[CH.expo[k]]); }}
   lm.sort(function(a,b){{return a-b;}});
   var med = lm.length ? lm[Math.floor(lm.length/2)].toFixed(0) : '—';
+  var ch=0;
+  for(var k in CH.expo){{ if(MINE.expo[k]!==CH.expo[k]) ch++; }}
+  for(var c in CH.develop){{ if(MINE.develop[c]!==CH.develop[c]) ch++; }}
+  if(MINE.look!==CH.look) ch++;
   document.getElementById('st').textContent =
-    'проявка: ' + d + ' камер · look: ' + (CH.look || 'нет') +
-    ' · экспозиция: ' + e + ' клипов · твоя цель по лицу ≈ ' + med;
+    'мой выбор проставлен · ты поправил: ' + ch +
+    ' · цель по лицу ≈ ' + med + ' · look: ' + (CH.look || 'нет');
 }}
 document.addEventListener('click', function(e){{
   var c = e.target.closest('.cell.pick'); if(!c) return;
@@ -716,7 +804,10 @@ function copyFeedback(){{
   lm.sort(function(a,b){{return a-b;}});
   var payload = {{type:'lut_board', project:{json.dumps(ctx['code'])},
                   doc_version:{v}, develop:CH.develop, look:CH.look,
-                  exposure:CH.expo,
+                  exposure:CH.expo, mine:MINE,
+                  corrected: (function(){{var o={{}};
+                    for(var k in CH.expo){{ if(MINE.expo[k]!==CH.expo[k]) o[k]=[MINE.expo[k],CH.expo[k]]; }}
+                    return o;}})(),
                   target_face_luma: lm.length ? +lm[Math.floor(lm.length/2)].toFixed(1) : null}};
   var t=JSON.stringify(payload,null,1);
   var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta);
@@ -1002,6 +1093,80 @@ def main(argv=None) -> int:
             lk["m"] = metrics(lk["path"]) if frame_ok(lk["path"]) else \
                 {"luma": 0, "sat": 0, "black": 0, "clip": 0}
 
+    # ── ВОЛНА 2: сетка по КАЖДОМУ клипу дня, под моей рекомендацией.
+    # Роман: «выбор по каждому видео, а не по группе» и «ты делаешь выбор,
+    # я корректирую». Поэтому здесь не выборка, а весь день, и в каждой строке
+    # моё предложение уже отмечено — он правит только то, с чем не согласен.
+    # ⚠️ Среднее по ВСЕМ строкам лук-борда, а не последняя строка. Словарь-
+    # компрехеншн по {id: m} оставлял метрики последнего клипа и выбирал look
+    # по одному кадру: так malibu обошёл porsche_xblue_contrast, который в
+    # среднем насыщеннее при том же нуле повреждений.
+    _acc = {}
+    for rec in look_rows:
+        for lk in rec["looks"]:
+            _acc.setdefault(lk["id"], []).append(lk["m"])
+    look_metrics = {k: {mk: sum(m[mk] for m in v) / len(v) for mk in v[0]}
+                    for k, v in _acc.items()}
+    rec_look = recommend_look(looks, look_metrics) if look_rows else None
+    rec_dev = {cam: recommend_develop(info["develops"]) for cam, info in cam_info.items()}
+
+    per_clip = []
+    jobs2 = []
+    for cam, items in sorted(by_cam.items()):
+        dev = rec_dev.get(cam)
+        if not dev:
+            continue
+        chain = [STORE / dev["file"]] + ([STORE / rec_look["file"]] if rec_look else [])
+        for scene, clip in items:
+            pr = probe.get(clip.name)
+            video, _ = P.frame_src(clip, source, mirror)
+            dur = P.ffprobe_duration(video) or 4.0
+            tc = max(0.0, min(dur * 0.5, dur - 0.05))
+            stem = re.sub(r"[^A-Za-z0-9]+", "_", f"{scene}_{clip.stem}")
+            row = {"key": f"{scene}/{clip.name}", "clip_key": stem, "cam": cam,
+                   "scene": scene, "clip": clip.name, "develop": dev["id"],
+                   "look": rec_look["id"] if rec_look else None,
+                   "face": bool(pr and pr["face"]), "steps": []}
+            o = files_dir / "_perclip" / f"{stem}_orig.jpg"
+            jobs2.append((video, tc, o, (), 0.0))
+            row["orig_rel"] = f"{files_dirname}/_perclip/{o.name}"
+            if pr and pr["face"] and pr.get("face_luma"):
+                miss = stops_to_target(pr["face_luma"], target)
+                row["miss"] = miss
+                row["mine"] = min(EXPOSURE_STOPS, key=lambda v: abs(v - miss))
+                row["over"] = abs(miss) > max(EXPOSURE_STOPS) + 1e-6
+            else:
+                row["mine"] = 0.0          # без лица экспозицию не двигаем
+                row["miss"] = None
+            # ⚠️ Имя кадра несёт ПРОЯВКУ и LOOK. Без них смена рекомендации не
+            # инвалидирует кэш: кадры остаются от прошлого look, а подпись на
+            # странице уже новая — и выбор делается по картинке от другого куба.
+            # Поймано живьём: кадры под malibu подписались porsche_xblue_contrast.
+            tagbase = f"{stem}__{dev['id']}__{rec_look['id'] if rec_look else 'nolook'}"
+            for st in EXPOSURE_STOPS:
+                f = files_dir / "_perclip" / f"{tagbase}__{stop_tag(st)}.jpg"
+                jobs2.append((video, tc, f, tuple(chain), st))
+                row["steps"].append({"stop": st, "path": f,
+                                     "rel": f"{files_dirname}/_perclip/{f.name}"})
+            per_clip.append(row)
+
+    print(f"  волна 2: {len(per_clip)} клипов × {len(EXPOSURE_STOPS)+1} кадров "
+          f"= {len(jobs2)} — под {rec_dev and 'моей проявкой'} и look "
+          f"{rec_look['id'] if rec_look else '—'}")
+    t2 = time.time()
+    done2 = 0
+    with ThreadPoolExecutor(max_workers=args.jobs) as ex:
+        for ok in ex.map(lambda j: extract(j[0], j[1], j[2], j[3], PERCLIP_W, j[4]), jobs2):
+            done2 += 1 if ok else 0
+    print(f"  снято {done2}/{len(jobs2)} за {time.time()-t2:.0f} с")
+    want2 = {j[2].name for j in jobs2}
+    pc = files_dir / "_perclip"
+    stale2 = [q for q in pc.glob("*.jpg") if q.name not in want2] if pc.exists() else []
+    for q in stale2:
+        q.unlink()
+    if stale2:
+        print(f"  убрано кадров от прошлой рекомендации: {len(stale2)}")
+
     vpath = out_dir / f"{code}_lut_board_version.json"
     ver = int((json.loads(vpath.read_text()) if vpath.exists() else {}).get("v", 0)) + 1
     vpath.write_text(json.dumps({"v": ver, "at": time.strftime("%Y-%m-%d %H:%M:%S")}),
@@ -1012,7 +1177,9 @@ def main(argv=None) -> int:
     ctx = {
         "code": code, "version": ver, "when": when_ru(),
         "cams": cams, "look_rows": look_rows, "expo_rows": expo_rows,
-        "coverage": coverage,
+        "coverage": coverage, "per_clip": per_clip,
+        "rec_look": rec_look["id"] if rec_look else None,
+        "rec_dev": {c: (d["id"] if d else None) for c, d in rec_dev.items()},
         "target": target, "target_src": target_src, "faces": faces,
         "look_base_name": lead_dev["id"] if lead_dev else "—",
         "files_dir": str(files_dir), "lut_cam": lut_cam,
