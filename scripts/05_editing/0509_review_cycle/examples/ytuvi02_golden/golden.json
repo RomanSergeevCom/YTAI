@@ -3,8 +3,8 @@
  "project": "YTUVI02",
  "real": "/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate/00_Setup/05_Review",
  "sandbox": "/Users/romansergeev/YTAI_work/_golden/YTUVI02/00_Setup/05_Review",
- "taken": "2026-09-22T15:07:39",
- "code_version": "3033f02",
+ "taken": "2026-09-22T15:14:43",
+ "code_version": "8db7aaa",
  "inputs": {
   "YTUVI02_v1.words.json": "ba7efddebec7b9df834d40ad98c8c6c9f4e93be3",
   "pravki/drive_clips.json": "9564a5660d8d7f5748377011015e9607a113c8b6",
@@ -111,7 +111,7 @@
    "rc": 0,
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "0177d9a14bf454f85af744d796b11a10e3c416ab",
+    "_stdout.txt": "675205ba23890bf17a61ff6f6d105fb5813b2185",
     "mockups/src/ann_tz01.html": "e520714a51466a53bc5a6e47660dc81d88d850ce",
     "mockups/src/ann_tz02.html": "e38c99ca53ed86f66f5a9aef684add2bd2e7037f",
     "mockups/src/ann_tz03.html": "157b740c87e13041ceef2769947a7ac7dee4a2a6",

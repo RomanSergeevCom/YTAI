@@ -760,9 +760,10 @@ for num, ov in OVERRIDES.items():
     for k, v in ov.items():
         if k.startswith('_'):
             continue
-        # `wasnow` — пары «было на экране → надо» для карточки-макета (make_infographics_v6, стадия K)
+        # `wasnow` — пары «было на экране → надо» для карточки-макета (make_infographics_v6, стадия K),
+        # `lower` — данные подписи человека в кадре для макета лоуэра (стадия L)
         if k in ('title', 'category', 'v1_tc', 'tc_range', 'est', 'status', 'decision', 'roman_comment',
-                 'typo', 'typo_h', 'wasnow'):
+                 'typo', 'typo_h', 'wasnow', 'lower'):
             p[k] = v
         elif k == 'material_rich':
             p['material_rich'] = v

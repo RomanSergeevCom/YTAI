@@ -140,6 +140,7 @@ TERM_EXTRA, TERM_RX, LOC_RX, MAP_WINDOWS, place_family`.
 | `gen`? | `sub` \| `terms` \| `locs` — список из данных (подглавы / термины / места) в этой ТЗ; без поля s10 списков не ставит (по номеру ТЗ-30/75/76 — только у проекта ytuvi01) |
 | `typo` | `[{tc, was, now}]` — пары «было → стало» |
 | `wasnow`? | `[[было на экране, надо], …]` — несколько замен в одном кадре, которые драфт `fix_tzNN` по одному bbox не покажет (например четыре английские подписи на иллюстрации). Стадия `render` рисует из них карточку-макет `mockups/wasnow_tzNN.png` (блок K `make_infographics_v6`); ставится через `tz_overrides.json` |
+| `lower`? | `{name, role?, sec?, photo?, avatar?}` — подпись человека в кадре: стадия `render` рисует макет лоуэра `mockups/lower_tzNN.png` (блок L) поверх кадра секунды `sec` (без `sec` — на альфе). `photo` — путь к круглому фото от папки `05_Review`; `avatar: false` — без кружка |
 | `decision`? | ❓ вопрос Роману |
 | `status`? | `rejected` — Роман снял строку (номер сохранён) |
 | `rejected_by`?, `roman_comment`?, `replies`?, `sheet_answer`? | обратная связь |

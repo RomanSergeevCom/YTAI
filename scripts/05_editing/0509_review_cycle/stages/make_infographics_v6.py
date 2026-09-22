@@ -1102,3 +1102,55 @@ if want('K'):
                           T('d.ig.wasnow_a'), T('d.ig.wasnow_b')), WASNOW_CSS)
         _n += 1
     print(f'карточек «было → надо»: {_n}')
+
+
+# ═══════════ L. ЛОУЭР: подпись человека в кадре (макет монтажёру) ═══════════
+# Роман 22.09.2026 к ТЗ-42/43: «Создай пример плашки». Генератора подписи человека в репо не было —
+# ТЗ описывало плашку словами, а монтажёр рисовал её на глаз. Источник — поле `lower` записи ТЗ:
+# {name, role?, sec?, photo?}; `sec` — секунда ката под подложку (без неё макет на альфе, как титр).
+# Место — нижняя треть слева: правило самого ТЗ-41 «подпись под человеком, а не по диагонали от него».
+LOWER_CSS = f"""
+.lw {{ position:absolute; inset:0; overflow:hidden; }}
+.lw .shot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
+.lw .box {{ position:absolute; left:210px; bottom:300px; display:flex; align-items:center; gap:56px;
+  background:{PANEL}; border-radius:28px; border-left:18px solid {RED}; padding:52px 86px 56px 64px; }}
+.lw .ava {{ width:230px; height:230px; border-radius:50%; flex:none; background-size:cover;
+  background-position:center; border:7px solid rgba(255,255,255,.22); }}
+.lw .ava.empty {{ background:rgba(255,255,255,.10); }}
+.lw .nm {{ font-size:132px; font-weight:bold; letter-spacing:.02em; color:{IVORY}; line-height:1.04; }}
+.lw .rl {{ font-family:Helvetica,Arial,sans-serif; font-size:58px; color:{MUT}; margin-top:18px; }}
+"""
+
+
+def _lower_body(name, role, shot, photo):
+    bg = f'<div class="shot" style="background-image:url(\'file://{shot}\')"></div>' if shot else ''
+    ava = (f'<div class="ava" style="background-image:url(\'file://{photo}\')"></div>' if photo else
+           '<div class="ava empty"></div>' if photo is not None else '')
+    rl = f'<div class="rl">{esc(role)}</div>' if role else ''
+    return (f'<div class="lw">{bg}<div class="box">{ava}'
+            f'<div><div class="nm">{esc(name)}</div>{rl}</div></div></div>')
+
+
+if want('L'):
+    _pr = json.load(open(MONT / 'pravki_v2.json'))['all']
+    _n = 0
+    for _i, _p in enumerate(_pr, 1):
+        _lo = _p.get('lower')
+        if not isinstance(_lo, dict) or not _lo.get('name') or _p.get('status') == 'rejected':
+            continue
+        _sec = _lo.get('sec')
+        _shot = (W6 / 'hires' / f'h{int(_sec) + 1:04d}.jpg') if _sec is not None else None
+        if _shot is not None and not _shot.exists():
+            print(f'  !! нет кадра {_shot.name} для {tz_label(_i)} — макет на альфе')
+            _shot = None
+        _photo = _lo.get('photo')
+        if _photo:
+            _photo = Path(_photo) if Path(_photo).is_absolute() else (M.parent / _photo)
+            if not _photo.exists():
+                print(f'  !! нет фото {_photo} для {tz_label(_i)} — кружок пустой')
+                _photo = ''
+        page(f'lower_tz{_i:02d}',
+             _lower_body(_lo['name'], _lo.get('role', ''), _shot, _photo if _lo.get('avatar', True) else None),
+             LOWER_CSS, draft=False)
+        _n += 1
+    print(f'макетов лоуэров: {_n}')
