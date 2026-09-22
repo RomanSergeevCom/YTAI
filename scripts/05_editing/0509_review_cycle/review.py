@@ -974,6 +974,10 @@ def v_doc_tz(r: Review) -> bool:
 def st_doc_nav(r: Review):
     if not _ext(r, 'doc_id'):
         return True, 'doc_id пуст — навигатор пропущен'
+    # Навигатор нужен не каждому фильму: на YTUVI01 v2 Роман попросил всё держать в одной
+    # вкладке ТЗ (22.09.2026). Пустой `nav_tab` в карточке = вкладку не собираем.
+    if 'nav_tab' in r.card and not str(r.card.get('nav_tab') or '').strip():
+        return True, 'nav_tab пуст — навигатор не нужен этому фильму'
     edits_guard(r, 'doc_nav')
     rc, out = r.run_cmd([PY, STAGES_DIR / 'doc_tab_review_v1.py'], 'doc_nav', 40)
     r.S['surfaces']['doc_nav'] = {'at': now(), 'rc': rc, 'tab': os.environ.get('YTAI_NAV_TAB') or r.card.get('nav_tab'),
