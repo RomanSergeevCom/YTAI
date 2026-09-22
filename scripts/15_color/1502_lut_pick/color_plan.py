@@ -34,7 +34,11 @@ import time
 from pathlib import Path
 
 EXPOSURE_STOPS = (-1.0, -0.5, 0.0, 0.5, 1.0)
-EXPOSURE_EXTRA = (1.5, 2.0, 2.5, 3.0, -1.5, -2.0)   # добираются ТОЛЬКО когда нужно
+EXPOSURE_EXTRA = (1.5, 2.0, 2.5, 3.0, -1.5, -2.0, -2.5, -3.0)  # ТОЛЬКО когда нужно
+# ⚠️ Набор симметричен намеренно. Раньше вверх он дотягивался до +3, а вниз
+# упирался в −2, и клип с промахом −2,5 (выбитое лицо при тёмной выученной
+# цели: stops_to_target(255, 45) = −2,50) получал потолок −2,0 — та самая
+# болезнь, которую докстринг ladder_for объявляет вылеченной.
 EXPOSURE_MAX = 3.0                                   # предел фильтра exposure в ffmpeg
 TARGET_FACE_LUMA_DEFAULT = 150.0
 _TARGET_NOTE = ("стартовая догадка; уточняется по ТВОЕМУ выбору — "
@@ -52,6 +56,16 @@ def when_ru():
 
 def stop_tag(st: float) -> str:
     """Имя файла для ступени экспозиции: expm10 / expm05 / exp00 / expp05 / expp10."""
+    # ⚠️ Тег несёт ДЕСЯТЫЕ, а не сотые: 0,15 и 0,25 округлились бы в один «02»,
+    # и два кадра лестницы молча записались бы в один файл. Сейчас через
+    # ladder_for такие ступени не рождаются, но тихо схлопывать их нельзя —
+    # именно этот класс ошибки («имя обязано нести всё, от чего зависит
+    # содержимое») стоил слою трёх багов за одну сессию. Ступень не на сетке
+    # 0,1 — это ошибка вызывающего, а не повод потерять кадр.
+    if abs(round(st * 10) - st * 10) > 1e-6:
+        raise ValueError(
+            f"ступень экспозиции {st} не ложится на сетку 0,1 — имя кадра "
+            f"не сможет её отличить от соседней; округли или расширь тег")
     sign = "m" if st < -1e-6 else ("p" if st > 1e-6 else "")
     return f"exp{sign}{abs(st)*10:02.0f}"
 
@@ -219,12 +233,28 @@ def backup(path):
     path = Path(path)
     if not path.exists():
         return None
-    bak = path.with_name(f"{path.stem}.{time.strftime('%Y%m%d_%H%M%S')}.bak.json")
+    # ⚠️ Метка с точностью до СЕКУНДЫ затирала предыдущую копию, когда за ту же
+    # секунду писали дважды — а это ровно сценарий, ради которого функция заведена
+    # (перезапись утверждённого плана). Если имя занято, ищем свободный суффикс:
+    # копия, которая молча затёрла другую копию, хуже отсутствия копии.
+    base = f"{path.stem}.{time.strftime('%Y%m%d_%H%M%S')}"
+    bak = path.with_name(f"{base}.bak.json")
+    n = 1
+    while bak.exists():
+        bak = path.with_name(f"{base}_{n:02d}.bak.json")
+        n += 1
     bak.write_bytes(path.read_bytes())
     return bak
 
 
 # ─────────────────────────────────────── ключи клипов (нового кода) ──
+
+def _count(it):
+    d = {}
+    for x in it:
+        d[x] = d.get(x, 0) + 1
+    return d
+
 
 class SlugCollision(Exception):
     """Два разных клипа дали один слаг.
@@ -406,7 +436,14 @@ def gamma_cache_stale(rec: dict, clip: Path) -> bool:
     size, mtime = _stat_pair(clip)
     if size is None or rec.get("size") is None:
         return False
-    return size != rec.get("size") or abs(mtime - (rec.get("mtime") or 0)) > 1.0
+    if size != rec.get("size"):
+        return True
+    # ⚠️ Защита симметрична размеру: запись без mtime (ручная правка кэша,
+    # частичная миграция схемы) раньше сравнивалась с нулём и всегда выходила
+    # устаревшей — файл перезамерялся, хотя не менялся.
+    if rec.get("mtime") is None:
+        return False
+    return abs(mtime - rec["mtime"]) > 1.0
 
 
 def save_gamma_cache(project: Path, code: str, clips: dict) -> Path:
@@ -433,6 +470,16 @@ def seed_gamma_cache_from_lut_plan(plan: dict, keys_by_basename: dict) -> dict:
     если завтра найдётся баг в нормализации, его переприменят, не поднимая карту.
     """
     out = {}
+    # ⚠️ Ключи старого плана переключаются по basename, а basename не уникален
+    # сам по себе: счётчик Sony сбрасывается, и одно имя файла может встретиться
+    # в двух сценах. Молча отдать гамму чужой сцене = чужая проявка без единого
+    # сообщения. Рядом slug_index в такой же ситуации отказывается работать —
+    # здесь правило то же.
+    dupes = [b for b, n in _count(k.split("/")[-1] for k in keys_by_basename.values()).items() if n > 1]
+    if dupes:
+        raise SlugCollision(
+            "одно имя файла встречается в разных сценах, посев гамм по basename "
+            f"отдал бы гамму чужому клипу: {', '.join(sorted(dupes)[:5])}")
     for pk, rec in (plan.get("clips") or {}).items():
         raw = (rec or {}).get("gamma")
         if not raw:

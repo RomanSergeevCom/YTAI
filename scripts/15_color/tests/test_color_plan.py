@@ -550,3 +550,64 @@ class TestBackup:
         """
         assert _plan.backup(tmp_path / "нет.json") is None
         assert list(tmp_path.iterdir()) == []
+
+
+class TestFoundBugsStayFixed:
+    """Сторожа на пять дефектов, найденных тестами 22.09 при первом же прогоне.
+
+    Все пять — в коде, который написан в ту же сессию. Тесты нашли их раньше
+    Premiere, и это главное, ради чего набор заводился.
+    """
+
+    def test_backup_never_overwrites_a_previous_copy(self, tmp_path):
+        """CLR-05-F: две копии в одну секунду — две РАЗНЫЕ копии.
+
+        ⚠️ Метка имела точность до секунды, и второй вызов затирал первую копию.
+        Это ровно тот сценарий, ради которого backup() заведён: перезапись
+        утверждённого плана. Копия, молча затёршая другую копию, хуже отсутствия.
+        """
+        p = tmp_path / "plan.json"
+        p.write_text('{"a":1}', encoding="utf-8")
+        b1 = _plan.backup(p)
+        p.write_text('{"a":2}', encoding="utf-8")
+        b2 = _plan.backup(p)
+        assert b1 != b2, "вторая копия легла поверх первой"
+        assert b1.read_text(encoding="utf-8") == '{"a":1}'
+        assert b2.read_text(encoding="utf-8") == '{"a":2}'
+
+    def test_cache_record_without_mtime_is_not_stale(self, tmp_path):
+        """CLR-04-F: совпал размер, mtime отсутствует → запись НЕ устарела.
+
+        ⚠️ `rec.get("mtime") or 0` сравнивал с нулём и всегда давал «устарела»:
+        ручная правка кэша или частичная миграция схемы приводили к лишнему
+        перезамеру. Защита обязана быть симметрична той, что есть для size.
+        """
+        clip = tmp_path / "c.MP4"
+        clip.write_bytes(b"\x00" * 64)
+        assert _plan.gamma_cache_stale({"size": 64}, clip) is False
+        assert _plan.gamma_cache_stale({"size": 99}, clip) is True
+
+    def test_seed_refuses_when_basename_repeats_across_scenes(self):
+        """CLR-04-G: одно имя файла в двух сценах → отказ, а не чужая гамма.
+
+        ⚠️ Посев переключал ключи по basename без проверки, тогда как slug_index
+        в такой же ситуации отказывается работать. Счётчик Sony сбрасывается, и
+        одно имя реально встречается дважды — гамма легла бы на клип другой
+        сцены молча, то есть чужая проявка без единого сообщения.
+        """
+        keys = {"a": "01_Scene/RYA-FX3-1000.MP4", "b": "02_Other/RYA-FX3-1000.MP4"}
+        with pytest.raises(_plan.SlugCollision):
+            _plan.seed_gamma_cache_from_lut_plan({"clips": {}}, keys)
+
+    def test_stop_tag_refuses_off_grid_step(self):
+        """CLR-06-F: ступень вне сетки 0,1 — отказ, а не молчаливое схлопывание.
+
+        ⚠️ `0,15` и `0,25` округлялись в один тег `expp02`, и два кадра лестницы
+        записались бы в один файл. Через ladder_for такие ступени сейчас не
+        рождаются, но класс ошибки — ровно тот, что стоил слою трёх багов:
+        имя файла обязано нести всё, от чего зависит содержимое.
+        """
+        assert _plan.stop_tag(0.5) == "expp05"
+        assert _plan.stop_tag(-1.0) == "expm10"
+        with pytest.raises(ValueError):
+            _plan.stop_tag(0.15)
