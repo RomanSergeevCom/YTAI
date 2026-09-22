@@ -154,6 +154,7 @@ def extract(video, tc, out_jpg, luts=(), width=None, stops=0.0):
 
 PROBE_W = 320
 PERCLIP_W = 640      # ширина кадра в сетке «по каждому клипу»
+READABLE_LUMA = 30   # ниже этого в логе кадр нечитаем — решения по нему не принять
 
 
 def probe_developed(by_cam, cam_info, source, mirror, probe_dir, jobs_n):
@@ -181,10 +182,21 @@ def probe_developed(by_cam, cam_info, source, mirror, probe_dir, jobs_n):
             video, _ = P.frame_src(clip, source, mirror)
             dur = P.ffprobe_duration(video) or 4.0
             tc = max(0.0, min(dur * 0.5, dur - 0.05))
-            out = probe_dir / (re.sub(r"[^A-Za-z0-9]+", "_", f"{scene}_{clip.stem}") + ".jpg")
+            # ⚠️ Имя несёт ПРОЯВКУ. Без неё проб-кадры переживают смену
+            # рекомендации и остаются от прошлого прогона — а в самом первом
+            # прогоне гамма ещё не определялась и лут не применялся вовсе.
+            # Тогда и поиск лиц, и вся экспозиция по 163 клипам считались бы по
+            # ЛОГАРИФМИЧЕСКИМ кадрам, где эти метрики ничего не значат.
+            devtag = devs[0]["id"] if devs else "nodev"
+            out = probe_dir / (re.sub(r"[^A-Za-z0-9]+", "_", f"{scene}_{clip.stem}")
+                               + f"__{devtag}.jpg")
             tasks.append((video, tc, out, (lead,) if lead else (), clip.name))
     with ThreadPoolExecutor(max_workers=jobs_n) as ex:
         list(ex.map(lambda t: extract(t[0], t[1], t[2], t[3], PROBE_W), tasks))
+    want = {t[2].name for t in tasks}
+    for q in probe_dir.glob("*.jpg"):
+        if q.name not in want:
+            q.unlink()
     out = {}
     for _, _, jpg, _, name in tasks:
         if not frame_ok(jpg, PROBE_W // 2):
@@ -194,10 +206,16 @@ def probe_developed(by_cam, cam_info, source, mirror, probe_dir, jobs_n):
         # Яркость по лицу — та же величина, что решает на ступени 3, только
         # посчитанная для ВСЕХ клипов дня, а не для двенадцати в витрине.
         fm = P.face_metrics(a, bbox, core=P.FACE_CORE) if bbox else None
+        mx = a.max(-1)
         out[name] = {"luma": float((a * (0.2126, 0.7152, 0.0722)).sum(-1).mean()),
                      "face": bbox is not None,
                      "face_luma": float(fm["luma"]) if fm else None,
-                     "clip": float(fm["clip"]) if fm else None}
+                     "clip": float(fm["clip"]) if fm else None,
+                     # метрики ВСЕГО кадра: эталон для покраски обязан быть цел
+                     # не только по лицу — выбитое небо за спиной убивает
+                     # карточку так же, как чёрный кадр
+                     "frame_clip": float((mx >= WHITE).mean()),
+                     "frame_black": float((mx <= BLACK).mean())}
     return out
 
 
@@ -388,7 +406,14 @@ def pick_samples(by_cam: dict, per_cam: int, luma: dict | None = None):
             continue
         k = min(per_cam, len(items))
         if luma:
-            ranked = sorted(items, key=lambda it: luma.get(it[1].name, 999.0))
+            # ⚠️ Тёмные — да, чёрные — нет. Первый заход брал абсолютно самые
+            # тёмные клипы, и кадры DJI выходили с luma 9-10: на таком кадре
+            # решения не принять, видно только чёрный прямоугольник. Поэтому
+            # сначала отсекаем нечитаемое, и уже среди оставшегося берём тёмное.
+            readable = [it for it in items
+                        if luma.get(it[1].name, 0.0) >= READABLE_LUMA]
+            ranked = sorted(readable or items,
+                            key=lambda it: luma.get(it[1].name, 999.0))
             picked, seen = [], set()
             order = ([0, 1] +                                   # самые тёмные
                      [len(ranked) // 2] +                       # медиана
@@ -499,11 +524,31 @@ h1{font:800 26px/1.2 'Space Grotesk','Inter',sans-serif;margin:0 0 6px}
      /* 1110 картинок на одной file:// странице: без этого браузер считает
         раскладку для всех сразу и прокрутка дёргается. */
      content-visibility:auto;contain-intrinsic-size:170px 1400px}
-.cell{flex:0 0 232px}
-.cell img{display:block;width:232px;height:130px;object-fit:cover;border-radius:8px;
-          border:2px solid transparent;background:#000}
+.cell{flex:0 0 300px}
+.cell img{display:block;width:300px;height:169px;object-fit:cover;border-radius:8px;
+          border:3px solid transparent;background:#000}
 .cell.base img{border-color:var(--line)}
-.cell.sel img{border-color:var(--acc)}
+.cell.sel img{border-color:var(--acc);box-shadow:0 0 0 3px rgba(200,240,74,.25)}
+.cell.sel .nm:after{content:' ✓ выбран';color:var(--acc);font-weight:700}
+.nav{position:sticky;top:0;z-index:8;background:rgba(13,15,20,.94);
+     backdrop-filter:blur(8px);display:flex;gap:8px;padding:10px 0 12px;margin:0 0 14px;
+     border-bottom:1px solid var(--line)}
+.nav a{flex:1;text-align:center;padding:12px 10px;border-radius:10px;
+       background:var(--card);border:1px solid var(--line);color:var(--tx);
+       text-decoration:none;font:700 14px 'Inter',sans-serif}
+.nav a:hover{border-color:var(--acc)}
+.nav a b{display:block;font:600 11.5px ui-monospace,monospace;color:var(--dim);
+         margin-top:3px}
+details.more{margin:0 0 14px}
+details.more summary{cursor:pointer;color:var(--dim);font-size:13px;
+                     padding:6px 0;list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary:before{content:'▸ ';color:var(--acc)}
+details.more[open] summary:before{content:'▾ '}
+details.more .why{margin-top:8px}
+.lookgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.lookgrid .cell{flex:none}
+.lookgrid .cell img{width:100%;height:auto;aspect-ratio:16/9}
 .cell .nm{font:600 11.5px ui-monospace,monospace;margin:5px 0 2px;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cell .m{font:500 10.5px ui-monospace,monospace;color:var(--dim);line-height:1.45}
@@ -524,6 +569,16 @@ pre.p{background:#11141c;border:1px solid var(--line);border-radius:8px;
       padding:10px 12px;overflow-x:auto;font:500 11.5px ui-monospace,monospace;color:var(--dim)}
 @media(max-width:760px){.wrap{padding:16px}.cell,.cell img{flex-basis:200px;width:200px}}
 """
+
+
+def short_name(lut_id: str) -> str:
+    """Читаемая подпись под кадром. Полный id — для манифеста, не для глаза:
+    «sony__slog3_sgamut3cine__rec709__neutral__legacy» ни о чём не говорит,
+    а «neutral legacy» говорит всё."""
+    if lut_id.startswith("look__"):
+        return lut_id[6:].replace("_", " ")
+    parts = [b for b in lut_id.split("__") if b not in ("rec709",)]
+    return " ".join(parts[2:]).replace("_", " ") or " ".join(parts).replace("_", " ")
 
 
 def esc(s):
@@ -565,56 +620,57 @@ def build_html(ctx) -> str:
          f"<title>{esc(title)}</title><style>{CSS}</style></head><body><div class=wrap>"]
 
     h.append(f"<h1>{esc(ctx['code'])} — луты по ступеням<span class=ver>v{v}</span></h1>")
-    h.append("<p class=sub>Слева направо в каждой строке: исходник в логе → та же "
-             "картинка после <b>проявки</b> → и после <b>проявки с покраской</b>. "
-             "Проявку выбирает камера, а не вкус — но у кандидатов разная цена "
-             "по теням, и цену видно числами под кадром. Покраска — ДНК канала, "
-             "одна на весь канал.</p>")
+    h.append("<p class=sub>Три решения. Первые два — один раз на канал, третье — "
+             "по каждому клипу. Мой выбор уже проставлен, правь что не нравится.</p>")
 
     k = ctx["kpi"]
     h.append("<div class=kpi>" + "".join(
-        f"<b>{esc(a)} <i>{esc(b)}</i></b>" for a, b in k) + "</div>")
+        f"<b>{esc(a)} <i>{esc(bb)}</i></b>" for a, bb in k) + "</div>")
 
-    h.append('<div class=built>Внутри Lumetri картинка идёт '
+    h.append('<div class=nav>'
+             '<a href="#s1">1 · Проявка<b>один выбор на камеру</b></a>'
+             '<a href="#s2">2 · Покраска<b>один выбор на канал</b></a>'
+             f'<a href="#s3">3 · Экспозиция<b>{len(ctx["per_clip"])} клипов</b></a>'
+             '</div>')
+
+    h.append('<details class=more><summary>Как это устроено и почему так</summary>'
+             '<p class=why>Внутри Lumetri картинка идёт '
              '<b>проявка → экспозиция → покраска</b> — это порядок обработки, '
-             'и он вытащен из твоего же шаблона проекта. Решения принимаются в '
-             '<b>другом</b> порядке: сначала две настройки на весь канал '
-             '(проявка на камеру, look), и только потом — экспозиция по каждому '
-             'клипу под ними. Выбирать экспозицию, не зная look, бессмысленно: '
-             'он сдвигает яркость.</div>')
-    h.append("<div class=built>Кадры собраны так: <b>цепочкой из двух lut3d</b>, "
-             "а не через склеенный куб — в превью ошибки склейки нет вообще. "
-             "Склейка в один куб точна не для всякого look'а (замер 22.09: Baza "
-             "0,98/255, GOLD 54/255), и вопрос о ней решается после пробы Input LUT "
-             "в Premiere.</div>")
+             'вытащенный из твоего же шаблона проекта. Решения принимаются в '
+             'другом порядке: сначала две настройки на весь канал, и только '
+             'потом экспозиция по каждому клипу под ними. Выбирать экспозицию, '
+             'не зная look, бессмысленно — он сдвигает яркость.<br><br>'
+             'Кадры собраны <b>цепочкой из двух lut3d</b>, а не через склеенный '
+             'куб: в превью ошибки склейки нет вообще. Склейка в один куб точна '
+             'не для всякого look (замер 22.09: Baza 0,98/255, GOLD 54/255), и '
+             'вопрос о ней решается после пробы Input LUT в Premiere.</p></details>')
 
     # ── ступень 2: проявка
-    h.append('<div class=sec><h2><span class=ic>🎞</span>Решение 1 · Проявка — '
-             'ОДИН выбор на камеру, навсегда</h2>')
-    h.append('<p class=why><b>Здесь нечего корректировать по клипам.</b> '
-             'Проявка определяется камерой и гаммой, а не вкусом: выбрал один '
-             'раз — и он живёт в профиле канала, пока сам не поменяешь. '
-             'Кандидатов всего по два на гамму, и победитель по числам уже '
-             'отмечен — тебе остаётся глянуть и согласиться.<br>'
-             'Строки ниже — <b>не отдельные решения</b>, а те же два куба на '
-             'разном материале, чтобы разницу было видно. Клик по любому кадру '
-             'выбирает куб для <b>всей камеры</b> сразу.<br>'
-             '<b>Красное число = куб съедает картинку:</b> чёрное выше 1 % — '
-             'зажатые тени, пережог выше 2 % — выбитые света. Исходники дня '
-             'проверены: в них 0,00 % чистого чёрного, значит всё зажатое '
-             'создаёт именно лут.</p>')
-    # Сводка решения — чтобы выбор читался числами, не только картинками.
+    h.append('<div class=sec id=s1><h2><span class=ic>🎞</span>Решение 1 · '
+             'Проявка — один выбор на камеру</h2>')
+    h.append('<p class=why>Возвращает лог в нормальную картинку. Определяется '
+             '<b>камерой</b>, а не вкусом: выбрал один раз — живёт в профиле '
+             'канала. <b>Здесь нечего править по клипам.</b> Победитель по '
+             'числам отмечен ✓, клик по любому кадру меняет выбор для всей '
+             'камеры.</p>')
+    h.append('<details class=more><summary>Почему кадры такие тёмные</summary>'
+             '<p class=why>Специально: проявки различаются именно на тёмных '
+             'сценах, на светлом кадре любая выглядит прилично. Число '
+             '<b>чёрн</b> — сколько процентов кадра куб утопил в чистый чёрный. '
+             'Эту деталь не вернуть ничем. Исходники дня проверены: в них '
+             '0,00 % чистого чёрного, значит всё зажатое создал именно лут.</p>'
+             '</details>')
     for camx in ctx["cams"]:
         if not camx["develops"]:
             continue
         best = min(camx["develops"], key=lambda d: d["metrics"].get("black_share", 9))
         h.append('<div class=built style="margin:0 0 12px">'
-                 f'<b>{esc(camx["cam"])}</b> · гамма {esc(camx["gamma"] or "?")} → '
-                 f'мой выбор <code>{esc(best["id"])}</code>. ')
-        h.append(" · ".join(
-            f'{esc(d["id"].split("__")[-1])}: зажатых теней '
-            f'{d["metrics"].get("black_share", 0)*100:.1f} %'
-            for d in camx["develops"]) + '</div>')
+                 f'<b>{esc(camx["cam"])}</b> · {esc(camx["gamma"] or "?")} → '
+                 f'<b style="color:var(--acc)">{esc(short_name(best["id"]))}</b> — '
+                 + " · ".join(
+                     f'{esc(short_name(d["id"]))} зажимает '
+                     f'{d["metrics"].get("black_share", 0)*100:.1f} %'
+                     for d in camx["develops"]) + '</div>')
     for cam in ctx["cams"]:
         h.append(f'<div class=camttl>{esc(cam["cam"] or "без камеры")}</div>')
         h.append(f'<div class=gam>гамма {esc(cam["gamma"] or "НЕ ОПРЕДЕЛЕНА")} '
@@ -629,31 +685,42 @@ def build_html(ctx) -> str:
             h.append(cell_html(s["orig_rel"], "исходник (лог)", s["orig_m"], None, "base"))
             h.append('<div class=arrow>→</div>')
             for d in s["dev"]:
-                h.append(cell_html(d["rel"], d["name"], d["m"], s["orig_m"],
-                                   "pick", d["id"], d.get("cam", "")))
+                h.append(cell_html(d["rel"], short_name(d["id"]), d["m"],
+                                   s["orig_m"], "pick", d["id"], d.get("cam", "")))
             h.append("</div>")
     h.append("</div>")
 
-    # ── ступень 4: покраска
-    h.append('<div class=sec><h2><span class=ic>🎨</span>Решение 2 · Покраска — '
-             'ДНК канала</h2>')
-    h.append(f'<p class=why>Один look на весь канал. Слева закреплён кадр '
-             f'<b>без покраски</b> — это база сравнения. Все варианты положены '
-             f'поверх одной и той же проявки '
-             f'(<code>{esc(ctx["look_base_name"])}</code>), поэтому разница между '
-             f'колонками — это ровно покраска и ничего больше.<br>'
-             f'<b>Тоже один выбор — на весь канал</b>, а не по клипам. Строки — '
-             f'тот же набор на разном материале. Клик по колонке выбирает look '
-             f'канала.</p>')
-    for s in ctx["look_rows"]:
-        h.append(f'<div class=lbl>{esc(s["label"])}</div><div class=row>')
-        h.append(cell_html(s["base_rel"], "только проявка", s["base_m"], None, "base"))
-        h.append('<div class=arrow>→</div>')
-        for lk in s["looks"]:
-            h.append(cell_html(lk["rel"], lk["name"], lk["m"], s["base_m"],
-                               "pick", lk["id"]))
-        h.append("</div>")
-    h.append("</div>")
+    # ── решение 2: покраска, крупными карточками
+    h.append('<div class=sec id=s2><h2><span class=ic>🎨</span>Решение 2 · '
+             'Покраска — один выбор на канал</h2>')
+    h.append(f'<p class=why>Характер канала. Кладётся поверх проявки '
+             f'(<code>{esc(short_name(ctx["look_base_name"]))}</code>), поэтому '
+             f'разница между карточками — это ровно покраска. '
+             f'<b>Кликни по той, что нравится.</b> Кадры взяты нормально снятые, '
+             f'не тёмные — покраску на чёрном кадре не выбрать.<br>'
+             f'Первая карточка — <b>без покраски</b>, база сравнения. '
+             f'Перечёркнутые числа значат, что look режет картинку.</p>')
+    for s_row in ctx["look_rows"]:
+        h.append(f'<div class=lbl>{esc(s_row["label"])}</div><div class=lookgrid>')
+        bm = s_row["base_m"]
+        h.append(f'<div class="cell base"><img loading="lazy" decoding="async" '
+                 f'src="{esc(s_row["base_rel"])}" alt="без покраски">'
+                 f'<div class="nm">без покраски</div>'
+                 f'<div class="m">нас {bm["sat"]:.0f}% · пережог {bm["clip"]:.1f}%</div>'
+                 f'</div>')
+        for lk in s_row["looks"]:
+            m = lk["m"]
+            harm = m["clip"] > 2.0 or m["black"] > 1.0
+            warn = (f'<span class="bad">режет: пережог {m["clip"]:.1f}% · '
+                    f'чёрное {m["black"]:.1f}%</span>' if harm else
+                    f'нас {m["sat"]:.0f}% · чисто')
+            h.append(f'<div class="cell pick" data-lut="{esc(lk["id"])}">'
+                     f'<img loading="lazy" decoding="async" '
+                     f'src="{esc(lk["rel"])}" alt="{esc(lk["name"])}">'
+                     f'<div class="nm">{esc(short_name(lk["id"]))}</div>'
+                     f'<div class="m">{warn}</div></div>')
+        h.append('</div>')
+    h.append('</div>')
 
     # ── покрытие: все клипы дня
     cov = ctx["coverage"]
@@ -684,7 +751,7 @@ def build_html(ctx) -> str:
         h.append('</pre>')
 
     # ── сетка по каждому клипу
-    h.append('<div class=sec><h2><span class=ic>🎬</span>Решение 3 · Экспозиция — '
+    h.append('<div class=sec id=s3><h2><span class=ic>🎬</span>Решение 3 · Экспозиция — '
              f'по каждому из {len(ctx["per_clip"])} клипов, мой выбор отмечен</h2>')
     h.append(f'<p class=why>Здесь <b>весь день</b>, а не выборка, и в каждой строке '
              f'уже стоит моё предложение — правь только то, с чем не согласен. '
@@ -890,6 +957,8 @@ def main(argv=None) -> int:
           f"самые тёмные · ступень 3 (экспозиция): "
           f"{sum(len(v) for v in face_samples.values())} клипов с лицом")
 
+    _target = args.target or profile_target(project, code) or TARGET_FACE_LUMA_DEFAULT
+    target = _target
     jobs = []          # (video, tc, out_path, luts, stops)
     cams = []
     lut_cam = {}       # id лута -> камера (look'и не попадают, у них камеры нет)
@@ -956,13 +1025,38 @@ def main(argv=None) -> int:
     lead_dev = lead_cam["develops"][0] if lead_cam["develops"] else None
     looks = look_candidates(luts, args.looks)
     look_rows = []
+    # ⚠️ Look смотрят на НОРМАЛЬНО снятом кадре с лицом, а не на самом тёмном.
+    # Выборка ступени «проявка» смещена в тёмное намеренно — там кубы и
+    # расходятся, — но на чёрном кадре покраску не выбрать: не видно ничего.
+    # Эталон — кадр, экспонированный ПРАВИЛЬНО, то есть с лицом ближе всего к
+    # цели. Не самый тёмный (там ничего не видно) и не самый светлый: первый
+    # заход брал самые светлые, и эталон вышел с 37 % пережога ещё ДО покраски —
+    # на выбитом кадре характер look'а так же неразличим, как на чёрном.
+    look_ref = []
+    ref_pool = []
+    for cam, items in face_samples.items():
+        for scene, c in items:
+            pr = probe.get(c.name) or {}
+            fl = pr.get("face_luma")
+            if not fl:
+                continue
+            if pr.get("frame_clip", 1) > 0.05 or pr.get("frame_black", 1) > 0.02:
+                continue          # выбитый или утопленный кадр эталоном не годится
+            ref_pool.append((abs(fl - target), scene, c))
+    ref_pool.sort(key=lambda t: t[0])
+    for _, scene, clip in ref_pool[:args.look_rows]:
+        video, _ = P.frame_src(clip, source, mirror)
+        dur = P.ffprobe_duration(video) or 4.0
+        tc = max(0.0, min(dur * 0.5, dur - 0.05))
+        look_ref.append((f"{scene} / {clip.name}",
+                         re.sub(r"[^A-Za-z0-9]+", "_", f"{scene}_{clip.stem}"),
+                         video, tc))
     if lead_dev:
-        rows = lead_cam["samples"][:args.look_rows]
-        for s in rows:
-            stem = Path(s["orig_path"]).stem.replace("_orig", "")
+        for label, stem0, vid0, tc0 in look_ref:
+            stem = f"lookref_{stem0}"
             base = files_dir / f"{stem}__base.jpg"
-            jobs.append((None, None, base, None, 0.0))       # заполнится ниже
-            rec = {"label": s["label"], "base_path": base,
+            jobs.append((vid0, tc0, base, (STORE / lead_dev["file"],), 0.0))
+            rec = {"label": label, "base_path": base,
                    "base_rel": f"{files_dirname}/{base.name}", "looks": []}
             for lk in looks:
                 p = files_dir / f"{stem}__{lk['id']}.jpg"
@@ -971,16 +1065,10 @@ def main(argv=None) -> int:
                                      "name": lk["id"].replace("look__", "")})
             look_rows.append(rec)
 
-    # достроить задания лук-борда (нужен video/tc того же клипа)
-    jobs = [j for j in jobs if j[0] is not None]
     if lead_dev:
-        for s, rec in zip(lead_cam["samples"][:args.look_rows], look_rows):
-            src_job = next(j for j in jobs if j[2] == s["orig_path"])
-            video, tc = src_job[0], src_job[1]
-            jobs.append((video, tc, Path(rec["base_path"]),
-                         (STORE / lead_dev["file"],), 0.0))
+        for (label, stem0, vid0, tc0), rec in zip(look_ref, look_rows):
             for lk, meta in zip(rec["looks"], looks):
-                jobs.append((video, tc, Path(lk["path"]),
+                jobs.append((vid0, tc0, Path(lk["path"]),
                              (STORE / lead_dev["file"], STORE / meta["file"]), 0.0))
 
     print(f"  кадров к рендеру: {len(jobs)}")
@@ -1016,7 +1104,7 @@ def main(argv=None) -> int:
     # переиспользуется на всей лестнице: Vision на пере- и недодержанном кадре
     # находит лицо чуть иначе, и тогда разница в стопах смешалась бы с разницей
     # в рамке, а мы меряем именно экспозицию.
-    target = args.target or profile_target(project, code) or TARGET_FACE_LUMA_DEFAULT
+    target = _target
     target_src = ("задан флагом" if args.target else
                   ("выучен по твоему выбору" if profile_target(project, code)
                    else _TARGET_NOTE))
