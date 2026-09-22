@@ -20,7 +20,7 @@
 usage:  python3 stages/kb_visuals.py needs | pick | sheets
         ~/YTAI/environment/.venv_vlm/bin/python stages/kb_visuals.py verify
 """
-import json, os, re, sqlite3, subprocess, sys
+import collections, json, os, re, sqlite3, subprocess, sys
 from pathlib import Path
 
 os.environ.setdefault('HF_HOME', str(Path.home() / 'YTAI/models/huggingface'))
@@ -93,6 +93,78 @@ def disabled(t0, t1):
     return any(min(t1, float(r['t1'])) - max(t0, float(r['t0'])) > 0.5 * (t1 - t0) for r in P.get('disabled_ranges', []))
 
 
+# ── книги (Роман 16.09.2026: «нужно больше такого из книг и из журналов») ────────────────────
+# Книги в базе — сканы страниц, встроенных фигур в них нет (`gem_kb/pdf_figures.py` их пропускает),
+# зато половины страниц уже нарезаны и размечены: книга, модуль, печатная страница, заголовок, краткое
+# содержание, тип (photo_plate / content / table …). Ищем по этой разметке текстом — модель не нужна.
+# Роман 16.09.2026: сканы вынесены из базы в 01_ScanBook-SSEF («качество плохое, старайся не использовать») —
+# books_policy `fallback`: книга идёт в кандидаты бита, только если ни одна картинка базы не прошла verify.
+BOOKS_MANIFEST = Path(KB_CFG['books_manifest']) if KB_CFG.get('books_manifest') else Path('/nonexistent')
+BOOKS_POLICY = KB_CFG.get('books_policy') or 'always'
+BOOK_NAME = {'SSEF_ACG': 'SSEF, курс Advanced Coloured Gemstones', 'SSEF': 'SSEF, курс гемологии',
+             'GEMA_PH': 'Gem-A, Practical Handbook', 'GEMA_FW': 'Gem-A, Foundation Workbook'}
+BOOK_URL = {'SSEF_ACG': 'https://www.ssef.ch/education/', 'SSEF': 'https://www.ssef.ch/education/',
+            'GEMA_PH': 'https://gem-a.com/education/', 'GEMA_FW': 'https://gem-a.com/education/'}
+BOOK_TYPES = {'photo_plate': 4.0, 'content': 1.0, 'summary': 0.5}       # нужны иллюстрации, не таблицы и не оглавления
+# свой клип годится в перебивку, только если это съёмка предмета, а не говорящая голова
+BROLL_SCENE = re.compile(r'(Macro|Broll|B_?roll|Closeup|Showcase|Try_?On|Globe|Catalog|Store)', re.I)
+TALKING = re.compile(r'(CAM\d|интервью|монолог|комментар|консультант|говорит|рассказывает|Commentary|Consultant|Interview)', re.I)
+PHOTO_WORDS = ('photo', 'photograph', 'image', 'microscop', 'inclusion', 'crystal', 'rough', 'cut stone',
+               'specimen', 'ring', 'necklace', 'faceted', 'cabochon', 'plate', 'montage')
+
+
+def book_pages():
+    """половины страниц книг с разметкой → [{file, book, module, page, heading, summary, type, w, h}]"""
+    if not BOOKS_MANIFEST.exists():
+        return []
+    root = BOOKS_MANIFEST.parent.parent                                 # …/01_Book/02_Pages/manifest → корень книги (file = «02_Pages/…»)
+    out = []
+    for p in json.load(open(BOOKS_MANIFEST, encoding='utf-8')).get('pages', []):
+        if (p.get('content_type') or '') not in BOOK_TYPES or not p.get('file'):
+            continue
+        f = root / p['file'] if not str(p['file']).startswith('/') else Path(p['file'])
+        if max(int(p.get('w') or 0), int(p.get('h') or 0)) < MIN_SIDE:
+            continue
+        out.append({'path': str(f.relative_to(KB_ROOT)) if str(f).startswith(str(KB_ROOT)) else str(f),
+                    'book': p.get('book') or '', 'module': p.get('module') or '', 'page': p.get('printed_page_no'),
+                    'heading': p.get('heading') or '', 'summary': p.get('summary') or '',
+                    'type': p.get('content_type'), 'wh': [int(p.get('w') or 0), int(p.get('h') or 0)]})
+    return out
+
+
+def book_candidates(pages, entities, limit):
+    """подбор страниц книги под предметы бита: слова запросов в заголовке/содержании + бонус фотоплате"""
+    res = []
+    for ei, e in enumerate(entities):
+        toks = {t.lower() for q in e['queries'] for t in re.findall(r'[A-Za-z]{4,}', q)}
+        if not toks:
+            continue
+        for pg in pages:
+            blob = (pg['heading'] + ' ' + pg['summary']).lower()
+            hits = sum(1 for t in toks if t in blob)
+            if not hits:
+                continue
+            score = hits * 2.0 + BOOK_TYPES.get(pg['type'], 0) + sum(0.4 for w in PHOTO_WORDS if w in blob) - ei * 1.5
+            name = BOOK_NAME.get(pg['book'], pg['book'] or 'книга')
+            credit = f"{name}{', модуль ' + pg['module'].title() if pg['module'] else ''}" \
+                     f"{', с. ' + str(pg['page']) if pg['page'] else ''}"
+            res.append({'src': 'kb', 'from': 'book', 'entity': e['title'], 'path': pg['path'], 'kind': 'book-page',
+                        'ptype': pg['type'],
+                        'source': pg['path'], 'locator': f"с. {pg['page']}" if pg['page'] else '', 'wh': pg['wh'],
+                        'fts': pg['summary'][:240], 'vlm_desc': '', 'credit': credit,
+                        'url': BOOK_URL.get(pg['book'], ''), 'score': round(score, 3), 'query': pg['heading'][:60]})
+    res.sort(key=lambda c: -c['score'])
+    seen, top = set(), []
+    for c in res:
+        if c['path'] in seen:
+            continue
+        seen.add(c['path'])
+        top.append(c)
+        if len(top) >= limit:
+            break
+    return top
+
+
 def vocab():
     base = json.load(open(TERMS_BASE, encoding='utf-8')) if TERMS_BASE.exists() else {}
     out = []
@@ -106,6 +178,34 @@ def vocab():
     for e in VIS_EXTRA:
         out.append({'def': '', 'kind': 'gem', **e})
     return out
+
+
+_WORDS = None
+
+
+def all_words():
+    global _WORDS
+    if _WORDS is None:
+        _WORDS = [(w['w'], float(w['s']), float(w['e'])) for sg in json.load(open(P.WORDS, encoding='utf-8'))['segments']
+                  for w in sg.get('words') or []]
+    return _WORDS
+
+
+def word_time(t0, t1, rx):
+    """время первого слова предмета в [t0, t1] (Роман 16.09.2026, ТЗ-65: вставка «слишком рано» — начало бита не
+    годится, картинка встаёт на само слово); None — слово не нашлось (многословный регэксп, другая форма)"""
+    if not rx:
+        return None
+    r = re.compile(rx.replace('ё', 'е'))
+    for w, s, e in all_words():
+        if t0 - 0.05 <= s <= t1 and r.search(w.lower().replace('ё', 'е')):
+            return s
+    return None
+
+
+def tc_sec(s):
+    m = re.match(r'\s*(\d+):(\d{2})(?:\.(\d+))?', str(s or ''))
+    return int(m.group(1)) * 60 + int(m.group(2)) + (float('0.' + m.group(3)) if m.group(3) else 0) if m else None
 
 
 # ── needs ────────────────────────────────────────────────────────────────────────────────────
@@ -199,46 +299,83 @@ def fts(con, q):
     return []
 
 
-def cmd_pick():
-    needs = json.load(open(OUT / 'needs.json', encoding='utf-8'))
-    con = sqlite3.connect(KB / 'index.sqlite')
-    scores = {r['path']: r for r in jl(KB / 'fig_scores.jsonl')}
-    vlm = {r['path']: r.get('desc', '') for r in jl(KB / 'vlm_captions.jsonl')}
-    phash = {r['p']: r['h'] for r in jl(KB / 'fig_phash.jsonl')}
-    clips, files = footage_catalog()
-    voc = {v['title']: v for v in vocab()}
-    out, cache_q = [], {}
-    for b in needs:
-        if b['need'] < 3 or b.get('graphic_cover', 0) >= 0.6 or b.get('disabled'):
-            continue
-        cands, seen = [], set()
-        for ei, e in enumerate([x for x in b['entities'] if not x['weak']][:3]):
-            for qi, q in enumerate(e['queries'][:2]):
-                rows = cache_q.setdefault(q, fts(con, q))
+def arg(name, default=None):
+    """--name=value из командной строки"""
+    return next((a.split('=', 1)[1] for a in sys.argv if a.startswith(f'--{name}=')), default)
+
+
+class KbSearch:
+    """FTS5 по подписям базы → фильтр профиля (exclude_sources, min_side; карты/таблицы/страницы — вон, если не просили
+    схем) → зрелищность fig_scores + ранг FTS + размер → дедуп phash. Общий для pick (биты) и targets (свои запросы)."""
+
+    def __init__(self):
+        self.con = sqlite3.connect(KB / 'index.sqlite')
+        self.scores = {r['path']: r for r in jl(KB / 'fig_scores.jsonl')}
+        self.vlm = {r['path']: r.get('desc', '') for r in jl(KB / 'vlm_captions.jsonl')}
+        self.phash = {r['p']: r['h'] for r in jl(KB / 'fig_phash.jsonl')}
+        self.cache = {}
+
+    def search(self, ents, limit, diagrams=False, skip=()):
+        """ents: [(заголовок предмета, [запросы EN])] по убыванию важности"""
+        cands, seen = [], set(skip)
+        for ei, (title, queries) in enumerate(ents):
+            for qi, q in enumerate(queries):
+                rows = self.cache.setdefault(q, fts(self.con, q))
                 for rank, (rid, kind, source, path, loc, gems, text) in enumerate(rows):
                     if path in seen or str(source).startswith(EXCLUDE or ('\0',)) or str(path).startswith(EXCLUDE or ('\0',)):
                         continue
                     seen.add(path)
-                    sc = scores.get(path) or {}
+                    sc = self.scores.get(path) or {}
                     wh = sc.get('wh') or [0, 0]
                     if max(wh or [0]) < MIN_SIDE:
                         continue
-                    desc = vlm.get(path, '')
-                    if re.search(r'Type:\s*(map|chart|document)', desc or '', re.I) or re.search(r'\b(page|table|graph|spectr|diagram)', (desc or '').lower()):
+                    desc = self.vlm.get(path, '')
+                    if not diagrams and (re.search(r'Type:\s*(map|chart|document)', desc or '', re.I)
+                                         or re.search(r'\b(page|table|graph|spectr|diagram)', (desc or '').lower())):
                         continue
                     score = float(sc.get('score') or 0) + 3.0 / (1 + rank) + min(max(wh) / 1500, 1.5) - ei * 1.5 - qi * 0.5
-                    cands.append({'src': 'kb', 'entity': e['title'], 'path': path, 'kind': kind, 'source': source, 'locator': loc,
-                                  'wh': wh, 'fts': (text or '')[:240], 'vlm_desc': (desc or '')[:240], 'score': round(score, 3), 'query': q})
+                    cands.append({'src': 'kb', 'entity': title, 'path': path, 'kind': kind, 'source': source, 'locator': loc,
+                                  'wh': wh, 'fts': (text or '')[:240], 'vlm_desc': (desc or '')[:240], 'score': round(score, 3),
+                                  'query': q})
         cands.sort(key=lambda c: -c['score'])
         picked = []
         for c in cands:
-            h = phash.get(c['path'].replace('_KB/figures/', ''))
+            h = self.phash.get(c['path'].replace('_KB/figures/', ''))
             if h and any(sum(x != y for x, y in zip(h, u)) <= 12 for u in
-                         [phash.get(p['path'].replace('_KB/figures/', ''), '') for p in picked] if u):
+                         [self.phash.get(p['path'].replace('_KB/figures/', ''), '') for p in picked] if u):
                 continue
             picked.append(c)
-            if len(picked) >= PER_BEAT:
+            if len(picked) >= limit:
                 break
+        return picked
+
+
+def want_books(pages, bid, picked, ver, min_q):
+    """книги-сканы: при books_policy fallback — только когда картинки базы уже проверены и ни одна не годится"""
+    if not pages:
+        return False
+    if BOOKS_POLICY != 'fallback':
+        return True
+    rec = [ver.get((bid, c['path'])) for c in picked]
+    base_ok = any(r and r.get('match') == 'yes' and int(r.get('quality') or 0) >= min_q for r in rec)
+    return (any(rec) and not base_ok) or (not picked and bool(ver))
+
+
+def cmd_pick():
+    needs = json.load(open(OUT / 'needs.json', encoding='utf-8'))
+    S = KbSearch()
+    clips, files = footage_catalog()
+    voc = {v['title']: v for v in vocab()}
+    out = []
+    min_need = int(next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--min-need=')), 3))
+    pages = book_pages() if '--no-books' not in sys.argv else []
+    min_q = int(next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--min-q=')), 4))
+    ver = {(r['beat'], r['path']): r for r in jl(OUT / 'verify.jsonl')}
+    print(f'pick: порог need ≥ {min_need} · страниц книг в разметке: {len(pages)} · книги: {BOOKS_POLICY}', flush=True)
+    for b in needs:
+        if b['need'] < min_need or b.get('graphic_cover', 0) >= 0.6 or b.get('disabled'):
+            continue
+        picked = S.search([(e['title'], e['queries'][:2]) for e in [x for x in b['entities'] if not x['weak']][:3]], PER_BEAT)
         own = []
         for ei, e in enumerate([x for x in b['entities'] if not x['weak']][:3]):
             rx = voc[e['title']]['rx'].replace('ё', 'е')
@@ -262,11 +399,43 @@ def cmd_pick():
             if o['clip'] not in seen_c:
                 seen_c.add(o['clip'])
                 dedup.append(o)
+        # у слабых битов (need 1) сильных предметов нет — для книг берём и слабые, иначе бит остался бы пустым
+        ents = [x for x in b['entities'] if not x['weak']][:3] or b['entities'][:2]
+        books = book_candidates(pages, ents, 4) if want_books(pages, b['id'], picked, ver, min_q) else []
         out.append({**{k: b[k] for k in ('id', 't0', 't1', 'tc', 'chapter', 'text')},
-                    'entities': [e['title'] for e in b['entities'] if not e['weak']], 'cands': picked, 'own': dedup[:4]})
+                    'entities': [e['title'] for e in b['entities'] if not e['weak']], 'cands': picked,
+                    'own': dedup[:4], 'books': books})
     P.write_json_atomic(OUT / 'candidates.json', out)
     print(f'pick: {len(out)} beats · kb {sum(len(b["cands"]) for b in out)} · own {sum(len(b["own"]) for b in out)} · '
-          f'пустых {sum(1 for b in out if not b["cands"] and not b["own"])}', flush=True)
+          f'книги {sum(len(b["books"]) for b in out)} · '
+          f'пустых {sum(1 for b in out if not b["cands"] and not b["own"] and not b["books"])}', flush=True)
+
+
+def cmd_targets():
+    """Адресный поиск по СВОИМ запросам (заметки Романа, замена книжных сканов, «найди картинку, где синтетика видна»)
+    → кандидаты в формате candidates.json, дальше те же verify / sheets.
+    usage: kb_visuals.py targets --in=targets_<name>.json [--per=12] [--min-q=4]
+    targets_<name>.json: [{id, t0, t1, chapter?, text, subject (EN, вопрос VLM), queries: [EN…], diagrams?: bool,
+                          skip?: [path…]}] → candidates_<name>.json"""
+    inp = OUT / arg('in')
+    name = inp.stem.replace('targets_', '')
+    per, min_q = int(arg('per', 12)), int(arg('min-q', 4))
+    S = KbSearch()
+    pages = book_pages() if '--no-books' not in sys.argv else []
+    ver = {(r['beat'], r['path']): r for r in jl(OUT / 'verify.jsonl')}
+    out = []
+    for tg in json.load(open(inp, encoding='utf-8')):
+        subj = tg.get('subject') or tg['id']
+        picked = S.search([(subj, tg['queries'])], per, diagrams=bool(tg.get('diagrams')), skip=tg.get('skip') or ())
+        ents = [{'title': subj, 'queries': tg['queries']}]
+        books = book_candidates(pages, ents, 4) if want_books(pages, tg['id'], picked, ver, min_q) else []
+        t0 = float(tg['t0'])
+        out.append({'id': tg['id'], 't0': t0, 't1': float(tg.get('t1', t0 + 8)), 'tc': mmss(t0),
+                    'chapter': tg.get('chapter') or chapter_at(t0), 'text': tg.get('text', ''), 'entities': [subj],
+                    'cands': picked, 'own': [], 'books': books})
+        print(f"  {tg['id']} {mmss(t0)} кандидатов {len(picked)}" + (f' · книги {len(books)}' if books else ''), flush=True)
+    P.write_json_atomic(OUT / f'candidates_{name}.json', out)
+    print(f'targets: {len(out)} → candidates_{name}.json', flush=True)
 
 
 # ── verify ───────────────────────────────────────────────────────────────────────────────────
@@ -283,18 +452,18 @@ def cmd_verify():
     from mlx_vlm import load, generate
     from mlx_vlm.prompt_utils import apply_chat_template
     from mlx_vlm.utils import load_config
-    cands = json.load(open(OUT / 'candidates.json', encoding='utf-8'))
+    cands = json.load(open(OUT / arg('in', 'candidates.json'), encoding='utf-8'))    # --in=candidates_<name>.json (targets)
     path = OUT / 'verify.jsonl'
     done = {(r['beat'], r['path']) for r in jl(path)}
     cache = OUT / 'cache'
     cache.mkdir(exist_ok=True)
     model, processor = load(VLM)
     config = load_config(VLM)
-    total = sum(len(b['cands']) for b in cands)
+    total = sum(len(b['cands']) + len(b.get('books') or []) for b in cands)
     n = 0
     with open(path, 'a', encoding='utf-8') as fh:
         for b in cands:
-            for c in b['cands']:
+            for c in b['cands'] + (b.get('books') or []):      # книги проверяем так же, как журналы
                 n += 1
                 if (b['id'], c['path']) in done:
                     continue
@@ -312,7 +481,8 @@ def cmd_verify():
                     r = f'ERROR {e}'
                 g = lambda k: (re.search(rf'{k}:\s*(.+)', r) or [None, ''])[1].strip()
                 qd = re.search(r'\d', g('QUALITY'))
-                rec = {'beat': b['id'], 'path': c['path'], 'match': (g('MATCH').split() or [''])[0].lower(),
+                rec = {'beat': b['id'], 'path': c['path'], 'from': c.get('from', 'journal'),
+                       'credit': c.get('credit', ''), 'match': (g('MATCH').split() or [''])[0].lower(),
                        'form': g('FORM'), 'quality': int(qd.group(0)) if qd else 0, 'ru': g('RU'), 'raw': r[:300]}
                 fh.write(json.dumps(rec, ensure_ascii=False) + '\n')
                 fh.flush()
@@ -337,14 +507,16 @@ def frame_of(video, cache):
 
 def cmd_sheets():
     from PIL import Image, ImageDraw, ImageFont
-    cands = json.load(open(OUT / 'candidates.json', encoding='utf-8'))
+    src_name = arg('in', 'candidates.json')                   # --in=candidates_<name>.json → sheet_<name>_…
+    tag_name = '' if src_name == 'candidates.json' else Path(src_name).stem.replace('candidates_', '') + '_'
+    cands = json.load(open(OUT / src_name, encoding='utf-8'))
     ver = {(r['beat'], r['path']): r for r in jl(OUT / 'verify.jsonl')}
     cache = OUT / 'cache'
     cache.mkdir(exist_ok=True)
     font = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Unicode.ttf', 18)
     big = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Unicode.ttf', 22)
-    TH, KBN, OWNN, ROWS = 230, PER_BEAT, 3, 6
-    W = 330 + (KBN + OWNN) * (TH + 8) + 20
+    TH, KBN, OWNN, BOOKN, ROWS = 230, int(arg('per', PER_BEAT)), 3, 3, int(arg('rows', 6))
+    W = 330 + (KBN + OWNN + BOOKN) * (TH + 8) + 40
     rank = lambda b, c: (-(ver.get((b['id'], c['path'])) or {}).get('quality', 0) *
                          {'yes': 2, 'partly': 1}.get((ver.get((b['id'], c['path'])) or {}).get('match'), 0), -c['score'])
     by_ch = {}
@@ -361,30 +533,36 @@ def cmd_sheets():
                 y = 10 + ri * (TH + 56)
                 d.text((10, y), f"{b['id']} {b['tc']}", fill=(242, 234, 216), font=big)
                 d.multiline_text((10, y + 32), '\n'.join(re.findall('.{1,26}', ' · '.join(b['entities'])))[:150], fill=(205, 198, 184), font=font)
-                tiles = [('K', ci + 1, c) for ci, c in enumerate(b['cands'][:KBN])] + [('O', oi + 1, o) for oi, o in enumerate(b['own'][:OWNN])]
+                books = sorted(b.get('books') or [], key=lambda c: rank(b, c))
+                tiles = ([('K', ci + 1, c) for ci, c in enumerate(b['cands'][:KBN])]
+                         + [('B', bi + 1, c) for bi, c in enumerate(books[:BOOKN])]
+                         + [('O', oi + 1, o) for oi, o in enumerate(b['own'][:OWNN])])
                 for ti, (tag, num, c) in enumerate(tiles):
-                    x = 330 + ti * (TH + 8) + (20 if tag == 'O' else 0)
+                    x = 330 + ti * (TH + 8) + (20 if tag == 'B' else 40 if tag == 'O' else 0)
                     try:
-                        src = (KB_ROOT / c['path']) if tag == 'K' else frame_of(c['path'], cache)
+                        src = (KB_ROOT / c['path']) if tag in ('K', 'B') else frame_of(c['path'], cache)
                         im = Image.open(src).convert('RGB')
                         im.thumbnail((TH, TH))
                         img.paste(im, (x, y))
                     except Exception:
                         pass
-                    if tag == 'K':
+                    if tag in ('K', 'B'):
                         v = ver.get((b['id'], c['path'])) or {}
-                        lab1 = f"K{num} {v.get('match', '?')} q{v.get('quality', '?')} {max(c['wh'])}px"
-                        lab2 = str(c['source'])[:24]
+                        lab1 = f"{tag}{num} {v.get('match', '?')} q{v.get('quality', '?')} {max(c['wh'])}px"
+                        lab2 = (c.get('credit') or str(c['source']))[:24]
                     else:
                         lab1 = f"O{num} {'⭐' if c['gold'] else ''}{c['clip'][-9:]}"
                         lab2 = c['scene'][:24]
-                    d.rectangle([x, y + TH, x + TH, y + TH + 42], fill=(10, 10, 12) if tag == 'K' else (40, 10, 14))
-                    d.text((x + 4, y + TH + 1), lab1, fill=(228, 255, 110) if tag == 'K' else (255, 170, 170), font=font)
+                    d.rectangle([x, y + TH, x + TH, y + TH + 42],
+                                fill=(10, 10, 12) if tag == 'K' else (12, 22, 36) if tag == 'B' else (40, 10, 14))
+                    d.text((x + 4, y + TH + 1), lab1,
+                           fill=(228, 255, 110) if tag == 'K' else (150, 215, 255) if tag == 'B' else (255, 170, 170), font=font)
                     d.text((x + 4, y + TH + 21), lab2, fill=(160, 160, 170), font=font)
-            f = OUT / f'sheet_ch{ch}_p{pg // ROWS + 1}.jpg'
+            f = OUT / f'sheet_{tag_name}ch{ch}_p{pg // ROWS + 1}.jpg'
             img.save(f, quality=85)
             files.append(str(f))
-    P.write_json_atomic(OUT / 'candidates_ranked.json', cands)
+    if not tag_name:
+        P.write_json_atomic(OUT / 'candidates_ranked.json', cands)
     print('sheets:', len(files), *files, sep='\n  ')
 
 
@@ -441,6 +619,275 @@ CARD_CSS = """html,body{margin:0;width:3840px;height:2160px;overflow:hidden;back
 .badge{position:absolute;top:50px;right:60px;font:30px 'Helvetica Neue',Arial;color:rgba(255,255,255,.5)}"""
 
 
+def cmd_propose():
+    """Черновик вставок на пустые биты: лучший проверенный кадр (журнал/книга) или свой клип.
+    Выбирает КОД по оценке локальной VLM, а сессия смотрит один контактный лист и правит.
+    usage: kb_visuals.py propose [--gap=12] [--min-q=4]"""
+    gap = float(next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--gap=')), 12))
+    min_q = int(next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--min-q=')), 4))
+    cands = json.load(open(OUT / 'candidates.json', encoding='utf-8'))
+    ver = {(r['beat'], r['path']): r for r in jl(OUT / 'verify.jsonl')}
+    picks = json.load(open(OUT / 'picks.json', encoding='utf-8')) if (OUT / 'picks.json').exists() else {'inserts': [], 'groups': []}
+    busy = sorted(float(i['t']) for i in picks['inserts'])                 # уже занятые места ката
+    used = {i['path'] for i in picks['inserts']}
+    inserts, groups, last = [], [], -99.0
+    used_near = set()
+
+    def near_key(c):
+        """книга + соседняя страница = тот же разворот (…/acg03/s020_bottom.jpg → acg03/s020)"""
+        m = re.search(r'/([^/]+)/s(\d+)', str(c.get('path') or ''))
+        return f'{m.group(1)}/{int(m.group(2)) // 2}' if m else str(c.get('path'))
+
+    voc = {v['title']: v for v in vocab()}
+    for b in sorted(cands, key=lambda x: x['t0']):
+        ent0 = (b['entities'] or [''])[0]
+        ws = word_time(float(b['t0']), float(b['t1']), (voc.get(ent0) or {}).get('rx'))
+        t = round(max(float(b['t0']), ws - 0.2), 2) if ws is not None else round(float(b['t0']) + 0.4, 2)
+        if any(abs(t - u) < gap for u in busy) or t - last < gap:
+            continue
+        pool = []
+        for c in b['cands'] + (b.get('books') or []):
+            v = ver.get((b['id'], c['path'])) or {}
+            if v.get('match') != 'yes' or int(v.get('quality') or 0) < min_q or c['path'] in used:
+                continue
+            ru = (v.get('ru') or '').strip()
+            if not ru or not re.search(r'[А-Яа-я]', ru) or len(ru) < 8:      # модель иногда уходит в чужой язык
+                continue
+            form = (v.get('form') or '').lower()
+            # VLM зовёт «полосой с текстом» почти всё (407 из 542 на YTUVI02), поэтому у книг верим своей
+            # разметке: photo_plate — это разворот с фотографиями, его и берём.
+            if not (form.startswith(('photo', 'micro', 'collage')) or c.get('ptype') == 'photo_plate'):
+                continue
+            pool.append((int(v['quality']) + (1 if form.startswith('photo') else 0), float(c.get('score') or 0), c, ru))
+        pool.sort(key=lambda x: (-x[0], -x[1]))
+        pool = [p for p in pool if near_key(p[2]) not in used_near]         # соседние страницы одной книги — это один и тот же разворот
+        ent = (b['entities'] or ['ВСТАВКА'])[0]
+        gid = f'gp{len(groups) + 1:02d}'
+        iid = f'p_{b["id"]}'
+        dur = round(min(4.0, max(2.5, float(b['t1']) - float(b['t0']) - 1.0)), 1)
+        dur_txt = f'{dur:.0f}' if dur % 1 == 0 else f'{dur:.1f}'.replace('.', ',')     # «4 с» / «2,5 с», как в каноне ТЗ
+        if pool:
+            q, sc, c, ru = pool[0]
+            inserts.append({'id': iid, 'group': gid, 't': t, 'dur': dur, 'src': 'kb', 'path': c['path'],
+                            'title': ent, 'desc': ru, 'credit': c.get('credit') or credit_of(c),
+                            'url': c.get('url') or journal_url(c), 'from': c.get('from', 'journal'), 'q': q})
+            used_near.add(near_key(c))
+        else:                                                              # картинки нет — ставим свою съёмку
+            # только перебивочные сцены: интервью и монологи (CAM1/CAM2, комментарии, консультанты) — не вставка
+            # и только там, где предмет реально снят: камень из макро-каталога или место на глобусе;
+            # процессы («нагрев», «имитация») своим кадром не покажешь — будет вставка мимо смысла
+            own = [o for o in (b.get('own') or [])
+                   if o['path'] not in used and BROLL_SCENE.search(o.get('scene') or '')
+                   and not TALKING.search((o.get('desc') or '') + ' ' + (o.get('scene') or ''))
+                   and (o.get('entity') in STONE_FOLDERS or 'Globe' in (o.get('scene') or ''))]
+            if not own:
+                continue
+            o = own[0]
+            c, ru, q = o, f"{ent.lower()} — свой кадр", 0
+            inserts.append({'id': iid, 'group': gid, 't': t, 'dur': dur, 'src': 'own', 'path': o['path'],
+                            'in': 0.5, 'title': ent, 'desc': (o.get('desc') or '')[:120], 'from': 'own', 'q': 0})
+        groups.append({'group': gid, 'source': 'kb_visuals', 'category': 'insert', 'notes': ['kb_visuals_1609'],
+                       'v1_tc': mmss(t), 'tc_range': f"{mmss(b['t0'])}–{mmss(b['t1'])}",
+                       'title': f'ВСТАВКА: {ent}', 'now': f"На {mmss(b['t0'])} про «{ent.lower()}» — в кадре этого нет.",
+                       'do_h': f'Показать: {ru.rstrip(".")}',
+                       'do': [f"{mmss(t)} ▸ {ru.rstrip('.')}, {dur_txt} с — карточка V2"]})
+        used.add(c['path'])
+        last = t
+    P.write_json_atomic(OUT / 'proposals.json', {'inserts': inserts, 'groups': groups})
+    # контактный лист предложений: сессия смотрит ОДИН файл вместо десятков картинок
+    from PIL import Image, ImageDraw, ImageFont
+    font = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Unicode.ttf', 17)
+    TH, COLS = 300, 4
+    for pg in range(0, len(inserts), COLS * 4):
+        chunk = inserts[pg:pg + COLS * 4]
+        rows = (len(chunk) + COLS - 1) // COLS
+        img = Image.new('RGB', (COLS * (TH + 10) + 10, rows * (TH + 64) + 10), (22, 22, 26))
+        d = ImageDraw.Draw(img)
+        for k, ins in enumerate(chunk):
+            x, y = 10 + (k % COLS) * (TH + 10), 10 + (k // COLS) * (TH + 64)
+            try:
+                im = Image.open(KB_ROOT / ins['path']).convert('RGB')
+                im.thumbnail((TH, TH))
+                img.paste(im, (x, y))
+            except Exception:                                  # noqa: BLE001 — битая картинка базы: плитка останется пустой
+                pass
+            d.text((x, y + TH + 2), f"{mmss(ins['t'])} {ins['from']} q{ins['q']} · {ins['title'][:20]}", fill=(228, 255, 110), font=font)
+            d.text((x, y + TH + 22), ins['desc'][:40], fill=(226, 218, 200), font=font)
+            d.text((x, y + TH + 42), (ins.get('credit') or '')[:44], fill=(150, 150, 160), font=font)
+        f = OUT / f'sheet_proposals_p{pg // (COLS * 4) + 1}.jpg'
+        img.save(f, quality=86)
+        print('лист предложений:', f)
+    if '--apply' in sys.argv:                                  # влить черновик в отбор сессии (с бэкапом picks.json)
+        pf = OUT / 'picks.json'
+        if pf.exists():
+            (OUT / f'picks.before_propose.json').write_text(pf.read_text(encoding='utf-8'), encoding='utf-8')
+        picks['inserts'] = picks['inserts'] + inserts
+        picks['groups'] = picks['groups'] + groups
+        P.write_json_atomic(pf, picks)
+        print(f'picks.json: вставок {len(picks["inserts"])}, групп {len(picks["groups"])} (бэкап picks.before_propose.json)')
+    by_src = collections.Counter(i['from'] for i in inserts)
+    print(f'propose: вставок {len(inserts)} (журналы {by_src.get("journal", 0)} · книги {by_src.get("book", 0)}), '
+          f'пауза ≥{gap:g} с, качество ≥{min_q} → proposals.json', flush=True)
+    for i in inserts[:8]:
+        print(f'  {mmss(i["t"])} {i["title"][:22]:24} q{i["q"]} {i["from"]:7} {i["desc"][:52]}')
+
+
+def cmd_retime():
+    """Переставить уже отобранные вставки на слово предмета (picks.json, с бэкапом).
+    usage: kb_visuals.py retime --ids=p_b014[,…] [--word=синтет] [--pad=5]
+    окно поиска = tc_range группы (+pad с справа); регэксп = --word или словарь по заголовку вставки"""
+    ids = set(next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--ids=')), '').split(',')) - {''}
+    word = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--word=')), '')
+    pad = float(next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--pad=')), 5))
+    pf = OUT / 'picks.json'
+    picks = json.load(open(pf, encoding='utf-8'))
+    voc = {v['title']: v for v in vocab()}
+    groups = {g['group']: g for g in picks['groups']}
+    changed = 0
+    for ins in picks['inserts']:
+        if ids and ins['id'] not in ids:
+            continue
+        g = groups.get(ins.get('group')) or {}
+        rng = re.split(r'\s*[–-]\s*', g.get('tc_range') or '')
+        t0 = tc_sec(rng[0]) if rng and rng[0] else float(ins['t']) - 3
+        t1 = (tc_sec(rng[1]) if len(rng) > 1 else float(ins['t'])) + pad
+        rx = word or (voc.get(ins.get('title')) or {}).get('rx')
+        ws = word_time(t0 - 3, t1, rx)
+        if ws is None:
+            print(f"  {ins['id']}: слово «{rx}» в {mmss(t0)}–{mmss(t1)} не нашлось — оставляю {mmss(float(ins['t']))}")
+            continue
+        new_t = round(max(0.0, ws - 0.2), 2)
+        old = mmss(float(ins['t']))
+        ins['t'] = new_t
+        if g:
+            g['v1_tc'] = mmss(new_t)
+            g['do'] = [re.sub(rf'^{re.escape(old)}\b', mmss(new_t), x) for x in g.get('do') or []]
+        changed += 1
+        print(f"  {ins['id']}: {old} → {mmss(new_t)} (слово в {ws:.2f} с)")
+    if changed:
+        (OUT / 'picks.before_retime.json').write_text(pf.read_text(encoding='utf-8'), encoding='utf-8')
+        P.write_json_atomic(pf, picks)
+    print(f'retime: переставлено {changed}')
+
+
+def is_scan(path):
+    """скан книги SSEF — запасной источник (Роман 16.09.2026: только если в Digital_Originals ничего не нашлось)"""
+    return '01_ScanBook-SSEF' in str(path) or '/01_Book/' in str(path)
+
+
+SCAN_MARK = '⚠️ скан книги — в базе не нашлось'
+
+
+def source_name(s):
+    """короткое имя исходника макета для плашки: клип RYA-… или файл"""
+    if isinstance(s, dict) and s.get('url') and not (s.get('clip') or s.get('kb')):
+        from urllib.parse import urlparse
+        return urlparse(s['url']).netloc.replace('www.', '')           # «kremlin.ru», а не хвост адреса «12117»
+    if isinstance(s, dict) and s.get('note') and not (s.get('clip') or s.get('kb')):
+        return 'схема'
+    s = s if isinstance(s, str) else (s.get('clip') or s.get('kb') or s.get('url') or s.get('note') or '')
+    m = re.search(r'RYA-[A-Z0-9]+-\d{3,4}', s)
+    return m.group(0) if m else Path(s).name[:40]
+
+
+def source_links(s):
+    """ссылки на один исходник макета: {clip|kb|url|note} или строка (id клипа / путь картинки базы)"""
+    import drive_links as DL
+    if isinstance(s, str):
+        s = {'clip': s} if re.search(r'RYA-[A-Z0-9]+-\d{3,4}', s) else {'kb': s}
+    if s.get('clip'):
+        return f"{source_name(s)}: {DL.line(DL.clip_links(s['clip'])) or 'оригинал в Drive не найден'}"
+    if s.get('kb'):
+        lk = DL.kb_links(s['kb'])
+        return f"{Path(lk.get('source') or s['kb']).name}: {DL.line(lk) or 'файл в Drive не найден'}"
+    return ' · '.join(x for x in (s.get('note'), s.get('url')) if x)
+
+
+def source_line(ins, links=False):
+    """строка «откуда картинка». links=False — коротко, для плашки на самом макете; links=True — со ссылками на САМИ
+    файлы в Drive (Роман 16.09.2026): весь PDF со страницей + папка, оригинал клипа, исходники макета"""
+    import drive_links as DL
+    if ins['src'] == 'kb':
+        head = f"Фото: {ins.get('credit') or '—'}" + (f' · {SCAN_MARK}' if is_scan(ins['path']) else '')
+        if not links:
+            return head
+        url = ins.get('url') or journal_url(ins)
+        return ' · '.join(x for x in (head, DL.line(DL.kb_links(ins['path'])), f'издание: {url}' if url else '') if x)
+    if ins['src'] == 'mock':
+        srcs = ins.get('sources') or []
+        if not links:
+            return 'Макет ревью (DRAFT)' + (' · исходники: ' + ', '.join(source_name(s) for s in srcs) if srcs else '')
+        return ' · '.join(['Макет ревью (DRAFT)'] + [source_links(s) for s in srcs])
+    stem = Path(ins['path']).stem
+    scene = Path(ins['path']).parent.name
+    head = f"Свой клип: {stem} @ {mmss(float(ins.get('in', 0)))}" + (f" · сцена {scene}" if scene else '')
+    if not links:
+        return head
+    return ' · '.join(x for x in (head, DL.line(DL.clip_links(ins['path'])),
+                                  f"фрагмент: {ins['clip_url']}" if ins.get('clip_url') else '') if x)
+
+
+def upload_own_clips(picks, remote):
+    """Фрагменты своих клипов (вход −2 с … выход +2 с) → Drive, чтобы у макета была ссылка на исходник.
+    Роман 16.09.2026: «когда собираешь макеты, нужно чтобы все ссылки на исходники»."""
+    out = OUT / 'clips'
+    out.mkdir(exist_ok=True)
+    made = {}
+    for ins in picks['inserts']:
+        if ins['src'] != 'own' or ins.get('doc_only'):
+            continue
+        t0 = max(0.0, float(ins.get('in', 0)) - 2.0)
+        dur = float(ins.get('dur', 4.0)) + 4.0
+        f = out / f"src_{ins['id']}_{Path(ins['path']).stem}.mp4"
+        if not f.exists():
+            r = subprocess.run(['ffmpeg', '-v', 'error', '-ss', f'{t0:.2f}', '-i', str(ins['path']), '-t', f'{dur:.2f}',
+                                '-vf', 'scale=1280:-2', '-c:v', 'h264_videotoolbox', '-b:v', '3M', '-an', '-y', str(f)],
+                               capture_output=True, text=True, timeout=300)
+            if r.returncode or not f.exists():
+                print('фрагмент FAIL', ins['id'], r.stderr[-160:])
+                continue
+        made[ins['id']] = f.name
+    if not made:
+        return {}
+    subprocess.run(['rclone', 'copy', str(out), remote, '--include', 'src_*.mp4', '--transfers', '4'], check=True)
+    ls = json.loads(subprocess.run(['rclone', 'lsjson', remote, '--files-only', '--include', 'src_*.mp4'],
+                                   capture_output=True, text=True, check=True).stdout)
+    ids = {f['Name']: f['ID'] for f in ls}
+    urls = {k: f"https://drive.google.com/file/d/{ids[v]}/view" for k, v in made.items() if v in ids}
+    dc_path = P.MONT / 'drive_clips.json'                       # чтобы вкладка и лист тоже ставили ссылку на клип
+    dc = json.loads(dc_path.read_text(encoding='utf-8')) if dc_path.exists() else {}
+    for ins in picks['inserts']:
+        fid = ids.get(made.get(ins['id'], ''))
+        m = re.search(r'RYA-[A-Z0-9]+-\d{3,4}', Path(ins.get('path', '')).stem)
+        if fid and m:
+            dc.setdefault(m.group(0) + '.MP4', [{'id': fid, 'name': made[ins['id']], 'note': 'фрагмент ревью'}])
+    P.write_json_atomic(dc_path, dc)
+    print(f'фрагменты своих клипов: {len(urls)} → Drive · drive_clips {len(dc)}')
+    return urls
+
+
+def stamp_source(im, text):
+    """плашка с источником по низу картинки (макет монтажёру читается без дока)"""
+    from PIL import Image, ImageDraw, ImageFont
+    if not text:
+        return im
+    w, h = im.size
+    size = max(13, w // 58)
+    try:
+        font = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial.ttf', size)
+    except Exception:                                          # noqa: BLE001 — шрифта нет: пишем системным
+        font = ImageFont.load_default()
+    pad = size // 2
+    bar = size + pad * 2
+    out = Image.new('RGB', (w, h + bar), (18, 18, 22))
+    out.paste(im, (0, 0))
+    d = ImageDraw.Draw(out)
+    while font.getlength(text) > w - pad * 2 and len(text) > 20:
+        text = text[:-4] + '…'
+    d.text((pad, h + pad), text, fill=(226, 218, 200), font=font)
+    return out
+
+
 def cmd_cards():
     from PIL import Image
     picks = json.load(open(OUT / 'picks.json', encoding='utf-8'))
@@ -449,7 +896,8 @@ def cmd_cards():
     doc.mkdir(exist_ok=True)
     render = Path.home() / 'YTAI/scripts/999_extra/infographic/render.py'
     import html as _h
-    for ins in picks['inserts']:
+    removed = {g['group'] for g in picks['groups'] if g.get('removed')}
+    for ins in [i for i in picks['inserts'] if i.get('group') not in removed]:   # снятые группы не рисуем
         if ins['src'] == 'kb':
             img = KB_ROOT / ins['path']
             url = ins.get('url') or journal_url(ins)
@@ -486,12 +934,72 @@ def cmd_cards():
                 continue
             im = Image.open(out).convert('RGB')
         im.thumbnail((1600, 1600))
+        im = stamp_source(im, source_line(ins))               # Роман 16.09: на макете видно, откуда картинка
         im.save(doc / f"kbv_{ins['id']}.jpg", quality=86)
-        print('card', ins['id'], ins['src'], ins['title'])
+        print('card', ins['id'], ins['src'], ins['title'], '·', source_line(ins)[:60])
+
+
+KBV_SOURCES = ('kb_visuals', 'roman_notes_', 'roman_timeline_')
+
+
+def tz_key(t):
+    """ключ готовой записи из picks['tz'] (вырезки, заметки без вставок)"""
+    return t.get('kbv_group') or t.get('group') or f"tz:{t.get('title', '')}"
+
+
+def place_records(old_all, new_by_key, order, removed, tz_keys=()):
+    """Номер ТЗ = позиция в pravki['all'] на ВСЕХ поверхностях (s10, вкладка, verify, лист, таймлайн), а tz_overrides
+    привязаны к номерам. Раньше apply выкидывал все свои записи и дописывал их в конец — номера ехали, оверрайды
+    били мимо (YTUVI02 v2). Теперь: запись группы встаёт на своё прежнее место; убранная группа (`removed`) остаётся
+    на месте снятой (status rejected — номер сохранён, строки нет); новые группы — только в конец.
+    Старые записи без `kbv_group` один раз сопоставляются: с готовыми ТЗ из picks['tz'] — по точному заголовку (они
+    копируются дословно), с группами — по порядку (группы в picks.json только дописываются; ключи tz в `order` стоят
+    после ВСЕХ групп, включая новые, поэтому по порядку их сопоставлять нельзя — YTUVI02 v3: вырезка ТЗ-78 уехала бы на 98)."""
+    have = {p.get('kbv_group') for p in old_all if p.get('kbv_group')}
+    tz_keys = set(tz_keys)
+    legacy_groups = iter([k for k in order if k not in have and k not in tz_keys])
+    tz_by_title = {}
+    for k in order:
+        if k in tz_keys and k not in have:
+            tz_by_title.setdefault((new_by_key.get(k) or {}).get('title'), []).append(k)
+    out, placed = [], set()
+    for p in old_all:
+        mine = bool(p.get('kbv_group')) or str(p.get('source') or '').startswith(KBV_SOURCES)
+        if not mine:
+            out.append(p)
+            continue
+        key = p.get('kbv_group')
+        if not key:
+            same = tz_by_title.get(p.get('title')) or []
+            key = same.pop(0) if same else next(legacy_groups, None)
+        if key is None or (key not in new_by_key and key not in removed):
+            key = key or f"lost:{p.get('title', '')}"
+            p = {**p, 'kbv_group': key, 'status': 'rejected', 'rejected_by': 'kb_visuals'}
+            print(f'  !! {key}: группы больше нет в picks.json — ТЗ снято, номер сохранён')
+            out.append(p)
+            placed.add(key)
+            continue
+        if key in removed:
+            new = {**p, 'kbv_group': key, 'status': 'rejected', 'rejected_by': 'kb_visuals', 'removed_why': removed[key]}
+        else:
+            new = dict(new_by_key[key])
+            if p.get('status') == 'rejected' and p.get('rejected_by') != 'kb_visuals':    # Роман снял строку в доке
+                new['status'], new['rejected_by'] = 'rejected', p.get('rejected_by')
+            for k in ('roman_comment', 'replies'):                                       # его комменты не теряем
+                if p.get(k) and not new.get(k):
+                    new[k] = p[k]
+        out.append(new)
+        placed.add(key)
+    for key in order:
+        if key not in placed and key in new_by_key and key not in removed:
+            out.append(new_by_key[key])
+    return out
 
 
 def cmd_apply():
     picks = json.load(open(OUT / 'picks.json', encoding='utf-8'))
+    removed = {g['group']: g['removed'] for g in picks['groups'] if g.get('removed')}
+    picks['inserts'] = [i for i in picks['inserts'] if i.get('group') not in removed]
     card_path = P.CARD_PATH
     card = json.load(open(card_path, encoding='utf-8'))
     foot = Path(P.PROJECT_DIR) / '01_Source'
@@ -513,26 +1021,38 @@ def cmd_apply():
     card['v2'] = v2
     P.write_json_atomic(card_path, card)
     pr = json.load(open(P.MONT / 'pravki_v2.json', encoding='utf-8'))
-    keep = [p for p in pr['all'] if p.get('source') not in ('kb_visuals', 'roman_notes_1509', 'roman_timeline_1509')]
     added = []
     by_group = {}
     for ins in picks['inserts']:
         by_group.setdefault(ins['group'], []).append(ins)
+    clip_urls = {} if '--no-clips' in sys.argv else upload_own_clips(picks, P.need('shots_remote'))
+    for ins in picks['inserts']:
+        if clip_urls.get(ins['id']):
+            ins['clip_url'] = clip_urls[ins['id']]
     for g in picks['groups']:
+        if g['group'] in removed:
+            continue
         mats, credits = [], []
         for i in by_group.get(g['group'], []):
             if i['src'] == 'kb':
+                import drive_links as DL
                 url = i.get('url') or journal_url(i)
-                mats.append({'t': f"{i['title']} — {i['desc']}", 'img': f"kbv_{i['id']}.jpg", 'src': f"Фото: {i['credit']}"})
-                # сама страница издания картинкой в доке + ссылка на журнал (Роман 16.09.2026: права на фото из журналов — можно)
+                scan = f' · {SCAN_MARK}' if is_scan(i['path']) else ''
+                files = DL.line(DL.kb_links(i['path']))
+                mats.append({'t': f"{i['title']} — {i['desc']}", 'img': f"kbv_{i['id']}.jpg", 'src': f"Фото: {i['credit']}{scan}"})
+                # сама страница источника картинкой в доке + ссылки на САМ файл (весь PDF со страницей) и папку
+                # (Роман 16.09.2026: «ссылки на исходники — на сами файлы»; права на фото из журналов — можно)
                 mats.append({'t': f"страница источника: {i['credit']}", 'img': f"kbvsrc_{i['id']}.jpg",
-                             'src': (f"издание: {url}" if url else 'издание: см. базу знаний канала')})
-                credits.append(f"{i['credit']}{' — ' + url if url else ''}")
+                             'src': ' · '.join(x for x in (files, f'издание: {url}' if url else '') if x)
+                                    or 'файл в Drive-зеркале базы не найден'})
+                credits.append(' — '.join(x for x in (f"{i['credit']}{scan}", files or url) if x))
+            elif i['src'] == 'mock':
+                mats.append({'t': f"{i['title']} — {i['desc']}", 'img': f"kbv_{i['id']}.jpg", 'src': 'Макет ревью (DRAFT)'})
+                for s in i.get('sources') or []:                     # каждый исходник макета — своей строкой со ссылкой
+                    mats.append({'t': f'исходник макета: {source_name(s)}', 'src': source_links(s)})
             else:
-                mats.append({'t': f"{i['title']} — {i['desc']}", 'img': f"kbv_{i['id']}.jpg",
-                             'src': ('макет ревью (DRAFT)' if i['src'] == 'mock'
-                                     else f"свой клип {Path(i['path']).stem} @ {mmss(float(i['in']))}")})
-        added.append({'notes': g.get('notes', []) + ['kb_visuals_1509'], 'v1_tc': g['v1_tc'], 'tc_range': g['tc_range'],
+                mats.append({'t': f"{i['title']} — {i['desc']}", 'img': f"kbv_{i['id']}.jpg", 'src': source_line(i, links=True)})
+        added.append({'kbv_group': g['group'], 'notes': g.get('notes', []) + ['kb_visuals_1509'], 'v1_tc': g['v1_tc'], 'tc_range': g['tc_range'],
                       'title': g['title'], 'category': g.get('category', 'insert'), 'source': g.get('source', 'kb_visuals'), 'est': g['now'],
                       'nado': '', 'material_rich': mats, 'typo': [], 'sheet_answer': '', 'decision': g.get('decision', ''),
                       'parts': {'now': [g['now']], 'do': [{'h': g.get('do_h', ''), 'items': g['do']}],
@@ -540,9 +1060,13 @@ def cmd_apply():
                                 'tl': ([f"слой V2 ревью-секвенции: {', '.join(i['title'] for i in by_group.get(g['group'], []) if not i.get('doc_only'))}"]
                                        if any(not i.get('doc_only') for i in by_group.get(g['group'], [])) else [])}})
     for t in picks.get('tz', []):
-        added.append(t)
-    pr['all'] = keep + added
+        added.append({**t, 'kbv_group': tz_key(t)})
+    order = [g['group'] for g in picks['groups']] + [tz_key(t) for t in picks.get('tz', [])]
+    n_before = len(pr['all'])
+    pr['all'] = place_records(pr['all'], {a['kbv_group']: a for a in added}, order, removed,
+                              tz_keys=[tz_key(t) for t in picks.get('tz', [])])
     P.write_json_atomic(P.MONT / 'pravki_v2.json', pr)
+    print(f'apply: ТЗ было {n_before}, стало {len(pr["all"])} (новые — в конце, снятых групп {len(removed)})')
     shots = P.MONT / 'shots_ids.json'
     doc = OUT / 'doc'
     remote = P.need('shots_remote')
@@ -556,5 +1080,5 @@ def cmd_apply():
 
 
 if __name__ == '__main__':
-    {'needs': cmd_needs, 'pick': cmd_pick, 'verify': cmd_verify, 'sheets': cmd_sheets, 'cards': cmd_cards,
-     'apply': cmd_apply}[sys.argv[1]]()
+    {'needs': cmd_needs, 'pick': cmd_pick, 'verify': cmd_verify, 'sheets': cmd_sheets, 'propose': cmd_propose,
+     'cards': cmd_cards, 'apply': cmd_apply, 'retime': cmd_retime, 'targets': cmd_targets}[sys.argv[1]]()

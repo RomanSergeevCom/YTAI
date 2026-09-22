@@ -24,8 +24,10 @@ TAB = T('c2.sheet_tab')                   # 'ТЗ монтажёру' / 'Edit no
 HDR = list(T('c2.sheet_hdr'))             # ['ТЗ', 'v1 TC', …, '⏳ Решение Романа', 'Статус'] / EN — с ним же сверяет verify ниже
 
 pravki = json.loads((M / 'pravki_v2.json').read_text())['all']
-drive_clips = json.loads((M / 'drive_clips.json').read_text())
-shots_ids = json.loads((M / 'shots_ids.json').read_text())
+_opt = lambda p: __import__('json').load(open(p)) if p.exists() else {}
+# необязательные обогащалки от мягкой стадии drive: без публичной папки кадров их нет
+drive_clips = _opt(M / 'drive_clips.json')
+shots_ids = _opt(M / 'shots_ids.json')
 # файлы материалов в Drive-папке проекта (Review_materials) — ссылки ведём ТУДА,
 # на каждом файле висит коммент с ТЗ/таймкодом/источником
 proj_ids = json.loads((M / 'proj_material_ids.json').read_text()) \

@@ -1,6 +1,6 @@
 # 0509_review_cycle — ревью ката + ТЗ на монтаж (машинный ранбук)
 
-Стадия главы «Editing» (KB 4.7 `/kb/review-cycle/`, канон форматов — KB 4.6 `/kb/review-timeline/`).
+Стадия главы «Editing» (KB 5.7 `/kb/review-cycle/`, канон форматов — KB 5.6 `/kb/review-timeline/`).
 Скрипты живут здесь, в репо; всё состояние фильма — в `{project}/00_Setup/05_Review/`.
 Никаких рабочих копий инструмента рядом с данными (так расходились три версии YTUVI01/02/Memex).
 
@@ -17,7 +17,7 @@ python3 $R cloud   --project P judge --print-call | collect --run <id> | salvage
 python3 $R edits   --project P        # правки Романа из дока → pravki; ОБЯЗАТЕЛЬНО перед регенерацией вкладок
 python3 $R ticket  --project P        # REVIEW_STATE.md
 python3 $R card    --project P check
-python3 $R docs                        # таблица стадий → README + KB 4.7 (между маркерами)
+python3 $R docs                        # таблица стадий → README + KB 5.7 (между маркерами)
 ```
 
 Стадии идемпотентны, гейт — по артефактам на диске (`review_state.json` можно потерять — ничего не
@@ -43,7 +43,7 @@ YTs/{CH}/review_profile.json   профиль канала (стиль, кано
 
 Папка стадии: `review.py` · `proj_config.py` (карточка+профиль, `YTAI_CARD`/`YTAI_PROJECT_DIR`/поиск вверх) ·
 `stages/` (s2…s14, make_*, doc_tab_*, tz_sheet, s9, route_candidates, s3b_probe_vlm, doc_pdf_qc,
-preview_qc_local; `_bootstrap.py` — единая точка путей) · `cloud/` (pack, wf_judge, collect, salvage,
+preview_qc_local, kb_visuals — вне конвейера, см. «Визуал из базы»; `_bootstrap.py` — единая точка путей) · `cloud/` (pack, wf_judge, collect, salvage,
 wf_verdict_doc, wf_structure_src; `_legacy/` — старые 250-агентные воркфлоу, не запускать) · `montage/`
 (режим montage_tz) · `shared/` (card_tools, align, risk_registry, acts_compact, phone_brief, producer_page,
 notes_sync, recover_from_session_log, shot, peek, i18n + i18n_strings/, golden, fake_docs, chapters_from_plan) ·
@@ -79,9 +79,9 @@ YTEVO02 — только как справка; `ytuvi02_golden/` — этало
 | 22 | review_json | mac | make_review_v6 (ytai-part-v1, 6 слоёв) | {CODE}_review_v6.json |
 | 23 | mock | mac | mockbuild_v6.js через partsBuilder | 0 ошибок |
 | 24 | previews | mac | s7 + s12 --render + preview_qc_local | qc 0 high |
-| 25 | drive | mac | s9_materials_drive + s12 --upload/--apply | файлы с комментами |
+| 25 | drive | mac | s9_materials_drive + s12 --upload/--apply + ensure_shots | файлы с комментами, все картинки pravki в shots_ids |
 | 26 | sheet | mac | tz_sheet | лист обновлён |
-| 27 | doc_tz | mac | doc_tab_tz_v4 (гейт: review.py edits) | вкладка записана |
+| 27 | doc_tz | mac | ensure_shots → doc_tab_tz_v4, 6 колонок с «Говорит» (гейт: review.py edits) | вкладка записана |
 | 28 | doc_nav | mac | doc_tab_review_v1 (навигатор) | вкладка записана |
 | 29 | verify | mac | doc_tab_tz_v4_verify | ALL PASS |
 | 30 | doc_qc | mac | doc_pdf_qc (pdftotext/pdfimages/PIL) | 0 high |
@@ -101,6 +101,29 @@ YTEVO02 — только как справка; `ytuvi02_golden/` — этало
 | 8 | standalone | mac | make_standalone (для телефона) | один HTML |
 | 9 | phone_brief | mac | phone_brief → Telegram | файл ≤1 МБ отправлен |
 <!-- stages:end -->
+
+## Визуал из базы (`stages/kb_visuals.py`, вне конвейера)
+
+Где в кате не хватает картинки: база знаний канала (профиль `kb`) + свои съёмки (`FOOTAGE_ROUTING.md`) → вставки V2 и ТЗ.
+Не стадия `review.py` — шаги запускаются руками по порядку (`python3 stages/kb_visuals.py <шаг>`; карточка ищется как у
+остальных стадий: `YTAI_CARD`, `YTAI_PROJECT_DIR` или запуск из папки проекта), всё локально, 0 токенов, выход в
+`work/{cut}/kb_visuals/`; `verify` уважает PAUSE (`P.pause_gate`):
+
+| шаг | что делает | выход |
+|---|---|---|
+| `needs` | транскрипт → биты 8–18 с → предметы по словарю: термины `YTs/{CH}/review_terms_base.json`, у которых есть запросы в `VIS_QUERIES`, + места (`places[].en`) + камни `VIS_EXTRA` → EN-запросы. В файл идут все биты: `need` 3/1/0 (сильный предмет / слабый / нет), в `card.disabled_ranges` — `need` 0, доля графики ката — `graphic_cover` | `needs.json` |
+| `pick` | биты с `need` ≥ порога (`--min-need=N`, по умолчанию 3), `graphic_cover` < 0.6 и не disabled → FTS5 `_KB/index.sqlite` → фильтр `kb.exclude_sources`/`min_side` и отсев карт, графиков и страниц по `vlm_captions` → зрелищность `fig_scores`, дедуп phash, до `kb.per_beat` на бит; + до 4 своих клипов (кроме `working`) по регэкспу предмета в `FOOTAGE_ROUTING.md` или папке камня; + **книги**: половины страниц из `kb.books_manifest` по заголовку и краткому содержанию, приоритет `photo_plate` (`--no-books` выключает) | `candidates.json` (`cands` · `own` · `books`) |
+| `targets` | адресный поиск по СВОИМ запросам (заметки Романа, замена картинок): `--in=targets_<name>.json` [{id, t0, t1, subject, queries, diagrams?, skip?}] → FTS базы тем же отбором, что `pick` (`--per=N`) | `candidates_<name>.json` |
+| `verify` | Qwen2.5-VL-7B (`.venv_vlm/bin/python`, ~7–10 картинок/мин): тема, фото/страница, качество 1–5, подпись; `--in=candidates_<name>.json` | `verify.jsonl` |
+| `sheets` | контактные листы по главам (колонки K журналы · B книги · O свои клипы, подпись = вердикт VLM) — отбор глазами через `shared/shot.py` → руками `picks.json` {inserts, groups, tz}; `--in=…` `--per=N` `--rows=N` | `sheet_[<name>_]chNN_pP.jpg` |
+| `propose` | черновик вставок на пустые биты БЕЗ участия сессии: лучший проверенный кадр (`match` yes, `quality` ≥ `--min-q`, русская подпись), пауза между вставками `--gap` с, тексты ТЗ по шаблону; время вставки = первое слово предмета в бите (не начало бита) | `proposals.json` |
+| `retime` | переставить отобранные вставки на слово: `--ids=…` [`--word=регэксп`] (окно — tc_range группы) | `picks.json` (+ бэкап) |
+| `cards` | 4K-карточки `mockups/kbv_*.png` (на карточке кредит + ссылка на издание, бейдж «DRAFT · макет монтажёру») + jpg для дока с **плашкой источника по низу** (журнал/книга со ссылкой · свой клип со сценой и таймкодом · макет с перечнем исходников) + **сама страница издания** `doc/kbvsrc_*.jpg` | `mockups/`, `doc/kbv*.jpg` |
+| `apply` | `card.v2` (перезаписывается целиком), ТЗ в `pravki_v2.json`: запись каждой группы встаёт на СВОЁ прежнее место (`kbv_group`; номер ТЗ = позиция), убранная группа (`removed`) — `status: rejected` с тем же номером, новые — в конец; у kb-вставки ДВА материала — макет и страница источника со ссылками на САМ файл в Drive (весь PDF `#page=N` + папка, `shared/drive_links.py`), блок 📚 = кредит + ссылка на файл; у макета (`src: mock`) — строка со ссылкой на каждый `sources[]`; у своих клипов — фрагмент (вход −2 с, 1280p) в Drive и ссылка на него + запись в `drive_clips.json` (`--no-clips` выключает); `rclone copy` kbv*.jpg / src_*.mp4 → `shots_remote` + `shots_ids.json` | — |
+
+После `apply` — `run --from format_tz` (или `--from render`). Модель не решает «что показать»: Qwen3-8B на YTUVI02 в 63 из 97
+битов выдумал «включения под микроскопом», поэтому предметы берутся по словарю. `apply` пишет в Drive (`shots_remote`) — на
+тестовых ресурсах подменять `YTAI_SHOTS_REMOTE`.
 
 ## Облако — один проход на фильм
 
@@ -152,10 +175,13 @@ route → облако → apply → align → chapters → acts → verdict →
   байт-в-байт. Строки — `shared/i18n_strings/<owner>.py` (контракт §10). Логи и поверхности Романа — по-русски.
 - Известные не-ошибки ката (дыра в футаже, недоделанные экраны) — `card.exclusions [{t0, t1, reason}]`, не ТЗ.
 - Любая правка кода → `review.py selftest` (RU golden YTUVI02 байт-в-байт + EN-фикстура YTCR + полнота i18n) до commit/push.
-- Номера ТЗ никогда не переиспользуются; `status: rejected` = Роман снял строку в доке (`review.py edits`).
+- Номера ТЗ никогда не переиспользуются и не едут: номер = позиция в `pravki.all`, новые ТЗ — только в конец; `status: rejected` = Роман снял строку в доке (`review.py edits`) или `kb_visuals` убрал группу. Номерные фикстуры YTUVI01 (списки ТЗ-30/75/76, `ADD_MAT`, `_ATTACH_FILES`) работают только у проекта `ytuvi01`.
 - Внешние id (док, Drive, лист) — только из карточки; пусто = отказ, не фолбэк на прошлый фильм.
 - Чувствительное (YTCH) = ⚠️ «на подтверждение фонда/блюр», не ⛔.
-- Формат поверхностей заморожен (KB 4.6): 6 слоёв · ОДНА таблица во вкладке · блоки ❌/✅/📋/📍/📚/🎬/💬 · превью на кадре.
+- Формат поверхностей заморожен (KB 5.6): 6 слоёв · ОДНА таблица во вкладке · блоки ❌/✅/📋/📍/📚/🎬/💬 · превью на кадре.
+  Вкладка ТЗ — 6 колонок: `№ | ⏱ TC | | ТЗ монтажёру | Говорит | Материал` (Роман 16.09.2026: «транскрипт обязателен — без него не виден контекст»); «Говорит» — дословно из words.json (`shared/said.py`), опорная фраза жирным.
+- Все картинки pravki — в `shots_ids` до записи вкладки: `stages/ensure_shots.py` (в стадиях `drive` и `doc_tz`) дозаливает найденные в mockups/ и kb_visuals/doc/, битая ссылка = отказ `doc_tz`.
+- YTUVI: визуал — сначала `YTUVI-Digital_Originals` (открыта целиком), сканы книг `01_ScanBook-SSEF` — только если в базе пусто (`books_policy: fallback`, пометка ⚠️).
 
 ## Грабли
 

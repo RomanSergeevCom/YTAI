@@ -42,6 +42,10 @@ code{font:500 13px var(--mono);background:var(--bg-2);border:1px solid var(--lin
 .tile .now{font:700 34px/1 var(--display);color:var(--ink)}
 .tile .sub{margin-top:8px;font-size:13px;color:var(--ink-3)}
 .note{font-size:13px;color:var(--ink-3);margin:8px 0 0}
+.bad{color:#FF7A7A;font-weight:700}.good{color:#5BD68A;font-weight:700}
+.ex{background:var(--bg-2);border:1px solid var(--line-soft);border-radius:10px;padding:9px 12px;font-size:15px;color:var(--ink-2);margin:0 0 8px}
+.ex .l{font-weight:700;color:var(--ink)}
+.tag{display:inline-block;font:600 11px var(--mono);letter-spacing:.04em;padding:2px 7px;border-radius:6px;border:1px solid var(--line);color:var(--ink-3);margin-left:6px;vertical-align:middle}
 
 /* action scheme */
 .who{display:inline-block;font:700 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;border-radius:20px;padding:3px 9px;border:1px solid;white-space:nowrap}
@@ -138,7 +142,7 @@ td.w{color:var(--ink-2)}
 </style>
 
 </head><body><div class="wrap">
-<div class="top"><span class="mark">RYA.AE</span><span>ревью ката · ТЗ на монтаж</span><span class="tc">версия 5 · 15.09.2026</span></div>
+<div class="top"><span class="mark">RYA.AE</span><span>ревью ката · ТЗ на монтаж</span><span class="tc">версия 6 · 15.09.2026</span></div>
 
 <h1>Конвейер ревью ката: где идут часы машины, где минуты агента</h1>
 <p class="lede">Монтажёр прислал сборку. Раньше её разбирали <b>сотни облачных агентов</b>, каждый заново читал кадры, а упавший прогон запускали ещё раз. Теперь всё, что можно посчитать, считают <b>локальные модели на Memex ночью</b>, а в облако уходит <b>один короткий проход</b> с готовым списком кандидатов. Форматы для монтажёра не изменились.</p>
@@ -158,14 +162,14 @@ td.w{color:var(--ink-2)}
   <tbody>
     <tr><td><b>review.py</b></td><td class="num">1</td><td class="w">единый CLI: init · status · run · resume · stage · cloud · edits · ticket · memex · card · docs · selftest; стейт-машина 31 стадии cut_review и 9 montage_tz</td><td class="w"><code>README.md</code> (машинный ранбук, таблица стадий), <code>python3 review.py --help</code></td></tr>
     <tr><td><b>proj_config.py</b> + профили</td><td class="num">1 + 3</td><td class="w">карточка фильма (поиск по YTAI_CARD / YTAI_PROJECT_DIR / вверх от cwd), профили каналов YTUVI · YTCH · YTEVO, база терминов UVI</td><td class="w"><code>docs/contracts.md</code> §1–3</td></tr>
-    <tr><td><b>stages/</b></td><td class="num">46</td><td class="w">кадры → OCR → VLM → LLM → пробы → маршрутизация → ТЗ → полировка → графика 4K → таймлайн 6 слоёв → мок-сборка → превью и QA → лист · вкладки · verify · QA дока</td><td class="w">докстринг в каждом файле; таблица стадий в README и KB 4.7</td></tr>
+    <tr><td><b>stages/</b></td><td class="num">46</td><td class="w">кадры → OCR → VLM → LLM → пробы → маршрутизация → ТЗ → полировка → графика 4K → таймлайн 6 слоёв → мок-сборка → превью и QA → лист · вкладки · verify · QA дока</td><td class="w">докстринг в каждом файле; таблица стадий в README и KB 5.7</td></tr>
     <tr><td><b>cloud/</b></td><td class="num">7</td><td class="w">один проход: pack · wf_judge.js (J·F·V·S) · collect · salvage · cost; вердикт YTCH · структура YTEVO; старые 250-агентные воркфлоу в <code>_legacy/</code></td><td class="w"><code>docs/contracts.md</code> §7, README «Облако»</td></tr>
-    <tr><td><b>montage/</b></td><td class="num">10</td><td class="w">режим ТЗ из исходников: сегментация тезисов, лист по пословным якорям, мокапы с DOM-QC, структурная страница, standalone</td><td class="w">KB 4.8, <code>docs/contracts.md</code> §8</td></tr>
+    <tr><td><b>montage/</b></td><td class="num">10</td><td class="w">режим ТЗ из исходников: сегментация тезисов, лист по пословным якорям, мокапы с DOM-QC, структурная страница, standalone</td><td class="w">KB 5.8, <code>docs/contracts.md</code> §8</td></tr>
     <tr><td><b>shared/</b></td><td class="num">12</td><td class="w">карточка · выравнивание · стоп-реестр · резюме актов · вердикт · бриф для телефона · страница продюсера · заметки · восстановление из логов сессий · shot/peek (гигиена)</td><td class="w">докстринги; <code>ytai_load</code> в 999_extra/bin</td></tr>
     <tr><td><b>memex/</b></td><td class="num">9</td><td class="w">push · pull · start · status · pause · resume · stop · watchdog</td><td class="w">README «Memex»</td></tr>
     <tr><td><b>docs/ · templates/ · examples/</b></td><td class="num">4 · 4 · 4 папки</td><td class="w">контракты, хэндофф, эта схема; шаблоны карточки, профиля, тикета, plist; примеры YTUVI01, YTCH12 v4, YTCH11 v2, YTEVO02 (golden)</td><td class="w"><code>docs/HANDOFF_2026-09-14.md</code></td></tr>
     <tr><td><b>Вход в сессию</b></td><td class="num">2</td><td class="w">скилл <code>/review</code> (читает 5 файлов, дальше только review.py) и раздел в <code>CLAUDE.md</code></td><td class="w"><code>~/YTAI/.claude/skills/review/SKILL.md</code></td></tr>
-    <tr><td><b>KB yt.rya.ae</b></td><td class="num">3</td><td class="w">4.7 Cut Review Cycle (человеческий ранбук) · 4.8 Montage TZ from Source · 4.6 канон форматов</td><td class="w"><a href="https://yt.rya.ae/kb/review-cycle/">/kb/review-cycle/</a> · <a href="https://yt.rya.ae/kb/montage-tz/">/kb/montage-tz/</a></td></tr>
+    <tr><td><b>KB yt.rya.ae</b></td><td class="num">3</td><td class="w">5.7 Cut Review Cycle (человеческий ранбук) · 5.8 Montage TZ from Source · 5.6 канон форматов</td><td class="w"><a href="https://yt.rya.ae/kb/review-cycle/">/kb/review-cycle/</a> · <a href="https://yt.rya.ae/kb/montage-tz/">/kb/montage-tz/</a></td></tr>
   </tbody>
 </table></div>
 <p class="note">Проверено на YTUVI02 от начала до конца: ночной разбор на Memex, маршрутизация, облако 7 агентов / 924 k, полировка, все поверхности на тестовых Google-ресурсах, verify ALL PASS, гейт правок, бриф в Telegram. Регрессия — <code>review.py selftest</code>, 1 секунда.</p>
@@ -233,6 +237,7 @@ td.w{color:var(--ink-2)}
   </tbody>
 </table></div>
 
+<p class="note">Замер 15.09 на иллюстрациях DBeaver (RSC004, 45 кадров): Qwen2.5-VL-7B, Qwen3-VL-8B и Qwen3-8B как сверщик из 17 подтверждённых блокеров нашли 3, остальное — общие или выдуманные замечания. Все опечатки на экране дал Apple Vision OCR, тайминг — whisper. Поэтому VLM и LLM здесь — признаки, а не вердикты. Qwen3-VL скачана в <code>~/YTAI/models/huggingface</code>, но ставить её вместо Qwen2.5-VL без замера <code>route_candidates --eval</code> не нужно.</p>
 <h2 id="s-levers"><span class="n">РЫЧАГИ</span>Пять причин, почему стало дешевле</h2>
 <div class="levers">
   <div class="lever"><div class="ico">A</div><div><h3>Класс ошибки решает код, а не три скептика</h3><p>На YTUVI02 24 из 26 находок «вёрстка» прошли трёх скептиков, хотя по твоему правилу это не ошибки. Теперь вёрстка, вкус и темп отбрасываются до облака; опечатки, факты, валюта, английский, экран≠озвучка и чужие следы идут по правилам.</p><div class="eff">61 из 84 старых находок решаются локально · 0 ложных подтверждений</div></div></div>
@@ -278,6 +283,26 @@ td.w{color:var(--ink-2)}
   </ul>
 </div>
 
+<div class="cols" style="margin-top:12px">
+  <div class="card"><h3>Как показываем правку<span class="tag">решено 15.09</span></h3>
+    <div class="ex"><span class="l">❌ СЕЙЧАС ·</span> Database (<span class="bad">BD2</span>)</div>
+    <div class="ex"><span class="l">✅ СДЕЛАТЬ ·</span> Database (<span class="good">Db2</span>)</div>
+    <ul>
+      <li><b>Красным</b> — что на экране не так, <b>зелёным</b> — как надо. Оба жирные.</li>
+      <li><b>Без зачёркивания</b> и без розового фона: так тяжело читать.</li>
+      <li>Что значат цвета — в шапке вкладки, в строке «Как читать».</li>
+      <li><b>Статус:</b> вкладка ТЗ пока рисует опечатки по-старому (стало — красным на розовом, было — зачёркнуто). Переделка — тикет, §4a п. 1.</li>
+    </ul></div>
+  <div class="card"><h3>Как писать ТЗ, чтобы читалось сразу<span class="tag">кандидаты</span></h3><ul>
+      <li><b>Заголовок</b> — до 6 слов: «Опечатка в титре», «Чужой логотип».</li>
+      <li><b>❌ СЕЙЧАС</b> — одно предложение: что на экране, без оценок.</li>
+      <li><b>✅ СДЕЛАТЬ</b> — начинается с глагола и даёт точную замену; ключевой кусок подсвечен цветом.</li>
+      <li><b>Крупный кроп места ошибки</b> с рамкой и номером ТЗ — рядом с полным кадром.</li>
+      <li><b>Устаревший логотип бренда</b> — ошибка класса <code>fact</code>. Пример: у Google Cloud с 2025 года градиентное облако, плоское четырёхцветное — старое.</li>
+      <li>Откуда: ревью иллюстраций DBeaver (RSC004), Роман назвал этот формат «просто и понятно». В канон 5.6 — только по его «измени» (тикет, §4a п. 2–5).</li>
+  </ul></div>
+</div>
+
 <h2 id="s-continue"><span class="n">КАК ПРОДОЛЖАТЬ</span>Что нужно, чтобы система работала и менялась</h2>
 <div class="cols">
   <div class="card"><h3>Что должно быть на месте</h3><ul>
@@ -294,8 +319,9 @@ td.w{color:var(--ink-2)}
     <li><b>Главы, якоря, ссылки на док и Drive, грабли</b> → <code>review_card.json</code> фильма</li>
     <li><b>Как судит облако</b> → промпты в <code>cloud/wf_judge.js</code>; <b>пороги маршрутизации</b> → константы в шапке <code>stages/route_candidates.py</code></li>
     <li><b>Порядок и набор стадий</b> → таблицы <code>STAGES_CUT</code> / <code>STAGES_MONTAGE</code> в <code>review.py</code></li>
-    <li><b>Вид вкладок, листа, таймлайна</b> (канон 4.6) → <code>stages/doc_tab_tz_v3.py</code>, <code>tz_sheet.py</code>, <code>make_review_v6.py</code>; <b>графика</b> → <code>make_infographics_v6.py</code> + <code>style</code> профиля</li>
+    <li><b>Вид вкладок, листа, таймлайна</b> (канон 5.6) → <code>stages/doc_tab_tz_v3.py</code>, <code>tz_sheet.py</code>, <code>make_review_v6.py</code>; <b>графика</b> → <code>make_infographics_v6.py</code> + <code>style</code> профиля</li>
     <li><b>Бриф, страница продюсера, заметки</b> → <code>shared/phone_brief.py</code>, <code>producer_page.py</code>, <code>notes_sync.py</code></li>
+    <li><b>Цвета правки «было → стало» и строка «Как читать»</b> → блок <code>r['typo']</code> и шапка в <code>stages/doc_tab_tz_v3.py</code></li>
     <li>После правки кода: commit в репо и <code>review.py memex push</code>. Скрипты никогда не правятся «под проект» внутри сессии.</li>
   </ul></div>
 </div>
@@ -304,8 +330,8 @@ td.w{color:var(--ink-2)}
 <div class="cols">
   <div class="card"><h3>Точки входа</h3><ul>
     <li><b>Скилл</b> <code>/review</code> — <code>~/YTAI/.claude/skills/review/SKILL.md</code>; раздел в <code>CLAUDE.md</code>.</li>
-    <li><b>Код</b> <code>~/YTAI/scripts/05_editing/0509_review_cycle/</code>: <code>README.md</code> (ранбук, таблица стадий), <code>docs/contracts.md</code> (схемы файлов), <code>docs/HANDOFF_2026-09-14.md</code> (итоги и хвосты), эта схема — <code>docs/scheme_2026-09-14.html</code>.</li>
-    <li><b>KB</b>: <a href="https://yt.rya.ae/kb/review-cycle/">4.7 Cut Review Cycle</a> · <a href="https://yt.rya.ae/kb/montage-tz/">4.8 Montage TZ from Source</a> · <a href="https://yt.rya.ae/kb/review-timeline/">4.6 канон форматов</a>.</li>
+    <li><b>Код</b> <code>~/YTAI/scripts/05_editing/0509_review_cycle/</code>: <code>README.md</code> (ранбук, таблица стадий), <code>docs/contracts.md</code> (схемы файлов), <code>docs/HANDOFF_2026-09-14.md</code> (итоги и хвосты), <code>docs/TICKET_next_session.md</code> (тикет новой сессии: сценарии, где что править, хвосты, §4a — идеи из RSC004), эта схема — <code>docs/scheme_2026-09-14.html</code>.</li>
+    <li><b>KB</b>: <a href="https://yt.rya.ae/kb/review-cycle/">5.7 Cut Review Cycle</a> · <a href="https://yt.rya.ae/kb/montage-tz/">5.8 Montage TZ from Source</a> · <a href="https://yt.rya.ae/kb/review-timeline/">5.6 канон форматов</a>.</li>
     <li><b>Проект</b>: <code>{project}/00_Setup/05_Review/REVIEW_STATE.md</code> — живой тикет, генерится <code>review.py ticket</code>.</li>
     <li><b>Память Claude</b>: <code>reference_review_cycle_system</code> (+ указатели в старых заметках о ревью).</li>
   </ul></div>
@@ -313,11 +339,11 @@ td.w{color:var(--ink-2)}
     <li><b>Хэндофф этой сборки</b>: репо <code>docs/HANDOFF_2026-09-14.md</code>, копия <code>~/Desktop/TICKET_review_cycle_handoff_2026-09-14.md</code>, файл в Telegram.</li>
     <li><b>Старые тикеты</b>: <code>~/Desktop/untitled folder/TICKET_YTUVI01_Review_v7.md</code>; YTUVI02 — в Корзине (<code>TICKET_YTUVI02_Review.md</code>, <code>RUN_YTUVI02.md</code>); YTUVI01 <code>HANDOFF_REVIEW_CYCLE.md</code> на T7-Blue-2 в папке проекта.</li>
     <li><b>Примеры данных и восстановленный тулинг</b>: <code>examples/ytuvi01</code>, <code>examples/ytch12_v4</code> (28 файлов из лога сессии), <code>examples/ytch11_v2</code>, <code>examples/ytevo02</code> (golden montage.json).</li>
-    <li><b>Чаты ревью</b> (id сессий в <code>~/.claude/projects/-Users-romansergeev-YTAI/</code>): YTUVI01 <code>1b145d6b</code>, <code>aae3a644</code>, <code>85c6dce0</code>; YTUVI02 <code>4cbf3c56</code>, <code>5bac9b3b</code>; YTCH12 <code>4de45847</code> (v4), <code>d364a110</code> (v1–v2); YTEVO02 <code>fd86095f</code>; эта сборка <code>78ea6a5c</code>. Результаты воркфлоу — в <code>&lt;id&gt;/subagents/workflows/</code>.</li>
+    <li><b>Чаты ревью</b> (id сессий в <code>~/.claude/projects/-Users-romansergeev-YTAI/</code>): YTUVI01 <code>1b145d6b</code>, <code>aae3a644</code>, <code>85c6dce0</code>; YTUVI02 <code>4cbf3c56</code>, <code>5bac9b3b</code>; YTCH12 <code>4de45847</code> (v4), <code>d364a110</code> (v1–v2); YTEVO02 <code>fd86095f</code>; эта сборка <code>78ea6a5c</code>; ревью иллюстраций DBeaver RSC004 (источник §4a) — <code>7e14f234</code> в <code>~/.claude/projects/-Users-romansergeev-Library-CloudStorage-GoogleDrive-rs-rya-ae-Shared-drives-RSCore/</code>. Результаты воркфлоу — в <code>&lt;id&gt;/subagents/workflows/</code>.</li>
     <li><b>Данные YTUVI02</b>: T7-Blue-2 <code>YTUVI-Projects/YTUVI02_Ruby_Certificate/00_Setup/05_Review/</code>; ночной прогон на Memex — <code>~/YTAI_work/YTUVI02/</code>.</li>
   </ul></div>
 </div>
 
-<div class="foot">Проверено 14–15.09.2026 на YTUVI02: поверхности новым кодом совпали со старым байт-в-байт (172/172 PNG, mock 0 ошибок); маршрутизация 61 из 84 находок локально, 0 ложных; облако целиком — 7 агентов / 924 k токенов, 55 находок, 41 подтверждена, 6 фактов опровергнуты с источниками; ночная смена Memex 2 ч 18 мин; док, лист, Drive и бриф прогнаны на тестовых ресурсах, verify ALL PASS, гейт правок сработал; полировка 41 строки ТЗ локальной моделью за 78 с; YTEVO02 — монтажный лист 0 расхождений, 28/28 мокапов побайтно.</div>
+<div class="foot">Проверено 14–15.09.2026 на YTUVI02: поверхности новым кодом совпали со старым байт-в-байт (172/172 PNG, mock 0 ошибок); маршрутизация 61 из 84 находок локально, 0 ложных; облако целиком — 7 агентов / 924 k токенов, 55 находок, 41 подтверждена, 6 фактов опровергнуты с источниками; ночная смена Memex 2 ч 18 мин; док, лист, Drive и бриф прогнаны на тестовых ресурсах, verify ALL PASS, гейт правок сработал; полировка 41 строки ТЗ локальной моделью за 78 с; YTEVO02 — монтажный лист 0 расхождений, 28/28 мокапов побайтно. Версия 6 (15.09): правила показа правок, кандидаты формата ТЗ и замер локальных моделей на RSC004.</div>
 </div>
 </body></html>

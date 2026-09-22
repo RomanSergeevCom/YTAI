@@ -91,6 +91,13 @@ def get(key, default=None, required=False):
     return default
 
 
+def card_only(key, default=None):
+    """Значение ТОЛЬКО из карточки, в обход окружения YTAI_<KEY>. Для ключей, которые нельзя подменять
+    переменной окружения (images_mode: от него зависит, откроются ли кадры наружу)."""
+    v = _cfg.get(key)
+    return default if v in (None, '') else v
+
+
 def _need(key):
     return get(key, required=True)
 
@@ -284,6 +291,19 @@ def min_frames_with_text():
     return int(v) if v else max(40, int(expect_frames() * 0.12))
 
 
+def min_alpha_share():
+    """Какая доля расшифровок VLM обязана содержать алфавит языка канала.
+
+    Дефолт 0.4 писан под каналы с плотной собственной графикой. У документалки
+    половина «экранов» — это случайный текст в кадре (вывески, шильдики, бренды,
+    номера машин) на латинице плюс кадры вовсе без текста, и честный прогон в порог
+    не укладывается: YTCH12 v5 дал кириллицу в 41 из 126 при 31 `NO TEXT`.
+    Переопределяется ключом карточки `min_alpha_share`.
+    """
+    v = get('min_alpha_share')
+    return float(v) if v else 0.4
+
+
 # ── внешние идентификаторы (нужны стадиям после моделей) ───────────────────
 MATERIALS_ID = str(get('materials_id', '') or '')
 DOC_ID = str(get('doc_id', '') or '')
@@ -291,6 +311,18 @@ SHEET_URL = str(get('sheet_url', '') or '')
 SHOTS_REMOTE = str(get('shots_remote', '') or '')
 PROJECT_FOLDER_ID = str(get('project_folder_id', '') or '')
 SPRINT_FOLDER_ID = str(get('sprint_folder_id', '') or '')
+
+
+def images_mode():
+    """Режим картинок вкладки «Обратная связь»: 'none' | 'public_folder' | 'temp_grant' (docs/feedback_v1.md §1).
+    Читается только из карточки; без ключа — public_folder при непустом shots_remote, иначе none.
+    Неизвестное значение = none (безопасная сторона)."""
+    v = str(card_only('images_mode', '') or '').strip().lower()
+    if v in ('none', 'public_folder', 'temp_grant'):
+        return v
+    if v:
+        return 'none'
+    return 'public_folder' if SHOTS_REMOTE.strip() else 'none'
 
 
 def need(key):

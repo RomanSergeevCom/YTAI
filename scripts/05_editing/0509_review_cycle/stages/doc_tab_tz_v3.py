@@ -13,6 +13,9 @@ v7 (Роман 10.09, эталон — карта структуры info_struct
   абзаце на всю ширину колонки; под ним короткая подпись «таймкод · что видно»; ссылки и источник —
   мелким серым;
 - комменты Романа 💬 — фиолетовым, один раз (s10 уже кладёт их в текст ТЗ).
+v3-колонки (Роман 16.09.2026: «транскрипт обязателен во вкладке ТЗ — без него не виден контекст»; канон 5.6 — 6 колонок):
+№ | ⏱ TC | категория | ТЗ монтажёру | Говорит | Материал / ссылки. «Говорит» — дословно из words.json (shared/said.py):
+абзацы по паузам, опорная фраза (секунда правки) жирным; у глав и ТЗ «весь фильм» — пусто.
 build_rows() — чистая функция без записи в док (её использует s13_doc_edits.py); пишет только main().
 """
 import copy
@@ -28,6 +31,7 @@ from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402
 from doctab_lib import DOCS, get_doc, iter_tabs  # noqa: E402
 from doctab_lib import batch_update as _batch_update  # noqa: E402
 from typo_diff import diff_spans, typo_line, typo_offsets  # noqa: E402
+from said import said  # noqa: E402
 
 
 # ⚠️ Было DOCS['01'] — документ ПЕРВОГО видео. Сборщик пересоздаёт вкладку целиком,
@@ -48,10 +52,15 @@ FROZEN = ({tuple(x) for x in P.get('frozen_tabs', [])} | {tuple(x) for x in (P.p
 # лист-чеклист — из карточки; пусто = листа у проекта ещё нет, строку про него не пишем
 # (ссылка на лист ДРУГОГО фильма в ТЗ — худший вариант: монтажёр уйдёт в чужой чек-лист).
 SHEET_URL = P.get('sheet_url') or ''
-WIDTHS = [34, 62, 22, 282, 276]          # v7: «Материал» шире; №/TC без переноса «ТЗ / -30», «9:32–10:1 / 0» (сумма 676pt)
+# v5 (22.09.2026, раскладка Романа): 9 колонок. Прежние 676 pt больше не держим — у Романа
+# вкладка pageless, страница не ограничивает ширину; «Материал» ≥ 250 pt под превью (verify).
+WIDTHS = [30, 56, 20, 132, 134, 24, 176, 262, 262]        # = 1096 pt
+C_SAY, C_ROMAN, C_OK, C_ERR, C_MAT, C_DO = 3, 4, 5, 6, 7, 8
+C_TZ = C_ERR                              # прежнее имя: на него завязаны verify и doc_pdf_qc
+TECH_FONT = 6.5                           # техблок (conf, pymorphy, stable, ocr=…) — просьба Романа
 FONT = 9
-IMG_W = 262                               # превью на всю ширину колонки «Материал» (276 − поля)
-HDR = list(T('c2.tz_hdr'))                # ['№', '⏱ TC', '', 'ТЗ монтажёру', 'Материал / ссылки'] / EN
+IMG_W = 250                               # превью на всю ширину колонки «Материал» (262 − поля)
+HDR = list(T('c2.tz_hdr'))                # 9 колонок, см. c2.tz_hdr
 # метки блоков s10 («❌ СЕЙЧАС ·» …) — core.lbl_* + « ·»
 LABELS = tuple(T(f'core.lbl_{k}') + ' ·' for k in ('now', 'do', 'list', 'where', 'source', 'timeline'))
 SPRINT_NAME = P.get('sprint_name') or T('c2.sprint_default', ch=P.CHANNEL)   # было зашито «YTUVI S1»
@@ -105,10 +114,17 @@ def clean(t):
     return re.sub(r'\s+', ' ', str(t or '').strip())
 
 
+def opt(name):
+    """необязательная обогащалка (ссылки на клипы, id скриншотов): её делает стадия drive.
+    Стадия drive мягкая и законно пропускается, когда у фильма нет публичной папки кадров
+    (YTCH12: ребёнок в кадре — shots_remote намеренно пуст). Тогда ссылок просто не будет."""
+    p = M / name
+    return json.load(open(p)) if p.exists() else {}
+
+
 def load():
-    return (json.load(open(M / 'pravki_v2.json'))['all'], json.load(open(M / 'shots_ids.json')),
-            json.load(open(M / 'proj_material_ids.json')) if (M / 'proj_material_ids.json').exists() else {},
-            json.load(open(M / 'drive_clips.json')))
+    return (json.load(open(M / 'pravki_v2.json'))['all'], opt('shots_ids.json'),
+            opt('proj_material_ids.json'), opt('drive_clips.json'))
 
 
 # ═══════════════════ чистая сборка строк таблицы ═══════════════════
@@ -146,24 +162,48 @@ def mat_cell(p, shots_ids, proj_ids, drive_clips):
     return '\n'.join(lines), imgs, caps, small
 
 
+def typo_words(p):
+    """фрагменты для подсветки в «Говорит»: текст ошибки, если он ЗВУЧИТ, а не только на экране.
+    Чаще не звучит — тогда подсветку даёт опорная фраза по времени (say_bold)."""
+    return [t.get('was') for t in (p.get('typo') or []) if t.get('was')]
+
+
 def tz_row(p, shots_ids, proj_ids, drive_clips):
+    """Строка ТЗ по девяти колонкам (раскладка Романа 22.09.2026).
+
+    «Описание ошибки» = 【заголовок】 + ❌ СЕЙЧАС, техблок (📚/🎬) — в её конце мелким серым.
+    «Как надо» = ✅ СДЕЛАТЬ и 📋 СПИСОК, там же пары «было → стало» красным.
+    «Комментарии Романа» = его 💬 и ❓ РЕШЕНИЕ РОМАНА; раньше и то и другое жило в общей ячейке.
+    📍 ГДЕ не печатается вовсе: контекст даёт «Говорит», где слова ошибки подсвечены.
+    """
     title = clean(p['title'])
-    body = f"【{title}】\n{p['nado']}"
+    err = f"【{title}】\n{p.get('nado_err') or p['nado']}"
+    tech = clean(p.get('nado_tech'))
+    if tech:
+        err += '\n' + tech
+    do = p.get('nado_do') or ''
     dec = T('c2.decision_prefix')                          # '❓ РЕШЕНИЕ РОМАНА: '
+    roman, purple = [], []
     if p.get('decision'):
-        body += '\n' + dec + p['decision']
-    purple = []
-    for c in p.get('roman_comment') or []:                 # s10 уже печатает «💬 …» в nado — не дублируем
+        roman.append(dec + p['decision'])
+    for c in p.get('roman_comment') or []:
         line = '💬 ' + c
-        if line not in body:
-            body += '\n' + line
+        roman.append(line)
         purple.append(line)
-    bold = [f'【{title}】'] + [l for l in LABELS if l in body] + ([dec.rstrip()] if p.get('decision') else [])
+    roman = '\n'.join(roman)
+    bold = ([f'【{title}】'] + [l for l in LABELS if l in err or l in do]
+            + ([dec.rstrip()] if p.get('decision') else []))
     mat, imgs, caps, small = mat_cell(p, shots_ids, proj_ids, drive_clips)
+    tech_lines = [l for l in tech.split('\n') if l.strip()]  # техблок — 6,5 pt серым в конце «Описания ошибки»
+    hl = typo_words(p)
+    say = (said(p.get('tc_range', ''), p['v1_tc'], hl=hl) if p.get('_sec') is not None
+           else {'text': '', 'bold': [], 'hl': []})
     return {'kind': 'tz', 'num': p['num'], 'cat': p['category'],
-            'cells': [p['num'], f"⏱ {p.get('tc_range', p['v1_tc'])}", CAT.get(p['category'], '·'), body, mat],
+            'cells': [p['num'], f"⏱ {p.get('tc_range', p['v1_tc'])}", CAT.get(p['category'], '·'),
+                      say['text'], roman, '', err, mat, do],
             'bold': bold, 'purple': purple, 'imgs': imgs, 'caps': caps, 'small': small,
-            'typo': p.get('typo') or []}
+            'tech': tech_lines, 'typo': p.get('typo') or [], 'say_bold': say['bold'],
+            'say_hl': say.get('hl') or [], 'checkbox': True}
 
 
 def clean_title(t):
@@ -208,7 +248,7 @@ def build_head(act, rejected):
 
 
 def build_rows(pravki_all, shots_ids, proj_ids, drive_clips):
-    """ЧИСТО: → (rows, head). rows[i] = dict(kind, cells[5], bold, purple, imgs, caps, small, typo, …)"""
+    """ЧИСТО: → (rows, head). rows[i] = dict(kind, cells[6], bold, purple, imgs, caps, small, typo, say_bold, …)"""
     pr = copy.deepcopy(pravki_all)
     for i, p in enumerate(pr):
         p['num'] = tz_label(i + 1)                             # 'ТЗ-07' (ru) / 'FIX-07' (en) — то, что видит монтажёр
@@ -231,9 +271,11 @@ def build_rows(pravki_all, shots_ids, proj_ids, drive_clips):
     for ci, ch in enumerate(CHAPTERS):
         ch_end = CHAPTERS[ci + 1]['sec'] if ci + 1 < len(CHAPTERS) else int(P.duration_sec()) + 1
         label = f"[{ch.get('no', ci + 1)}. {ch['name']} · {tmm(ch['sec'])}–{tmm(ch_end)}]"
+        ch_cells = [''] * len(HDR)
+        ch_cells[C_ERR] = label            # метка главы живёт в той же колонке, что и текст ТЗ
         rows.append({'kind': 'ch', 'label': label, 'color': ch['color'], 'cat': None,
-                     'cells': ['', '', '', label, ''], 'bold': [], 'purple': [], 'caps': [], 'small': [],
-                     'typo': [], 'imgs': [(-1, ch['img'])] if ch.get('img') else []})
+                     'cells': ch_cells, 'bold': [], 'purple': [], 'caps': [], 'small': [],
+                     'typo': [], 'say_bold': [], 'imgs': [(-1, ch['img'])] if ch.get('img') else []})
         for p in by_ch.get(ci) or []:
             rows.append(tz_row(p, shots_ids, proj_ids, drive_clips))
     return rows, build_head(act, rejected)
@@ -348,13 +390,16 @@ def main(force=False):
     # ── таблица + текст (с конца, чтобы индексы не ехали) ──
     cur = tab_body()[-1]['endIndex'] - 1
     batch_update(DOC_ID, [{'insertTable': {'location': {'tabId': tab_id, 'index': cur},
-                                           'rows': len(rows) + 1, 'columns': 5}}])
+                                           'rows': len(rows) + 1, 'columns': len(HDR)}}])
     tbl = [el for el in tab_body() if 'table' in el][-1]
     cells = [row['tableCells'] for row in tbl['table']['tableRows']]
-    all_cells = [HDR] + [r['cells'] for r in rows]
+    # Роман просил номер у каждого столбика — печатаем «N ИМЯ» в шапке (у пустой колонки категории
+    # остаётся только номер). Verify сверяет шапку по тем же правилам, см. HDR_NUM в нём.
+    hdr_cells = [f'{cj + 1} {h}'.strip() for cj, h in enumerate(HDR)]
+    all_cells = [hdr_cells] + [r['cells'] for r in rows]
     reqs = []
     for ri in range(len(all_cells) - 1, -1, -1):
-        for cj in range(4, -1, -1):
+        for cj in range(len(HDR) - 1, -1, -1):
             txt = str(all_cells[ri][cj])
             if txt:
                 reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cells[ri][cj]['content'][0]['startIndex']},
@@ -363,6 +408,21 @@ def main(force=False):
         batch_update(DOC_ID, reqs[i:i + 400])
         print(f'text batch {i // 400 + 1}', flush=True)
 
+    # ── чекбоксы приёмки: живые, кликаемые (Роман ставит галочку прямо в доке) ──
+    trows = [el for el in tab_body() if 'table' in el][-1]['table']['tableRows']
+    cb = []
+    for ri, r in enumerate(rows, start=1):
+        if not r.get('checkbox'):
+            continue
+        cell = trows[ri]['tableCells'][C_OK]
+        a = cell['content'][0]['startIndex']
+        cb.append({'createParagraphBullets': {
+            'range': {'tabId': tab_id, 'startIndex': a, 'endIndex': a},
+            'bulletPreset': 'BULLET_CHECKBOX'}})
+    for i in range(0, len(cb), 400):
+        batch_update(DOC_ID, cb[i:i + 400])
+    print(f'чекбоксы приёмки: {len(cb)}', flush=True)
+
     # ── картинки: превью в своём пустом абзаце (материал), у глав — в конец ячейки ──
     trows = [el for el in tab_body() if 'table' in el][-1]['table']['tableRows']
     img_reqs = []
@@ -370,9 +430,9 @@ def main(force=False):
         r = rows[ri - 1]
         if not r['imgs']:
             continue
-        cell = trows[ri]['tableCells'][4]
+        cell = trows[ri]['tableCells'][C_MAT]
         base = cell['content'][0]['startIndex']
-        lines = str(r['cells'][4]).split('\n')
+        lines = str(r['cells'][C_MAT]).split('\n')
         for li, name in sorted(r['imgs'], key=lambda x: -x[0]):
             did = shots_ids.get(name)
             if not did:
@@ -428,8 +488,19 @@ def main(force=False):
     stat = {'bold': 0, 'head': 0, 'mono': 0, 'typo': 0, 'purple': 0, 'caps': 0}
     for ri, r in enumerate(rows, start=1):
         tc = trows[ri]['tableCells']
-        c3, c4 = tc[3], tc[4]
+        c3, c4, csay = tc[C_ERR], tc[C_MAT], tc[C_SAY]
+        cdo, croman = tc[C_DO], tc[C_ROMAN]
         t3, t4 = cell_text(c3), cell_text(c4)
+        tdo, troman = cell_text(cdo), cell_text(croman)
+
+        def any_cell(span, kind='bold', st=None, fields='bold'):
+            """спан ищем во всех трёх текстовых колонках: заголовок и метки блоков теперь
+            разнесены по «Описанию ошибки», «Как надо» и «Комментариям Романа»"""
+            for cc, tt in ((c3, t3), (cdo, tdo), (croman, troman)):
+                pp = tt.find(span)
+                if pp >= 0:
+                    return style(cc, pp, pp + len(span), st or {'bold': True}, fields)
+            return False
         if r['kind'] == 'ch':
             p = t3.find(r['label'])
             if p >= 0:
@@ -441,7 +512,7 @@ def main(force=False):
             sreqs.append({'updateTableCellStyle': {
                 'tableRange': {'tableCellLocation': {'tableStartLocation': {'tabId': tab_id, 'index': tstart},
                                                      'rowIndex': ri, 'columnIndex': 0},
-                               'rowSpan': 1, 'columnSpan': 5},
+                               'rowSpan': 1, 'columnSpan': len(HDR)},
                 'tableCellStyle': {'backgroundColor': {'color': {'rgbColor': CH_BG.get(r['color'], CH_BG['Green'])}}},
                 'fields': 'backgroundColor'}})
             continue
@@ -450,44 +521,59 @@ def main(force=False):
             if t:
                 style(tc[cj], 0, len(t), {'bold': True}, 'bold')
         for span in r['bold']:
-            p = t3.find(span)
-            if p >= 0 and style(c3, p, p + len(span), {'bold': True}, 'bold'):
+            if any_cell(span):
                 stat['bold'] += 1
         # заголовки списков: строка, за которой идут пункты с отступом 8 пробелов
-        lines = t3.split('\n')
-        off = 0
-        for i, ln in enumerate(lines):
-            if ln.strip() and not ln.startswith(' ' * 8) and i + 1 < len(lines) and lines[i + 1].startswith(' ' * 8):
-                s = off + len(ln) - len(ln.lstrip())
-                if style(c3, s, off + len(ln), {'bold': True}, 'bold'):
-                    stat['head'] += 1
-            off += len(ln) + 1
-        for m in ITEM_TC.finditer(t3):                         # таймкоды пунктов — моноширинные серые
-            if style(c3, m.start(2), m.end(2), {'weightedFontFamily': {'fontFamily': 'Roboto Mono'},
-                                                'foregroundColor': {'color': {'rgbColor': GREY}}},
-                     'weightedFontFamily,foregroundColor'):
-                stat['mono'] += 1
+        for cc, tt in ((c3, t3), (cdo, tdo)):
+            lines = tt.split('\n')
+            off = 0
+            for i, ln in enumerate(lines):
+                if ln.strip() and not ln.startswith(' ' * 8) and i + 1 < len(lines) and lines[i + 1].startswith(' ' * 8):
+                    s = off + len(ln) - len(ln.lstrip())
+                    if style(cc, s, off + len(ln), {'bold': True}, 'bold'):
+                        stat['head'] += 1
+                off += len(ln) + 1
+            for m in ITEM_TC.finditer(tt):                     # таймкоды пунктов — моноширинные серые
+                if style(cc, m.start(2), m.end(2), {'weightedFontFamily': {'fontFamily': 'Roboto Mono'},
+                                                    'foregroundColor': {'color': {'rgbColor': GREY}}},
+                         'weightedFontFamily,foregroundColor'):
+                    stat['mono'] += 1
+        pos = 0
+        for tl in r.get('tech') or []:                         # техблок 📚/🎬 — 6,5 pt серым
+            p = t3.find(tl, pos)
+            if p >= 0:
+                style(c3, p, p + len(tl), {'fontSize': {'magnitude': TECH_FONT, 'unit': 'PT'},
+                                           'foregroundColor': {'color': {'rgbColor': GREY}}},
+                      'fontSize,foregroundColor')
+                pos = p + len(tl)
         for ty in r['typo']:                                   # опечатки: изменённые знаки — красным
             line = typo_line(ty['was'], ty['now'])
-            p = t3.find(line)
+            p = tdo.find(line)                                 # пары «было → стало» живут в «Как надо»
             if p < 0:
                 print('  !! typo-строка не найдена:', r['num'], line)
                 continue
             wo, no = typo_offsets(ty['was'])
             sw, sn = diff_spans(ty['was'], ty['now'])
             for s, e in sn:
-                stat['typo'] += style(c3, p + no + s, p + no + e,
+                stat['typo'] += style(cdo, p + no + s, p + no + e,
                                       {'bold': True, 'foregroundColor': {'color': {'rgbColor': RED}},
                                        'backgroundColor': {'color': {'rgbColor': PINK}}},
                                       'bold,foregroundColor,backgroundColor')
             for s, e in sw:
-                stat['typo'] += style(c3, p + wo + s, p + wo + e,
+                stat['typo'] += style(cdo, p + wo + s, p + wo + e,
                                       {'strikethrough': True, 'foregroundColor': {'color': {'rgbColor': RED}},
                                        'backgroundColor': {'color': {'rgbColor': PINK}}},
                                       'strikethrough,foregroundColor,backgroundColor')
+        for s_, e_ in r.get('say_bold') or []:                  # «Говорит»: слова в момент ошибки —
+            style(csay, s_, e_, {'bold': True, 'foregroundColor': {'color': {'rgbColor': RED}}},
+                  'bold,foregroundColor')                       # жирным рубиновым, вместо блока 📍 ГДЕ
+        for s_, e_ in r.get('say_hl') or []:                    # и сам текст ошибки, если он звучит
+            style(csay, s_, e_, {'bold': True, 'foregroundColor': {'color': {'rgbColor': RED}}},
+                  'bold,foregroundColor')
         for span in r['purple']:                               # 💬 комменты Романа — фиолетовым, жирным
-            p = t3.find(span)
-            if p >= 0 and style(c3, p, p + len(span), {'bold': True, 'foregroundColor': {'color': {'rgbColor': PURPLE}}},
+            p = troman.find(span)
+            if p >= 0 and style(croman, p, p + len(span),
+                                {'bold': True, 'foregroundColor': {'color': {'rgbColor': PURPLE}}},
                                 'bold,foregroundColor'):
                 stat['purple'] += 1
         for cap in r['caps']:                                  # подпись под превью — жирным

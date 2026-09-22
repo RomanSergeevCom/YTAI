@@ -24,6 +24,8 @@
  "new_ch": [],
  "chapters_plan": "",
  "align_against": [],
+ "prev_pravki": "",
+ "prev_cut_version": "",
  "exclusions": [],
  "film": "русскоязычный YouTube-док «…» (канал …)",
  "film_subject": "",
@@ -40,6 +42,10 @@
  "sheet_url": "",
  "notes_sheet_id": "",
  "shots_remote": "",
+ "images_mode": "",
+ "private_frames_folder_id": "",
+ "feedback_tab": "",
+ "feedback_sensitive_extra": [],
  "terms_file": "review_terms.json",
  "notes": []
 }

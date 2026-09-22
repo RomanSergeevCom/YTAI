@@ -26,6 +26,7 @@ chrome --dump-dom его читает. Превью: плашки с альфо�
 import argparse
 import html as _html
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -162,7 +163,7 @@ def qc(html_path):
                             f'--window-size={W},{H}', '--force-device-scale-factor=1',
                             '--allow-file-access-from-files', '--virtual-time-budget=5000',
                             f'--user-data-dir={td}', '--dump-dom', html_path.resolve().as_uri()],
-                           capture_output=True, text=True, timeout=120)
+                           capture_output=True, text=True, timeout=int(os.environ.get('YTAI_RENDER_TIMEOUT', '120')))
     m = re.search(r'data-qc="([^"]*)"', r.stdout)
     return _html.unescape(m.group(1)) if m else 'нет отчёта QC'
 

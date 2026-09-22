@@ -5,9 +5,16 @@
 привязанных к ПОСЛОВНЫМ таймкодам мастер-транскрибации:
   tc_in  = начало первого слова куска
   tc_out = конец последнего слова + min(зазор до следующего слова, 0,3 с)
-Для каждой склейки считается: файл-источник и смещение внутри него, кто в кадре
-(камера A — Дарья, B — Анастасия, по большинству слов), паузы ≥0,7 с внутри куска,
-пересечение стыка клипов. Экраны графики получают таймкод в ЧИСТОВИКЕ.
+Для каждой склейки считается: какой ракурс брать и файл-источник со смещением в КАЖДОМ
+ракурсе, кто говорит (по большинству слов), паузы ≥0,7 с внутри куска, пересечение стыка
+клипов. Экраны графики получают таймкод в ЧИСТОВИКЕ.
+
+Ракурсы (с 15.09.2026, синхрон по звуку — 05_Review/angles.json):
+  A — Sony A7 III, крупный план Дарьи: C0005…C0009 встык, это и есть мастер-ось времени;
+  B — Blackmagic ProRes UHD, общий план: Анастасия слева, Дарья справа (A004_11201111_C010.mov).
+Правило выбора: говорит Дарья → A; Анастасия или голос за кадром → B (крупного плана
+Анастасии не снимали); всё, что после конца A (23:09.12), — только B. Время в B:
+off = мастер − offset.
 
 Границы задаются якорями (подсказка_сек, "слово"): берётся ближайшее к подсказке
 вхождение слова — поэтому правка на полсекунды не ломает склейку.
@@ -25,7 +32,13 @@ OUT = BASE / "montage.json"
 CLIPS = [("C0005.MP4", 0.0, 342.72), ("C0006.MP4", 342.72, 685.44),
          ("C0007.MP4", 685.44, 1027.20), ("C0008.MP4", 1027.20, 1047.36),
          ("C0009.MP4", 1047.36, 1389.12)]
-CAM = {"Speaker 1": "A · Дарья", "Speaker 2": "B · Анастасия", "Speaker 3": "за кадром"}
+A_END = CLIPS[-1][2]                                   # конец ракурса A на мастер-оси
+ANGLES = BASE / "05_Review" / "angles.json"             # синхрон ракурса B (xcorr по звуку)
+TAIL_WORDS = BASE / "YTEVO02wide_tail.words.json"       # речь B после конца A, время клипа B
+GAP_WORDS = BASE / "YTEVO02wide_gap.words.json"         # речь B внутри дыры записи A (шов C0008/C0009)
+ANGLE_LABEL = {"A": "A · крупный · Дарья", "B": "B · общий · Анастасия и Дарья"}
+SPEAKER_ANGLE = {"Speaker 1": "A", "Speaker 2": "B", "Speaker 3": "B"}
+SPEAKER_NAME = {"Speaker 1": "Дарья", "Speaker 2": "Анастасия", "Speaker 3": "за кадром"}
 GAP_MIN, GAP_KEEP, PAD = 0.7, 0.35, 0.3
 
 
@@ -42,8 +55,8 @@ PIECES = [
     dict(id="01", title="Холодный старт · «Кто ваши герои?»", block=8, act="Крючок",
          parts=[("say", (m(16, 51.76), "потому"), (m(17, 9.0), "плечами"))],
          gfx=[("G01", (m(17, 2.3), "двое"))],
-         note="Паузу после «мама с папой» держать целиком — это и есть удар. Стык C0007/C0008 "
-              "на 17:07.20 падает ровно в эту паузу — проверить покадрово."),
+         note="Паузу после «мама с папой» держать целиком — это и есть удар. Кусок на общем плане B: "
+              "у B нет швов файлов, а стык C0007/C0008 камеры A (17:07.20) по звуку B непрерывен."),
     dict(id="02", title="Заставка «ЭВОЛЮЦИЯ»", act="Крючок",
          parts=[("gfx", "G02", 4.0)]),
     dict(id="03", title="«Не делать это мы не можем»", block=2, act="Кто мы",
@@ -57,8 +70,8 @@ PIECES = [
     dict(id="05", title="АНО «Эволюция» и единая среда", block=3, act="Кто мы",
          parts=[("say", (m(4, 48.5), "два"), (m(5, 42.5), "друга"))],
          gfx=[("G04", (m(4, 49.0), "два")), ("G05", (m(4, 53.7), "мы"))],
-         note="Стык C0005/C0006 на 05:42.72 — ровно на хвосте фразы. Внутри пауза после "
-              "«объединять людей» — подрезать."),
+         note="Кусок на общем плане B (говорит Анастасия): швов файлов у B нет, стык C0005/C0006 камеры A "
+              "по звуку непрерывен. Внутри пауза после «объединять людей» — подрезать."),
     dict(id="06", title="Национальная цель: Конституция, указы, шесть советов", block=6, act="Опора",
          parts=[("say", (m(11, 1.32), "большое"), (m(11, 23.3), "поправка")),
                 ("say", (m(11, 30.18), "что"), (m(12, 5.6), "целостность")),
@@ -104,7 +117,12 @@ PIECES = [
                 ("say", (m(18, 8.1), "когда"), (m(18, 26.8), "видели"))],
          gfx=[("G13", (m(17, 42.1), "потому"))],
          note="Снят фальстарт «первокультурную…» (17:59–18:06). Четырёхкратное «чтобы у нас "
-              "появилась…» оставлено целиком — ритмический якорь второй половины."),
+              "появилась…» оставлено целиком — ритмический якорь второй половины. ⚠ Внутри первой склейки "
+              "шов C0008/C0009 (17:27.36): камера A не писала 3,16 с и склеила «создавать эту | форму эволюции ТВ». "
+              "На общем плане B фраза целая (расшифровано по звуку B) — «создавать этот путь и образ, который на самом деле "
+              "уже есть. И платформа Эволюция ТВ, и это её часть». Кусок стоит на B и в листе посчитан по B: "
+              "на 3,16 с длиннее мастер-отрезка, все таймкоды после него сдвинуты. Мокап G13 разложен на крупный план A — "
+              "на общем плане проверить свободную зону."),
     dict(id="12", title="Информация и страх — против чего всё это", block=10, act="Зачем",
          parts=[("say", (m(18, 28.54), "да"), (m(18, 36.1), "миром")),
                 ("say", (m(18, 47.7), "и"), (m(19, 31.7), "будущего"))],
@@ -133,12 +151,28 @@ PIECES = [
          note="Снято «мы регистрируемся… начинаем ценностную путь» (20:43–20:53) — регистрацию "
               "(физлицо / проект) показывает графика. Снято «спускается эволюция ТВ» — кусок "
               "начинается с «Мы ищем создателей». «Развестить» (21:19) — в субтитрах «разместить»."),
-    dict(id="17", title="Финал: «всё рождается из вас самих»", block=12, act="Финал",
+    dict(id="17", title="Финал: «всё рождается из вас самих» → «Да здравствует эволюция!»", block=12, act="Финал",
          parts=[("say", (m(19, 31.8), "потому"), (m(19, 53.3), "всевышний")),
                 ("say", (m(22, 45.5), "люди"), (m(23, 5.7), "ресурсов")),
+                ("say", (m(23, 6.19), "попробуйте"), (m(23, 21.6), "творчеством")),
+                ("say", (m(24, 11.27), "будущее"), (m(24, 19.6), "миру")),
+                ("say", (m(24, 47.99), "всё"), (m(24, 57.11), "эволюция")),
                 ("gfx", "G17", 6.0)],
-         note="Точка на «…энергии и ресурсов» (23:05.84) — последняя фраза исходника сломана. "
-              "Сняты «мы сами в это не верим» (22:11) и богословская вставка 22:27–22:45."),
+         note="Финал достроен с общего плана B. C0010 камеры A не передан: C0009 — ровно полный 4-ГБ кусок, запись "
+              "шла дальше, а последние слова A распознаны на обрезанном звуке («истинно вас дарят»). На B речь идёт ещё "
+              "≈1:49 до «Да здравствует эволюция!»: с «Попробуйте найти те желания…» только ракурс B, переход A→B на "
+              "границе фраз (пауза 0,34 с). Звук: чтобы монолог не менял микрофон, для второй склейки тоже взять звук B "
+              "(у неё есть B-ссылка) или сгладить стык атмосферой. Взяты «…двигайтесь вместе с ними, тем самым вы будете "
+              "усиливать процесс совместным творчеством», «Будущее России создаётся созиданием каждого из нас. И поймите, "
+              "что у вас есть то, что нужно стране, у вас есть то, что нужно миру» и «Всё уже происходит, всё уже случается. "
+              "Да здравствует эволюция!». Не взяты: «И если вам нужны инструменты… присоединяйтесь к нам… с соборными силами "
+              "России…» (23:22–23:49; призыв уже в куске 16, «соборными» распознано как «оборными» — проверить на слух), "
+              "«Не будем ждать ничего от нашего управляющего звена…» (23:49–24:11, политический тон), «почувствуйте в себе "
+              "это качество…» и молитва «Господи, каким качеством я могу служить миру» (24:20–24:47). «Ура!» после "
+              "«эволюция» отрезано, выход за 0,1 с до него, — проверить на слух; вход на «Всё» (без «И»): метка «И» "
+              "ненадёжна. «Она» в первой склейке — это «жизнь будущего» из куска 12; если на слух не держится — начать "
+              "с 19:29.4 («…и мы ждём жизни будущего»). Сняты «мы сами в это не верим» (22:11) и богословская вставка "
+              "22:27–22:45."),
 ]
 
 GFX = {
@@ -177,7 +211,53 @@ def norm(w):
     return re.sub(r"[^\w.]+", "", str(w).lower().replace("ё", "е")).strip(".")
 
 
-def load_words():
+def load_angle_b():
+    if not ANGLES.exists():
+        return None
+    return json.loads(ANGLES.read_text(encoding="utf-8"))["scene1"]["angles"]["B"]
+
+
+def ang_segments(ang):
+    """кусочная карта: у каждого непрерывного участка записи A своё смещение B (дыры A между участками)"""
+    return ang.get("segments") or [{"master_from": 0.0, "master_to": 1e9, "offset": ang["offset"],
+                                    "rate": ang.get("rate", 1.0)}]
+
+
+def seg_at(ang, t):
+    segs = ang_segments(ang)
+    for sg in segs:
+        if sg["master_from"] - 1e-6 <= t <= sg["master_to"] + 1e-6:
+            return sg
+    return segs[-1] if t > segs[-1]["master_to"] else segs[0]
+
+
+def to_master(ang, c):
+    """время клипа B → мастер-ось; хвост после A — по последнему участку"""
+    sg = ang_segments(ang)[-1]
+    return sg["offset"] + c * sg.get("rate", 1.0)
+
+
+def to_b(ang, t):
+    sg = seg_at(ang, t)
+    return (t - sg["offset"]) / sg.get("rate", 1.0)
+
+
+def b_ref(ang, t0, t1):
+    if ang is None:
+        return None
+    c0, c1 = to_b(ang, t0), to_b(ang, t1)
+    if c0 < 0 or c1 > ang["duration"]:
+        return None
+    ref = {"file": ang["file"], "off_in": round(c0, 3), "off_out": round(c1, 3)}
+    s0, s1 = seg_at(ang, t0), seg_at(ang, t1)
+    if s0 is not s1:
+        # кусок перекрывает дыру записи A: в B эта речь идёт на (разница смещений) дольше
+        ref["a_gap_inside"] = round(s0["offset"] - s1["offset"], 3)
+        ref["a_gap_at"] = s0["master_to"]
+    return ref
+
+
+def load_words(ang=None):
     d = json.loads(WORDS.read_text(encoding="utf-8"))
     ws = []
     for seg in d["segments"]:
@@ -185,6 +265,35 @@ def load_words():
             ws.append({"w": w["w"].strip(), "n": norm(w["w"]), "s": to_sec(w["s"]),
                        "e": to_sec(w["e"]), "sp": w.get("speaker") or seg.get("speaker")})
     ws.sort(key=lambda x: x["s"])
+    if ang and TAIL_WORDS.exists():
+        # хвост есть только в ракурсе B: слова переводятся на мастер-ось; с switch_master они заменяют
+        # слова A (конец C0009 распознан на обрезанном звуке)
+        t = json.loads(TAIL_WORDS.read_text(encoding="utf-8"))
+        switch = t.get("switch_master", ws[-1]["e"] + 0.05)
+        ws = [w for w in ws if w["s"] < switch]
+        for seg in t["segments"]:
+            for w in seg.get("words", []):
+                s0 = to_master(ang, to_sec(w["s"]))
+                if s0 >= switch:
+                    ws.append({"w": w["w"].strip(), "n": norm(w["w"]), "s": s0,
+                               "e": to_master(ang, to_sec(w["e"])), "sp": w.get("speaker") or seg.get("speaker"),
+                               "tail": True})
+        ws.sort(key=lambda x: x["s"])
+    if ang and GAP_WORDS.exists():
+        # слова, которых на оси A нет вовсе (дыра записи): для текста куска вписываются в окно
+        # replace_master вместо склеенных распознаванием слов A; время куска считает main() по B
+        g = json.loads(GAP_WORDS.read_text(encoding="utf-8"))
+        for sp in g["splices"]:
+            m0, m1 = sp["replace_master"]
+            bw = sp["words"]
+            c0, c1 = to_sec(bw[0]["s"]), to_sec(bw[-1]["e"])
+            k = (m1 - m0) / max(c1 - c0, 1e-6)
+            ws = [w for w in ws if not (m0 <= w["s"] < m1)]
+            for w in bw:
+                ws.append({"w": w["w"].strip(), "n": norm(w["w"]), "s": m0 + (to_sec(w["s"]) - c0) * k,
+                           "e": m0 + (to_sec(w["e"]) - c0) * k, "sp": w.get("speaker") or sp.get("speaker"),
+                           "gap_b": True})
+        ws.sort(key=lambda x: x["s"])
     return ws
 
 
@@ -219,7 +328,8 @@ def clip_at(t):
 
 # ---------------- сборка ----------------
 def main():
-    ws = load_words()
+    ang = load_angle_b()
+    ws = load_words(ang)
     cursor = 0.0            # позиция в чистовике
     trimmed_cursor = 0.0    # то же после подрезки пауз
     pieces_out = []
@@ -230,7 +340,7 @@ def main():
             if part[0] in ("gfx", "hold"):
                 dur = float(part[2])
                 parts_out.append({"kind": part[0], "ref": part[1], "dur": dur,
-                                  "dst_in": cursor, "dst_out": cursor + dur})
+                                  "dst_in": round(cursor, 3), "dst_out": round(cursor + dur, 3)})
                 cursor += dur
                 trimmed_cursor += dur
                 continue
@@ -252,21 +362,42 @@ def main():
                 if g >= GAP_MIN:
                     gaps.append({"at": a["e"], "dur": round(g, 2), "after": a["w"]})
             trim = sum(g["dur"] - GAP_KEEP for g in gaps)
-            f_in, o_in = clip_at(s_in)
-            f_out, o_out = clip_at(s_out)
-            crosses = [c[1] for c in CLIPS[1:] if s_in < c[1] < s_out]
-            dur = s_out - s_in
+            ref_b = b_ref(ang, s_in, s_out)
+            ref_a = None
+            if s_out <= A_END + 0.05:
+                fa_in, oa_in = clip_at(s_in)
+                fa_out, oa_out = clip_at(min(s_out, A_END - 0.001))
+                ref_a = {"file": fa_in, "off_in": round(oa_in, 3), "file_out": fa_out, "off_out": round(oa_out, 3)}
+            angle = SPEAKER_ANGLE.get(major, "A")
+            if ref_a is None:
+                angle = "B"
+            elif ref_b is None:
+                angle = "A"
+            if angle == "B" and ref_b is None:
+                raise SystemExit(f"{p['id']}: кусок {tc(s_in)}–{tc(s_out)} вне обоих ракурсов")
+            if angle == "A":
+                f_in, o_in, f_out, o_out = ref_a["file"], ref_a["off_in"], ref_a["file_out"], ref_a["off_out"]
+                crosses = [c[1] for c in CLIPS[1:] if s_in < c[1] < s_out]
+            else:
+                f_in, o_in, f_out, o_out = ref_b["file"], ref_b["off_in"], ref_b["file"], ref_b["off_out"]
+                crosses = []
+            # кусок на B через дыру записи A длиннее мастер-отрезка на эту дыру — считаем по B
+            extra = ref_b["a_gap_inside"] if (angle == "B" and ref_b.get("a_gap_inside")) else 0.0
+            dur = s_out - s_in + extra
             parts_out.append({
                 "kind": "say", "src_in": round(s_in, 3), "src_out": round(s_out, 3),
-                "dur": round(dur, 3), "dst_in": round(cursor, 3), "dst_out": round(cursor + dur, 3),
+                "dur": round(dur, 3), "dur_master": round(s_out - s_in, 3),
+                "dst_in": round(cursor, 3), "dst_out": round(cursor + dur, 3),
                 "file_in": f_in, "off_in": round(o_in, 3), "file_out": f_out, "off_out": round(o_out, 3),
                 "crosses_clip": [round(c, 2) for c in crosses],
-                "camera": CAM.get(major, major), "speaker": major,
+                "angle": angle, "camera": ANGLE_LABEL[angle], "speaker": major,
+                "speaker_name": SPEAKER_NAME.get(major, major), "a": ref_a, "b": ref_b,
+                "tail_only_b": ref_a is None,
                 "words": len(seg), "first": " ".join(w["w"] for w in seg[:6]),
                 "last": " ".join(w["w"] for w in seg[-5:]),
                 "text": " ".join(w["w"] for w in seg),
                 "gaps": gaps, "trim_est": round(trim, 2)})
-            spoken_ranges.append((s_in, s_out, cursor))
+            spoken_ranges.append((s_in, s_out, cursor, ref_b.get("a_gap_at") if extra else None, extra))
             cursor += dur
             trimmed_cursor += dur - trim
         gfx_out = []
@@ -274,9 +405,9 @@ def main():
             i = anchor(ws, hint, word, "in")
             t_src = ws[i]["s"]
             dst = None
-            for a, b, c0 in spoken_ranges:
+            for a, b, c0, gat, gex in spoken_ranges:
                 if a - 0.01 <= t_src <= b + 0.01:
-                    dst = c0 + (t_src - a)
+                    dst = c0 + (t_src - a) + (gex if gat is not None and t_src >= gat else 0.0)
                     break
             kind, title, place = GFX[gid]
             gfx_out.append({"id": gid, "src": round(t_src, 3), "dst": round(dst, 3) if dst is not None else None,
@@ -302,7 +433,10 @@ def main():
     n_gaps = sum(len(x.get("gaps", [])) for p in pieces_out for x in p["parts"])
     gfx_ids = sorted({g["id"] for p in pieces_out for g in p["gfx"]})
     data = {"total": round(total, 2), "total_trimmed": round(total_tr, 2),
-            "source_total": 1389.12, "pieces": pieces_out, "gfx_catalog": GFX,
+            "source_total": A_END,
+            "angles": {"A": {"label": ANGLE_LABEL["A"], "files": [c[0] for c in CLIPS], "end": A_END},
+                       "B": ({**ang, "label": ANGLE_LABEL["B"]} if ang else None)},
+            "pieces": pieces_out, "gfx_catalog": GFX,
             "gfx_used": gfx_ids, "n_say_parts": n_cuts, "n_gaps": n_gaps}
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 

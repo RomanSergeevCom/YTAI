@@ -94,7 +94,7 @@ def check_vlm():
     alpha_re, alpha_key = (r'[A-Za-z]', 'latin') if LANG == 'en' else (r'[А-Яа-я]', 'cyrillic')
     cyr = sum(1 for r in recs.values() if re.search(alpha_re, r.get('vlm_text', '')))
     rep['vlm'][alpha_key] = cyr
-    if recs and cyr < len(recs) * .4:
+    if recs and cyr < len(recs) * P.min_alpha_share():
         bad.append(T('a1.selfcheck_vlm_alpha', n=cyr, total=len(recs)))
 
 

@@ -17,11 +17,11 @@
     review.py ticket  --project P                     # REVIEW_STATE.md для новой сессии
     review.py memex   --project P push|pull|start|status|pause|resume|stop
     review.py card    --project P check
-    review.py docs                                    # таблица стадий → README.md (+ KB 4.7) между маркерами
+    review.py docs                                    # таблица стадий → README.md (+ KB 5.7) между маркерами
 
 Режимы: cut_review (кат монтажёра → ревью + ТЗ) и montage_tz (исходники → монтажный лист).
 Хосты: Memex — «глаза» (download…probe, локальные модели), Mac — «руки» (route…phone_brief).
-Контракты — docs/contracts.md. Человеческий ранбук — KB 4.7 /kb/review-cycle/.
+Контракты — docs/contracts.md. Человеческий ранбук — KB 5.7 /kb/review-cycle/.
 """
 from __future__ import annotations
 
@@ -115,6 +115,9 @@ class Review:
         self.hb = self.ctl / 'heartbeat.txt'
         self.pause_f = self.ctl / 'PAUSE'
         self.stop_f = self.ctl / 'STOP'
+        self.host = 'mac'                 # cmd_run подставляет --host / автономный режим / --images
+        self.autonomous = False
+        self.images = 'none'
         self.S = self.load()
 
     # ── env для дочерних процессов ────────────────────────────────────────────
@@ -125,6 +128,9 @@ class Review:
         e.setdefault('HF_HOME', str(YTAI / 'models' / 'huggingface'))
         e['PATH'] = '/opt/homebrew/bin:/usr/local/bin:' + e.get('PATH', '')
         e['PYTHONUNBUFFERED'] = '1'
+        e['YTAI_HOST'] = self.host        # стадии с кадрами наружу (doc_feedback) сами решают по хосту и режиму
+        if self.autonomous:
+            e['YTAI_AUTONOMOUS'] = '1'
         # имя вкладки ТЗ — из карточки (doc_tab_tz_v4 иначе подставляет «· v4» первого фильма через setdefault)
         tab = os.environ.get('YTAI_TAB_TITLE') or self.card.get('tab_title')
         if tab and not os.environ.get('TZ_TAB'):
@@ -164,6 +170,8 @@ class Review:
     def log(self, msg: str):
         line = f'[{now()}] {msg}'
         print(line, flush=True)
+        if self.dry:                      # dry-run ничего не пишет на диск — в том числе в лог проекта
+            return
         with open(self.logs / 'review.log', 'a', encoding='utf-8') as fh:
             fh.write(line + '\n')
 
@@ -310,6 +318,10 @@ class Stopped(Exception):
 
 class AwaitCloud(Exception):
     """Стадия ждёт облачный прогон из сессии Claude."""
+
+
+class Warn(Exception):
+    """Стадия не выполнена по понятной причине: сразу warn со своим текстом (без повторов), цепочка идёт дальше."""
 
 
 def version() -> str:
@@ -904,8 +916,9 @@ def st_drive(r: Review):
     rc, out = r.run_cmd([PY, STAGES_DIR / 's9_materials_drive.py'], 'drive', 60)
     rc2, _ = r.run_cmd([PY, STAGES_DIR / 's12_doc_previews.py', '--upload'], 'drive_previews', 30)
     rc3, _ = r.run_cmd([PY, STAGES_DIR / 's12_doc_previews.py', '--apply'], 'drive_previews_apply', 10)
+    rc4, _ = r.run_cmd([PY, STAGES_DIR / 'ensure_shots.py'], 'drive_shots', 10)     # все картинки pravki — в shots_remote
     r.S['surfaces']['drive'] = {'at': now(), 'rc': rc}
-    return rc == 0 and rc2 == 0 and rc3 == 0, 'материалы и превью на Drive'
+    return rc == 0 and rc2 == 0 and rc3 == 0 and rc4 == 0, 'материалы и превью на Drive'
 
 
 def v_drive(r: Review) -> bool:
@@ -929,7 +942,10 @@ def edits_guard(r: Review, surface: str):
     """Перед регенерацией вкладки — правки Романа должны быть сняты (review.py edits).
     Гейт действует только для той же вкладки (имя) и того же дока, что писались в прошлый раз."""
     prev = r.S['surfaces'].get(surface) or {}
-    written = prev.get('at')
+    # Отметка ставится и на неудачной записи (503 от Docs, обрыв сети) — но тогда во вкладке
+    # НИЧЕГО не появилось, и правок Романа там взяться неоткуда. Считать такую запись
+    # состоявшейся значит запереть стадию навсегда: повтор упирается в гейт, а снимать нечего.
+    written = prev.get('at') if prev.get('rc') == 0 else None
     same_target = (prev.get('doc') or '') == (os.environ.get('YTAI_DOC_ID') or r.card.get('doc_id') or '') and \
                   (surface != 'doc_tz' or (prev.get('tab') or '') == r.tab_title())
     last_edits = (r.S.get('edits') or {}).get('at')
@@ -942,6 +958,9 @@ def st_doc_tz(r: Review):
     if not _ext(r, 'doc_id'):
         return True, 'doc_id пуст — вкладка ТЗ пропущена'
     edits_guard(r, 'doc_tz')
+    rc0, _ = r.run_cmd([PY, STAGES_DIR / 'ensure_shots.py'], 'doc_tz_shots', 10)   # без id картинка молча не встанет
+    if rc0 != 0:
+        return False, 'в pravki есть картинки без файла и без id в shots_ids — см. logs/doc_tz_shots.log'
     rc, out = r.run_cmd([PY, STAGES_DIR / 'doc_tab_tz_v4.py'], 'doc_tz', 40)
     r.S['surfaces']['doc_tz'] = {'at': now(), 'rc': rc, 'tab': r.tab_title(),
                                  'doc': os.environ.get('YTAI_DOC_ID') or r.card.get('doc_id')}
@@ -959,7 +978,7 @@ def st_doc_nav(r: Review):
     rc, out = r.run_cmd([PY, STAGES_DIR / 'doc_tab_review_v1.py'], 'doc_nav', 40)
     r.S['surfaces']['doc_nav'] = {'at': now(), 'rc': rc, 'tab': os.environ.get('YTAI_NAV_TAB') or r.card.get('nav_tab'),
                                   'doc': os.environ.get('YTAI_DOC_ID') or r.card.get('doc_id')}
-    return rc == 0, f'вкладка-навигатор «{r.card.get("nav_tab", "")}»'
+    return rc == 0, f'вкладка-навигатор «{os.environ.get("YTAI_NAV_TAB") or r.card.get("nav_tab", "")}»'
 
 
 def v_doc_nav(r: Review) -> bool:
@@ -1011,6 +1030,152 @@ def st_producer_page(r: Review):
 
 def v_producer_page(r: Review) -> bool:
     return (r.work / 'review_page.html').exists() or (r.review_dir / f'{r.code}_{r.cut}_review_producer.html').exists()
+
+
+# --- обратная связь по кату: сверка с прошлым ТЗ (docs/feedback_v1.md) -------------
+FB_SKIP = 'prev_pravki нет — сверка пропущена'
+
+
+def _fb_prev(r: Review) -> Path | None:
+    v = os.environ.get('YTAI_PREV_PRAVKI') or r.card.get('prev_pravki')
+    if not v:
+        return None
+    p = Path(str(v)).expanduser()
+    return p if p.is_absolute() else r.review_dir / p
+
+
+def _fb_on(r: Review) -> bool:
+    p = _fb_prev(r)
+    return bool(p and p.is_file())
+
+
+def _fb_missing(r: Review) -> str:
+    """ключ задан, а файла нет — это не «сверка не нужна», а потерянный вход (на Memex — не доехал в aux/)"""
+    p = _fb_prev(r)
+    return f'prev_pravki указан, файла нет: {p}' if p and not p.is_file() else ''
+
+
+def _fb_stale_name(out: Path) -> Path:
+    try:
+        sha = re.sub(r'[^0-9A-Za-z]', '', str(json.loads(out.read_text(encoding='utf-8')).get('packet_sha') or ''))[:16]
+    except Exception:
+        sha = ''
+    dst = out.with_name(f'feedback_check.stale-{sha or "unknown"}.json')
+    i = 1
+    while dst.exists():
+        i += 1
+        dst = out.with_name(f'feedback_check.stale-{sha or "unknown"}.{i}.json')
+    return dst
+
+
+def st_feedback(r: Review):
+    """Составная: модель → пакет сверщику → (ждём воркфлоу) → вливание. Модель пересобирается ВСЕГДА перед
+    вливанием: сборка затирает влитое, вливание вливает снова — порядок один, результат детерминирован."""
+    if _fb_missing(r):
+        raise Warn(_fb_missing(r))
+    if not _fb_on(r):
+        return True, FB_SKIP
+    call_py = SHARED / 'feedback_call.py'
+    rc, res = r.run_cmd([PY, SHARED / 'feedback_model.py'], 'feedback_build', 20)
+    if rc != 0:
+        return False, f'сборка модели rc={rc}: {res.strip()[-200:]}'
+    rc, call = r.run_cmd([PY, call_py, '--print-call'], 'feedback_call', 5)
+    if rc != 0:
+        return False, f'пакет сверщику rc={rc}: {call.strip()[-200:]}'
+    if r.dry:
+        return True, '[dry] модель → пакет сверщику → облако (1 агент) → вливание'
+    if not any(ln.startswith('Workflow(') for ln in call.splitlines()):
+        r.S['surfaces']['feedback'] = {'at': now(), 'cloud': 'skipped'}
+        return True, 'модель собрана; сверщику отправлять нечего — облако пропущено'
+    out = r.cloud / 'out' / 'feedback_check.json'
+    if out.exists():
+        rc, res = r.run_cmd([PY, call_py, '--apply'], 'feedback_apply', 10)
+        if rc == 0:
+            r.S['surfaces']['feedback'] = {'at': now(), 'cloud': 'applied'}
+            return True, (res.strip().splitlines()[-1][:120] if res.strip() else 'ответ сверщика влит')
+        if rc != 2:
+            return False, f'вливание rc={rc}: {res.strip()[-200:]}'
+        stale = _fb_stale_name(out)                          # ответ устарел: не удаляем, откладываем и зовём заново
+        os.replace(out, stale)
+        r.note(f'feedback: ответ сверщика устарел → {stale.name}; нужен новый облачный проход')
+    return _cloud_compound(r, call_py, 'feedback', 'feedback_check.json', ['--apply'])
+
+
+def v_feedback(r: Review) -> bool:
+    if _fb_missing(r):            # ключ задан, файла нет: гейт закрыт — иначе resume/автономный прогон «подтвердит по артефактам» молча
+        return False
+    return not _fb_on(r) or ((r.work / 'feedback.json').exists()
+                             and (r.S['surfaces'].get('feedback') or {}).get('cloud') in ('applied', 'skipped'))
+
+
+def st_feedback_page(r: Review):
+    if not _fb_on(r):
+        return True, _fb_missing(r) or FB_SKIP
+    # без --send: в Telegram страница уходит только отдельной командой после «ок» (shared/feedback_page.py --send)
+    rc, out = r.run_cmd([PY, SHARED / 'feedback_page.py'], 'feedback_page', 20)
+    return rc == 0, (out.strip().splitlines()[-1][:120] if out.strip() else 'страница обратной связи')
+
+
+def v_feedback_page(r: Review) -> bool:
+    return not _fb_on(r) or (r.review_dir / f'{r.code}_{r.cut}_feedback.html').exists()
+
+
+def memex_busy(r: Review) -> tuple[bool | None, str]:
+    """Жив ли на Memex прогон ЭТОГО проекта: pid-файл прогона либо процесс review.py run с его папкой.
+    → (True/False, пояснение); None = проверить не удалось (сеть, таймаут). Тот же ssh, что у memex/common.sh."""
+    ctl = str(r.card.get('ctl_dir') or f'~/.cache/{r.project}')
+    ctl = ctl if ctl.startswith(('~', '/')) else f'~/.cache/{r.project}'
+    remote = (f'p=$(cat {ctl}/review.pid 2>/dev/null); if [ -n "$p" ] && kill -0 "$p" 2>/dev/null; then echo "MEMEX_ALIVE pid $p"; '
+              f'elif pgrep -fl "review.py run" | grep -F "YTAI_work/{r.code}" >/dev/null; then echo "MEMEX_ALIVE process"; '
+              f'else echo MEMEX_IDLE; fi')
+    try:
+        p = subprocess.run(['ssh', '-o', 'ConnectTimeout=8', '-o', 'BatchMode=yes', os.environ.get('MX_HOST', 'memex'), remote],
+                           capture_output=True, text=True, timeout=30)
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return None, f'{type(e).__name__}'
+    if 'MEMEX_ALIVE' in p.stdout:
+        return True, p.stdout.strip().splitlines()[-1]
+    if 'MEMEX_IDLE' in p.stdout:
+        return False, ''
+    return None, (p.stderr.strip().splitlines()[-1][:120] if p.stderr.strip() else f'ssh rc={p.returncode}')
+
+
+def st_doc_feedback(r: Review):
+    if not _fb_on(r):
+        return True, _fb_missing(r) or FB_SKIP
+    if not _ext(r, 'doc_id'):
+        return True, 'doc_id пуст — вкладка обратной связи пропущена'
+    # edits_guard не нужен: вкладка целиком пересобирается кодом, правки Романа снимаются только с вкладки ТЗ
+    if r.host == 'mac' and not r.dry and os.environ.get('YTAI_SKIP_MEMEX_CHECK') != '1':
+        busy, why = memex_busy(r)
+        if busy:
+            raise Fatal(f'на Memex идёт прогон этого же проекта ({why}) — два писателя в один док. '
+                        f'Дождись конца (review.py memex status) или останови: review.py memex stop')
+        if busy is None:
+            raise Fatal(f'не удалось проверить, идёт ли прогон этого проекта на Memex ({why}) — в док не пишу. '
+                        f'Проверь сеть до Memex; если там точно пусто — повтори с YTAI_SKIP_MEMEX_CHECK=1')
+    temp = r.images == 'temp' and r.host == 'mac' and not r.autonomous      # кадры наружу — только вручную с Мака
+    if r.images == 'temp' and not temp:
+        r.note('doc_feedback: --images temp отброшен — на Memex и в автономном режиме вкладка пишется без кадров')
+    argv = [PY, STAGES_DIR / 'doc_tab_feedback_v1.py'] + (['--images', 'temp'] if temp else [])
+    rc, out = r.run_cmd(argv, 'doc_feedback', 60)
+    if r.dry:
+        r.run_cmd([PY, STAGES_DIR / 'doc_tab_feedback_v1_verify.py'], 'doc_feedback_verify', 20)
+        return True, '[dry] вкладка обратной связи → проверка'
+    surf = {'at': now(), 'rc': rc, 'doc': os.environ.get('YTAI_DOC_ID') or r.card.get('doc_id'), 'images': 'temp' if temp else 'none'}
+    r.S['surfaces']['doc_feedback'] = surf
+    if rc != 0:
+        return False, 'вкладка обратной связи не записана или записана с замечаниями — см. logs/doc_feedback.log'
+    rc, out = r.run_cmd([PY, STAGES_DIR / 'doc_tab_feedback_v1_verify.py'], 'doc_feedback_verify', 20)
+    ok = rc == 0 and 'ALL PASS' in out
+    surf['verify'] = 'ALL PASS' if ok else 'FAIL'
+    return ok, ('вкладка обратной связи записана, проверка ALL PASS' if ok
+                else 'проверка вкладки обратной связи FAIL — см. logs/doc_feedback_verify.log')
+
+
+def v_doc_feedback(r: Review) -> bool:
+    return (not _fb_on(r) or not _ext(r, 'doc_id')
+            or (r.S['surfaces'].get('doc_feedback') or {}).get('verify') == 'ALL PASS')
 
 
 # --- montage_tz -----------------------------------------------------------------
@@ -1066,6 +1231,10 @@ STAGES_CUT = [
     ('doc_qc',        'mac',   st_doc_qc,        v_doc_qc,        'SOFT'),
     ('phone_brief',   'mac',   st_phone_brief,   v_phone_brief,   'SOFT'),
     ('producer_page', 'mac',   st_producer_page, v_producer_page, 'SOFT'),
+    # сверка с прошлым ТЗ — строго ПОСЛЕ producer_page: ожидание облака не должно запирать основную цепочку
+    ('feedback',      'mac',   st_feedback,      v_feedback,      'SOFT'),
+    ('feedback_page', 'mac',   st_feedback_page, v_feedback_page, 'SOFT'),
+    ('doc_feedback',  'mac',   st_doc_feedback,  v_doc_feedback,  'SOFT'),
 ]
 
 STAGES_MONTAGE = [
@@ -1112,14 +1281,19 @@ STAGE_DESC = {
     'review_json': ('make_review_v6 (ytai-part-v1, 6 слоёв)', '{CODE}_review_v6.json'),
     'mock': ('mockbuild_v6.js через partsBuilder', '0 ошибок'),
     'previews': ('s7 + s12 --render + preview_qc_local', 'qc 0 high'),
-    'drive': ('s9_materials_drive + s12 --upload/--apply', 'файлы с комментами'),
+    'drive': ('s9_materials_drive + s12 --upload/--apply + ensure_shots', 'файлы с комментами, все картинки pravki в shots_ids'),
     'sheet': ('tz_sheet', 'лист обновлён'),
-    'doc_tz': ('doc_tab_tz_v4 (гейт: review.py edits)', 'вкладка записана'),
+    'doc_tz': ('ensure_shots → doc_tab_tz_v4, 6 колонок с «Говорит» (гейт: review.py edits)', 'вкладка записана'),
     'doc_nav': ('doc_tab_review_v1 (навигатор)', 'вкладка записана'),
     'verify': ('doc_tab_tz_v4_verify', 'ALL PASS'),
     'doc_qc': ('doc_pdf_qc (pdftotext/pdfimages/PIL)', '0 high'),
     'phone_brief': ('phone_brief → Telegram', 'файл ≤1 МБ отправлен'),
     'producer_page': ('producer_page / review_page', 'HTML'),
+    'feedback': ('feedback_model → 1 облачный агент-сверщик (feedback_call) → вливание; только при card.prev_pravki',
+                 'feedback.json, ответ сверщика влит'),
+    'feedback_page': ('feedback_page: HTML «Обратная связь по кату» продюсеру (в Telegram — отдельной командой)',
+                      '{CODE}_{cut}_feedback.html'),
+    'doc_feedback': ('doc_tab_feedback_v1 (кадры — только run --images temp, с Мака) → doc_tab_feedback_v1_verify', 'ALL PASS'),
     'segment': ('segment_local Qwen3-8B: тезисы + якоря', 'segments.json'),
     'montage': ('build_montage по пословным якорям', 'montage.json'),
     'structure': ('1 облачный агент: структура/тезисы/графика', 'montage_plan обновлён'),
@@ -1274,6 +1448,12 @@ def run_stage(r: Review, name: str, host: str, fn, vfn, gate: str, force: bool =
             r.log(f'☁️ {name}: {e}')
             r.tg(f'☁️ <b>{r.code}</b>: {name} ждёт облачный проход из сессии Claude')
             return False
+        except Warn as e:
+            stg.update(status='warn', msg=str(e)[:300], finished=now())
+            r.save()
+            r.log(f'⚠️ {name}: {e}')
+            r.tg(f'⚠️ <b>{r.code}</b>: {name} — {e}')
+            return True
         except Fatal as e:
             stg.update(status='failed', msg=str(e)[:300], finished=now())
             r.save()
@@ -1300,6 +1480,7 @@ def run_stage(r: Review, name: str, host: str, fn, vfn, gate: str, force: bool =
 
 
 AUTO_CLOUD_ROUNDS = 4          # автономный режим: сколько раз подряд самому выполнить Workflow на одной стадии
+AUTO_CLOUD_ROUNDS_BY_STAGE = {'feedback': 1}     # сверщик — один пакет, второго нет (docs/feedback_v1.md §6)
 
 
 def auto_cloud(r: Review, stage: str) -> bool:
@@ -1332,6 +1513,7 @@ def auto_cloud(r: Review, stage: str) -> bool:
 
 def cmd_run(r: Review, a) -> int:
     autonomous = bool(getattr(a, 'autonomous', False)) or (r.ctl / 'AUTONOMOUS').exists() and a.host == 'memex'
+    r.host, r.autonomous, r.images = a.host, autonomous, (getattr(a, 'images', None) or 'none')
     stages = stages_for(r)
     names = [s[0] for s in stages]
     sel = names[:]
@@ -1351,7 +1533,7 @@ def cmd_run(r: Review, a) -> int:
     if a.no_drive:
         sel = [s for s in sel if s != 'drive']
     if a.no_doc:
-        sel = [s for s in sel if s not in ('doc_tz', 'doc_nav', 'verify', 'doc_qc')]
+        sel = [s for s in sel if s not in ('doc_tz', 'doc_nav', 'verify', 'doc_qc', 'doc_feedback')]
     if r.pidf.exists() and not r.dry:
         try:
             os.kill(int(r.pidf.read_text()), 0)
@@ -1394,7 +1576,7 @@ def cmd_run(r: Review, a) -> int:
                     break
                 ok_stage = False
                 if (autonomous and not r.dry and r.st(name).get('status') == 'awaiting_cloud'
-                        and rounds < AUTO_CLOUD_ROUNDS):
+                        and rounds < AUTO_CLOUD_ROUNDS_BY_STAGE.get(name, AUTO_CLOUD_ROUNDS)):
                     rounds += 1
                     r.tg(f'☁️ <b>{r.code}</b>: {name} — облачный проход запускаю сам (headless Claude, раунд {rounds})')
                     auto_cloud(r, name)
@@ -1417,7 +1599,8 @@ def cmd_run(r: Review, a) -> int:
             write_ticket(r)
     if a.host == 'memex' and rc != 5:                     # rc 5 = не дождались очереди, нагрузку не давали
         r.tg(f'🧊 <b>Memex</b>: локальный разбор <b>{r.code}</b> закончен (rc={rc}) — нагрузка снята.')
-    if autonomous and not r.dry and rc == 0 and sel and sel[-1] == names[-1]:
+    last = [n for n in names if not (a.no_doc and n == 'doc_feedback')][-1]      # --no-doc: хвост цепочки — без вкладки сверки
+    if autonomous and not r.dry and rc == 0 and sel and sel[-1] == last:
         (r.ctl / 'AUTONOMOUS').unlink(missing_ok=True)
         r.tg(f'🏁 <b>{r.code}</b>: автономный разбор на Memex закончен целиком — ТЗ, таймлайн ревью и бриф готовы. '
              f'На маке: review.py memex pull --all')
@@ -1446,6 +1629,15 @@ def print_status(r: Review):
     lines.append(f'→ следующая стадия: {nxt or "всё готово"}')
     if r.S.get('edits', {}).get('at'):
         lines.append(f'правки Романа сняты: {r.S["edits"]["at"]}')
+    ledger = r.work / 'feedback_grants.json'
+    if ledger.exists():
+        try:
+            n_open = len(json.loads(ledger.read_text(encoding='utf-8')).get('open') or [])
+        except Exception:
+            n_open = '? (журнал не читается)'
+        if n_open:
+            lines.append(f'⚠️ незакрытые временные доступы к кадрам: {n_open} — выполни '
+                         f'python3 {SHARED / "doc_images.py"} --revoke-ledger {ledger}')
     print('\n'.join(lines))
 
 
@@ -1587,6 +1779,18 @@ def cmd_cloud(r: Review, a) -> int:
     if a.what == 'cost':
         argv = [PY, CLOUD_DIR / 'salvage.py', '--cost'] + (['--session', a.session] if a.session else [])
         return sub(argv, env)
+    if a.what == 'feedback':
+        if getattr(a, 'apply', False):
+            rc = sub([PY, SHARED / 'feedback_call.py', '--apply'], env)
+            if rc == 0:
+                r.S['surfaces']['feedback'] = {'at': now(), 'cloud': 'applied'}
+                r.st('feedback').update(status='done', msg='ответ сверщика влит (cloud feedback --apply)', finished=now())
+                r.save()
+                print('ответ сверщика влит → review.py resume продолжит со страницы (feedback_page)')
+            elif rc == 2:
+                print('ответ сверщика не подходит к текущему пакету — review.py run --only feedback отложит его и напечатает новый вызов')
+            return rc
+        return sub([PY, SHARED / 'feedback_call.py', '--print-call'], env)
     if a.what in ('verdict', 'structure'):
         script = CLOUD_DIR / ('wf_verdict_doc.js' if a.what == 'verdict' else 'wf_structure_src.js')
         print(f'Workflow({{scriptPath: "{script}", args: {{card: "{r.card_path}"}}}})')
@@ -1736,6 +1940,38 @@ def cmd_selftest(a) -> int:
     else:
         ok('EN-фикстура YTCR: run_fixture.py на месте', False, str(fx))
 
+    # (b2) обратная связь по кату (feedback-v1): самотесты модулей, синтаксис воркфлоу сверщика, офлайн-фикстура.
+    # Окружение без YTAI_*: самотесты и фикстура не должны видеть карточку/прошлое ТЗ вызывающей сессии.
+    fb_env = {k: v for k, v in os.environ.items() if not k.startswith('YTAI_') and k != 'TZ_TAB'}
+    for mod in ('shared/feedback_model.py', 'shared/tz_diff.py', 'shared/feedback_view.py', 'shared/feedback_page.py',
+                'shared/feedback_call.py', 'shared/doc_table.py', 'shared/tz_blocks.py', 'shared/doc_images.py',
+                'stages/doc_tab_feedback_v1.py', 'stages/doc_tab_feedback_v1_verify.py'):
+        try:
+            rc = subprocess.run([PY, ROOT / mod, '--selftest'], capture_output=True, text=True, env=fb_env, timeout=900)
+            ok(f'feedback: {mod} --selftest', rc.returncode == 0 and 'SELFTEST OK' in rc.stdout, (rc.stdout + rc.stderr).strip()[-200:])
+        except (subprocess.TimeoutExpired, OSError) as e:
+            ok(f'feedback: {mod} --selftest', False, f'{type(e).__name__}: {e}'[:200])
+    wf = CLOUD_DIR / 'wf_feedback_check.js'
+    if shutil.which(NODE):
+        rc = subprocess.run([NODE, '--check', str(wf)], capture_output=True, text=True)
+        ok('feedback: node --check cloud/wf_feedback_check.js', wf.exists() and rc.returncode == 0, (rc.stderr or str(wf)).strip()[-200:])
+    else:
+        rows.append(('feedback: node --check cloud/wf_feedback_check.js (node не найден — пропуск)', True, ''))
+    fx = ROOT / 'examples/feedback_fixture/run_fixture.py'
+    if fx.exists():
+        try:
+            rc = subprocess.run([PY, fx, '--json'], capture_output=True, text=True, env=fb_env, timeout=1800)
+            line = next((ln for ln in reversed(rc.stdout.splitlines()) if ln.startswith('ROWS ')), '')
+            try:
+                for name, good, msg in json.loads(line[5:]):
+                    ok(name, good, msg)
+            except ValueError:
+                ok('feedback: фикстура — прогон', False, (rc.stdout + rc.stderr).strip()[-200:])
+        except (subprocess.TimeoutExpired, OSError) as e:
+            ok('feedback: фикстура — прогон', False, f'{type(e).__name__}: {e}'[:200])
+    else:
+        ok('feedback: examples/feedback_fixture/run_fixture.py на месте', False, str(fx))
+
     # (c) i18n: таблицы грузятся (владельцы/дубли), у каждого ключа с ru есть en
     try:
         sys.path.insert(0, str(SHARED))
@@ -1774,13 +2010,16 @@ def main() -> int:
     p.add_argument('--autonomous', action='store_true',
                    help='host memex: вся цепочка на Memex, облачные проходы — headless Claude (shared/headless_claude.py)')
     p.add_argument('--max-wait-min', type=float, default=480, help='host memex: сколько ждать чужую нагрузку, мин (таймаут → rc 5)')
+    p.add_argument('--images', default='none', choices=['none', 'temp'],
+                   help='doc_feedback: temp — кадры в док под временным доступом (только с Мака, вручную, после «примени»)')
 
     p = sp.add_parser('stage'); p.add_argument('--project', required=True); p.add_argument('name')
     p.add_argument('action', choices=['start', 'pause', 'resume', 'stop', 'status'])
 
     p = sp.add_parser('cloud'); p.add_argument('--project', required=True)
-    p.add_argument('what', choices=['judge', 'collect', 'salvage', 'cost', 'verdict', 'structure'])
+    p.add_argument('what', choices=['judge', 'collect', 'salvage', 'cost', 'verdict', 'structure', 'feedback'])
     p.add_argument('--print-call', action='store_true'); p.add_argument('--run'); p.add_argument('--session')
+    p.add_argument('--apply', action='store_true', help='cloud feedback: влить ответ сверщика (cloud/out/feedback_check.json)')
 
     p = sp.add_parser('memex'); p.add_argument('--project', required=True)
     p.add_argument('action', choices=['push', 'pull', 'start', 'status', 'pause', 'resume', 'stop']); p.add_argument('rest', nargs='*')

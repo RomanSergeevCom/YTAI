@@ -74,7 +74,7 @@ def tc_sec(s):
         return None
     if isinstance(s, (int, float)):
         return float(s)
-    m = re.search(r'(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.(\d+))?', str(s))
+    m = re.search(r'(?<![\d:])(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.(\d+))?', str(s))   # «2449:40» — не «49:40»
     if not m:
         try:
             return float(str(s).strip())

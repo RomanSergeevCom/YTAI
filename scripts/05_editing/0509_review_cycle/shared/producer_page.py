@@ -94,6 +94,9 @@ def stage_rows():
     # НИКОГДА, даже если run записал в стейт «пропуск» (RU-страница продюсера YTUVI/YTCH/YTEVO не меняется)
     if not P.get('chapters_plan'):
         names = [n for n in names if n != 'chapters']
+    # то же для сверки с прошлым ТЗ: без card.prev_pravki три её стадии в таблице не показываем НИКОГДА
+    if not P.get('prev_pravki'):
+        names = [n for n in names if n not in ('feedback', 'feedback_page', 'doc_feedback')]
     hosts = dict(order)
     rows = []
     for n in names:

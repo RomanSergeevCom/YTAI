@@ -25,12 +25,13 @@ if [ -d "$UXP_DIR/src" ]; then
   rsync -a --delete --exclude 'node_modules' "$UXP_DIR/src/" "$MX_HOST:~/YTAI/scripts/05_editing/0500_uxp/src/"
   rsync -a --delete "$UXP_DIR/tests/mocks/" "$MX_HOST:~/YTAI/scripts/05_editing/0500_uxp/tests/mocks/"
 fi
-# файлы, на которые ссылается карточка вне 05_Review (план частей для глав, прошлые транскрипты для align) → aux/
+# файлы, на которые ссылается карточка вне 05_Review (план частей для глав, прошлые транскрипты для align, прошлое ТЗ) → aux/
 mx "mkdir -p $MX_REVIEW/aux" >/dev/null
 python3 - "$CARD" <<'EOF' > /tmp/review_card.aux.txt
 import json, sys, os
 card = json.load(open(sys.argv[1])); rd = os.path.dirname(os.path.abspath(sys.argv[1]))
 refs = list(card.get('align_against') or []) + ([card['chapters_plan']] if card.get('chapters_plan') else [])
+refs += [card['prev_pravki']] if card.get('prev_pravki') else []      # прошлое ТЗ для сверки версий (feedback)
 for p in refs:
     a = p if os.path.isabs(p) else os.path.normpath(os.path.join(rd, p))
     if os.path.exists(a):
@@ -53,6 +54,8 @@ if card.get('align_against'):
     card['align_against'] = [f'aux/{os.path.basename(p)}' for p in card['align_against']]
 if card.get('chapters_plan'):
     card['chapters_plan'] = f'aux/{os.path.basename(card["chapters_plan"])}'
+if card.get('prev_pravki'):
+    card['prev_pravki'] = f'aux/{os.path.basename(card["prev_pravki"])}'
 card['_memex'] = 'вариант карточки для Memex: пути относительно 05_Review; сгенерирован push.sh'
 print(json.dumps(card, ensure_ascii=False, indent=1))
 EOF

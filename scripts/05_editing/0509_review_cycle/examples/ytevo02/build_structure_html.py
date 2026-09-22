@@ -24,8 +24,8 @@ MANIFEST = BASE / "05_Review" / "mockups" / "manifest.json"
 MOCK_REL = "05_Review/mockups"   # относительно 00_Setup, где лежит страница
 
 SPEAKERS = {
-    "Speaker 1": ("Дарья Благо", "d", "В кадре · камера A"),
-    "Speaker 2": ("Анастасия Григорьева", "a", "Камера B — карта будет передана"),
+    "Speaker 1": ("Дарья Благо", "d", "Ракурс A — крупный план · в общем плане B справа"),
+    "Speaker 2": ("Анастасия Григорьева", "a", "Только общий план B — слева"),
     "Speaker 3": ("Мужчина за кадром", "m", "Режиссёр/оператор"),
 }
 
@@ -62,9 +62,11 @@ LINKS_BLOCK = (
     '<b>📁 Папка канала на Google Drive</b><span>YTEVO — материалы спринтов канала</span></a>'
     '<a class="lk" href="https://yt.rya.ae/ytevo/" target="_blank" rel="noopener">'
     '<b>🛠 Страница канала на портале</b><span>yt.rya.ae/ytevo/ — организация, советы, правовая опора, люди</span></a>'
-    '<div class="lk lk-off"><b>💾 Исходные видео — на SSD, не на Диске</b>'
-    '<span>T9-Black-RYA → YTEVO → YTEVO02_evolution_manifesto. Манифест: C0005–C0009, 17,0 ГБ. '
-    'Вторая сцена: C0014–C0015, 5,8 ГБ. На Google Drive не выгружены — скажи, и залью.</span></div>'
+    '<a class="lk" href="https://drive.google.com/drive/folders/1ZN_xiS2dwB6I6Pg_uSIWkgfulC9AjOKl" target="_blank" rel="noopener">'
+    '<b>💾 Исходные видео — на Google Drive</b>'
+    '<span>YTEVO → YTEVO S1 → YTEVO02_evolution_manifesto → 01_Source/Video. Манифест: крупный план A C0005–C0009 (17,0 ГБ) '
+    'и общий план B A004_11201111_C010 (25:16, 140 ГБ). Вторая сцена «Эволюция ТВ»: C0014–C0015 (5,8 ГБ) и общий план '
+    'A004_11201148_C013 (7:56, 44 ГБ). Общие планы B — только на Drive.</span></a>'
     '<div class="lk lk-off"><b>📄 Транскрипты и монтажные листы</b>'
     '<span>Там же, в 00_Setup: YTEVO02.diarized.txt и YTEVO02cam2.diarized.txt (дословно, по ролям), '
     'montage.json и montage_cam2.json (склейки), 05_Review/mockups (экраны в 4K)</span></div>'
@@ -78,9 +80,10 @@ CLIPS2 = [("C0014.MP4", "5:42.72", "00:00.00", "05:42.72", "12:37:12", "4,19 Г�
           ("C0015.MP4", "2:14.40", "05:42.72", "07:57.12", "12:42:54", "1,65 ГБ")]
 
 SCENE2_NOTE = (
-    "<b>Отдельная сцена: снята в тот же день, позже и другой камерой.</b> Sony A7 III, "
+    "<b>Отдельная сцена: снята в тот же день позже, той же камерой A.</b> Sony A7 III (C0014–C0015), "
     "12:37:12–12:45:09, одна непрерывная запись 7:57. В кадре снова Дарья, но говорят двое: "
-    "она и <b>Михаил, генеральный продюсер «Эволюция ТВ»</b> — он за кадром, его ракурса в материале нет.<br><br>"
+    "она и <b>Михаил, генеральный продюсер «Эволюция ТВ»</b>. На крупном плане A его нет, но 15.09 пришёл "
+    "общий план B (A004_11201148_C013.mov, Blackmagic): Михаил слева, Дарья справа — его реплики стоят на нём.<br><br>"
     "<b>Текст новый целиком.</b> Сравнение двух транскрибаций по словам: совпадений от пяти слов подряд — "
     "ноль, ни одна из 749 реплик этой сцены не звучит в манифесте. Значит заменить что-то в манифесте "
     "«более чистым дублем» отсюда нельзя — это дополнение, а не пересъём.<br><br>"
@@ -97,13 +100,14 @@ CHAPTERS = [("01", "Кто ваши герои?"), ("03", "Кто мы и зач
             ("06", "Опора: Конституция, указы, шесть советов"), ("07", "СССР — Союз Созидательных Сил России"),
             ("10", "Запуск «Эволюция ТВ»"), ("11", "Как устроена платформа"),
             ("12", "Против чего: информация и страх"), ("13", "Что такое «эволюция»"),
-            ("16", "Как участвовать: эволюция.рус"), ("17", "Всё рождается из вас самих")]
+            ("16", "Как участвовать: эволюция.рус"), ("17", "Всё рождается из вас самих · да здравствует эволюция")]
 
 # как находки разбора закрываются этой страницей
 FINDING_TAGS = {
-    "ПРОДАКШЕН-ПРОБЛЕМА №1": "камера B едет — снимается",
-    "ПРОДАКШЕН-ПРОБЛЕМА №2": "с камерой B появится вторая крупность",
+    "ПРОДАКШЕН-ПРОБЛЕМА №1": "камера B пришла — общий план, реплики Анастасии на нём",
+    "ПРОДАКШЕН-ПРОБЛЕМА №2": "вторая крупность есть — общий план B",
     "ПОРЯДОК ПЕРЕСБОРКИ": "реализовано в монтажном листе",
+    "ЧЕТЫРЕ СТЫКА": "проверено по звуку общего плана: три шва непрерывны, на C0008/C0009 пропало 3,16 с",
     "ГРАФИКА ЗДЕСЬ": "экраны отрисованы — галерея выше",
     "ШЕСТЬ СОВЕТОВ": "закрыто экраном G08",
     "«СССР»": "закрыто слайдом клиента G09",
@@ -118,11 +122,13 @@ DEVIATIONS = [
     "«Но героев у нас много» поставлено сразу после анонса «Эволюция ТВ» — это отсылка к холодному старту, кольцо замыкается там.",
     "Добавлены 02:20–02:33 («создать систему, которая помогала бы людям быть счастливыми») и 04:02–04:12 (формула жизни будущего) — их оставлял вердикт блока 2, но в порядок пересборки они не попали.",
     "Оговорки сняты по словам, а не кусками: «Платформа Эмолюция —», «спускается эволюция ТВ», «мы регистрируемся… начинаем ценностную путь».",
+    "15.09 пришёл общий план B: реплики Анастасии переставлены на него (крупного плана Анастасии нет), финал достроен с B — C0010 камеры A не передан, а на B речь идёт до «Да здравствует эволюция!».",
 ]
 
 RECOMMEND = {
-    "G01": "A — панель поверх кадра: пауза после «мама с папой» играет на лице Анастасии (камера B). "
-           "B — если в её кадре справа не окажется места под панель.",
+    "G01": "A — панель поверх кадра: пауза после «мама с папой» играет на Анастасии (общий план B, она слева). "
+           "Мокап разложен на крупный план A — на общем плане панель перенести в свободную зону, не на героинь. "
+           "B — если на общем плане места под панель не окажется.",
     "G08": "Оба, в разных местах. A (сетка) — полноэкранная вставка-исправление в куске 06, читается за 7 секунд. "
            "B (вокруг человека) — повтор в призыве, кусок 16: рифмуется с «в центре всегда остаётся человек».",
     "G14": "B — буквицы на светлом: читается как последовательность и рифмуется с красными буквицами их слайда СССР. "
@@ -134,20 +140,21 @@ RECOMMEND = {
 PORTAL_HEAD = ('<!-- rya-site-v1 --><style id="rya-nf">html.rya-gating body{visibility:hidden}'
                '.rya-overlay,.rya-chrome{visibility:visible}</style><script>document.documentElement.className+='
                '" rya-gating";window.__ryaFailsafe=setTimeout(function(){document.documentElement.classList.remove('
-               '"rya-gating")},3500);</script><link rel="stylesheet" href="/assets/site.css?v=20">')
-PORTAL_BODY = '<script src="/assets/site.js?v=20" defer></script>'
+               '"rya-gating")},3500);</script><link rel="stylesheet" href="/assets/site.css?v=21">')
+PORTAL_BODY = '<script src="/assets/site.js?v=21" defer></script>'
 
 SEAM_NOTE = (
-    "<b>Все пять файлов — одна непрерывная запись, и она, похоже, не кончилась на C0009.</b> "
-    "Звук на всех четырёх швах непрерывен — измерено по исходному PCM: скачок сэмпла на шве против фона "
-    "0,0–1,6, скачок огибающей 0,1–2,0; жёсткий разрез дал бы десятки. Время создания C0009 расходится с "
-    "концом C0008 примерно на 2,6 с — это артефакт метаданных (похоже на переключение записи на вторую карту, "
-    "отсюда и новый номер клипа); речь через шов 17:27.36 идёт без пропуска.<br><br>"
-    "<b>Главное — C0009 обрезан файлом.</b> Он весит 4 186 008 658 байт: ровно полный 4-ГБ кусок, как C0005 "
-    "и C0007. А последнее слово «дарят» кончается на 23:09.02 при конце файла 23:09.12 — речь идёт до "
-    "последней десятой секунды. Значит камера писала дальше, в C0010, которого нет ни в папке, ни на "
-    "подключённых дисках, и финал обрывается не из-за спикера. <b>Проверить карты камеры A (оба слота) на "
-    "C0010 и дальше</b> — если найдутся, финал в монтажном листе пересобрать."
+    "<b>Пять файлов камеры A — одна запись, но не непрерывная: на шве C0008/C0009 (17:27.36) пропало 3,16 с.</b> "
+    "Это показал общий план B, который писал без остановки: до шва его звук ложится на мастер со сдвигом +6,08 с, "
+    "после — +2,92 с (46 окон по 6–10 с, невязка ≤16 мс); три других шва — без скачка. Прежний вывод «речь через шов "
+    "идёт без пропуска» был ошибкой: распознавание склеило «создавать эту | форму эволюции ТВ», а на B фраза целая — "
+    "«создавать этот путь и образ, который на самом деле уже есть. И платформа Эволюция ТВ». Расхождение времени "
+    "создания C0009 (~2,6 с) было не артефактом метаданных, а этим пропуском. Сквозная ось A после 17:27 короче "
+    "реального времени на 3,16 с; кусок 11 монтажного листа проходит через шов — он стоит на B и посчитан по B (+3,16 с).<br><br>"
+    "<b>C0009 обрезан файлом</b> — ровно полный 4-ГБ кусок, речь до последней десятой секунды: камера A писала дальше, "
+    "но C0010 не передан. Зато общий план B пишет ещё ≈2:10 после конца A, из них ≈1:49 — речь: «Попробуйте найти те "
+    "желания… Будущее России создаётся созиданием каждого из нас… Да здравствует эволюция!» — финал в монтажном листе "
+    "достроен с B. Хвост расшифрован отдельно: 05_Review/wide_tail/."
 )
 
 EXTRA_CSS = """
@@ -378,7 +385,8 @@ def build_montage(mont):
         for x in p["parts"]:
             if x["kind"] == "say":
                 cc = "ca" if x["camera"].startswith("A") else ("cb" if x["camera"].startswith("B") else "cm")
-                pend = " <em>· карта едет</em>" if cc == "cb" else ""
+                alt = x.get("b") if x.get("angle") == "A" else x.get("a")
+                pend = f' <em>· другой ракурс: {e(alt["file"])} +{mmss(alt["off_in"], True)}</em>' if alt else ""
                 gaps = x.get("gaps") or []
                 gap_title = ", ".join(f'{mmss(g["at"], True)} ({g["dur"]} с после «{g["after"]}»)' for g in gaps)
                 gap_html = (f'<span class="gp" title="{e(gap_title)}">пауз ≥0,7 с: {len(gaps)} · −{x["trim_est"]:.1f} с</span>'
@@ -505,6 +513,8 @@ def build_story(mont, man, mock_rel, full_thumb, frames_sub="story_frames", chap
     chapters = CHAPTERS if chapters is None else chapters
     fdir = BASE / "05_Review" / "mockups" / frames_sub
     frames = {f.name.split("__")[0]: f.name for f in fdir.glob("*.jpg")}
+    wdir = BASE / "05_Review" / "mockups" / (frames_sub + "_wide")
+    wframes = {f.name.split("__")[0]: f.name for f in wdir.glob("*.jpg")} if wdir.exists() else {}
     cat = mont["gfx_catalog"]
     by = {p["id"]: p for p in mont["pieces"]}
     chap = {pid: i for i, (pid, _) in enumerate(chapters)}
@@ -520,8 +530,12 @@ def build_story(mont, man, mock_rel, full_thumb, frames_sub="story_frames", chap
             note = f'<div class="st-n">✂ {e(p["note"])}</div>' if k == 0 and p.get("note") else ""
             cam_b = False
             if x["kind"] == "say":
-                cam_b = x["camera"].startswith("B") or "за кадром" in x["camera"]
-                cam = x["camera"] + (" — встречный ракурс будет" if cam_b else "")
+                cam_b = x.get("angle") == "B" or x["camera"].startswith("B")
+                cam = x["camera"]
+                alt = x.get("b") if x.get("angle") == "A" else x.get("a")
+                if alt:
+                    cam += f' · другой ракурс {alt["file"]} +{mmss(alt["off_in"], True)}'
+
                 gaps = x.get("gaps") or []
                 src = (f'📄 {x["file_in"]} +{mmss(x["off_in"], True)} · исходник {mmss(x["src_in"], True)}–'
                        f'{mmss(x["src_out"], True)} · {x["dur"]:.1f} с · {cam}'
@@ -544,7 +558,7 @@ def build_story(mont, man, mock_rel, full_thumb, frames_sub="story_frames", chap
                 href = f'{mock_rel}/{main["thumb"] if full_thumb else main["png"]}'
                 where = f'на слове «{e(g["on_word"])}»' if g.get("on_word") else f'полноэкранно, {g.get("insert", "")} с'
                 if main.get("alpha") and cam_b:
-                    where += " · подложка превью — кадр камеры A"
+                    where += " · подложка превью — крупный план A, в монтаже — общий план B"
                 srcd = ("слайд клиента из презентации «Ценностный суверенитет России»" if main["kind"] == "client"
                         else "наш драфт — перерисовать в стиле клиента")
                 var = f'вариант {main["variant"]}' + (f' · есть {", ".join(o["variant"] for o in others)}' if others else "")
@@ -554,16 +568,21 @@ def build_story(mont, man, mock_rel, full_thumb, frames_sub="story_frames", chap
                             f'<a href="#g-{g["id"]}">{g["id"]}: {var}</a></div></figure>')
             if not figs and x["kind"] == "say":
                 mid = round((x["src_in"] + x["src_out"]) / 2, 2)
-                fn = frames.get("t" + f'{int(mid // 60):02d}m{mid % 60:06.3f}s'.replace(".", "_"))
-                if fn and cam_b:
+                key = "t" + f'{int(mid // 60):02d}m{mid % 60:06.3f}s'.replace(".", "_")
+                fn, wfn = frames.get(key), wframes.get(key)
+                if cam_b and wfn:
+                    figs.append(f'<figure class="st-f"><div class="st-im"><img src="{mock_rel}/{frames_sub}_wide/{wfn}" '
+                                f'loading="lazy" alt=""></div><figcaption><b>{mmss(x["dst_in"])}</b> · ракурс B, общий план — '
+                                f'говорит {e(x.get("speaker_name", ""))}, графики нет</figcaption></figure>')
+                elif fn and cam_b:
                     figs.append(f'<figure class="st-f"><div class="st-im st-wait"><img src="{mock_rel}/{frames_sub}/{fn}" '
-                                f'loading="lazy" alt=""><span class="st-wl">{e(x["camera"].upper())} · РАКУРСА ПОКА НЕТ</span></div>'
-                                f'<figcaption><b>{mmss(x["dst_in"])}</b> · говорит не тот, кто в кадре: на подложке '
-                                f'Дарья, встречный ракурс будет</figcaption></figure>')
+                                f'loading="lazy" alt=""><span class="st-wl">{e(x["camera"].upper())} · КАДР B НЕ ИЗВЛЕЧЁН</span></div>'
+                                f'<figcaption><b>{mmss(x["dst_in"])}</b> · на подложке крупный план A — кадр общего плана '
+                                f'для превью не извлечён</figcaption></figure>')
                 elif fn:
                     figs.append(f'<figure class="st-f"><div class="st-im"><img src="{mock_rel}/{frames_sub}/{fn}" '
-                                f'loading="lazy" alt=""></div><figcaption><b>{mmss(x["dst_in"])}</b> · в кадре Дарья, '
-                                f'камера A — графики нет</figcaption></figure>')
+                                f'loading="lazy" alt=""></div><figcaption><b>{mmss(x["dst_in"])}</b> · ракурс A, крупный план Дарьи — '
+                                f'графики нет</figcaption></figure>')
             elif not figs:
                 figs.append('<div class="st-empty">удержание кадра</div>')
             rows.append(f'<div class="st-row"><div class="st-tc">{mmss(x["dst_in"])}</div>'
@@ -626,12 +645,28 @@ def main():
             '<div class="sp-card" style="border-top-color:var(--blue)"><div class="sp-name">Михаил</div>'
             '<div class="sp-bar"><i style="width:37%;background:var(--blue)"></i></div>'
             '<div class="sp-meta">2 мин 33 с · 37% речи второй сцены</div>'
-            '<div class="sp-note">Генеральный продюсер «Эволюция ТВ» · за кадром, ракурса нет</div></div>')
+            '<div class="sp-note">Генеральный продюсер «Эволюция ТВ» · только общий план B — слева</div></div>')
     scene2 = ("" if not mont2 else
               f'<div class="sec" id="scene2">Вторая сцена · «Эволюция ТВ» — {mmss(mont2["total"])}</div>'
               f'<div class="note n-info">{SCENE2_NOTE}</div>'
               + build_story(mont2, man, a.mock_rel, a.full_res_thumbs, "story_frames_cam2", CHAPTERS2))
     devs = "".join(f"<li>{e(d)}</li>" for d in DEVIATIONS)
+
+    # ракурсы: строки таблиц исходника и заметка — из angles.json (через montage*.json)
+    def b_row(ang):
+        return (f"<tr><td class='mono'>{e(ang['file'])}</td><td>{mmss(ang['duration'], True)}</td>"
+                f"<td class='mono'>ракурс B · {e(ang.get('map_text', ''))}</td>"
+                f"<td class='mono dim'>TC {e(ang.get('tc', ''))}</td><td>{e(ang.get('size', ''))}</td></tr>")
+    angB = (mont.get("angles") or {}).get("B")
+    angB2 = ((mont2 or {}).get("angles") or {}).get("B")
+    if angB:
+        clip_rows += b_row(angB)
+    if angB2:
+        clip_rows2 += b_row(angB2)
+    n_b = sum(1 for p in mont["pieces"] for x in p["parts"] if x.get("angle") == "B")
+    angles_note = (angB.get("note_html", "") + f"<br><br><b>В монтажном листе</b> {n_b} из {mont['n_say_parts']} "
+                   "склеек речи стоят на общем плане B, остальные — на крупном плане Дарьи A; "
+                   "у каждой указан и второй ракурс с точным смещением.") if angB else ""
 
     crumbs = ('<nav class="crumbs"><a href="https://yt.rya.ae/">Overview</a><span>›</span>'
               '<a href="https://yt.rya.ae/#channels">Channels</a><span>›</span>'
@@ -767,7 +802,7 @@ pre.ch{{background:var(--bg-elev);border-radius:9px;padding:13px 16px;margin:9px
   <h1>Манифест платформы «Эволюция» — структура и графика</h1>
   <div class="tags">
     <span>Съёмка 04.09.2026</span><span>23:09 материала → {mmss(mont["total"])} чистовика</span>
-    <span>Камера A — Дарья · камера B — Анастасия (едет)</span><span>Разбор R.Y.A Media Lab</span>
+    <span>Ракурс A — крупный Дарьи · ракурс B — общий план</span><span>Разбор R.Y.A Media Lab</span>
   </div>
   <p>{e(canon.get("logline", ""))}</p>
   <div class="kpis">
@@ -805,7 +840,7 @@ pre.ch{{background:var(--bg-elev);border-radius:9px;padding:13px 16px;margin:9px
   пять линз разбора: холодный старт с опроса подростков → кто мы → опора → логика советов → новость
   «Эволюция ТВ» → продукт → зачем → смысл → призыв → финал. Каждая склейка привязана к пословным
   таймкодам: начало первого слова и конец последнего плюс до 0,3 с воздуха. Для каждой указаны файл
-  и смещение внутри него, камера и паузы к подрезке. Цветная лента — хронометраж по актам, клик ведёт к куску.</div>
+  и смещение внутри него в обоих ракурсах, какой ракурс брать и паузы к подрезке. Цветная лента — хронометраж по актам, клик ведёт к куску.</div>
   {build_montage(mont)}
   </details>
 
@@ -833,7 +868,7 @@ pre.ch{{background:var(--bg-elev);border-radius:9px;padding:13px 16px;margin:9px
     <thead><tr><th>Файл</th><th>Длительность</th><th>На сквозной таймлинии</th><th>Запись (UTC)</th><th>Размер</th></tr></thead>
     <tbody>{clip_rows}</tbody>
   </table></div>
-  <div class="note n-info" style="margin-top:12px"><b>Вторая сцена, другая камера — Sony A7 III.</b>
+  <div class="note n-info" style="margin-top:12px"><b>Вторая сцена — та же камера A (Sony A7 III), позже в тот же день.</b>
   Снята в тот же день позже, одной непрерывной записью; C0015 — хвост того же рулона.</div>
   <div class="tblw"><table class="tbl">
     <thead><tr><th>Файл</th><th>Длительность</th><th>На таймлинии сцены</th><th>Запись (UTC)</th><th>Размер</th></tr></thead>
@@ -843,17 +878,7 @@ pre.ch{{background:var(--bg-elev);border-radius:9px;padding:13px 16px;margin:9px
 
   <div class="sec" id="voices">Кто говорит</div>
   <div class="sp-grid">{spk_rows}{spk2}</div>
-  <div class="note n-ok" style="margin-top:12px"><b>Камера B будет — это меняет половину выводов разбора.</b>
-  На 00:56 на площадке спрашивают «Две камеры работают?» — «Да». Диаризация (pyannote 3.1, без подсказки
-  о числе голосов) независимо находит ровно три голоса; женские реплики чередуются ровными передачами
-  слова по 1,5–2,5 секунды. В переданных пяти клипах в кадре всё время Дарья: на репликах Анастасии
-  она молчит и слушает — проверено по шести кадрам внутри её блоков. Карта камеры B с Анастасией
-  будет передана отдельно.<br><br>
-  <b>Что это даёт:</b> её речь закрывается своим планом, а не графикой-заглушкой; появляется вторая
-  крупность — склейки перестают быть джамп-катами и становятся нормальной восьмёркой; на передачах слова
-  можно ставить реакции. В монтажном листе куски Анастасии помечены «камера B · карта едет».<br><br>
-  <b>Проверить при приёмке камеры B:</b> тайм-код старта (камера A стартовала 12:00:45 UTC); есть ли у неё
-  тот же разрыв около 12:18:12–12:18:15; синхронизировать по речи, а не по времени файла.</div>
+  <div class="note n-ok" style="margin-top:12px">{angles_note}</div>
 
   <div class="sec" id="blocks">Блоки исходника — диагноз</div>
   <div class="note n-info">Двенадцать смысловых блоков в порядке съёмки, с вердиктом монтажа. Это диагноз
@@ -873,6 +898,10 @@ pre.ch{{background:var(--bg-elev);border-radius:9px;padding:13px 16px;margin:9px
     <div class="sw" style="background:#2C3E8F;color:#fff"><b>#2C3E8F</b>синий градиента</div>
   </div>
 
+  <div class="note n-info" style="margin-top:18px"><b>Сверка и критика ниже сделаны 11.09 — до прихода общего плана B.</b>
+  Пункты про «Анастасия вне кадра», «камеры B нет», плашку «ЗА КАДРОМ» и «мёртвый экран» закрыты 15.09: Анастасия
+  в кадре на общем плане, её реплики в монтажном листе стоят на ракурсе B. Пункты про стыки клипов закрыты сверкой
+  по звуку общего плана (три шва непрерывны, на C0008/C0009 пропало 3,16 с).</div>
   {build_issues(an.get("check"), "Сверка разбора: что проверено построчно", "ok", "check")}
   {build_issues(an.get("critic"), "Чего в разборе не хватало", "warn", "critic")}
 

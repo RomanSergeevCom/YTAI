@@ -68,7 +68,10 @@ def cell_text(cell):
 
 def row_key(cells):
     k = cells[0].strip()
-    return k if k else 'CH:' + cells[3].strip()
+    if k:
+        return k
+    # строка-главы: метка лежит в колонке «Описание ошибки» (до 22.09.2026 — в колонке 3)
+    return 'CH:' + next((c.strip() for c in cells[3:] if c.strip()), '')
 
 
 def api_get(url):
@@ -106,10 +109,17 @@ for k in exp_rows:
 for k in act_rows:
     if k not in exp_rows:
         rep['extra_rows'].append({'key': k, 'cells': act_rows[k]})
-COLS = {1: 'tc', 3: 'tz', 4: 'material'}
+# v5 22.09.2026: № | TC | кат. | Говорит | Комментарии Романа | ✅ | Описание ошибки | Материал | Как надо.
+# «Говорит» (3) не читаем — это речь ката из words.json, Роман её не правит. Зато читаем его
+# собственную колонку (4) и чекбокс приёмки (5): раньше их просто не существовало, и всё, что он
+# дописывал, система видела только внутри общей ячейки ТЗ.
+COLS = {1: 'tc', 4: 'roman', 5: 'accepted', 6: 'tz', 7: 'material', 8: 'do'}
 for k, exp in exp_rows.items():
     act = act_rows.get(k)
     if not act:
+        continue
+    if len(act) != len(exp):              # вкладка собрана старым сборщиком (5 колонок, до «Говорит»)
+        print(f'  !! {k}: колонок в доке {len(act)}, у сборщика {len(exp)} — снимай правки кодом той же версии')
         continue
     for ci, name in COLS.items():
         a, b = exp[ci].split('\n'), act[ci].split('\n')

@@ -11,7 +11,7 @@ import argparse
 import subprocess
 from pathlib import Path
 
-SRC = Path("/Volumes/T9-Black-RYA/YTEVO/YTEVO02_evolution_manifesto")
+SRC = Path("/Volumes/T9-Black-RYA/YTEVO/YTEVO02_evolution_manifesto/01_Source/Video/01_Evolution_Manifesto/CAM-A")
 
 # (имя, длительность) в порядке укладки на таймлинию
 CLIPS = [
@@ -58,7 +58,7 @@ def main():
     ap.add_argument("--every", type=float, default=None)
     ap.add_argument("--at", default=None, help="список секунд через запятую")
     ap.add_argument("--width", type=int, default=1280)
-    ap.add_argument("--outdir", default=str(SRC / "00_Setup" / "frames"))
+    ap.add_argument("--outdir", default=str(Path(__file__).resolve().parent / "frames"))
     a = ap.parse_args()
 
     outdir = Path(a.outdir)

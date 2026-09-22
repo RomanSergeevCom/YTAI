@@ -88,7 +88,8 @@ def batch_update(doc_id, reqs, tries=4):
         except Exception as e:                                   # noqa: BLE001
             if k == tries - 1:
                 raise
-            print('  batch повтор:', str(e)[:110], flush=True)
+            # 110 знаков прятали саму причину: у Docs она в конце тела ответа, а не в начале
+            print('  batch повтор:', ' '.join(str(e).split())[:400], flush=True)
             time.sleep(8 * (k + 1))
 
 
@@ -289,6 +290,59 @@ def tab_body():
     raise SystemExit('вкладка потерялась')
 
 
+def table_text_len(tbl):
+    return sum(len(e.get('textRun', {}).get('content', '').strip())
+               for r in tbl['table']['tableRows'] for c in r['tableCells']
+               for el in c['content'] if 'paragraph' in el
+               for e in el['paragraph'].get('elements', []))
+
+
+def fresh_table(nrows, empty=False, tries=6):
+    """Последняя таблица вкладки — ДОЖДАВШИСЬ, что чтение догнало запись.
+
+    get_doc по этому доку отвечает ~30 с и возвращает состояние «до записи». Сразу после
+    insertTable в ответе приходит ТАБЛИЦА ПРОШЛОЙ ПОПЫТКИ — с тем же числом строк, но со
+    старыми (бо́льшими) индексами: вкладку перед этим очистили, и сегмент стал короче.
+    Индексы ячеек уезжают за конец сегмента, и заполнение падает «Precondition check failed»,
+    а обычный ретрай шлёт те же мёртвые индексы (YTUVI01 v2, 22.09.2026 — шесть попыток подряд).
+    По числу строк свежую таблицу от прошлой не отличить, а по содержимому — можно:
+    только что вставленная пустая. `empty=True` — ждать именно такую.
+    """
+    for k in range(tries):
+        tables = [el for el in tab_body() if 'table' in el]
+        ok = tables and len(tables[-1]['table']['tableRows']) == nrows
+        if ok and empty:
+            ok = table_text_len(tables[-1]) == 0
+        if ok:
+            return tables[-1]
+        seen = (f'{len(tables[-1]["table"]["tableRows"])} строк, '
+                f'{table_text_len(tables[-1])} знаков' if tables else 'ни одной')
+        print(f'  жду {"пустую " if empty else ""}таблицу {nrows} строк (вижу {seen})', flush=True)
+        time.sleep(6 * (k + 1))
+    raise SystemExit(f'таблица {nrows} строк так и не появилась в чтении вкладки')
+
+
+def insert_table_at_end(nrows, ncols, tries=4):
+    """Вставка таблицы в конец вкладки с ПЕРЕСЧЁТОМ индекса на каждой попытке.
+
+    Док большой, get_doc отвечает ~30 с, и чтение приходит устаревшим: после очистки вкладки
+    сегмент стал короче, а endIndex в ответе — ещё прежний. Индекс за концом сегмента Docs API
+    отбивает как «Precondition check failed», и обычный ретрай не помогает — он шлёт тот же
+    мёртвый индекс (YTUVI01 v2, 22.09.2026: четыре попытки подряд с одним и тем же 400).
+    """
+    for k in range(tries):
+        cur = tab_body()[-1]['endIndex'] - 1
+        try:
+            _batch_update(DOC_ID, [{'insertTable': {'location': {'tabId': tab_id, 'index': cur},
+                                                    'rows': nrows, 'columns': ncols}}])
+            return
+        except Exception as e:                                   # noqa: BLE001
+            if k == tries - 1:
+                raise
+            print(f'  insertTable повтор (индекс {cur} не принят):', str(e)[:110], flush=True)
+            time.sleep(8 * (k + 1))
+
+
 body = tab_body()
 first = next(c for c in body if 'paragraph' in c)
 start, end = first['startIndex'], body[-1]['endIndex'] - 1
@@ -314,10 +368,8 @@ for h, text, opts in head:
 batch_update(DOC_ID, reqs)
 print(f'шапка: {len(head)} абзацев', flush=True)
 
-cur = tab_body()[-1]['endIndex'] - 1
-batch_update(DOC_ID, [{'insertTable': {'location': {'tabId': tab_id, 'index': cur},
-                                       'rows': len(rows) + 1, 'columns': len(HDR)}}])
-tbl = [el for el in tab_body() if 'table' in el][-1]
+insert_table_at_end(len(rows) + 1, len(HDR))
+tbl = fresh_table(len(rows) + 1, empty=True)
 cells = [r['tableCells'] for r in tbl['table']['tableRows']]
 all_cells = [HDR] + [r['cells'] for r in rows]
 reqs = []
@@ -333,7 +385,7 @@ for i in range(0, len(reqs), 400):
     print(f'  текст {min(i + 400, len(reqs))}/{len(reqs)}', flush=True)
 
 # ── оформление: ширины, кегль, заливка глав и подглав, HEADING в ячейке ──
-tbl = [el for el in tab_body() if 'table' in el][-1]
+tbl = fresh_table(len(rows) + 1)
 tstart = tbl['startIndex']
 style = [{'updateTableColumnProperties': {
     'tableStartLocation': {'tabId': tab_id, 'index': tstart},
@@ -345,7 +397,7 @@ style.append({'updateTextStyle': {
     'textStyle': {'fontSize': {'magnitude': FONT, 'unit': 'PT'}}, 'fields': 'fontSize'}})
 batch_update(DOC_ID, style)
 
-tbl = [el for el in tab_body() if 'table' in el][-1]
+tbl = fresh_table(len(rows) + 1)
 trows = tbl['table']['tableRows']
 fills, heads = [], []
 for ri, r in enumerate([{'kind': 'hdr'}] + rows):
@@ -376,7 +428,7 @@ print(f'оформление: заливок {len(fills)}, заголовков 
 
 # ── кадры экранов: в колонку «Экран», по одному на экран, с конца ─────────
 if not a.no_images and nav_ids:
-    trows = [el for el in tab_body() if 'table' in el][-1]['table']['tableRows']
+    trows = fresh_table(len(rows) + 1)['table']['tableRows']
     img_reqs = []
     for ri in range(len(rows), 0, -1):
         r = rows[ri - 1]

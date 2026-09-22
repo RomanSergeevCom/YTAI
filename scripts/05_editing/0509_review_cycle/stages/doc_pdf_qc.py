@@ -47,14 +47,17 @@ LONG_PARA = 220             # сплошной абзац (как lint s10)
 MIN_IMG_W_PX = 640          # картинка в PDF уже — в доке будет мыло (колонка 262pt ≈ 524 px на retina)
 IMG_STD_MIN = 6.0           # однотонная картинка
 IMG_MEAN_DARK = 25.0        # почти чёрная
+IMG_P99_SUBJECT = 80.0      # …но p99 яркости ≥ N — в кадре яркий объект (УФ-фото, камень на чёрном: p99 94–148) → low, не брак
 PAGES_PER_TZ = (0.4, 1.6)   # ожидаемое число страниц = [a·n+2, b·n+6]
 PAGES_ADD = (2, 6)
 CAP_GAP = 42                # подпись не дальше N px (в единицах XML, 1.5×pt) под картинкой
+CAP_SPLIT_BOTTOM = 160      # картинка кончается ниже (h − N) и подпись первой строкой на след. странице → перенос, low (поле Docs + отступ ячейки = 121–131)
 LINE_TOL = 4                # фрагменты с |top−top| ≤ N — одна строка (эмодзи выше базовой линии на 2–3)
 
 TC = r'~?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*[–-]\s*\d{1,2}:\d{2}(?:\.\d+)?)?'
 TCR = re.compile(rf'(?<![\d:]){TC}(?![\d:])')
-CAP_RE = re.compile(r'^\d{1,2}:\d{2}(?:[–-]\d{1,2}:\d{2})?\s·\s\S')
+CAP_RE = re.compile(r'^(?:\d{1,2}:\d{2}(?:[–-]\d{1,2}:\d{2})?|сводно)\s·\s\S')   # «сводно» — справочная карта без таймкода
+                                                                                # (большие карты, карта названий в ТЗ-75/76)
 URL_RE = re.compile(r'https?://\S+')
 QUOTE_RE = re.compile(T('c2.qc_quote_rx'))                    # «…» (ru); «…» и “…” (en)
 LABELS = ('❌', '✅', '📋', '📍', '📚', '🎬', '💬', '❓')
@@ -63,7 +66,9 @@ if LANG == 'ru':                                              # русский �
     JARGON += [re.compile(r'\bнот[аы]\s+\d'), re.compile(r'\bкоммент\w*\s+\d'),
                re.compile(r'ночн\w+ разбор'), re.compile(r'\bревью\s*№')]
 # что сборщик вкладки пишет (doc_tab_tz_v3): шапка таблицы, префикс номера, «✅ СДЕЛАТЬ ·», «было «…» → стало»
-TZ_HDR = T('c2.tz_hdr')                                       # ['№', '⏱ TC', '', 'ТЗ монтажёру', 'Материал / ссылки']
+TZ_HDR = T('c2.tz_hdr')                                       # ['№', '⏱ TC', '', 'ТЗ монтажёру', 'Говорит', 'Материал / ссылки']
+# колонки и ширины — у сборщика вкладки (v3 16.09.2026: + «Говорит», дословная речь ката — её текст не проверяем)
+from doc_tab_tz_v3 import WIDTHS, C_TZ, C_SAY, C_MAT  # noqa: E402
 TZ_PREFIX = T('core.tz_prefix')                               # 'ТЗ' / 'FIX'
 DO_LABEL = T('core.lbl_do').split(' ', 1)[1] + ' ·'           # 'СДЕЛАТЬ ·' / 'DO ·'
 WASNOW_RE = re.compile(re.escape(T('core.was_pre')) + '.*?' + re.escape(T('core.was_mid').rstrip(' «“')))
@@ -148,34 +153,67 @@ def parse_xml(pdf):
     return pages
 
 
+HDR_NUM_RE = re.compile(r'^\d+\s+')          # шапка v5: «7 Описание ошибки» — номер колонки перед именем
+
+
 def find_columns(pages):
-    """Границы колонок по строке-шапке «№ | ⏱ TC | | ТЗ монтажёру | Материал / ссылки»."""
+    """Левые границы ВСЕХ колонок вкладки (v5: девять). Ищем строку-шапку, иначе — пропорции
+    WIDTHS от левого края картинок (XML-масштаб 1,5 px на pt).
+
+    До 22.09.2026 колонок было пять и границы звались x_tc/x_tz/x_say/x_mat; теперь считаем
+    список `xs` по числу колонок, а прежние ключи оставляем как псевдонимы для остального кода.
+    """
+    def aliases(xs, page=None, top=None):
+        return {'xs': xs, 'x_tc': xs[1], 'x_tz': xs[C_ERR], 'x_say': xs[C_SAY], 'x_mat': xs[C_MAT],
+                'page': page, 'top': top}
+
     for pg in pages:
         for mat in pg['frags']:
-            if not clean(mat.text).startswith(TZ_HDR[4].split(' ')[0]):               # 'Материал' / 'Material'
+            if not HDR_NUM_RE.sub('', clean(mat.text)).startswith(TZ_HDR[C_MAT].split(' ')[0]):
                 continue
-            same = [f for f in pg['frags'] if abs(f.top - mat.top) <= LINE_TOL]
-            tz = next((f for f in same if clean(f.text).startswith(TZ_HDR[3])), None)  # 'ТЗ монтажёру' / 'Edit notes'
-            tc = next((f for f in same if clean(f.text) in ('⏱ TC', 'TC', '⏱')), None)
-            if tz:
-                x_tc = tc.left - 4 if tc else tz.left - 90
-                return {'x_tc': x_tc, 'x_tz': tz.left - 6, 'x_mat': mat.left - 6, 'page': pg['n'], 'top': tz.top}
-    # запасной вариант — пропорции WIDTHS сборщика [34, 62, 22, 282, 276] от левого края картинок
+            same = sorted([f for f in pg['frags'] if abs(f.top - mat.top) <= LINE_TOL], key=lambda f: f.left)
+            if len(same) >= len(TZ_HDR) - 1:          # пустая колонка категории фрагмента не даёт
+                xs, k = [], 0
+                for cj in range(len(TZ_HDR)):
+                    if not TZ_HDR[cj] and cj > 0:     # категория: между соседями
+                        xs.append(xs[-1] + WIDTHS[cj - 1] * 1.5)
+                        continue
+                    xs.append(same[k].left - 6 if k < len(same) else xs[-1] + WIDTHS[cj - 1] * 1.5)
+                    k += 1
+                return aliases(xs, pg['n'], mat.top)
     lefts = [i['left'] for pg in pages for i in pg['imgs']]
     if not lefts:
         raise SystemExit('не нашёл ни шапки таблицы, ни картинок — это не вкладка ТЗ?')
-    x_mat = min(lefts) - 6
-    return {'x_tc': x_mat - 6 - (282 + 22 + 62) * 1.5, 'x_tz': x_mat - 6 - 282 * 1.5, 'x_mat': x_mat,
-            'page': None, 'top': None}
+    x_mat = min(lefts) - 6                            # картинки живут только в «Материале»
+    xs = [0.0] * len(WIDTHS)
+    xs[C_MAT] = x_mat
+    for cj in range(C_MAT - 1, -1, -1):
+        xs[cj] = xs[cj + 1] - WIDTHS[cj] * 1.5
+    for cj in range(C_MAT + 1, len(WIDTHS)):
+        xs[cj] = xs[cj - 1] + WIDTHS[cj - 1] * 1.5
+    return aliases(xs)
+
+
+COL_NAMES = ['num', 'tc', 'cat', 'say', 'roman', 'ok', 'tz', 'mat', 'do']
 
 
 def col_of(f, cols):
-    if f.left >= cols['x_mat']:
-        return 'mat'
-    if f.left >= cols['x_tz']:
-        return 'tz'
-    if f.left >= cols['x_tc']:
-        return 'tc'
+    """имя колонки по левому краю фрагмента. Имена прежние там, где смысл не менялся:
+    `tz` — теперь «Описание ошибки», `do` — новая «Как надо»."""
+    xs = cols.get('xs')
+    if not xs:                                        # старая вкладка (пять колонок)
+        if f.left >= cols['x_mat']:
+            return 'mat'
+        if f.left >= cols.get('x_say', cols['x_mat']):
+            return 'say'
+        if f.left >= cols['x_tz']:
+            return 'tz'
+        if f.left >= cols['x_tc']:
+            return 'tc'
+        return 'num'
+    for cj in range(len(xs) - 1, -1, -1):
+        if f.left >= xs[cj]:
+            return COL_NAMES[cj] if cj < len(COL_NAMES) else 'mat'
     return 'num'
 
 
@@ -215,7 +253,7 @@ def read_rows(pages, cols):
             head['tz'] += group_lines([f for f in frags if f.top <= lim])
             head['imgs'] += [im for im in pg['imgs'] if im['top'] + im['h'] // 2 <= lim]
             frags = [f for f in frags if f.top > lim]
-        bycol = {'num': [], 'tc': [], 'tz': [], 'mat': []}
+        bycol = {c: [] for c in COL_NAMES}
         for f in frags:
             bycol[col_of(f, cols)].append(f)
         lines = {c: group_lines(v) for c, v in bycol.items()}
@@ -224,11 +262,13 @@ def read_rows(pages, cols):
         i = 0
         while i < len(numl):
             t = clean(numl[i]['text'])
-            m = re.match(rf'^{re.escape(TZ_PREFIX)}-(\d{{1,2}})$', t)
-            if m and len(m.group(1)) == 2:
+            m = re.match(rf'^{re.escape(TZ_PREFIX)}-(\d{{1,3}})$', t)
+            # номер в узкой колонке переносится: «ТЗ-0» + «1», «ТЗ-10» + «0» (ТЗ-100) — хвост из цифр строкой ниже
+            wrap = m and i + 1 < len(numl) and re.match(r'^\d{1,2}$', clean(numl[i + 1]['text'])) \
+                and numl[i + 1]['top'] - numl[i]['top'] <= 18
+            if m and not wrap and len(m.group(1)) >= 2:
                 starts.append((numl[i]['top'], 'tz', f'{TZ_PREFIX}-{m.group(1)}'))
-            elif m and i + 1 < len(numl) and re.match(r'^\d$', clean(numl[i + 1]['text'])) \
-                    and numl[i + 1]['top'] - numl[i]['top'] <= 18:
+            elif wrap:
                 starts.append((numl[i]['top'], 'tz', f'{TZ_PREFIX}-{m.group(1)}{clean(numl[i + 1]["text"])}'))
                 wrapped += 1
                 i += 1
@@ -254,11 +294,11 @@ def read_rows(pages, cols):
         cur_page_cur = cur
         for s_top, kind, val in starts:
             row = {'kind': kind, 'num': val if kind == 'tz' else None, 'label': val if kind == 'ch' else None,
-                   'page': pg['n'], 'top': s_top, 'lines': {'tz': [], 'mat': [], 'num': []}, 'imgs': [],
+                   'page': pg['n'], 'top': s_top, 'lines': {c: [] for c in COL_NAMES}, 'imgs': [],
                    'pages': {pg['n']}, 'first_page_tz_lines': 0}
             rows.append(row)
             start_rows[s_top] = row
-        for c in ('tz', 'mat', 'num'):
+        for c in ('tz', 'mat', 'num', 'say'):                # say — речь ката: хранится, но в проверки не идёт
             for ln in lines[c]:
                 r = row_for(ln['top'])
                 if r is None:
@@ -411,7 +451,7 @@ def check_row(qc, row, pages_by_n, n_pages):
             # картинка у нижнего края — подпись могла уехать на следующую страницу
             nxt = [ln for ln in lm if ln['page'] == im['page'] + 1]
             nl = min(nxt, key=lambda ln: ln['top']) if nxt else None
-            if nl and CAP_RE.match(nl['text'].strip()) and bottom > pages_by_n[im['page']]['h'] - 120:
+            if nl and CAP_RE.match(nl['text'].strip()) and bottom > pages_by_n[im['page']]['h'] - CAP_SPLIT_BOTTOM:
                 qc.add(im['page'], tz, 'low', 'caption_split_page', f'подпись на следующей странице: {nl["text"]}')
                 continue
             qc.add(im['page'], tz, 'high', 'caption_missing', 'под картинкой нет строки-подписи')
@@ -488,8 +528,12 @@ def check_images(qc, pdf, rows, pages, n_expected):
                 stats['uniform'] += 1
                 qc.add(e['page'], e['tz'], 'high', 'image_uniform', f'картинка однотонная (std {arr.std():.1f}, mean {arr.mean():.0f})')
             elif arr.mean() < IMG_MEAN_DARK:
-                stats['dark'] += 1
-                qc.add(e['page'], e['tz'], 'high', 'image_dark', f'картинка почти чёрная (mean {arr.mean():.0f})')
+                p99 = float(np.percentile(arr, 99))
+                if p99 >= IMG_P99_SUBJECT:     # тёмный фон, но есть яркий объект (УФ-фото, камень на чёрном) — не брак
+                    qc.add(e['page'], e['tz'], 'low', 'image_dark_photo', f'тёмное фото с объектом (mean {arr.mean():.0f}, p99 {p99:.0f})')
+                else:
+                    stats['dark'] += 1
+                    qc.add(e['page'], e['tz'], 'high', 'image_dark', f'картинка почти чёрная (mean {arr.mean():.0f}, p99 {p99:.0f})')
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     return {'n_images': len(imgs), 'n_expected': n_expected, 'min_w': min((e['w'] for e in imgs), default=0), **stats}

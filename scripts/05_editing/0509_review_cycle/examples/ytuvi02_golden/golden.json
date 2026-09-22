@@ -3,8 +3,8 @@
  "project": "YTUVI02",
  "real": "/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate/00_Setup/05_Review",
  "sandbox": "/Users/romansergeev/YTAI_work/_golden/YTUVI02/00_Setup/05_Review",
- "taken": "2026-09-22T00:27:44",
- "code_version": "c4e0931",
+ "taken": "2026-09-22T11:08:36",
+ "code_version": "7f80e15",
  "inputs": {
   "YTUVI02_v1.words.json": "ba7efddebec7b9df834d40ad98c8c6c9f4e93be3",
   "pravki/drive_clips.json": "9564a5660d8d7f5748377011015e9607a113c8b6",
@@ -89,7 +89,7 @@
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
     "_stdout.txt": "da7b69d2d121b7b84dce91e590c645ce80f74365",
-    "pravki/pravki_v2.json": "30ef80e6cd250d905e3f599535be2083d6311e65",
+    "pravki/pravki_v2.json": "92c1d949db11a9a23fc3d77198f5a1d259664c3b",
     "work/v1/lint_v7.json": "f30fe49db20870efed81576a533818fd79b3f868"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/s10_format_tz.py",
@@ -101,7 +101,7 @@
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
     "_stdout.txt": "630234be2826ad0855dc35c93d70e4b55b0a9e1e",
-    "pravki/pravki_v2.json": "30ef80e6cd250d905e3f599535be2083d6311e65"
+    "pravki/pravki_v2.json": "92c1d949db11a9a23fc3d77198f5a1d259664c3b"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/s11_apply_sources.py",
    "env": {}
@@ -450,9 +450,9 @@
    "name": "tz_dump",
    "rc": 0,
    "outputs": {
-    "_dump/tz_requests.json": "dbda5e9f325083335d4f90cda0306861566c077e",
+    "_dump/tz_requests.json": "02e465cc633ee86f36accb62f27f4453b9e80e41",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "b368d7dc51f9b78449ab89afa100c43f939a1bbf"
+    "_stdout.txt": "899928a87c775e1f83498c18ea5c6acc880a0845"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/doc_tab_tz_v4.py --dump-requests <SB>/_dump/tz_requests.json",
    "env": {}

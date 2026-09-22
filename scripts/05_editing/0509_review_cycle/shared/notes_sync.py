@@ -22,7 +22,8 @@ usage:
   notes_sync.py fmt                           ревью-вёрстка листа (идемпотентно; push вызывает сам)
   notes_sync.py install-autopush [--dry-run] [--throttle 90]
         launchd-вотчер notes/ → push: templates/notes-push.plist.j2 (str.format) →
-        ~/Library/LaunchAgents/ae.rya.{project}-notes-push.plist + launchctl bootstrap; лог logs/notes_push.log
+        ~/Library/LaunchAgents/ae.rya.{project}-notes-push.plist + launchctl bootstrap;
+        лог ~/Library/Logs/ytai/ae.rya.{project}-notes-push.log (встроенный диск: на внешнем SSD launchd падает EX_CONFIG 78)
   notes_sync.py uninstall-autopush            launchctl bootout + удалить plist
 
 Токен Google — rscore (doctab_lib.access_token, ~/.config/rscore/token.json). Наружу пишут только
@@ -343,8 +344,14 @@ def render_plist(throttle=90):
     vals = {'label': LABEL, 'python': python, 'script': str(Path(__file__).resolve()),
             'notes_dir': str(NOTES), 'throttle': int(throttle),
             'path_env': '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin',
-            'card': str(P.CARD_PATH), 'log': str(LOGS / 'notes_push.log')}
+            'card': str(P.CARD_PATH), 'log': str(AGENT_LOG)}
     return TEMPLATE.read_text(encoding='utf-8').format(**{k: (xml_escape(v) if isinstance(v, str) else v) for k, v in vals.items()})
+
+
+# Лог launchd-агента — на ВСТРОЕННОМ диске: StandardOutPath на внешнем SSD launchd открыть не может
+# (15.09.2026, YTUVI02: 4 запуска подряд EX_CONFIG 78, лог не создан ни разу при смонтированном T7),
+# и тот же 78 после сна диска. Ошибки самого push видны здесь.
+AGENT_LOG = Path.home() / 'Library' / 'Logs' / 'ytai' / f'{LABEL}.log'
 
 
 def cmd_install(dry_run=False, throttle=90):
@@ -354,7 +361,7 @@ def cmd_install(dry_run=False, throttle=90):
         print(f'# dry-run: plist НЕ записан ({PLIST}); notes: {NOTES}', file=sys.stderr)
         return
     NOTES.mkdir(parents=True, exist_ok=True)     # WatchPaths должен существовать, иначе первый триггер — его создание
-    LOGS.mkdir(parents=True, exist_ok=True)
+    AGENT_LOG.parent.mkdir(parents=True, exist_ok=True)
     PLIST.parent.mkdir(parents=True, exist_ok=True)
     PLIST.write_text(text, encoding='utf-8')
     uid = os.getuid()
@@ -362,7 +369,7 @@ def cmd_install(dry_run=False, throttle=90):
     r = subprocess.run(['launchctl', 'bootstrap', f'gui/{uid}', str(PLIST)], capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit(f'launchctl bootstrap: rc={r.returncode} {r.stderr.strip()}')
-    print(f'autopush установлен: {PLIST}\n   WatchPaths {NOTES} · throttle {throttle} с · лог {LOGS / "notes_push.log"}')
+    print(f'autopush установлен: {PLIST}\n   WatchPaths {NOTES} · throttle {throttle} с · лог {AGENT_LOG}')
 
 
 def cmd_uninstall():

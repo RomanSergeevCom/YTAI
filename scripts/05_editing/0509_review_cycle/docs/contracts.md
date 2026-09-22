@@ -51,6 +51,10 @@
 | `clips`?, `speakers`? | list / dict | режим montage_tz: клипы встык, роли |
 | `notes`? | `[str]` | грабли проекта — печатаются в `REVIEW_STATE.md` |
 | `verify_tz`?, `verify_first_tz`? | dict / str | проверки «по содержанию ТЗ» для verify-скриптов |
+| `drop_segments`? | `[segment_id]` | экраны, которые Роман удалил на ревью-таймлайне (id сегментов прошлой сборки `{CODE}_review_v6.json`, читаются из автосейва .prproj). `make_review_v6` вырезает их ПОСЛЕ арбитража — остальные экраны остаются там, где он их отсматривал |
+| `disabled_ranges`? | `[{t0, t1, why, source}]` | куски ката, выключенные на таймлайне (Clip → Enable, в .prproj `ClipTrackItem/IsMuted`) = «вырезать». `make_review_v6` режет V1 на `part.base_segments` (`on_NN` / `off_NN` + `disabled: true`, §9); `kb_visuals needs` не ищет визуал в бите, перекрытом > 50 %. ТЗ «вырезать» к куску заводится отдельно (YTUVI02: ТЗ-63) |
+| `v2`? | `[{kind, sid, path, t, in?, out?, opts}]` | вставки слоя V2 (свои клипы и стиллы): `kind` `seg` (клип `in`→`out` в `t`) \| `still` (картинка в `t`, `opts.dur`); `path` абсолютный или с префиксом `FOOT/` `REFS/` `NAT/` `MOCK/`; `opts` зависит от `kind`: `seg` — {`keep_audio`, `speaker`, `kind`, `audio`, `prio`, `item_marker` {name, comment}}, `still` — {`dur`, `prio`, `item_marker`}; лишний ключ (например `dur` у `seg`) → TypeError в `make_review_v6`. Пишет `kb_visuals apply` (перезаписывает ключ целиком), читает `make_review_v6` (цвет Cyan) |
+| `footage_routing`? | path | каталог своих съёмок для `kb_visuals pick`; нет — `{project}/00_Setup/FOOTAGE_ROUTING.md` |
 
 Пути внутри карточки могут быть относительными к папке карточки.
 
@@ -77,6 +81,7 @@
 | `drive` | `{materials_folder: "Review_materials"}` |
 | `notes_cycle` | bool — заводить ли notes-цикл по умолчанию |
 | `mode_default` | `cut_review` \| `montage_tz` |
+| `kb`? | `{root, exclude_sources, min_side, per_beat, footage_root, books_manifest?, books_policy?, drive_originals_root?, drive_footage_root?}` — база знаний канала для `stages/kb_visuals.py`: `root` — папка с `_KB/index.sqlite` (FTS5 по подписям), `exclude_sources` — префиксы источников, которые не берём (YTUVI с 16.09.2026: пусто — база открыта целиком, включая `01_SSEF`), `min_side` (1000 px), `per_beat` (6 кандидатов на бит), `footage_root` — корень своих съёмок. `books_manifest` — размеченные половины страниц книг (YTUVI: `01_ScanBook-SSEF/02_Pages/halves_manifest.json` — сканы вынесены из базы, плохое качество: book, module, printed_page_no, heading, summary, content_type); `books_policy` `fallback` — книга идёт в кандидаты, только если ни одна картинка базы не прошла verify (метка «⚠️ скан книги — в базе не нашлось»), `always` (по умолчанию) — как раньше. `drive_originals_root` / `drive_footage_root` — id Drive-зеркала базы и папки своих съёмок: ссылки ТЗ на САМИ файлы (`shared/drive_links.py`, кэш `pravki/drive_originals_ids.json`). Нет ключа `kb` — корни `/nonexistent`, `kb_visuals pick` падает на открытии `_KB/index.sqlite` |
 
 ## 3. `review_terms.json` — термины и места фильма (рядом с карточкой)
 
@@ -125,7 +130,9 @@ TERM_EXTRA, TERM_RX, LOC_RX, MAP_WINDOWS, place_family`.
 | `est` | ❌ СЕЙЧАС — что на экране |
 | `nado` | отрендеренный текст блоков (генерится из `parts`) |
 | `parts` | `{now: [{h, items[]}], do: [{h, items[]}], list?, where?, source?, timeline?}` — структурная истина |
-| `material_rich` | `[{t, img, src?, src_auto?}]` — материалы: подпись, картинка, источник |
+| `material_rich` | `[{t, img, src?, src_auto?}]` — материалы: подпись, картинка, источник (у вставок kb_visuals — «📄 файл целиком: <Drive-ссылка>#page=N · стр. N · 📁 папка: <ссылка>»; у своих клипов — оригинал в Drive-футаже; у макетов — строка на каждый исходник) |
+| `kbv_group`? | группа `picks.json`, из которой запись собрал `kb_visuals apply`: по ней запись остаётся на СВОЁМ месте при повторном apply (номер ТЗ = позиция в `all`); убранная группа (`removed`) → `status: rejected`, `rejected_by: kb_visuals`, `removed_why` |
+| `gen`? | `sub` \| `terms` \| `locs` — список из данных (подглавы / термины / места) в этой ТЗ; без поля s10 списков не ставит (по номеру ТЗ-30/75/76 — только у проекта ytuvi01) |
 | `typo` | `[{tc, was, now}]` — пары «было → стало» |
 | `decision`? | ❓ вопрос Роману |
 | `status`? | `rejected` — Роман снял строку (номер сохранён) |
@@ -133,6 +140,20 @@ TERM_EXTRA, TERM_RX, LOC_RX, MAP_WINDOWS, place_family`.
 | `skeptic`? | `{code: T|V|H|C|F|D, reason}` — вердикт скептика |
 | `sensitive`? | YTCH: `{flag: true, reason}` — ⚠️ на подтверждение фонда |
 | `notes` | ids заметок/источников |
+
+**Номер ТЗ = позиция записи в `all`** на всех поверхностях (s10, вкладка, verify, лист, таймлайн, doc_pdf_qc). Записи не
+удаляются и не переставляются: снятое — `status: rejected`, новое — только в конец. `pravki/tz_overrides.json` привязан
+к номерам (`"ТЗ-NN": {parts_replace | parts | material_rich | title …}`); поле `_title` — заголовок, под который писался
+ручной текст: s10 пропускает оверрайд с `!!`, если у записи на этой позиции другой заголовок.
+
+**Вкладка ТЗ (канон 5.6, v3 16.09.2026):** `№ | ⏱ TC | категория | ТЗ монтажёру | Говорит | Материал / ссылки`,
+ширины `[30, 56, 20, 176, 132, 262]` pt. «Говорит» — `shared/said.py`: дословные слова `words.json` в окне `tc_range`
+±3 с (до границ предложений; диапазон > 40 с — якорь ±10 с; ≤ 70 слов), абзацы по паузе ≥ 1,2 с / смене спикера,
+жирным — слова в секунде `v1_tc`; у глав и ТЗ «весь фильм» пусто. verify: каждый абзац — подстрока потока слов.
+
+**`work/{cut}/kb_visuals/picks.json`**: `groups[]` только дописываются (`removed: "<почему>"` вместо удаления),
+`inserts[].sources` у макетов (`src: mock`) — `[{clip: путь|RYA-…} | {kb: путь картинки базы} | {url, note}]` → ссылки
+на каждый исходник. `targets_<name>.json` → `kb_visuals targets` → `candidates_<name>.json` (тот же формат, что у битов).
 
 ## 6. `work/{cut}/candidates.json` — маршрутизация кандидатов (0 токенов)
 
@@ -243,6 +264,9 @@ markers, min_builder, chapter_markers, bin, created, note}`, `segments[{segment_
 color, source_file, source_path, clip_id, kind, use, speaker, source_in_sec, source_out_sec, timeline_in_sec, timeline_out_sec,
 item_marker?}]`, `tracks`, `audio_policy`, `required_imports`, `counts`, `dropped`. Слои: V1 оригинал · V2 футажи ·
 V3 инфографика · V4 плашки ТЗ · V5 стрелки · V6 структура; маркеры секвенции = только главы.
+`part.base_segments?` — только при `card.disabled_ranges`: V1 кусками `{seg_id: on_NN|off_NN, source_in_sec, source_out_sec,
+timeline_in_sec, timeline_out_sec, disabled?: true}` встык на всю длину ката; partsBuilder ≥ 1.13.0 ставит выключенным кускам
+V1/A1 `createSetDisabledAction` (кусок тёмный, но на месте — tc остальных экранов не сдвигаются). Без ключа — цельный V1, как раньше.
 `part.fps` = `P.FPS_EXACT` (29.97 → 30000/1001); все `timeline_in/out_sec` и маркеры глав лежат на этой сетке (допуск
 0.02 кадра), стиллы ≤ floor(4.8·fps) кадров. Язык маркеров/шапки/summary — i18n (§10), номер ТЗ на поверхности — `tz_label`.
 
@@ -280,3 +304,32 @@ ch_name}}`; `ok` → бэкап `review_card.json.bak-chapters-<ts>` и заме
 карточка не трогается, решает Роман. После применения `review.py` перепомечает `chapter` у `screens_v6.json` и
 `audit_findings.json` по новым границам (без OCR). Если главы меняются после прохода дальше — `run --only chapters`, затем
 `run --from terms`.
+
+## 12. Обратная связь по кату (`feedback-v1`) — указатель
+
+Полный контракт — **`docs/feedback_v1.md`** (модель `work/{cut}/feedback.json`, статусы и разделы, лимиты текста, облачный
+сверщик, протокол кадров). Здесь — только то, что касается карточки, стейта и цепочки.
+
+Ключи карточки (все необязательные; без `prev_pravki` три стадии пропускаются, а страница продюсера их не показывает):
+
+| ключ | значение | по умолчанию |
+|---|---|---|
+| `prev_pravki` | ТЗ прошлой версии, путь от `05_Review` или абсолютный; env `YTAI_PREV_PRAVKI`. `memex push` кладёт файл в `aux/` | нет → сверка пропущена; ключ есть, а файла нет → стадия `feedback` = ⚠️ с путём |
+| `prev_cut_version` | `"v4"` | из `align_against` по `_v(\d+)\.words` |
+| `images_mode` | `none` \| `public_folder` \| `temp_grant`; читается ТОЛЬКО из карточки (`proj_config.card_only`, окружением не подменить) | `public_folder` при непустом `shots_remote`, иначе `none` |
+| `private_frames_folder_id` | папка Drive для кадров вкладки, БЕЗ доступа по ссылке (ни прямого, ни унаследованного) | нет → `temp_grant` отказывает |
+| `feedback_tab` | имя вкладки | «Обратная связь · {ver}» |
+| `feedback_sensitive_extra` | номера пунктов прошлого ТЗ, которые считать чувствительными, хотя флага у них нет: `[86, 97]` (в облако не уходят); env `YTAI_FEEDBACK_SENSITIVE_EXTRA=86,97` | `[]` |
+
+Стадии (в конце `STAGES_CUT`, после `producer_page`, все SOFT, хост mac): `feedback` (модель → один облачный агент →
+вливание; модель пересобирается ВСЕГДА перед вливанием; устаревший ответ не удаляется, а переименовывается в
+`cloud/out/feedback_check.stale-<sha>.json`; в автономном режиме — один облачный раунд) → `feedback_page` (HTML, без отправки;
+в Telegram — только `shared/feedback_page.py --send` после «ок») → `doc_feedback` (вкладка + проверка `ALL PASS`; кадры — только
+`run --images temp` с Мака; перед записью — отказ, если на Memex жив прогон этого же проекта или проверить это не удалось,
+отключается `YTAI_SKIP_MEMEX_CHECK=1`; `edits_guard` не вызывается — вкладка целиком пересобирается кодом).
+Дочерним процессам `review.py` передаёт `YTAI_HOST` (`mac`|`memex`) и `YTAI_AUTONOMOUS=1`.
+
+`review_state.json → surfaces`: `feedback {at, cloud: applied|skipped}` · `feedback_html` = файл `{CODE}_{cut}_feedback.html`
+(гейт стадии — наличие файла) · `doc_feedback {at, rc, doc, images, verify: ALL PASS|FAIL}`.
+`review.py status` показывает ⚠️, пока в `work/{cut}/feedback_grants.json` есть незакрытые временные доступы к кадрам.
+Регрессия: `examples/feedback_fixture/` (в `review.py selftest`, офлайн, данные — литералы в `build_fixture.py`).

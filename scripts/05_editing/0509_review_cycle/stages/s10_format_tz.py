@@ -54,6 +54,12 @@ KIND_LOW_OTHER = T('core.kind_low.other')
 # YTUVI-фикстуры (списки ТЗ-30/75/76, карточки ADD_MAT) — русские тексты под номера ТЗ русских фильмов; в EN не
 # применяются вовсе, в RU — только когда есть их данные (sub в карточке, термины/места, картинка в mockups)
 FIXTURES = LANG == 'ru'
+# Номерные фикстуры (GEN_* по ТЗ-30/75/76, ADD_MAT) — тексты и карточки YTUVI01 под ЕГО номера. У другого фильма
+# тот же номер — другое ТЗ: на YTUVI02 v2 ТЗ-75/76 (вставки МЬЯНМА/ВКЛЮЧЕНИЯ) затёрло списками терминов и мест,
+# а к ТЗ-25 «опечатка» прицепило «КАРТЬЕ». Поэтому по номеру — только у ytuvi01; у остальных список включает
+# явное поле записи `gen: sub | terms | locs`.
+NUM_FIXTURES = FIXTURES and P.PROJECT == 'ytuvi01'
+GEN_BY_FIELD = {'sub': 'ТЗ-30', 'terms': 'ТЗ-75', 'locs': 'ТЗ-76'}
 
 pr = json.load(open(PRAVKI))
 allp = pr['all']
@@ -387,7 +393,10 @@ GEN_LIST = {'ТЗ-30': lambda: gen_structure('sub'), 'ТЗ-75': gen_terms, 'ТЗ
 
 
 def _card(img, t, title, n, what):
-    return {'t': f'{what} «{title}» — {_plural(n, "показ", "показа", "показов")}', 'img': img, '_t': t}
+    # подпись в каноне «таймкод · что видно» (таймкод — первое упоминание), иначе doc_qc считает картинку без подписи
+    return {'t': f'{what} «{title}» — {_plural(n, "показ", "показа", "показов")}', 'img': img, '_t': t,
+            'cap': f'{int(t) // 60}:{int(t) % 60:02d} · {what} «{title}» — {_plural(n, "показ", "показа", "показов")}',
+            'cap_replaces_t': True}
 
 
 def gen_term_cards():
@@ -399,11 +408,17 @@ def gen_term_cards():
     cards = [_card(f'term_{k}.png', min(e['t'] for e in es), meta.get(k, k.upper()), len(es), 'Плашка')
              for k, es in by.items()]
     cards.sort(key=lambda c: c.pop('_t'))
-    grp = 'termgrp_marble_iron_fluor.png'
-    cards.append({'t': 'Так выглядит общая плашка, когда 2–3 термина звучат подряд', 'img': grp})
+    # общая плашка «2–3 термина подряд»: имя из term_groups ЭТОГО фильма (было зашито имя первого фильма
+    # `termgrp_marble_iron_fluor.png` — у второго такой группы нет, и verify падал «карточка на каждый пункт»)
+    grp = next((f"termgrp_{'_'.join(g['keys'])}.png" for g in (TJ.get('term_groups') or []) if len(g.get('keys') or []) >= 2), '')
+    if grp and (Path(P.MOCK) / grp).exists():
+        cards.append({'t': 'Так выглядит общая плашка, когда 2–3 термина звучат подряд', 'img': grp,
+                      'cap': 'сводно · общая плашка, когда 2–3 термина звучат подряд', 'cap_replaces_t': True})
     # сводная шпаргалка: что звучит → как подписываем (Роман 11.09 — «иначе легко путаться»)
-    cards.append({'t': 'КАРТА НАЗВАНИЙ: термины по порядку появления, часть 1', 'img': 'info_namemap_terms.png'})
-    cards.append({'t': 'КАРТА НАЗВАНИЙ: термины по порядку появления, часть 2', 'img': 'info_namemap_terms_2.png'})
+    cards.append({'t': 'КАРТА НАЗВАНИЙ: термины по порядку появления, часть 1', 'img': 'info_namemap_terms.png',
+                  'cap': 'сводно · КАРТА НАЗВАНИЙ: термины по порядку появления, часть 1', 'cap_replaces_t': True})
+    cards.append({'t': 'КАРТА НАЗВАНИЙ: термины по порядку появления, часть 2', 'img': 'info_namemap_terms_2.png',
+                  'cap': 'сводно · КАРТА НАЗВАНИЙ: термины по порядку появления, часть 2', 'cap_replaces_t': True})
     return cards
 
 
@@ -420,14 +435,12 @@ def gen_loc_cards():
         img = f'map_{k}_note.png' if any(e.get('note') for e in own) else f'map_{k}.png'
         cards.append(_card(img, min(e['t'] for e in own), PLACE[k]['label'], len(own), 'Мини-карта'))
     cards.sort(key=lambda c: c.pop('_t'))
-    return cards + [
-        {'t': 'Большая карта: одна страна — два разных месторождения', 'img': 'mapfull_burma.png'},
-        {'t': '«Рубиновый пояс», шаг 1 из 3', 'img': 'mapfull_belt.png'},
-        {'t': '«Рубиновый пояс», шаг 2 из 3', 'img': 'mapfull_belt_2.png'},
-        {'t': '«Рубиновый пояс», шаг 3 из 3', 'img': 'mapfull_belt_3.png'},
-        {'t': 'КАРТА НАЗВАНИЙ: все 13 мест одним кадром — что звучит и что ставим на экран',
-         'img': 'info_namemap_places.png'},
-    ]
+    ref = [('Большая карта: одна страна — два разных месторождения', 'mapfull_burma.png'),
+           ('«Рубиновый пояс», шаг 1 из 3', 'mapfull_belt.png'),
+           ('«Рубиновый пояс», шаг 2 из 3', 'mapfull_belt_2.png'),
+           ('«Рубиновый пояс», шаг 3 из 3', 'mapfull_belt_3.png'),
+           ('КАРТА НАЗВАНИЙ: все 13 мест одним кадром — что звучит и что ставим на экран', 'info_namemap_places.png')]
+    return cards + [{'t': t, 'img': img, 'cap': f'сводно · {t}', 'cap_replaces_t': True} for t, img in ref]
 
 
 GEN_MAT = {'ТЗ-75': gen_term_cards, 'ТЗ-76': gen_loc_cards}
@@ -459,8 +472,8 @@ ADD_MAT = {
 def add_cards(p):
     """дописать карточку-рендер, если её ещё нет (оверрайды и GEN_MAT не трогаем).
     Фикстура YTUVI: только RU и только если сама картинка есть в mockups — у другого фильма тот же номер ТЗ
-    не должен получить «мини-карту МОГОК»."""
-    if not FIXTURES:
+    не должен получить «мини-карту МОГОК» (картинка с тем же именем у него тоже бывает — поэтому только ytuvi01)."""
+    if not NUM_FIXTURES:
         return
     have = {m.get('img') for m in (p.get('material_rich') or [])}
     for img, cap in ADD_MAT.get(p['num'], []):
@@ -556,20 +569,53 @@ FIX_LINE = (re.compile(r'^(?:Заменить титр на|Исправить �
             re.compile(r'^(?:Replace the on-screen text with|Replace the title with|Fix to|Redraw the title:?)\s*“(.+?)”'))
 
 
+def _norm(s):
+    """текст для сравнения на дубль: без кавычек, маркеров, таймкодов, регистра и лишних пробелов"""
+    s = TC_RE.sub(' ', clean(s))
+    s = re.sub(r'[«»„“”"\'`▸•·—–\-:]+', ' ', s)
+    return re.sub(r'\s+', ' ', s).strip().lower()
+
+
 def apply_typo(p):
-    """p['typo'] → первый блок ✅ СДЕЛАТЬ «tc ▸ было «…» → стало «…»»; дубли «Заменить титр на «…»» убрать."""
+    """p['typo'] → первый блок ✅ СДЕЛАТЬ «tc ▸ было «…» → стало «…»»; пересказы того же исправления убрать.
+
+    Раньше дедуп смотрел ТОЛЬКО на строки верхнего уровня и только на три формулировки из FIX_LINE.
+    Поэтому одно исправление печаталось до трёх раз: пара «было → стало», сырой `fix` отдельной
+    строкой (`parts_from_audit` кладёт его строкой, если он длиннее 70 знаков или начинается со
+    строчной) и тот же текст пунктом внутри `{h, items}` — словари дедуп вообще не разбирал
+    (YTUVI01 v2, ТЗ-01 «кристале ситнетического рубине», 22.09.2026).
+    Теперь сравниваем нормализованный текст и заходим внутрь `items`.
+    """
     ty = p.get('typo') or []
     do = [v for v in (p['parts'].get('do') or []) if not (isinstance(v, dict) and v.get('_typo'))]
     if not ty:
         p['parts']['do'] = do
         return
+    # вложенные пары схлопываем: судья часто даёт и строку целиком, и слово внутри неё —
+    # «было «кристале ситнетического рубине»» и «было «ситнетического»» на том же таймкоде.
+    # Монтажёру это одна правка, а не две (Роман, 22.09.2026).
+    ty = [t for t in ty if not any(o is not t and o.get('tc') == t.get('tc')
+                                   and len(o.get('was', '')) > len(t.get('was', ''))
+                                   and t.get('was', '') in o.get('was', '') for o in ty)]
+    p['typo'] = ty
     nows = [t['now'] for t in ty]
+    seen = {_norm(n) for n in nows if _norm(n)} | {_norm(t['was']) for t in ty if _norm(t['was'])}
+
+    def dup_text(v):
+        s = clean(v)
+        if not s:
+            return False
+        m = FIX_LINE.match(s)
+        if m and any(m.group(1) in n or n in m.group(1) for n in nows):
+            return True
+        n = _norm(s)
+        return bool(n) and n in seen           # голая строка-исправление: «кристалле синтетического рубина»
 
     def dup(v):
-        if not isinstance(v, str):
-            return False
-        m = FIX_LINE.match(clean(v))
-        return bool(m) and any(m.group(1) in n or n in m.group(1) for n in nows)
+        if isinstance(v, dict):
+            v['items'] = [x for x in (v.get('items') or []) if not dup_text(x)]
+            return not v['items'] and not clean(v.get('h'))
+        return dup_text(v)
     do = [v for v in do if not dup(v)]
     items = [f"{t['tc']} ▸ {typo_line(t['was'], t['now'])}" for t in ty]
     do.insert(0, {'h': p.get('typo_h') or T('c1.s10.typo_h'), 'items': items,
@@ -635,6 +681,20 @@ def render(p):
     return '\n'.join(out)
 
 
+# Колонки вкладки (решение Романа 22.09.2026): ошибка и лечение живут в РАЗНЫХ колонках,
+# 📍 ГДЕ не печатается вовсе — контекст с подсветкой слов даёт колонка «Говорит», а якорь
+# дублировал её слово в слово. `nado` остаётся прежним: его читают бриф, страница продюсера,
+# плашки ТЗ на таймлайне и pravki_lib.
+COLS = {'err': ['now'], 'tech': ['src', 'tl'], 'do': ['do', 'list']}
+
+
+def render_cols(p):
+    """→ {'err': «❌ СЕЙЧАС …», 'tech': «📚 ИСТОЧНИК … 🎬 НА ТАЙМЛАЙНЕ …», 'do': «✅ СДЕЛАТЬ …»}"""
+    parts = p.get('parts') or {}
+    return {col: '\n'.join(ln for k in keys for ln in render_block(k, parts.get(k)))
+            for col, keys in COLS.items()}
+
+
 def lint(p):
     multi, long_ = [], []
     for ln in p['nado'].split('\n'):
@@ -672,12 +732,23 @@ if OVERRIDES and _ov_proj != P.PROJECT:
 for num, ov in OVERRIDES.items():
     if num.startswith('_'):
         continue
-    idx = int(num[3:]) - 1
+    try:
+        idx = int(num[3:]) - 1
+    except ValueError:
+        print('!! ключ оверрайда не номер ТЗ — пропуск:', num)
+        continue
     if not (0 <= idx < len(allp)):
         print('!! нет', num)
         continue
     p = allp[idx]
+    # номер ТЗ = позиция в pravki: если записи сдвинулись, ручной текст лёг бы на чужое ТЗ. `_title` — заголовок,
+    # под который писался текст (или его собственный `title`, если оверрайд сам меняет заголовок)
+    if ov.get('_title') and p.get('title') not in (ov['_title'], ov.get('title')):
+        print(f'!! {num}: оверрайд писался под «{ov["_title"][:50]}», а сейчас «{str(p.get("title"))[:50]}» — пропуск')
+        continue
     for k, v in ov.items():
+        if k.startswith('_'):
+            continue
         if k in ('title', 'category', 'v1_tc', 'tc_range', 'est', 'status', 'decision', 'roman_comment', 'typo', 'typo_h'):
             p[k] = v
         elif k == 'material_rich':
@@ -696,16 +767,18 @@ GEN_DATA = {'ТЗ-30': FIXTURES and bool(SUB),
             'ТЗ-75': FIXTURES and bool(TJ.get('terms')) and bool(TERMS),
             'ТЗ-76': FIXTURES and bool(TJ.get('locs')) and bool(PLACE)}
 for p in allp:
-    gen_on = GEN_DATA.get(p['num'], False)
-    if p['num'] in GEN_LIST and gen_on:
-        p['parts']['list'] = GEN_LIST[p['num']]()
-    if p['num'] in GEN_TITLE and gen_on:
-        p['title'] = GEN_TITLE[p['num']]()
-    if p['num'] in GEN_MAT and gen_on:            # правый столбец: карточка на каждый термин/место
-        p['material_rich'] = GEN_MAT[p['num']]()
+    gk = GEN_BY_FIELD.get(p.get('gen')) or (p['num'] if NUM_FIXTURES else None)
+    gen_on = bool(gk) and GEN_DATA.get(gk, False)
+    if gen_on and gk in GEN_LIST:
+        p['parts']['list'] = GEN_LIST[gk]()
+    if gen_on and gk in GEN_TITLE:
+        p['title'] = GEN_TITLE[gk]()
+    if gen_on and gk in GEN_MAT:                  # правый столбец: карточка на каждый термин/место
+        p['material_rich'] = GEN_MAT[gk]()
     add_cards(p)
     apply_typo(p)
     p['nado'] = render(p)
+    p.update({f'nado_{k}': v for k, v in render_cols(p).items()})
     if p.get('status') != 'rejected':
         multi, long_ = lint(p)
         if multi or long_:

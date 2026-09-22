@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """build_montage_cam2.py — монтажный лист ВТОРОЙ сцены: «Эволюция ТВ» (C0014+C0015).
 
-Съёмка 04.09.2026, 12:37:12–12:45:09, Sony A7 III, одна непрерывная запись 7:57.
-В кадре Дарья; Михаил — генеральный продюсер «Эволюция ТВ» — говорит за кадром
-(его ракурс будет позже). Пересечения текста с манифестом нет ни на одну фразу:
-это отдельный материал про запуск вещания.
+Съёмка 04.09.2026, 12:37:12–12:45:09, одна непрерывная запись 7:57, два ракурса:
+  A — Sony A7 III, крупный план Дарьи (C0014+C0015 встык — мастер-ось времени);
+  B — Blackmagic ProRes UHD, общий план: Михаил слева, Дарья справа (A004_11201148_C013.mov,
+      пришёл 15.09.2026; синхрон по звуку — 05_Review/angles.json, off = мастер − offset).
+Михаил — генеральный продюсер «Эволюция ТВ»: в крупном плане его нет, его реплики — ракурс B.
+Пересечения текста с манифестом нет ни на одну фразу: это отдельный материал про запуск вещания.
 
 Схема данных и правила те же, что в build_montage.py: границы кусков привязаны к
 пословным таймкодам через якоря «подсказка + слово», tc_out = конец последнего слова
@@ -21,7 +23,11 @@ WORDS = BASE / "YTEVO02cam2.words.json"
 OUT = BASE / "montage_cam2.json"
 
 CLIPS = [("C0014.MP4", 0.0, 342.72), ("C0015.MP4", 342.72, 477.12)]
-CAM = {"Speaker 1": "A7 III · Дарья", "Speaker 2": "Михаил — за кадром"}
+A_END = CLIPS[-1][2]
+ANGLES = BASE / "05_Review" / "angles.json"
+ANGLE_LABEL = {"A": "A · крупный · Дарья", "B": "B · общий · Михаил и Дарья"}
+SPEAKER_ANGLE = {"Speaker 1": "A", "Speaker 2": "B"}
+SPEAKER_NAME = {"Speaker 1": "Дарья", "Speaker 2": "Михаил"}
 GAP_MIN, GAP_KEEP, PAD = 0.7, 0.35, 0.3
 
 
@@ -145,6 +151,36 @@ def anchor(ws, hint, word, edge):
     return min(cand, key=lambda i: abs(ws[i][key] - hint))
 
 
+def load_angle_b():
+    if not ANGLES.exists():
+        return None
+    return json.loads(ANGLES.read_text(encoding="utf-8"))["scene2"]["angles"]["B"]
+
+
+def seg_at(ang, t):
+    segs = ang.get("segments") or [{"master_from": 0.0, "master_to": 1e9, "offset": ang["offset"],
+                                    "rate": ang.get("rate", 1.0)}]
+    for sg in segs:
+        if sg["master_from"] - 1e-6 <= t <= sg["master_to"] + 1e-6:
+            return sg
+    return segs[-1] if t > segs[-1]["master_to"] else segs[0]
+
+
+def b_ref(ang, t0, t1):
+    if ang is None:
+        return None
+    s0, s1 = seg_at(ang, t0), seg_at(ang, t1)
+    c0 = (t0 - s0["offset"]) / s0.get("rate", 1.0)
+    c1 = (t1 - s1["offset"]) / s1.get("rate", 1.0)
+    if c0 < 0 or c1 > ang["duration"]:
+        return None
+    ref = {"file": ang["file"], "off_in": round(c0, 3), "off_out": round(c1, 3)}
+    if s0 is not s1:
+        ref["a_gap_inside"] = round(s0["offset"] - s1["offset"], 3)
+        ref["a_gap_at"] = s0["master_to"]
+    return ref
+
+
 def clip_at(t):
     for name, a, b in CLIPS:
         if a <= t < b:
@@ -154,6 +190,7 @@ def clip_at(t):
 
 
 def main():
+    ang = load_angle_b()
     ws = load_words()
     cursor = trimmed = 0.0
     out = []
@@ -181,15 +218,26 @@ def main():
             gaps = [{"at": a["e"], "dur": round(b["s"] - a["e"], 2), "after": a["w"]}
                     for a, b in zip(seg, seg[1:]) if b["s"] - a["e"] >= GAP_MIN]
             trim = sum(g["dur"] - GAP_KEEP for g in gaps)
-            f_in, o_in = clip_at(s_in)
-            f_out, o_out = clip_at(s_out)
+            fa_in, oa_in = clip_at(s_in)
+            fa_out, oa_out = clip_at(s_out)
+            ref_a = {"file": fa_in, "off_in": round(oa_in, 3), "file_out": fa_out, "off_out": round(oa_out, 3)}
+            ref_b = b_ref(ang, s_in, s_out)
+            angle = SPEAKER_ANGLE.get(major, "A") if ref_b else "A"
+            if angle == "A":
+                f_in, o_in, f_out, o_out = fa_in, oa_in, fa_out, oa_out
+                crosses = [round(c[1], 2) for c in CLIPS[1:] if s_in < c[1] < s_out]
+            else:
+                f_in, o_in, f_out, o_out = ref_b["file"], ref_b["off_in"], ref_b["file"], ref_b["off_out"]
+                crosses = []
             dur = s_out - s_in
             parts.append({"kind": "say", "src_in": round(s_in, 3), "src_out": round(s_out, 3),
                           "dur": round(dur, 3), "dst_in": round(cursor, 3), "dst_out": round(cursor + dur, 3),
                           "file_in": f_in, "off_in": round(o_in, 3), "file_out": f_out,
                           "off_out": round(o_out, 3),
-                          "crosses_clip": [round(c[1], 2) for c in CLIPS[1:] if s_in < c[1] < s_out],
-                          "camera": CAM.get(major, major), "speaker": major, "words": len(seg),
+                          "crosses_clip": crosses,
+                          "angle": angle, "camera": ANGLE_LABEL[angle], "speaker": major,
+                          "speaker_name": SPEAKER_NAME.get(major, major), "a": ref_a, "b": ref_b,
+                          "words": len(seg),
                           "first": " ".join(w["w"] for w in seg[:6]),
                           "last": " ".join(w["w"] for w in seg[-5:]),
                           "text": " ".join(w["w"] for w in seg),
@@ -219,7 +267,10 @@ def main():
         raise SystemExit(f"{len(ERRORS)} якорей не найдено")
     n_say = sum(1 for p in out for x in p["parts"] if x["kind"] == "say")
     data = {"scene": "Эволюция ТВ · вторая сцена (C0014+C0015)", "total": round(cursor, 2),
-            "total_trimmed": round(trimmed, 2), "source_total": 477.12, "pieces": out,
+            "total_trimmed": round(trimmed, 2), "source_total": A_END,
+            "angles": {"A": {"label": ANGLE_LABEL["A"], "files": [c[0] for c in CLIPS], "end": A_END},
+                       "B": ({**ang, "label": ANGLE_LABEL["B"]} if ang else None)},
+            "pieces": out,
             "gfx_catalog": GFX, "gfx_used": sorted({g["id"] for p in out for g in p["gfx"]}),
             "n_say_parts": n_say,
             "n_gaps": sum(len(x.get("gaps", [])) for p in out for x in p["parts"])}

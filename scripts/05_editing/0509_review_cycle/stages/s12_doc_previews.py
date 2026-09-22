@@ -58,8 +58,10 @@ PW, PH = 1600, 900
 # файл драфта реально лежит в mockups, иначе второй/двадцать первый ТЗ чужого фильма получил бы текст про рубины.
 _ATTACH_FILES = {'ТЗ-21': ('fix_tz21b.png', 'fix_tz21c.png', 'fix_tz21d.png'), 'ТЗ-31': ('fix_tz31b.png',),
                  'ТЗ-32': ('fix_tz32b.png',), 'ТЗ-10': ('fix_tz10b.png',)}
+# номер ТЗ другого фильма — другое ТЗ: на YTUVI02 ТЗ-21 «RUBY / рубин» получало «цену Sunrise Ruby» без файла.
+# Поэтому фикстура — только у ytuvi01 (там ru, как было, всегда; en — если файл есть).
 ATTACH = {num: [(img, T(f'c2.pv_att.{Path(img).stem}')) for img in imgs if LANG == 'ru' or (MOCK / img).exists()]
-          for num, imgs in _ATTACH_FILES.items()}
+          for num, imgs in _ATTACH_FILES.items()} if P.PROJECT == 'ytuvi01' else {}
 ATTACH = {num: lst for num, lst in ATTACH.items() if lst}
 SRC_FIX = T('c2.pv_src_fix')
 C_RED, C_GREEN, C_BLUE = (193, 39, 45), (46, 139, 62), (31, 79, 209)
