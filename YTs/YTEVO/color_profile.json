@@ -1,0 +1,37 @@
+{
+ "schema": "color-profile-v1",
+ "channel": "YTEVO",
+ "_note": "Цветовая ДНК канала. Проявка выбирается ДЕТЕРМИНИРОВАННО по камере+гамме — это технический шаг, не вкус. Look — решение Романа, ОДИН на канал.",
+ "develop": {
+  "S-Log3": {
+   "lut": "sony__slog3_sgamut3cine__rec709__neutral",
+   "cameras": [
+    "CAM-A_FX3",
+    "CAM-B_ZVE1"
+   ],
+   "decided_by": "roman",
+   "decided_at": "2026-09-22"
+  },
+  "D-Log2": {
+   "lut": "dji_pocket4p__dlog2__rec709__minus",
+   "cameras": [
+    "CAM-C_Pocket"
+   ],
+   "decided_by": "roman",
+   "decided_at": "2026-09-22"
+  }
+ },
+ "look": {
+  "id": "look__newstar",
+  "decided_by": "roman",
+  "decided_at": "2026-09-22",
+  "_why": "ДНК канала, выбрана в витрине на реальных кадрах"
+ },
+ "exposure": {
+  "target_face_luma": 134,
+  "_why": "выучено по выбору Романа — медиана яркости лиц на кадрах, которые он отметил; машина целится сюда, человек правит",
+  "learned_at": "2026-09-22",
+  "learned_from": "YTEVO03"
+ },
+ "updated": "2026-09-22"
+}

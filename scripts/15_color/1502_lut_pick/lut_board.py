@@ -57,6 +57,8 @@ MAX_LOOKS = 8      # candidates on stage 3
 SAMPLES_PER_CAM = 4
 
 EXPOSURE_STOPS = (-1.0, -0.5, 0.0, 0.5, 1.0)
+EXPOSURE_EXTRA = (1.5, 2.0, 2.5, 3.0, -1.5, -2.0)   # добираются ТОЛЬКО когда нужно
+EXPOSURE_MAX = 3.0                                   # предел фильтра exposure в ffmpeg
 TARGET_FACE_LUMA_DEFAULT = 150.0
 _TARGET_NOTE = ("стартовая догадка; уточняется по ТВОЕМУ выбору — "
                 "медиана яркости лиц на кадрах, которые ты отметил")
@@ -283,6 +285,25 @@ def face_measure(jpg: Path, bbox=None) -> dict:
     return m
 
 
+def ladder_for(miss):
+    """Ступени для клипа. Базовые ±1 всем, а если промах больше — лестница
+    достраивается до него.
+
+    Раньше клип с промахом +3.00 получал те же пять ступеней и подпись
+    «лестницы не хватает»: машина знала, что нужно больше, и всё равно
+    предлагала потолок. Теперь нужные ступени просто есть.
+    """
+    steps = set(EXPOSURE_STOPS)
+    if miss is None:
+        return sorted(steps)
+    need = max(-EXPOSURE_MAX, min(EXPOSURE_MAX, miss))
+    for st in EXPOSURE_EXTRA:
+        if (need > 1.0 and 1.0 < st <= need + 0.5) or \
+           (need < -1.0 and need - 0.5 <= st < -1.0):
+            steps.add(st)
+    return sorted(steps)
+
+
 def stops_to_target(luma: float, target: float) -> float:
     """На сколько стопов промах. Стоп — это удвоение света, поэтому log2."""
     if luma <= 1.0:
@@ -334,12 +355,18 @@ def develop_candidates(luts, gamma, limit=MAX_DEVELOP):
     return picked
 
 
-def look_candidates(luts, limit=MAX_LOOKS):
-    """Look'и: сперва те, что не ломают нейтраль слишком сильно, затем яркие.
-    Порядок в витрине — от спокойного к характерному, чтобы глаз шёл по шкале."""
+def look_candidates(luts, limit=0):
+    """Все покрасочные, от спокойных к характерным.
+
+    ⚠️ По умолчанию показываются ВСЕ. Первая версия резала до восьми «репрезентативных»,
+    и Роман выбрал look, не увидев девятнадцати остальных. Покраска — единственное
+    по-настоящему вкусовое решение в системе; урезать выбор за человека тут нельзя.
+    Покрасочные не привязаны к камере: они ложатся на уже нормальный Rec.709,
+    поэтому все до одного годятся для любой из трёх камер.
+    """
     pool = [l for l in luts if l["stage"] == "look"]
     pool.sort(key=lambda l: l["metrics"].get("neutral_drift255", 0.0))
-    if len(pool) <= limit:
+    if not limit or len(pool) <= limit:
         return pool
     idx = np.linspace(0, len(pool) - 1, limit).round().astype(int)
     return [pool[i] for i in sorted(set(idx))]
@@ -621,7 +648,11 @@ def build_html(ctx) -> str:
 
     h.append(f"<h1>{esc(ctx['code'])} — луты по ступеням<span class=ver>v{v}</span></h1>")
     h.append("<p class=sub>Три решения. Первые два — один раз на канал, третье — "
-             "по каждому клипу. Мой выбор уже проставлен, правь что не нравится.</p>")
+             "по каждому клипу. " + (
+                 "Проставлен <b>твой сохранённый выбор</b> — правь, он "
+                 "подхватится автоматически." if ctx.get("from_saved") else
+                 "Мой выбор уже проставлен, правь что не нравится.") +
+             " Выбор сохраняется в браузере сам, вкладку можно закрыть.</p>")
 
     k = ctx["kpi"]
     h.append("<div class=kpi>" + "".join(
@@ -786,7 +817,7 @@ def build_html(ctx) -> str:
                      f'<img loading="lazy" decoding="async" width="232" height="130" '
                      f'src="{esc(st["rel"])}" alt="{esc(nm)}">'
                      f'<div class="nm">{esc(nm)}</div>'
-                     f'<div class="m">{"мой выбор" if mine else "&nbsp;"}</div></div>')
+                     f'<div class="m">{("твой выбор" if row.get("from_saved") else "мой выбор") if mine else "&nbsp;"}</div></div>')
         h.append('</div>')
     h.append('</div>')
 
@@ -798,10 +829,11 @@ def build_html(ctx) -> str:
     h.append('</div>')
 
     h.append('<div class=bar><button onclick="copyFeedback()">Скопировать выбор</button>'
-             '<span class=st id=st>ничего не выбрано</span></div>')
+             '<span class=st id=st>ничего не выбрано</span><span class=st id=restored style="color:var(--ok)"></span><button onclick="localStorage.removeItem(LSKEY);location.reload()" style="background:var(--card);color:var(--dim);border:1px solid var(--line)">сбросить к моему выбору</button></div>')
 
     # таблица «клип → стоп → яркость лица»: по ней страница считает медиану
     # того, что Роман выбрал, и это и есть выученная цель.
+    code_json = json.dumps(ctx["code"])
     mine_json = json.dumps({
         "develop": {c: d for c, d in (ctx.get("rec_dev") or {}).items() if d},
         "look": ctx.get("rec_look"),
@@ -847,7 +879,7 @@ document.addEventListener('click', function(e){{
   if(c.dataset.expo !== undefined){{ CH.expo[c.dataset.clip]=parseFloat(c.dataset.expo); refresh(); return; }}
   var id=c.dataset.lut, cam=c.dataset.cam;
   if(cam) CH.develop[cam]=id; else CH.look=id;
-  refresh();
+  refresh(); persist();
 }});
 function copyFeedback(){{
   var lm=[];
@@ -866,10 +898,114 @@ function copyFeedback(){{
   document.body.removeChild(ta);
   document.getElementById('st').textContent='скопировано — вставь в чат';
 }}
+// Промежуточное сохранение: выбор живёт в браузере и переживает закрытие
+// вкладки. Прокликать 163 клипа и потерять всё на случайном Cmd+W — недопустимо.
+var LSKEY = 'lutboard_' + {code_json};
+function persist(){{
+  try{{ localStorage.setItem(LSKEY, JSON.stringify(
+    {{at:new Date().toISOString(), doc:{v}, CH:CH}})); }}catch(e){{}}
+}}
+(function restore(){{
+  try{{
+    var raw = localStorage.getItem(LSKEY); if(!raw) return;
+    var got = JSON.parse(raw); if(!got || !got.CH) return;
+    CH.develop = Object.assign({{}}, MINE.develop, got.CH.develop||{{}});
+    CH.look = got.CH.look || MINE.look;
+    CH.expo = Object.assign({{}}, MINE.expo, got.CH.expo||{{}});
+    var el=document.getElementById('restored');
+    if(el) el.textContent = 'восстановлен выбор от ' + String(got.at).slice(0,16).replace('T',' ');
+  }}catch(e){{}}
+}})();
 refresh();
 </script>""")
     h.append("</div></body></html>")
     return "\n".join(h)
+
+
+def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict) -> dict:
+    """Сохранить выбор Романа: канальное — в профиль, покадровое — в проект.
+
+    Два адреса, потому что у решений разный срок жизни:
+      проявка и look — ДНК канала, живут в YTs/{КАНАЛ}/color_profile.json;
+      экспозиция — свойство конкретного съёмочного дня, живёт в проекте.
+    Профиль пишется по ГАММЕ, а не по камере: завтра в парке появится третья
+    тушка на S-Log3, и она должна получить ту же проявку без правок.
+    """
+    prof_p = profile_path(project, code)
+    prof = load_json_safe(prof_p) or {}
+    ch = re.match(r"^(YT[A-Z]{2,4})", code)
+    prof.setdefault("schema", "color-profile-v1")
+    prof["channel"] = ch.group(1) if ch else code
+    prof.setdefault("_note", "Цветовая ДНК канала. Проявка выбирается "
+                    "ДЕТЕРМИНИРОВАННО по камере+гамме — это технический шаг, не "
+                    "вкус. Look — решение Романа, ОДИН на канал.")
+    dev = prof.setdefault("develop", {})
+    for cam, lut_id in (fb.get("develop") or {}).items():
+        gamma = by_cam_gamma.get(cam)
+        if not gamma:
+            continue
+        key = str(gamma)
+        entry = dev.setdefault(key, {})
+        entry["lut"] = lut_id
+        entry.setdefault("cameras", [])
+        if cam not in entry["cameras"]:
+            entry["cameras"].append(cam)
+        entry["decided_by"] = "roman"
+        entry["decided_at"] = time.strftime("%Y-%m-%d")
+    if fb.get("look"):
+        prof["look"] = {"id": fb["look"], "decided_by": "roman",
+                        "decided_at": time.strftime("%Y-%m-%d"),
+                        "_why": "ДНК канала, выбрана в витрине на реальных кадрах"}
+    if fb.get("target_face_luma"):
+        prof["exposure"] = {
+            "target_face_luma": fb["target_face_luma"],
+            "_why": ("выучено по выбору Романа — медиана яркости лиц на кадрах, "
+                     "которые он отметил; машина целится сюда, человек правит"),
+            "learned_at": time.strftime("%Y-%m-%d"),
+            "learned_from": code,
+        }
+    prof["updated"] = time.strftime("%Y-%m-%d")
+    save_json_atomic(prof_p, prof)
+
+    out_p = (project / "00_Setup" / "01_Ingest" / f"{code}_color_choice.json")
+    doc = load_json_safe(out_p) or {}
+    doc.update({
+        "schema": "color-choice-v1",
+        "project": code,
+        "_note": "Покадровый выбор Романа по этому съёмочному дню. Проявка и look "
+                 "живут в профиле канала, здесь — только то, что свойство ДНЯ.",
+        "develop": fb.get("develop"),
+        "look": fb.get("look"),
+        "target_face_luma": fb.get("target_face_luma"),
+        "exposure": fb.get("exposure"),
+        "machine": (fb.get("mine") or {}).get("expo"),
+        "corrected": fb.get("corrected"),
+        "saved": now_iso(),
+        "doc_version": int(doc.get("doc_version") or 0) + 1,
+    })
+    save_json_atomic(out_p, doc)
+    return {"profile": prof_p, "choice": out_p,
+            "corrected": len(fb.get("corrected") or {}),
+            "clips": len(fb.get("exposure") or {})}
+
+
+def load_json_safe(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+
+def save_json_atomic(path: Path, obj):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1), encoding="utf-8")
+    import os as _os
+    _os.replace(tmp, path)
+
+
+def now_iso():
+    return time.strftime("%Y-%m-%dT%H:%M:%S%z")
 
 
 # ───────────────────────────────────────────────────────── main ──
@@ -887,9 +1023,12 @@ def main(argv=None) -> int:
                     help="клипов на камеру на ступени 2; это ОДИН выбор, "
                          "строки нужны только чтобы увидеть разницу")
     ap.add_argument("--develops", type=int, default=MAX_DEVELOP)
-    ap.add_argument("--looks", type=int, default=MAX_LOOKS)
+    ap.add_argument("--looks", type=int, default=0,
+                    help="сколько покрасочных показать; 0 = все")
     ap.add_argument("--look-rows", type=int, default=4, help="клипов на лук-борде")
     ap.add_argument("--refresh", action="store_true", help="перерисовать кадры из кэша")
+    ap.add_argument("--feedback", help="файл с выбором из витрины (или - для stdin); "
+                                       "сохраняет и выходит, ничего не рендерит")
     ap.add_argument("--target", type=float,
                     help="цель яркости лица; по умолчанию — выученная из профиля канала")
     args = ap.parse_args(argv)
@@ -899,6 +1038,29 @@ def main(argv=None) -> int:
         die(f"проекта нет: {project}")
     m = re.match(r"^(YT[A-Z]{2,4}\d+)_", project.name)
     code = m.group(1) if m else project.name
+
+    if args.feedback:
+        raw = sys.stdin.read() if args.feedback == "-" else \
+            Path(args.feedback).expanduser().read_text(encoding="utf-8")
+        try:
+            fb = json.loads(raw)
+        except json.JSONDecodeError as e:
+            die(f"выбор не разобрался как JSON: {e}")
+        src = project / "01_Source"
+        rec = load_recorded_gammas(project, code)
+        cam_gamma = {}
+        for cam, items in all_clips_by_cam(src).items():
+            g = [normalize_gamma((rec.get(c.name) or (None,))[0])
+                 for _, c in items if rec.get(c.name)]
+            g = [x for x in g if x]
+            if g:
+                cam_gamma[cam] = max(set(g), key=g.count)
+        res = save_choice(project, code, fb, cam_gamma)
+        print(f"\nВЫБОР СОХРАНЁН")
+        print(f"  профиль канала: {res['profile']}")
+        print(f"  выбор по дню:   {res['choice']}")
+        print(f"  клипов: {res['clips']} · поправлено против машины: {res['corrected']}")
+        return 0
     source = project / "01_Source"
     if not source.is_dir():
         die(f"нет {source}")
@@ -1185,7 +1347,22 @@ def main(argv=None) -> int:
     rec_look = recommend_look(looks, look_metrics) if look_rows else None
     rec_dev = {cam: recommend_develop(info["develops"]) for cam, info in cam_info.items()}
 
+    # ⚠️ Если Роман уже выбирал по этому дню — предлагается ЕГО выбор, а не мой.
+    # Иначе каждая пересборка витрины откатывала бы его работу к рекомендации.
+    saved = load_json_safe(out_dir / f"{code}_color_choice.json") or {}
+    by_id = {l["id"]: l for l in luts}
+    if saved.get("look") and saved["look"] in by_id:
+        rec_look = by_id[saved["look"]]
+    for cam, lut_id in (saved.get("develop") or {}).items():
+        if lut_id in by_id and cam in rec_dev:
+            rec_dev[cam] = by_id[lut_id]
+    saved_expo = saved.get("exposure") or {}
+    if saved:
+        print(f"  найден твой сохранённый выбор от {saved.get('saved', '?')[:16]} — "
+              f"витрина предлагает его, не мой")
+
     per_clip = []
+    skipped_nonlog = []
     jobs2 = []
     for cam, items in sorted(by_cam.items()):
         dev = rec_dev.get(cam)
@@ -1193,6 +1370,13 @@ def main(argv=None) -> int:
             continue
         chain = [STORE / dev["file"]] + ([STORE / rec_look["file"]] if rec_look else [])
         for scene, clip in items:
+            # ⚠️ Снятое НЕ в логе сюда не попадает: проявка ему не нужна, а
+            # применить её — значит проявить уже проявленное и убить кадр.
+            # На YTEVO03 это один клип ZV-E1, снятый в rec709.
+            grec = (recorded.get(clip.name) or (None,))[0]
+            if grec and normalize_gamma(grec) == "Rec.709":
+                skipped_nonlog.append(f"{scene}/{clip.name}")
+                continue
             pr = probe.get(clip.name)
             video, _ = P.frame_src(clip, source, mirror)
             dur = P.ffprobe_duration(video) or 4.0
@@ -1208,17 +1392,21 @@ def main(argv=None) -> int:
             if pr and pr["face"] and pr.get("face_luma"):
                 miss = stops_to_target(pr["face_luma"], target)
                 row["miss"] = miss
-                row["mine"] = min(EXPOSURE_STOPS, key=lambda v: abs(v - miss))
-                row["over"] = abs(miss) > max(EXPOSURE_STOPS) + 1e-6
+                lad = ladder_for(miss)
+                row["mine"] = min(lad, key=lambda v: abs(v - miss))
+                row["over"] = abs(miss) > EXPOSURE_MAX + 1e-6
             else:
                 row["mine"] = 0.0          # без лица экспозицию не двигаем
                 row["miss"] = None
+            if stem in saved_expo:         # сохранённый выбор человека сильнее
+                row["mine"] = float(saved_expo[stem])
+                row["from_saved"] = True
             # ⚠️ Имя кадра несёт ПРОЯВКУ и LOOK. Без них смена рекомендации не
             # инвалидирует кэш: кадры остаются от прошлого look, а подпись на
             # странице уже новая — и выбор делается по картинке от другого куба.
             # Поймано живьём: кадры под malibu подписались porsche_xblue_contrast.
             tagbase = f"{stem}__{dev['id']}__{rec_look['id'] if rec_look else 'nolook'}"
-            for st in EXPOSURE_STOPS:
+            for st in ladder_for(row.get("miss")):
                 f = files_dir / "_perclip" / f"{tagbase}__{stop_tag(st)}.jpg"
                 jobs2.append((video, tc, f, tuple(chain), st))
                 row["steps"].append({"stop": st, "path": f,
@@ -1253,6 +1441,7 @@ def main(argv=None) -> int:
         "code": code, "version": ver, "when": when_ru(),
         "cams": cams, "look_rows": look_rows, "expo_rows": expo_rows,
         "coverage": coverage, "per_clip": per_clip,
+        "skipped_nonlog": skipped_nonlog, "from_saved": bool(saved),
         "rec_look": rec_look["id"] if rec_look else None,
         "rec_dev": {c: (d["id"] if d else None) for c, d in rec_dev.items()},
         "target": target, "target_src": target_src, "faces": faces,
@@ -1264,6 +1453,7 @@ def main(argv=None) -> int:
                 ("кандидатов проявки", sum(len(c["develops"]) for c in cams)),
                 ("look'ов", len(looks)),
                 ("лиц найдено", f"{faces} из {len(expo_rows)}"),
+                ("снято не в логе", len(skipped_nonlog)),
                 ("цель по лицу", f"{target:.0f}"),
                 ("гамма не определена", len(unknown)),
                 ("нет проявки под гамму", len(nolut))],
