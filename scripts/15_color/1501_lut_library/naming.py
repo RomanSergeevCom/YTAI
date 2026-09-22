@@ -82,6 +82,29 @@ def token(s: str) -> str:
     return re.sub(r"[^a-z0-9]", "", slugify(s).lower())
 
 
+def normalize_gamma(g: str | None) -> str | None:
+    """Камеры и библиотека называют одну гамму по-разному: сайдкар Sony отдаёт
+    's-log3-cine', манифест хранит 'S-Log3'. Сводим к одному ключу.
+
+    ⚠️ Порядок пар НЕСУЩИЙ: 'dlog2' и 'dlogm' обязаны стоять ДО 'dlog',
+    иначе D-Log2 схлопнется в D-Log и клип получит куб чужой гаммы.
+    ⚠️ Живёт здесь, а не рядом с вызовом: ключ нужен и библиотеке
+    (manifest.input.gamma), и чтению метаданных клипа. Две копии этой
+    таблицы разъедутся — вся история багов слоя именно про это.
+    """
+    if not g:
+        return None
+    s = re.sub(r"[^a-z0-9]", "", g.lower())
+    for key, norm in (("slog3", "S-Log3"), ("slog2", "S-Log2"),
+                      ("dlog2", "D-Log2"), ("dlogm", "D-Log M"), ("dlog", "D-Log"),
+                      ("vlog", "V-Log"), ("clog3", "C-Log3"), ("clog2", "C-Log2"),
+                      ("applelog", "Apple Log"), ("flog2", "F-Log2"),
+                      ("ilog", "I-Log"), ("rec709", "Rec.709")):
+        if s.startswith(key) or key in s:
+            return norm
+    return g
+
+
 def join_id(*blocks: str) -> str:
     """Join semantic blocks with `__`, skipping empties. Canon separator."""
     return "__".join(b for b in blocks if b)

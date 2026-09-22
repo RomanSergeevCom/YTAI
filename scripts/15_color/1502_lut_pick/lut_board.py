@@ -43,120 +43,21 @@ LIB = HERE.parent / "1501_lut_library"
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(LIB))
 
-import lut_pick as P          # noqa: E402  — reuse the proven frame/gamma plumbing
+import color_media as M       # noqa: E402  — клипы, пути, гамма (stdlib, живёт без карты)
+import color_frames as F      # noqa: E402  — кадры, метрики, лица (numpy/PIL/Vision)
+import color_plan as PL       # noqa: E402  — экспозиция, ключи, профиль, выбор (stdlib)
+import lut_select as S        # noqa: E402  — отбор из библиотеки по манифесту
 import naming as _N           # noqa: E402
 N_TAX = _N.taxonomy()
 
-STORE = LIB / "store"
-MANIFEST = LIB / "manifest.json"
 
-BLACK = 6          # 8-bit max(RGB) at or below this is crushed to black
-WHITE = 250        # at or above this is blown
-MAX_DEVELOP = 6    # candidates per camera on stage 2
 MAX_LOOKS = 8      # candidates on stage 3
 SAMPLES_PER_CAM = 4
-
-EXPOSURE_STOPS = (-1.0, -0.5, 0.0, 0.5, 1.0)
-EXPOSURE_EXTRA = (1.5, 2.0, 2.5, 3.0, -1.5, -2.0)   # добираются ТОЛЬКО когда нужно
-EXPOSURE_MAX = 3.0                                   # предел фильтра exposure в ffmpeg
-TARGET_FACE_LUMA_DEFAULT = 150.0
-_TARGET_NOTE = ("стартовая догадка; уточняется по ТВОЕМУ выбору — "
-                "медиана яркости лиц на кадрах, которые ты отметил")
-
-MONTHS_RU = ("января", "февраля", "марта", "апреля", "мая", "июня", "июля",
-             "августа", "сентября", "октября", "ноября", "декабря")
 
 
 def die(msg, code=2):
     print(f"\n✗ {msg}\n", file=sys.stderr)
     sys.exit(code)
-
-
-def when_ru():
-    t = time.localtime()
-    return (f"{t.tm_mday} {MONTHS_RU[t.tm_mon - 1]} {t.tm_year}, "
-            f"{t.tm_hour:02d}:{t.tm_min:02d}")
-
-
-def normalize_gamma(g: str | None) -> str | None:
-    """Камеры и библиотека называют одну гамму по-разному: сайдкар Sony отдаёт
-    's-log3-cine', манифест хранит 'S-Log3'. Сводим к одному ключу."""
-    if not g:
-        return None
-    s = re.sub(r"[^a-z0-9]", "", g.lower())
-    for key, norm in (("slog3", "S-Log3"), ("slog2", "S-Log2"),
-                      ("dlog2", "D-Log2"), ("dlogm", "D-Log M"), ("dlog", "D-Log"),
-                      ("vlog", "V-Log"), ("clog3", "C-Log3"), ("clog2", "C-Log2"),
-                      ("applelog", "Apple Log"), ("flog2", "F-Log2"),
-                      ("ilog", "I-Log"), ("rec709", "Rec.709")):
-        if s.startswith(key) or key in s:
-            return norm
-    return g
-
-
-def vf_chain_multi(luts, width=None, stops=0.0) -> str:
-    """scale ДО lut3d, общий gbrp10le, дальше ступени подряд.
-
-    Одна и та же цепочка на исходник и на варианты — иначе они несравнимы по
-    яркости (обоснование и замеры: lut_pick.vf_chain).
-
-    ⚠️ Экспозиция вставляется ПОСЛЕ ПЕРВОГО лута и ДО остальных. Это не
-    произвол: порядок обработки внутри Lumetri вытащен из шаблона проекта и
-    выглядит так —
-        Basic Correction: LUT (проявка) → BasicCorrection3 (здесь Exposure)
-        Creative:         LUT (покраска)
-    то есть экспозиция живёт ровно между проявкой и покраской. Превью обязано
-    повторять этот порядок, иначе оно врёт про результат в Premiere.
-    """
-    base = f"scale={width or P.FRAME_WIDTH}:-2:flags=bicubic,format=gbrp10le"
-    for i, lut in enumerate(luts):
-        if lut:
-            base += f",lut3d=file='{P.lut_arg(lut)}':interp=tetrahedral"
-        if i == 0 and abs(stops) > 1e-6:
-            base += f",exposure=exposure={stops:.3f}"
-    return base
-
-
-def frame_ok(path: Path, min_w: int = 100) -> bool:
-    """Кадр цел? Сигнатура + размеры + ПОЛНОЕ декодирование.
-
-    ⚠️ Не по весу файла. Порог lut_pick.jpeg_ok в 4 КБ откалиброван под кадры
-    960 px, а на пробных 320 px нормальный кадр весит 1.2-1.5 КБ: вес JPEG
-    зависит от ДЕТАЛЬНОСТИ, а не от целости. Замер: тёмный интерьер храма —
-    1234 байта при luma 17, ровная светлая стена — 1504 байта при luma 161.
-    Оба кадра идеальны, а порог по весу забраковал шесть таких из 163.
-    im.load() поднимает исключение на оборванном файле независимо от размера —
-    это и есть настоящая проверка.
-    """
-    try:
-        if path.stat().st_size < 300:
-            return False
-        with open(path, "rb") as fh:
-            if fh.read(2) != b"\xff\xd8":
-                return False
-        with Image.open(path) as im:
-            if im.width < min_w or im.height < 40:
-                return False
-            im.load()
-        return True
-    except Exception:
-        return False
-
-
-def extract(video, tc, out_jpg, luts=(), width=None, stops=0.0):
-    if frame_ok(out_jpg, (width or P.FRAME_WIDTH) // 2):
-        return True
-    out_jpg.parent.mkdir(parents=True, exist_ok=True)
-    P.run(["ffmpeg", "-nostdin", "-hide_banner", "-v", "error",
-           "-ss", f"{tc:.3f}", "-i", str(video), "-an",
-           "-vf", vf_chain_multi(luts, width, stops), "-frames:v", "1", "-q:v", "3",
-           str(out_jpg)], timeout=180)
-    return frame_ok(out_jpg, (width or P.FRAME_WIDTH) // 2)
-
-
-PROBE_W = 320
-PERCLIP_W = 640      # ширина кадра в сетке «по каждому клипу»
-READABLE_LUMA = 30   # ниже этого в логе кадр нечитаем — решения по нему не принять
 
 
 def probe_developed(by_cam, cam_info, source, mirror, probe_dir, jobs_n):
@@ -179,10 +80,10 @@ def probe_developed(by_cam, cam_info, source, mirror, probe_dir, jobs_n):
     tasks = []
     for cam, items in by_cam.items():
         devs = (cam_info.get(cam) or {}).get("develops") or []
-        lead = STORE / devs[0]["file"] if devs else None
+        lead = S.STORE / devs[0]["file"] if devs else None
         for scene, clip in items:
-            video, _ = P.frame_src(clip, source, mirror)
-            dur = P.ffprobe_duration(video) or 4.0
+            video, _ = M.frame_src(clip, source, mirror)
+            dur = M.ffprobe_duration(video) or 4.0
             tc = max(0.0, min(dur * 0.5, dur - 0.05))
             # ⚠️ Имя несёт ПРОЯВКУ. Без неё проб-кадры переживают смену
             # рекомендации и остаются от прошлого прогона — а в самом первом
@@ -194,20 +95,20 @@ def probe_developed(by_cam, cam_info, source, mirror, probe_dir, jobs_n):
                                + f"__{devtag}.jpg")
             tasks.append((video, tc, out, (lead,) if lead else (), clip.name))
     with ThreadPoolExecutor(max_workers=jobs_n) as ex:
-        list(ex.map(lambda t: extract(t[0], t[1], t[2], t[3], PROBE_W), tasks))
+        list(ex.map(lambda t: F.extract(t[0], t[1], t[2], t[3], F.PROBE_W), tasks))
     want = {t[2].name for t in tasks}
     for q in probe_dir.glob("*.jpg"):
         if q.name not in want:
             q.unlink()
     out = {}
     for _, _, jpg, _, name in tasks:
-        if not frame_ok(jpg, PROBE_W // 2):
+        if not F.frame_ok(jpg, F.PROBE_W // 2):
             continue
         a = np.asarray(Image.open(jpg).convert("RGB"), dtype=np.float64)
-        bbox = P.detect_face(jpg)
+        bbox = F.detect_face(jpg)
         # Яркость по лицу — та же величина, что решает на ступени 3, только
         # посчитанная для ВСЕХ клипов дня, а не для двенадцати в витрине.
-        fm = P.face_metrics(a, bbox, core=P.FACE_CORE) if bbox else None
+        fm = F.face_metrics(a, bbox, core=F.FACE_CORE) if bbox else None
         mx = a.max(-1)
         out[name] = {"luma": float((a * (0.2126, 0.7152, 0.0722)).sum(-1).mean()),
                      "face": bbox is not None,
@@ -216,8 +117,8 @@ def probe_developed(by_cam, cam_info, source, mirror, probe_dir, jobs_n):
                      # метрики ВСЕГО кадра: эталон для покраски обязан быть цел
                      # не только по лицу — выбитое небо за спиной убивает
                      # карточку так же, как чёрный кадр
-                     "frame_clip": float((mx >= WHITE).mean()),
-                     "frame_black": float((mx <= BLACK).mean())}
+                     "frame_clip": float((mx >= F.WHITE).mean()),
+                     "frame_black": float((mx <= F.BLACK).mean())}
     return out
 
 
@@ -240,166 +141,7 @@ def pick_face_samples(by_cam, per_cam, probe):
     return out
 
 
-def metrics(jpg: Path) -> dict:
-    """Числа, по которым видно цену кандидата. Те же, что доказали себя на
-    замере 22.09: зажатые тени отличают проявки друг от друга сильнее всего."""
-    a = np.asarray(Image.open(jpg).convert("RGB"), dtype=np.float64)
-    mx, mn = a.max(-1), a.min(-1)
-    lit = mx >= 16                      # ниже насыщенность — шум, не цвет
-    sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0.0)
-    return {
-        "luma": float((a * (0.2126, 0.7152, 0.0722)).sum(-1).mean()),
-        "sat": float(sat[lit].mean() * 100) if lit.any() else 0.0,
-        "black": float((mx <= BLACK).mean() * 100),
-        "clip": float((mx >= WHITE).mean() * 100),
-    }
-
-
-def stop_tag(st: float) -> str:
-    """Имя файла для ступени экспозиции: expm10 / expm05 / exp00 / expp05 / expp10."""
-    sign = "m" if st < -1e-6 else ("p" if st > 1e-6 else "")
-    return f"exp{sign}{abs(st)*10:02.0f}"
-
-
-def face_measure(jpg: Path, bbox=None) -> dict:
-    """Яркость по ЛИЦУ на ПРОЯВЛЕННОМ кадре — иначе пороги бессмысленны.
-
-    На логарифмическом кадре «кожа на ключе ≈ 150» не значит ничего: лог кодирует
-    18 % серого около 0.41. Мерить экспозицию можно только после проявки, когда
-    картинка уже в Rec.709.
-
-    bbox передаётся снаружи, чтобы все ступени лестницы мерились по ОДНОМУ И ТОМУ
-    ЖЕ прямоугольнику: Vision на пере- и недодержанном кадре находит лицо чуть
-    иначе, и тогда «разница в стопах» смешивается с разницей в рамке.
-    """
-    rgb = np.asarray(Image.open(jpg).convert("RGB"), dtype=np.float64)
-    if bbox is None:
-        bbox = P.detect_face(jpg)
-    roi = "face" if bbox else "frame"
-    if bbox is None:
-        bbox = (0, 0, rgb.shape[1], rgb.shape[0])
-    m = P.face_metrics(rgb, bbox, core=P.FACE_CORE if roi == "face" else 1.0)
-    if m is None:
-        m = {"luma": 0.0, "sat": 0.0, "lit": 0.0, "clip": 0.0}
-    m["roi"] = roi
-    return m
-
-
-def ladder_for(miss):
-    """Ступени для клипа. Базовые ±1 всем, а если промах больше — лестница
-    достраивается до него.
-
-    Раньше клип с промахом +3.00 получал те же пять ступеней и подпись
-    «лестницы не хватает»: машина знала, что нужно больше, и всё равно
-    предлагала потолок. Теперь нужные ступени просто есть.
-    """
-    steps = set(EXPOSURE_STOPS)
-    if miss is None:
-        return sorted(steps)
-    need = max(-EXPOSURE_MAX, min(EXPOSURE_MAX, miss))
-    for st in EXPOSURE_EXTRA:
-        if (need > 1.0 and 1.0 < st <= need + 0.5) or \
-           (need < -1.0 and need - 0.5 <= st < -1.0):
-            steps.add(st)
-    return sorted(steps)
-
-
-def stops_to_target(luma: float, target: float) -> float:
-    """На сколько стопов промах. Стоп — это удвоение света, поэтому log2."""
-    if luma <= 1.0:
-        return 3.0
-    return float(np.clip(np.log2(target / luma), -3.0, 3.0))
-
-
 # ───────────────────────────────────────────────── выбор кандидатов ──
-
-def load_library() -> list[dict]:
-    man = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    return man["luts"]
-
-
-def develop_candidates(luts, gamma, limit=MAX_DEVELOP):
-    """Кандидаты проявки под гамму клипа.
-
-    Порядок — по цене в тенях: меньше зажатого чёрного, лучше. Это не вкус,
-    а измеримый ущерб. «Родную» семью neutral держим в списке всегда, даже если
-    она платит тенями: автор коллекции рекомендует именно её, и Роман должен
-    видеть, чего эта рекомендация стоит на его материале.
-    """
-    g = normalize_gamma(gamma)
-    if not g:
-        # Неизвестная гамма НЕ ДОЛЖНА молча подбирать кубы с такой же неизвестной.
-        # Ровно эта снисходительность и покрасила 61 клип DJI чужой математикой:
-        # старый код ставил флаг «mismatch» и ехал дальше.
-        return []
-    pool = [l for l in luts
-            if l["stage"] == "develop"
-            and normalize_gamma((l.get("input") or {}).get("gamma")) == g]
-    if not pool:
-        return []
-    # ⚠️ Проявка не имеет права тонировать серое. Её работа тональная — разжать
-    # логарифм; цвет начинается на следующей ступени. Кубы, которые красят
-    # (Tungsten 6.4, Eastman 7.4, Vision 9.5, Utopia 11.2, IceBlue 19.8 по
-    # neutral_drift255) — это проявка с покраской внутри, то есть ровно то, что
-    # мы разделяем. Предлагать их как «проявку» значит протащить вкус обратно
-    # в технический шаг. В библиотеке они остаются и годятся как look.
-    drift_max = N_TAX["stage_detect"]["neutral_drift255_develop_max"]
-    flavoured = [l for l in pool
-                 if l["metrics"].get("neutral_drift255", 0.0) > drift_max]
-    pool = [l for l in pool
-            if l["metrics"].get("neutral_drift255", 0.0) <= drift_max]
-    if not pool:
-        return []
-    pool.sort(key=lambda l: (l["metrics"].get("black_share", 0.0), l["id"]))
-    picked = pool[:limit]
-    return picked
-
-
-def look_candidates(luts, limit=0):
-    """Все покрасочные, от спокойных к характерным.
-
-    ⚠️ По умолчанию показываются ВСЕ. Первая версия резала до восьми «репрезентативных»,
-    и Роман выбрал look, не увидев девятнадцати остальных. Покраска — единственное
-    по-настоящему вкусовое решение в системе; урезать выбор за человека тут нельзя.
-    Покрасочные не привязаны к камере: они ложатся на уже нормальный Rec.709,
-    поэтому все до одного годятся для любой из трёх камер.
-    """
-    pool = [l for l in luts if l["stage"] == "look"]
-    pool.sort(key=lambda l: l["metrics"].get("neutral_drift255", 0.0))
-    if not limit or len(pool) <= limit:
-        return pool
-    idx = np.linspace(0, len(pool) - 1, limit).round().astype(int)
-    return [pool[i] for i in sorted(set(idx))]
-
-
-def recommend_develop(devs):
-    """Моя рекомендация по проявке: меньше всего зажатых теней.
-
-    Это не вкус, а измеримый ущерб — зажатую тень не вернуть ничем, а лишний
-    пережог светов у log→709 кубов идёт по ролловфу и стоит дешевле.
-    Замер 22.09: на S-Log3 neutral топит 14.9 % тёмного кадра, neutral legacy —
-    0.01 %; на D-Log2 plus топит 55.7 %, minus — 0.11 %.
-    """
-    if not devs:
-        return None
-    return min(devs, key=lambda d: (d["metrics"].get("black_share", 0.0), d["id"]))
-
-
-def recommend_look(looks, look_metrics):
-    """Моя рекомендация по look: максимум характера при нуле повреждений.
-
-    Сначала отбрасываем всё, что режет картинку (пережог > 2 % или зажатое
-    чёрное > 1 %), потом из выживших берём самый насыщенный — насыщенность и
-    есть тот характер, ради которого look ставят. Единственное решение во всей
-    системе, которое действительно вкусовое; числа тут только отсекают вред.
-    """
-    ok = [l for l in looks
-          if look_metrics.get(l["id"], {}).get("clip", 99) <= 2.0
-          and look_metrics.get(l["id"], {}).get("black", 99) <= 1.0]
-    pool = ok or looks
-    if not pool:
-        return None
-    return max(pool, key=lambda l: look_metrics.get(l["id"], {}).get("sat", 0.0))
 
 
 # ───────────────────────────────────────────────────────── сбор ──
@@ -410,8 +152,8 @@ def all_clips_by_cam(source: Path) -> dict:
                     if d.is_dir() and re.match(r"^\d\d_", d.name)
                     and not d.name.startswith("00_"))
     for sdir in scenes:
-        for clip in P.scene_clips(sdir):
-            by_cam.setdefault(P.cam_of(clip, source), []).append((sdir.name, clip))
+        for clip in M.scene_clips(sdir):
+            by_cam.setdefault(M.cam_of(clip, source), []).append((sdir.name, clip))
     return by_cam
 
 
@@ -438,7 +180,7 @@ def pick_samples(by_cam: dict, per_cam: int, luma: dict | None = None):
             # решения не принять, видно только чёрный прямоугольник. Поэтому
             # сначала отсекаем нечитаемое, и уже среди оставшегося берём тёмное.
             readable = [it for it in items
-                        if luma.get(it[1].name, 0.0) >= READABLE_LUMA]
+                        if luma.get(it[1].name, 0.0) >= F.READABLE_LUMA]
             ranked = sorted(readable or items,
                             key=lambda it: luma.get(it[1].name, 999.0))
             picked, seen = [], set()
@@ -457,21 +199,6 @@ def pick_samples(by_cam: dict, per_cam: int, luma: dict | None = None):
             idx = np.linspace(0, len(items) - 1, k)
             out[cam] = [items[int(round(i))] for i in idx]
     return out
-
-
-def profile_path(project: Path, code: str) -> Path:
-    ch = re.match(r"^(YT[A-Z]{2,4})", code)
-    return (Path.home() / "YTAI" / "YTs" / (ch.group(1) if ch else code)
-            / "color_profile.json")
-
-
-def profile_target(project: Path, code: str):
-    """Цель по лицу, выученная из прошлых выборов Романа. None — ещё не учились."""
-    try:
-        d = json.loads(profile_path(project, code).read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return None
-    return (d.get("exposure") or {}).get("target_face_luma")
 
 
 def load_recorded_gammas(project: Path, code: str) -> dict:
@@ -493,28 +220,6 @@ def load_recorded_gammas(project: Path, code: str) -> dict:
         if rec.get("gamma"):
             out[key.split("/")[-1]] = (rec["gamma"], doc.get("generated", "")[:10])
     return out
-
-
-def detect_gamma(clip: Path, cam: str, recorded: dict | None = None):
-    """Гамма ТОЛЬКО из измеренных метаданных. Никаких догадок по имени камеры:
-    ровно эта догадка и покрасила 61 клип DJI чужой математикой.
-
-    Порядок источников по свежести, а не по удобству: живой сайдкар → живой тег
-    контейнера → запись прошлого замера. Источник всегда возвращается наружу и
-    печатается в витрине, чтобы «откуда мы это знаем» было видно глазом.
-    """
-    if clip.exists():
-        g = P.sony_gamma(clip)
-        if g:
-            return normalize_gamma(g), "сайдкар M01.XML"
-        g = P.dji_gamma(clip)
-        if g:
-            return normalize_gamma(g), "тег com.dji.camera.ColorGammaSxS"
-    rec = (recorded or {}).get(clip.name)
-    if rec:
-        return normalize_gamma(rec[0]), f"замер {rec[1]}, оригинал сейчас недоступен"
-    return None, ("оригинал недоступен и в плане записи нет"
-                  if not clip.exists() else "не определена")
 
 
 # ───────────────────────────────────────────────────────── витрина ──
@@ -632,16 +337,6 @@ pre.p{background:#11141c;border:1px solid var(--line);border-radius:8px;
 """
 
 
-def short_name(lut_id: str) -> str:
-    """Читаемая подпись под кадром. Полный id — для манифеста, не для глаза:
-    «sony__slog3_sgamut3cine__rec709__neutral__legacy» ни о чём не говорит,
-    а «neutral legacy» говорит всё."""
-    if lut_id.startswith("look__"):
-        return lut_id[6:].replace("_", " ")
-    parts = [b for b in lut_id.split("__") if b not in ("rec709",)]
-    return " ".join(parts[2:]).replace("_", " ") or " ".join(parts).replace("_", " ")
-
-
 def esc(s):
     return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
 
@@ -698,10 +393,10 @@ def build_html(ctx) -> str:
             continue
         cur = ctx.get("rec_dev", {}).get(camx["cam"])
         best = next((d for d in camx["develops"] if d["id"] == cur), camx["develops"][0])
-        nowc.append((camx["cam"], short_name(best["id"]),
+        nowc.append((camx["cam"], S.short_name(best["id"]),
                      f'{camx["gamma"]} · съедает '
                      f'{best["metrics"].get("black_share", 0)*100:.1f} % теней'))
-    nowc.append(("покраска канала", short_name(ctx["rec_look"] or "—"),
+    nowc.append(("покраска канала", S.short_name(ctx["rec_look"] or "—"),
                  f'{len(ctx["look_rows"] and ctx["look_rows"][0]["looks"] or [])} кандидатов показано'))
     nowc.append(("цель по лицу", f'{ctx["target"]:.0f}', esc(ctx["target_src"])))
     h.append('<div class=now>' + "".join(
@@ -763,7 +458,7 @@ def build_html(ctx) -> str:
             costly = bs > best_bs + 0.01
             h.append(f'<div class="opt{" on" if on else ""}">'
                      f'<span class=tick>{"✓" if on else ""}</span>'
-                     f'<span class=nm>{esc(short_name(d["id"]))}</span>'
+                     f'<span class=nm>{esc(S.short_name(d["id"]))}</span>'
                      f'<span class="cost{" bad" if costly else ""}">'
                      f'{bs*100:.1f} % в чёрное</span></div>')
         fams = {(d.get("family") or "") for d in camx["develops"]}
@@ -789,7 +484,7 @@ def build_html(ctx) -> str:
             h.append(cell_html(s["orig_rel"], "исходник (лог)", s["orig_m"], None, "base"))
             h.append('<div class=arrow>→</div>')
             for d in s["dev"]:
-                h.append(cell_html(d["rel"], short_name(d["id"]), d["m"],
+                h.append(cell_html(d["rel"], S.short_name(d["id"]), d["m"],
                                    s["orig_m"], "pick", d["id"], d.get("cam", "")))
             h.append("</div>")
     h.append("</div>")
@@ -798,12 +493,12 @@ def build_html(ctx) -> str:
     h.append('<div class=sec id=s2><h2><span class=ic>🎨</span>Решение 2 · '
              'Покраска — один выбор на канал</h2>')
     h.append(f'<div class=built>Сейчас выбрано: '
-             f'<b>{esc(short_name(ctx["rec_look"] or "—"))}</b>. '
-             f'Поверх проявки <b>{esc(short_name(ctx["look_base_name"]))}</b>. '
+             f'<b>{esc(S.short_name(ctx["rec_look"] or "—"))}</b>. '
+             f'Поверх проявки <b>{esc(S.short_name(ctx["look_base_name"]))}</b>. '
              f'Кандидатов в коллекции — <b>{len(ctx["look_rows"][0]["looks"]) if ctx["look_rows"] else 0}</b>, '
              f'показаны все.</div>')
     h.append(f'<p class=why>Характер канала. Кладётся поверх проявки '
-             f'(<code>{esc(short_name(ctx["look_base_name"]))}</code>), поэтому '
+             f'(<code>{esc(S.short_name(ctx["look_base_name"]))}</code>), поэтому '
              f'разница между карточками — это ровно покраска. '
              f'<b>Кликни по той, что нравится.</b> Кадры взяты нормально снятые, '
              f'не тёмные — покраску на чёрном кадре не выбрать.<br>'
@@ -826,7 +521,7 @@ def build_html(ctx) -> str:
             h.append(f'<div class="cell pick" data-lut="{esc(lk["id"])}">'
                      f'<img loading="lazy" decoding="async" '
                      f'src="{esc(lk["rel"])}" alt="{esc(lk["name"])}">'
-                     f'<div class="nm">{esc(short_name(lk["id"]))}</div>'
+                     f'<div class="nm">{esc(S.short_name(lk["id"]))}</div>'
                      f'<div class="m">{warn}</div></div>')
         h.append('</div>')
     h.append('</div>')
@@ -860,7 +555,7 @@ def build_html(ctx) -> str:
         h.append('</pre>')
 
     # ── сетка по каждому клипу
-    _dev_line = " · ".join(f'{esc(c)} → {esc(short_name(d))}'
+    _dev_line = " · ".join(f'{esc(c)} → {esc(S.short_name(d))}'
                            for c, d in (ctx.get("rec_dev") or {}).items() if d)
     h.append('<div class=sec id=s3><h2><span class=ic>🎬</span>Решение 3 · Экспозиция — '
              f'по каждому из {len(ctx["per_clip"])} клипов, мой выбор отмечен</h2>')
@@ -873,7 +568,7 @@ def build_html(ctx) -> str:
              f'нечего, и трогать её — значит гадать. Такие клипы стоят на нуле '
              f'и помечены.</p>')
     h.append(f'<div class=built>Кадры ниже собраны под: {_dev_line} · look '
-             f'<b>{esc(short_name(ctx["rec_look"] or "—"))}</b> · цель по лицу '
+             f'<b>{esc(S.short_name(ctx["rec_look"] or "—"))}</b> · цель по лицу '
              f'<b>{ctx["target"]:.0f}</b>. Поменяешь проявку или look — '
              f'страницу надо пересобрать, кадры обновятся.</div>')
     for row in ctx["per_clip"]:
@@ -908,7 +603,7 @@ def build_html(ctx) -> str:
     h.append('<div class=foot>')
     h.append(f'<b>Версия v{v} · собрано {esc(ctx["when"])}</b><br>')
     h.append(f'кадры: <code>{esc(ctx["files_dir"])}</code> · '
-             f'библиотека: <code>{esc(str(STORE))}</code><br>')
+             f'библиотека: <code>{esc(str(S.STORE))}</code><br>')
     h.append('Страница статическая, открывается с <code>file://</code>, сервер не нужен.')
     h.append('</div>')
 
@@ -1008,112 +703,6 @@ refresh();
     return "\n".join(h)
 
 
-def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict) -> dict:
-    """Сохранить выбор Романа: канальное — в профиль, покадровое — в проект.
-
-    Два адреса, потому что у решений разный срок жизни:
-      проявка и look — ДНК канала, живут в YTs/{КАНАЛ}/color_profile.json;
-      экспозиция — свойство конкретного съёмочного дня, живёт в проекте.
-    Профиль пишется по ГАММЕ, а не по камере: завтра в парке появится третья
-    тушка на S-Log3, и она должна получить ту же проявку без правок.
-    """
-    prof_p = profile_path(project, code)
-    prof = load_json_safe(prof_p) or {}
-    ch = re.match(r"^(YT[A-Z]{2,4})", code)
-    prof.setdefault("schema", "color-profile-v1")
-    prof["channel"] = ch.group(1) if ch else code
-    prof.setdefault("_note", "Цветовая ДНК канала. Проявка выбирается "
-                    "ДЕТЕРМИНИРОВАННО по камере+гамме — это технический шаг, не "
-                    "вкус. Look — решение Романа, ОДИН на канал.")
-    dev = prof.setdefault("develop", {})
-    for cam, lut_id in (fb.get("develop") or {}).items():
-        gamma = by_cam_gamma.get(cam)
-        if not gamma:
-            continue
-        key = str(gamma)
-        entry = dev.setdefault(key, {})
-        entry["lut"] = lut_id
-        entry.setdefault("cameras", [])
-        if cam not in entry["cameras"]:
-            entry["cameras"].append(cam)
-        entry["decided_by"] = "roman"
-        entry["decided_at"] = time.strftime("%Y-%m-%d")
-    if fb.get("look"):
-        prof["look"] = {"id": fb["look"], "decided_by": "roman",
-                        "decided_at": time.strftime("%Y-%m-%d"),
-                        "_why": "ДНК канала, выбрана в витрине на реальных кадрах"}
-    if fb.get("target_face_luma"):
-        prof["exposure"] = {
-            "target_face_luma": fb["target_face_luma"],
-            "_why": ("выучено по выбору Романа — медиана яркости лиц на кадрах, "
-                     "которые он отметил; машина целится сюда, человек правит"),
-            "learned_at": time.strftime("%Y-%m-%d"),
-            "learned_from": code,
-        }
-    prof["updated"] = time.strftime("%Y-%m-%d")
-    save_json_atomic(prof_p, prof)
-
-    out_p = (project / "00_Setup" / "01_Ingest" / f"{code}_color_choice.json")
-    board = project / "00_Setup" / "01_Ingest" / f"{code}_lut_board.html"
-    doc = load_json_safe(out_p) or {}
-    # Файл описывает САМ СЕБЯ: что за этап, чем закрыт, где артефакты и что
-    # дальше. Иначе через месяц по одному словарю экспозиций не восстановить,
-    # откуда он взялся и можно ли на него опираться.
-    doc.update({
-        "schema": "color-choice-v1",
-        "stage": {
-            "layer": "15_color",
-            "name": "Выбор цвета: проявка, покраска, экспозиция",
-            "done": True,
-            "decided_by": "roman",
-            "model": "три ступени: pre → проявка (по камере) → покраска (ДНК канала); "
-                     "экспозиция — число между проявкой и покраской, не лут",
-            "artifacts": {
-                "board": str(board),
-                "frames": str(board.parent / f"{code}_lut_board_files"),
-                "channel_profile": str(profile_path(project, code)),
-            },
-            "tool": "scripts/15_color/1502_lut_pick/lut_board.py",
-            "next": "проба Input LUT / Exposure в Premiere, затем раскладка "
-                    "по клипам и донор канала",
-        },
-        "project": code,
-        "_note": "Покадровый выбор Романа по этому съёмочному дню. Проявка и look "
-                 "живут в профиле канала, здесь — только то, что свойство ДНЯ.",
-        "develop": fb.get("develop"),
-        "look": fb.get("look"),
-        "target_face_luma": fb.get("target_face_luma"),
-        "exposure": fb.get("exposure"),
-        "machine": (fb.get("mine") or {}).get("expo"),
-        "corrected": fb.get("corrected"),
-        "saved": now_iso(),
-        "doc_version": int(doc.get("doc_version") or 0) + 1,
-    })
-    save_json_atomic(out_p, doc)
-    return {"profile": prof_p, "choice": out_p,
-            "corrected": len(fb.get("corrected") or {}),
-            "clips": len(fb.get("exposure") or {})}
-
-
-def load_json_safe(path):
-    try:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return None
-
-
-def save_json_atomic(path: Path, obj):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1), encoding="utf-8")
-    import os as _os
-    _os.replace(tmp, path)
-
-
-def now_iso():
-    return time.strftime("%Y-%m-%dT%H:%M:%S%z")
-
-
 # ───────────────────────────────────────────────────────── main ──
 
 def main(argv=None) -> int:
@@ -1128,7 +717,7 @@ def main(argv=None) -> int:
     ap.add_argument("--develop-rows", type=int, default=2,
                     help="клипов на камеру на ступени 2; это ОДИН выбор, "
                          "строки нужны только чтобы увидеть разницу")
-    ap.add_argument("--develops", type=int, default=MAX_DEVELOP)
+    ap.add_argument("--develops", type=int, default=S.MAX_DEVELOP)
     ap.add_argument("--looks", type=int, default=0,
                     help="сколько покрасочных показать; 0 = все")
     ap.add_argument("--look-rows", type=int, default=4, help="клипов на лук-борде")
@@ -1156,12 +745,12 @@ def main(argv=None) -> int:
         rec = load_recorded_gammas(project, code)
         cam_gamma = {}
         for cam, items in all_clips_by_cam(src).items():
-            g = [normalize_gamma((rec.get(c.name) or (None,))[0])
+            g = [M.normalize_gamma((rec.get(c.name) or (None,))[0])
                  for _, c in items if rec.get(c.name)]
             g = [x for x in g if x]
             if g:
                 cam_gamma[cam] = max(set(g), key=g.count)
-        res = save_choice(project, code, fb, cam_gamma)
+        res = PL.save_choice(project, code, fb, cam_gamma)
         print(f"\nВЫБОР СОХРАНЁН")
         print(f"  профиль канала: {res['profile']}")
         print(f"  выбор по дню:   {res['choice']}")
@@ -1171,7 +760,7 @@ def main(argv=None) -> int:
     if not source.is_dir():
         die(f"нет {source}")
     mirror = Path(args.frames_from).expanduser().resolve() if args.frames_from else None
-    if not MANIFEST.exists():
+    if not S.MANIFEST.exists():
         die("библиотека пуста — сначала `lut_lib.py --import --apply`")
 
     out_dir = project / "00_Setup" / "01_Ingest"
@@ -1182,7 +771,7 @@ def main(argv=None) -> int:
             p.unlink()
     files_dir.mkdir(parents=True, exist_ok=True)
 
-    luts = load_library()
+    luts = S.load_library()
     by_cam = all_clips_by_cam(source)
     if not by_cam:
         die("в проекте не нашлось клипов по сценам 01_Source/NN_*")
@@ -1197,12 +786,12 @@ def main(argv=None) -> int:
     # а не камеры: на YTEVO03 один клип ZV-E1 снят в rec709, остальные в S-Log3.
     cam_info = {}
     for cam, items in sorted(by_cam.items()):
-        per_clip = [detect_gamma(c, cam, recorded) for _, c in items]
+        per_clip = [M.detect_gamma(c, cam, recorded) for _, c in items]
         seen = [g for g, _ in per_clip if g]
         gamma = max(set(seen), key=seen.count) if seen else None
         gsrc = next((s for g, s in per_clip if g == gamma), "не определена")
         mixed = sorted({g for g in seen if g != gamma})
-        devs = develop_candidates(luts, gamma, args.develops)
+        devs = S.develop_candidates(luts, gamma, args.develops)
         cam_info[cam] = {"gamma": gamma, "gamma_src": gsrc, "mixed": mixed,
                          "develops": devs}
         print(f"  {cam or '—':<16} гамма {str(gamma):<12} ({gsrc}) → "
@@ -1225,7 +814,7 @@ def main(argv=None) -> int:
           f"самые тёмные · ступень 3 (экспозиция): "
           f"{sum(len(v) for v in face_samples.values())} клипов с лицом")
 
-    _target = args.target or profile_target(project, code) or TARGET_FACE_LUMA_DEFAULT
+    _target = args.target or PL.profile_target(project, code) or PL.TARGET_FACE_LUMA_DEFAULT
     target = _target
     jobs = []          # (video, tc, out_path, luts, stops)
     cams = []
@@ -1241,8 +830,8 @@ def main(argv=None) -> int:
                  "develops": devs, "samples": []}
 
         for scene, clip in items:
-            video, kind = P.frame_src(clip, source, mirror)
-            dur = P.ffprobe_duration(video) or 4.0
+            video, kind = M.frame_src(clip, source, mirror)
+            dur = M.ffprobe_duration(video) or 4.0
             # Середина клипа, прижатая к его концу. ⚠️ Никакого нижнего порога в
             # полсекунды: на YTEVO03 два клипа короче (0.400 и 0.469 с), и порог
             # уводил таймкод ЗА конец — ffmpeg тогда не отдаёт кадр вовсе, а ругань
@@ -1259,7 +848,7 @@ def main(argv=None) -> int:
                 # обрезка до ~40 схлопывает eastman с eastmanrm, vision с visionteal.
                 # Кадр тогда молча показывает не тот куб, что подписан.
                 p = files_dir / f"{stem}__{d['id']}.jpg"
-                jobs.append((video, tc, p, (STORE / d["file"],), 0.0))
+                jobs.append((video, tc, p, (S.STORE / d["file"],), 0.0))
                 srec["dev"].append({"id": d["id"], "cam": cam, "path": p,
                                     "rel": f"{files_dirname}/{p.name}",
                                     "name": d["id"]})
@@ -1275,15 +864,15 @@ def main(argv=None) -> int:
             continue
         lead = devs[0]
         for scene, clip in items:
-            video, _ = P.frame_src(clip, source, mirror)
-            dur = P.ffprobe_duration(video) or 4.0
+            video, _ = M.frame_src(clip, source, mirror)
+            dur = M.ffprobe_duration(video) or 4.0
             tc = max(0.0, min(dur * 0.5, dur - 0.05))
             stem = re.sub(r"[^A-Za-z0-9]+", "_", f"{scene}_{clip.stem}")
             row = {"label": f"{scene} / {clip.name}", "cam": cam,
                    "develop": lead["id"], "clip_key": stem, "steps": []}
-            for st in EXPOSURE_STOPS:
-                pth = files_dir / f"{stem}__{lead['id']}__{stop_tag(st)}.jpg"
-                jobs.append((video, tc, pth, (STORE / lead["file"],), st))
+            for st in PL.EXPOSURE_STOPS:
+                pth = files_dir / f"{stem}__{lead['id']}__{PL.stop_tag(st)}.jpg"
+                jobs.append((video, tc, pth, (S.STORE / lead["file"],), st))
                 row["steps"].append({"stop": st, "path": pth,
                                      "rel": f"{files_dirname}/{pth.name}"})
             expo_rows.append(row)
@@ -1291,7 +880,7 @@ def main(argv=None) -> int:
     # Лук-борд: одна проявка на всех, иначе разница между колонками — не только look.
     lead_cam = max(cams, key=lambda c: len(c["samples"]))
     lead_dev = lead_cam["develops"][0] if lead_cam["develops"] else None
-    looks = look_candidates(luts, args.looks)
+    looks = S.look_candidates(luts, args.looks)
     look_rows = []
     # ⚠️ Look смотрят на НОРМАЛЬНО снятом кадре с лицом, а не на самом тёмном.
     # Выборка ступени «проявка» смещена в тёмное намеренно — там кубы и
@@ -1313,8 +902,8 @@ def main(argv=None) -> int:
             ref_pool.append((abs(fl - target), scene, c))
     ref_pool.sort(key=lambda t: t[0])
     for _, scene, clip in ref_pool[:args.look_rows]:
-        video, _ = P.frame_src(clip, source, mirror)
-        dur = P.ffprobe_duration(video) or 4.0
+        video, _ = M.frame_src(clip, source, mirror)
+        dur = M.ffprobe_duration(video) or 4.0
         tc = max(0.0, min(dur * 0.5, dur - 0.05))
         look_ref.append((f"{scene} / {clip.name}",
                          re.sub(r"[^A-Za-z0-9]+", "_", f"{scene}_{clip.stem}"),
@@ -1323,7 +912,7 @@ def main(argv=None) -> int:
         for label, stem0, vid0, tc0 in look_ref:
             stem = f"lookref_{stem0}"
             base = files_dir / f"{stem}__base.jpg"
-            jobs.append((vid0, tc0, base, (STORE / lead_dev["file"],), 0.0))
+            jobs.append((vid0, tc0, base, (S.STORE / lead_dev["file"],), 0.0))
             rec = {"label": label, "base_path": base,
                    "base_rel": f"{files_dirname}/{base.name}", "looks": []}
             for lk in looks:
@@ -1337,17 +926,17 @@ def main(argv=None) -> int:
         for (label, stem0, vid0, tc0), rec in zip(look_ref, look_rows):
             for lk, meta in zip(rec["looks"], looks):
                 jobs.append((vid0, tc0, Path(lk["path"]),
-                             (STORE / lead_dev["file"], STORE / meta["file"]), 0.0))
+                             (S.STORE / lead_dev["file"], S.STORE / meta["file"]), 0.0))
 
     print(f"  кадров к рендеру: {len(jobs)}")
     t0 = time.time()
     done = 0
     with ThreadPoolExecutor(max_workers=args.jobs) as ex:
-        for ok in ex.map(lambda j: extract(j[0], j[1], j[2], j[3], None, j[4]), jobs):
+        for ok in ex.map(lambda j: F.extract(j[0], j[1], j[2], j[3], None, j[4]), jobs):
             done += 1 if ok else 0
     print(f"  снято {done}/{len(jobs)} за {time.time()-t0:.0f} с")
     if done < len(jobs):
-        missing = [j[2].name for j in jobs if not frame_ok(j[2])]
+        missing = [j[2].name for j in jobs if not F.frame_ok(j[2])]
         print(f"  ⚠ не снялось {len(missing)} кадров — в витрине будут дыры:")
         for nm in missing[:6]:
             print(f"        {nm}")
@@ -1363,10 +952,10 @@ def main(argv=None) -> int:
 
     for cam in cams:
         for s in cam["samples"]:
-            s["orig_m"] = metrics(s["orig_path"]) if frame_ok(s["orig_path"]) else \
+            s["orig_m"] = F.metrics(s["orig_path"]) if F.frame_ok(s["orig_path"]) else \
                 {"luma": 0, "sat": 0, "black": 0, "clip": 0}
             for d in s["dev"]:
-                d["m"] = metrics(d["path"]) if frame_ok(d["path"]) else \
+                d["m"] = F.metrics(d["path"]) if F.frame_ok(d["path"]) else \
                     {"luma": 0, "sat": 0, "black": 0, "clip": 0}
     # ── Ступень 3: замер по ЛИЦУ. Рамка ищется один раз, на кадре 0 стопов, и
     # переиспользуется на всей лестнице: Vision на пере- и недодержанном кадре
@@ -1374,19 +963,19 @@ def main(argv=None) -> int:
     # в рамке, а мы меряем именно экспозицию.
     target = _target
     target_src = ("задан флагом" if args.target else
-                  ("выучен по твоему выбору" if profile_target(project, code)
-                   else _TARGET_NOTE))
+                  ("выучен по твоему выбору" if PL.profile_target(project, code)
+                   else PL._TARGET_NOTE))
     faces = 0
     for row in expo_rows:
         zero = next(st for st in row["steps"] if abs(st["stop"]) < 1e-6)
-        bbox = P.detect_face(zero["path"]) if frame_ok(zero["path"]) else None
+        bbox = F.detect_face(zero["path"]) if F.frame_ok(zero["path"]) else None
         row["roi"] = "face" if bbox else "frame"
         faces += 1 if bbox else 0
         for st in row["steps"]:
-            st["m"] = face_measure(st["path"], bbox) if frame_ok(st["path"]) else \
+            st["m"] = F.face_measure(st["path"], bbox) if F.frame_ok(st["path"]) else \
                 {"luma": 0.0, "sat": 0.0, "lit": 0.0, "clip": 0.0, "roi": row["roi"]}
         z = next(st for st in row["steps"] if abs(st["stop"]) < 1e-6)
-        row["miss_stops"] = stops_to_target(z["m"]["luma"], target)
+        row["miss_stops"] = PL.stops_to_target(z["m"]["luma"], target)
         # Машина предлагает ближайшую доступную ступень, но ТОЛЬКО если лицо
         # найдено. Без лица предлагать экспозицию не по чему — счёт пошёл бы
         # по небу за лобовым стеклом, а это ровно та ошибка, что была раньше.
@@ -1396,7 +985,7 @@ def main(argv=None) -> int:
             # Лестница конечна. Если промах больше её потолка, машина упирается
             # и об этом надо сказать, а не молча предложить крайнюю ступень:
             # такой кадр либо снят сильно не так, либо тёмный по замыслу.
-            row["out_of_range"] = abs(row["miss_stops"]) > max(EXPOSURE_STOPS) + 1e-6
+            row["out_of_range"] = abs(row["miss_stops"]) > max(PL.EXPOSURE_STOPS) + 1e-6
         else:
             row["machine"] = 0.0
             row["locked"] = True
@@ -1422,18 +1011,18 @@ def main(argv=None) -> int:
                                  "state": "лица нет — экспозиция не трогается",
                                  "stop": 0.0, "luma": pr["luma"]})
                 continue
-            miss = stops_to_target(pr["face_luma"], target)
-            st = min(EXPOSURE_STOPS, key=lambda v: abs(v - miss))
-            over = abs(miss) > max(EXPOSURE_STOPS) + 1e-6
+            miss = PL.stops_to_target(pr["face_luma"], target)
+            st = min(PL.EXPOSURE_STOPS, key=lambda v: abs(v - miss))
+            over = abs(miss) > max(PL.EXPOSURE_STOPS) + 1e-6
             coverage.append({"cam": cam, "clip": clip.name, "scene": scene,
                              "state": "лестницы не хватает" if over else "по лицу",
                              "stop": st, "miss": miss, "luma": pr["face_luma"]})
 
     for rec in look_rows:
-        rec["base_m"] = metrics(rec["base_path"]) if frame_ok(rec["base_path"]) else \
+        rec["base_m"] = F.metrics(rec["base_path"]) if F.frame_ok(rec["base_path"]) else \
             {"luma": 0, "sat": 0, "black": 0, "clip": 0}
         for lk in rec["looks"]:
-            lk["m"] = metrics(lk["path"]) if frame_ok(lk["path"]) else \
+            lk["m"] = F.metrics(lk["path"]) if F.frame_ok(lk["path"]) else \
                 {"luma": 0, "sat": 0, "black": 0, "clip": 0}
 
     # ── ВОЛНА 2: сетка по КАЖДОМУ клипу дня, под моей рекомендацией.
@@ -1450,12 +1039,12 @@ def main(argv=None) -> int:
             _acc.setdefault(lk["id"], []).append(lk["m"])
     look_metrics = {k: {mk: sum(m[mk] for m in v) / len(v) for mk in v[0]}
                     for k, v in _acc.items()}
-    rec_look = recommend_look(looks, look_metrics) if look_rows else None
-    rec_dev = {cam: recommend_develop(info["develops"]) for cam, info in cam_info.items()}
+    rec_look = S.recommend_look(looks, look_metrics) if look_rows else None
+    rec_dev = {cam: S.recommend_develop(info["develops"]) for cam, info in cam_info.items()}
 
     # ⚠️ Если Роман уже выбирал по этому дню — предлагается ЕГО выбор, а не мой.
     # Иначе каждая пересборка витрины откатывала бы его работу к рекомендации.
-    saved = load_json_safe(out_dir / f"{code}_color_choice.json") or {}
+    saved = PL.load_json_safe(out_dir / f"{code}_color_choice.json") or {}
     by_id = {l["id"]: l for l in luts}
     if saved.get("look") and saved["look"] in by_id:
         rec_look = by_id[saved["look"]]
@@ -1474,18 +1063,18 @@ def main(argv=None) -> int:
         dev = rec_dev.get(cam)
         if not dev:
             continue
-        chain = [STORE / dev["file"]] + ([STORE / rec_look["file"]] if rec_look else [])
+        chain = [S.STORE / dev["file"]] + ([S.STORE / rec_look["file"]] if rec_look else [])
         for scene, clip in items:
             # ⚠️ Снятое НЕ в логе сюда не попадает: проявка ему не нужна, а
             # применить её — значит проявить уже проявленное и убить кадр.
             # На YTEVO03 это один клип ZV-E1, снятый в rec709.
             grec = (recorded.get(clip.name) or (None,))[0]
-            if grec and normalize_gamma(grec) == "Rec.709":
+            if grec and M.normalize_gamma(grec) == "Rec.709":
                 skipped_nonlog.append(f"{scene}/{clip.name}")
                 continue
             pr = probe.get(clip.name)
-            video, _ = P.frame_src(clip, source, mirror)
-            dur = P.ffprobe_duration(video) or 4.0
+            video, _ = M.frame_src(clip, source, mirror)
+            dur = M.ffprobe_duration(video) or 4.0
             tc = max(0.0, min(dur * 0.5, dur - 0.05))
             stem = re.sub(r"[^A-Za-z0-9]+", "_", f"{scene}_{clip.stem}")
             row = {"key": f"{scene}/{clip.name}", "clip_key": stem, "cam": cam,
@@ -1496,11 +1085,11 @@ def main(argv=None) -> int:
             jobs2.append((video, tc, o, (), 0.0))
             row["orig_rel"] = f"{files_dirname}/_perclip/{o.name}"
             if pr and pr["face"] and pr.get("face_luma"):
-                miss = stops_to_target(pr["face_luma"], target)
+                miss = PL.stops_to_target(pr["face_luma"], target)
                 row["miss"] = miss
-                lad = ladder_for(miss)
+                lad = PL.ladder_for(miss)
                 row["mine"] = min(lad, key=lambda v: abs(v - miss))
-                row["over"] = abs(miss) > EXPOSURE_MAX + 1e-6
+                row["over"] = abs(miss) > PL.EXPOSURE_MAX + 1e-6
             else:
                 row["mine"] = 0.0          # без лица экспозицию не двигаем
                 row["miss"] = None
@@ -1512,20 +1101,20 @@ def main(argv=None) -> int:
             # странице уже новая — и выбор делается по картинке от другого куба.
             # Поймано живьём: кадры под malibu подписались porsche_xblue_contrast.
             tagbase = f"{stem}__{dev['id']}__{rec_look['id'] if rec_look else 'nolook'}"
-            for st in ladder_for(row.get("miss")):
-                f = files_dir / "_perclip" / f"{tagbase}__{stop_tag(st)}.jpg"
+            for st in PL.ladder_for(row.get("miss")):
+                f = files_dir / "_perclip" / f"{tagbase}__{PL.stop_tag(st)}.jpg"
                 jobs2.append((video, tc, f, tuple(chain), st))
                 row["steps"].append({"stop": st, "path": f,
                                      "rel": f"{files_dirname}/_perclip/{f.name}"})
             per_clip.append(row)
 
-    print(f"  волна 2: {len(per_clip)} клипов × {len(EXPOSURE_STOPS)+1} кадров "
+    print(f"  волна 2: {len(per_clip)} клипов × {len(PL.EXPOSURE_STOPS)+1} кадров "
           f"= {len(jobs2)} — под {rec_dev and 'моей проявкой'} и look "
           f"{rec_look['id'] if rec_look else '—'}")
     t2 = time.time()
     done2 = 0
     with ThreadPoolExecutor(max_workers=args.jobs) as ex:
-        for ok in ex.map(lambda j: extract(j[0], j[1], j[2], j[3], PERCLIP_W, j[4]), jobs2):
+        for ok in ex.map(lambda j: F.extract(j[0], j[1], j[2], j[3], F.PERCLIP_W, j[4]), jobs2):
             done2 += 1 if ok else 0
     print(f"  снято {done2}/{len(jobs2)} за {time.time()-t2:.0f} с")
     want2 = {j[2].name for j in jobs2}
@@ -1544,7 +1133,7 @@ def main(argv=None) -> int:
     unknown = [c["cam"] for c in cams if not c["gamma"]]
     nolut = [c["cam"] for c in cams if not c["develops"]]
     ctx = {
-        "code": code, "version": ver, "when": when_ru(),
+        "code": code, "version": ver, "when": PL.when_ru(),
         "cams": cams, "look_rows": look_rows, "expo_rows": expo_rows,
         "coverage": coverage, "per_clip": per_clip,
         "skipped_nonlog": skipped_nonlog, "from_saved": bool(saved),
