@@ -249,8 +249,13 @@ ck('«Говорит»: у каждой ТЗ с таймкодом есть ре
 ck('«Говорит»: каждый абзац дословно из words.json', not say_not_verbatim, f'{say_not_verbatim[:8]}' if say_not_verbatim else '')
 ck('«Говорит»: опорная фраза жирным', not say_no_bold, f'{say_no_bold[:8]}' if say_no_bold else '')
 
-dups = [n for n, p in act if p.get('roman_comment') and t3[n].count('💬') != len(p['roman_comment'])]
+# 💬 живут в СВОЕЙ колонке (раскладка Романа 22.09.2026), а не в тексте ТЗ: до неё проверка считала
+# их в «Описание ошибки» + «Как надо» и падала на каждой ТЗ с комментарием, как только они появились.
+t_roman = {n: cell_text(r['tableCells'][C_ROMAN]) for n, r in row_of.items()}
+dups = [n for n, p in act if p.get('roman_comment') and t_roman[n].count('💬') != len(p['roman_comment'])]
 ck('💬 комменты Романа без дублей', not dups, f'{dups}' if dups else '')
+stray = [n for n, p in act if '💬' in t3[n]]
+ck('💬 не попали в текст ТЗ', not stray, f'{stray}' if stray else '')
 
 # ── ссылки: клипы пула + «🔗 файл:» на каждый материал с img + источники + ссылки внутри ТЗ ──
 exp_links = 0
