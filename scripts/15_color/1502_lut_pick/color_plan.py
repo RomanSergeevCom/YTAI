@@ -322,3 +322,141 @@ def check_lumetri_stops(preview_stops: float) -> tuple[bool, str]:
                    f"а ползунок Exposure кончается на "
                    f"±{LUMETRI_EXPOSURE_LIMIT:.0f}: столько одной экспозицией "
                    "не вытянуть, нужна другая проявка")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ДНК канала: читаем обратно то, что записал save_choice
+# ─────────────────────────────────────────────────────────────────────────────
+
+class DevelopUnknown(Exception):
+    """Проявку вывести не удалось. Отказ, а не догадка.
+
+    ⚠️ Именно снисходительность «гамма не совпала — ставим флаг mismatch и едем
+    дальше» покрасила 61 клип DJI из 163 чужой математикой. Клип без проявки
+    обязан остановить прогон и назваться по имени.
+    """
+
+
+def load_profile(project: Path, code: str) -> dict:
+    """ДНК канала. Пустой словарь — профиля ещё нет (первый день канала)."""
+    return load_json_safe(profile_path(project, code)) or {}
+
+
+def resolve_develop(profile: dict, gamma, camera_role: str = ""):
+    """(id проявки, откуда) по гамме клипа и роли камеры.
+
+    Порядок — от частного к общему:
+      1. develop[гамма].by_camera[роль] — когда одна гамма у РАЗНЫХ тушек
+         означает разные кубы;
+      2. develop[гамма].lut            — обычный случай, гамма и решает;
+      3. отказ.
+
+    ⚠️ Шаг 1 не теоретический: taxonomy._body_independent прямо говорит, что у
+    Sony гамма от тушки не зависит, а у DJI зависит — «Pocket 4 и Pocket 4P —
+    разные кубы под одним именем D-Log». Сегодня не бьёт только потому, что под
+    D-Log2 в парке одна тушка.
+    """
+    if not gamma:
+        raise DevelopUnknown("гамма клипа не определена — проявлять нечем")
+    dev = (profile or {}).get("develop") or {}
+    entry = dev.get(str(gamma))
+    if not entry:
+        raise DevelopUnknown(
+            f"в профиле канала нет проявки для гаммы {gamma}; "
+            f"известны: {', '.join(sorted(dev)) or '(пусто)'}")
+    by_cam = entry.get("by_camera") or {}
+    if camera_role and camera_role in by_cam:
+        return by_cam[camera_role], f"профиль: камера {camera_role} + гамма {gamma}"
+    lut = entry.get("lut")
+    if not lut:
+        raise DevelopUnknown(f"в профиле у гаммы {gamma} пустое поле lut")
+    return lut, f"профиль: гамма {gamma}"
+
+
+def resolve_look(profile: dict):
+    """Look канала. None — покраски нет, и это законный план."""
+    return ((profile or {}).get("look") or {}).get("id")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Кэш гамм: чтобы система пережила размонтированную карту
+# ─────────────────────────────────────────────────────────────────────────────
+
+def gamma_cache_path(project: Path, code: str) -> Path:
+    return project / "00_Setup" / "01_Ingest" / f"{code}_gamma_cache.json"
+
+
+def load_gamma_cache(project: Path, code: str) -> dict:
+    d = load_json_safe(gamma_cache_path(project, code)) or {}
+    return d.get("clips") or {}
+
+
+def _stat_pair(clip: Path):
+    """(размер, mtime) оригинала. ⚠️ На битом симлинке stat() кидает — тогда
+    (None, None), и такая запись НИКОГДА не считается устаревшей: иначе кэш
+    самоуничтожается ровно в тот момент, ради которого заведён."""
+    try:
+        st = clip.stat()
+        return st.st_size, st.st_mtime
+    except OSError:
+        return None, None
+
+
+def gamma_cache_stale(rec: dict, clip: Path) -> bool:
+    size, mtime = _stat_pair(clip)
+    if size is None or rec.get("size") is None:
+        return False
+    return size != rec.get("size") or abs(mtime - (rec.get("mtime") or 0)) > 1.0
+
+
+def save_gamma_cache(project: Path, code: str, clips: dict) -> Path:
+    p = gamma_cache_path(project, code)
+    save_json_atomic(p, {
+        "schema": "gamma-cache-v1",
+        "_note": "Замер гаммы по каждому клипу. Пишется, когда оригинал ДОСТУПЕН; "
+                 "читается, когда недоступен. ⚠️ Оригиналы в проекте бывают "
+                 "симлинками на съёмную карту — без этого файла после "
+                 "размонтирования гамму взять неоткуда, и слой встаёт.",
+        "project": code,
+        "tool": "scripts/15_color/1502_lut_pick/lut_board.py",
+        "updated": now_iso(),
+        "clips": clips,
+    })
+    return p
+
+
+def seed_gamma_cache_from_lut_plan(plan: dict, keys_by_basename: dict) -> dict:
+    """Разовый посев кэша из СТАРОГО {CODE}_lut_plan.json.
+
+    Старый план — единственное место, где гаммы этого дня записаны, пока карта
+    не примонтирована. Забираем их один раз, сохраняя сырую строку дословно:
+    если завтра найдётся баг в нормализации, его переприменят, не поднимая карту.
+    """
+    out = {}
+    for pk, rec in (plan.get("clips") or {}).items():
+        raw = (rec or {}).get("gamma")
+        if not raw:
+            continue
+        canon = keys_by_basename.get(pk.split("/")[-1]) or pk
+        out[canon] = {
+            "gamma": _N_normalize(raw),
+            "gamma_raw": raw,
+            "source": "legacy_lut_plan",
+            "cam": (rec or {}).get("cam") or "",
+            "pix_fmt": (rec or {}).get("pix_fmt") or "",
+            "size": None,
+            "mtime": None,
+            "measured": plan.get("generated") or "",
+        }
+    return out
+
+
+def _N_normalize(raw):
+    """normalize_gamma живёт в naming.py (канон один на слой). Импорт ленивый,
+    чтобы color_plan оставался stdlib-модулем без обязательной библиотеки."""
+    import sys as _sys
+    lib = Path(__file__).resolve().parent.parent / "1501_lut_library"
+    if str(lib) not in _sys.path:
+        _sys.path.insert(0, str(lib))
+    import naming as _n
+    return _n.normalize_gamma(raw)

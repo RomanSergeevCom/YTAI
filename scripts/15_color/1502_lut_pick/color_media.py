@@ -103,6 +103,20 @@ def scene_clips(sdir):
     return [v[0] for _, v in sorted(found.items())]
 
 
+def content_scenes(source):
+    """Сцены съёмочного дня: только пронумерованные и БЕЗ служебной 00_.
+
+    ⚠️ `00_Tests_And_Sync` — проверки, хлопушки и синхрон, а не фильм. Красить их
+    никто не собирался, гаммы у них может не быть вовсе, и без этого фильтра
+    раскладка честно отказывается на девяти клипах, которых не должно быть в
+    выборке. Правило живёт здесь, в одном месте: витрина и раскладка обязаны
+    видеть ОДИН И ТОТ ЖЕ набор клипов, иначе их числа разойдутся.
+    """
+    return sorted(d for d in source.iterdir()
+                  if d.is_dir() and re.match(r"^\d\d_", d.name)
+                  and not d.name.startswith("00_"))
+
+
 def cam_of(clip, source):
     """Имя камеры = промежуточная папка между сценой и файлом ('' если её нет)."""
     parts = clip.relative_to(source).parts       # (scene, CAM-A_FX3, file.MP4)

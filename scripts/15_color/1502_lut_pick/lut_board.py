@@ -148,9 +148,7 @@ def pick_face_samples(by_cam, per_cam, probe):
 
 def all_clips_by_cam(source: Path) -> dict:
     by_cam: dict[str, list] = {}
-    scenes = sorted(d for d in source.iterdir()
-                    if d.is_dir() and re.match(r"^\d\d_", d.name)
-                    and not d.name.startswith("00_"))
+    scenes = M.content_scenes(source)
     for sdir in scenes:
         for clip in M.scene_clips(sdir):
             by_cam.setdefault(M.cam_of(clip, source), []).append((sdir.name, clip))
