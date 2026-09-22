@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wall-Clock Multicam Layout — YTAI UXP Plugin Design</title>
+<style>
+  :root {
+    --bg: #0e1117;
+    --bg-card: #161b22;
+    --bg-code: #1c2128;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent-warm: #f0883e;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --purple: #bc8cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 30px;
+  }
+  header.hero {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+  }
+  header.hero h1 {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  header.hero .tagline {
+    color: var(--text-dim);
+    font-size: 16px;
+  }
+  header.hero .meta {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  header.hero .meta span { display: inline-flex; align-items: center; gap: 6px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+  }
+  .badge.green { color: var(--green); border-color: var(--green); }
+  .badge.yellow { color: var(--yellow); border-color: var(--yellow); }
+  .badge.purple { color: var(--purple); border-color: var(--purple); }
+  .badge.accent { color: var(--accent); border-color: var(--accent); }
+
+  h2 {
+    font-size: 22px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-top: 48px;
+    color: var(--accent);
+  }
+  h3 {
+    font-size: 17px;
+    margin-top: 28px;
+    color: var(--accent-warm);
+  }
+  p { margin: 12px 0; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.45;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    color: var(--text);
+  }
+  code {
+    background: var(--bg-code);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  }
+  pre code { background: transparent; padding: 0; font-size: 13px; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+  }
+  .card-title { font-weight: 600; color: var(--accent); margin-bottom: 12px; }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 24px 0;
+  }
+  .two-col h4 {
+    margin: 0 0 12px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+  .two-col .before h4::before { content: "❌ "; color: var(--red); }
+  .two-col .after h4::before { content: "✅ "; color: var(--green); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--bg-code);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  td code { font-size: 12px; }
+  tr:nth-child(even) td { background: var(--bg-card); }
+
+  .timeline-viz {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    padding: 20px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 24px 0;
+  }
+  .timeline-viz pre {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .phase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .phase {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
+  .phase .phase-num {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .phase .phase-title {
+    font-weight: 600;
+    margin: 4px 0;
+    color: var(--accent);
+  }
+  .phase .phase-time {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .risk-row.high { border-left: 3px solid var(--red); }
+  .risk-row.medium { border-left: 3px solid var(--yellow); }
+  .risk-row.low { border-left: 3px solid var(--green); }
+
+  nav.toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 24px;
+    margin: 24px 0;
+  }
+  nav.toc h3 { margin-top: 0; }
+  nav.toc ol { padding-left: 24px; }
+  nav.toc li { margin: 4px 0; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  .key-stat {
+    display: inline-block;
+    margin: 8px 16px 8px 0;
+  }
+  .key-stat .label { font-size: 11px; text-transform: uppercase; color: var(--text-dim); letter-spacing: 1px; }
+  .key-stat .value { font-size: 22px; font-weight: 700; color: var(--accent); }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .legend { display: flex; gap: 16px; margin: 12px 0; font-size: 12px; color: var(--text-dim); }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="hero">
+  <h1>Wall-Clock Multicam Layout</h1>
+  <div class="tagline">YTAI UXP Plugin — INGEST Stage Rewrite</div>
+  <div class="meta">
+    <span><span class="badge accent">v1.0 draft</span></span>
+    <span>📅 2026-05-31</span>
+    <span>🎬 Test project: YTCR03 Vlad Myshinskii</span>
+    <span>📁 <code>0500_uxp/docs/wallclock/</code></span>
+  </div>
+  <div style="margin-top:16px">
+    <span class="key-stat"><div class="label">Estimated effort</div><div class="value">3-4 days</div></span>
+    <span class="key-stat"><div class="label">Phases</div><div class="value">8</div></span>
+    <span class="key-stat"><div class="label">Atomic commits</div><div class="value">~17</div></span>
+    <span class="key-stat"><div class="label">New modules</div><div class="value">10</div></span>
+    <span class="key-stat"><div class="label">YTCR03 sequences</div><div class="value">7</div></span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#tldr">TL;DR</a></li>
+    <li><a href="#problem">Problem: Why back-to-back placement isn't enough</a></li>
+    <li><a href="#concept">Concept: Wall-clock layout</a></li>
+    <li><a href="#json">JSON v2.0 format</a></li>
+    <li><a href="#arch">Architecture & module graph</a></li>
+    <li><a href="#tx">TX Path B+ strategy</a></li>
+    <li><a href="#roadmap">Roadmap — 8 phases</a></li>
+    <li><a href="#risks">Risks & mitigations</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+  </ol>
+  <p style="margin-top:12px; font-size:13px; color:var(--text-dim)">
+    📖 Full design: <a href="WALLCLOCK_DESIGN.md">WALLCLOCK_DESIGN.md</a>
+  </p>
+</nav>
+
+<h2 id="tldr">TL;DR</h2>
+
+<div class="card">
+  <div class="card-title">What's changing?</div>
+  <p>Current INGEST builder packs all clips back-to-back, losing real shooting chronology and capping at 2 cameras (V1+V2). The rewrite places clips on their <strong>wall-clock offset</strong> from <code>scene_t0</code>, supports N cameras (auto-detected from path), and places TX lavalier as continuous strips with sustained trim handles.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Key decisions (locked in with user)</div>
+  <table>
+    <tr><th>Axis</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>Code approach</td><td><span class="badge green">Clean refactor</span></td><td>Wall-clock is a strict superset. Pure layout/ + UXP placement/ split → unit-testable.</td></tr>
+    <tr><td>TX placement</td><td><span class="badge green">Path B+</span></td><td>Unsplit WAV in bin, scene-bounded TrackItem in sequence. Trim handles preserved.</td></tr>
+    <tr><td>Scope</td><td><span class="badge accent">Full handoff</span></td><td>Spec doc + automated tests + regression + Telegram notify.</td></tr>
+    <tr><td>Documentation</td><td><span class="badge purple">MD + HTML</span></td><td>Phase 0 — design doc lands before any code.</td></tr>
+  </table>
+</div>
+
+<h2 id="problem">Problem: Why back-to-back placement isn't enough</h2>
+
+<p>S03 (Developer Meeting) shot over <strong>~45 minutes</strong> of real time. DJI camera recorded in <strong>20 separate clips</strong> with pauses. iPhone joined briefly mid-meeting for <strong>5 clips</strong>. Throughout the whole 45 minutes, a lavalier mic on Vlad's chest recorded <strong>continuously</strong> — 27 minutes 31 seconds of audio.</p>
+
+<div class="two-col">
+  <div class="card before">
+    <h4>Current behavior (back-to-back)</h4>
+    <div class="timeline-viz">
+<pre>V1 DJI:    [DJI75][DJI76][DJI77]...[DJI94]   ← всё встык
+V2 iPhone: ∅ (multicam.pairs не описаны)
+A3 TX:     [TX][TX][TX]...[TX] [TX][TX][TX]  ← 18 кусков с дырами
+        0s──────────────────────────────────150s</pre>
+    </div>
+    <ul style="font-size:13px; color:var(--text-dim)">
+      <li>Реальные 45 минут схлопнуты в ~3 минуты compressed timeline</li>
+      <li>iPhone теряется (нет места в pair-схеме)</li>
+      <li>27-минутный непрерывный TX разорван на 18 фрагментов</li>
+      <li>VO-материал из gap'ов потерян</li>
+    </ul>
+  </div>
+
+  <div class="card after">
+    <h4>Wall-clock layout (target)</h4>
+    <div class="timeline-viz">
+<pre>V1 DJI:    █DJI75 ░ █76 █77 ░░░ █78... ░░░░░░░░░░░░░░░░ █93 ░ █94
+V2 iPhone:                                          █68 █69 █70 ░ █72
+A3 TX00:   ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+        0s                                                       27:31</pre>
+    </div>
+    <ul style="font-size:13px; color:var(--text-dim)">
+      <li>Реальная хронология видна на таймлайне</li>
+      <li>iPhone на V2 в своём моменте (~34:40 от scene_t0)</li>
+      <li>TX непрерывной полосой 27:31 → VO-материал доступен</li>
+      <li>Trim handles на TX → можно расширить за scene boundary</li>
+    </ul>
+  </div>
+</div>
+
+<h2 id="concept">Concept: Wall-clock layout</h2>
+
+<h3>Definitions</h3>
+<table>
+  <tr><th>Term</th><th>Definition</th></tr>
+  <tr><td><code>scene_t0</code></td><td>Earliest <code>creation_time</code> across all clips AND TX strips in a scene</td></tr>
+  <tr><td><code>wall_offset</code></td><td><code>(clip.creation_time - scene_t0).total_seconds()</code> — pre-computed by Python</td></tr>
+  <tr><td><code>cam_layers</code></td><td>Per-scene ordered list of camera names → V-track index map</td></tr>
+  <tr><td><code>tx_strips</code></td><td>Per-scene continuous TX WAV file list (path + creation_time + duration)</td></tr>
+</table>
+
+<h3>YTCR03 actual scene breakdown</h3>
+<table>
+  <tr><th>Scene</th><th>Clips</th><th>Cameras</th><th>TX lavalier</th><th>Wall-clock range (Dubai)</th></tr>
+  <tr><td>S01 morning_drive</td><td>8</td><td>FX3 + FX3A</td><td>—</td><td>~07:30–07:45</td></tr>
+  <tr><td>S02 amer_centre</td><td>16</td><td>DJI + iPhone</td><td><strong>TX01_MIC007</strong> (12:41:05)</td><td>~12:30–12:45</td></tr>
+  <tr><td>S03 developer_meeting</td><td>25</td><td>DJI + iPhone</td><td><strong>TX00_MIC044</strong> (13:03:10)</td><td>13:01:47–13:46</td></tr>
+  <tr><td>S04 with_wife</td><td>47</td><td><strong>FX3 + FX3A + iPhone</strong></td><td>TX02 (part)</td><td>~14:00–15:30</td></tr>
+  <tr><td>S05 property_tour</td><td>8</td><td>FX3A</td><td>—</td><td>~16:00–16:15</td></tr>
+  <tr><td>S06 numbers_breakdown</td><td>6</td><td>FX3A</td><td>—</td><td>~17:30–17:45</td></tr>
+  <tr><td>S07 street_outro</td><td>24</td><td>FX3A + iPhone</td><td>TX02 (part)</td><td>~18:30–19:00</td></tr>
+</table>
+
+<h3>Placement algorithm (conceptual)</h3>
+<pre><code>for each scene:
+  scene_t0 = min(creation_time for source in scene.clips ∪ tx_strips[scene])
+  cam_layers = override OR auto_detect(scene.clips)
+
+  seq = createSequence (empty) + applyMediaSettings (3840×2160@50fps, 48kHz)
+
+  for video clip in scene.clips:
+    v_idx = cam_layers[cam_from_path(clip.path)]
+    offset_sec = clip.wall_offset
+    createOverwriteItemAction(seq, clip.item, TickTime(offset_sec), v_idx, v_idx)
+
+  for tx_strip in tx_strips[scene]:
+    a_idx = max(cam_layers.values()) + 1 + tx_strip_index
+    offset_sec = (tx_strip.creation_time - scene_t0).total_seconds()
+    createOverwriteItemAction(seq, tx.item, TickTime(offset_sec), -1, a_idx)  // audio-only
+</code></pre>
+
+<h2 id="json">JSON v2.0 format</h2>
+
+<pre><code>{
+  "version": "2.0",
+  "layout_mode": "wallclock",
+  "media": {
+    "width": 3840, "height": 2160, "fps": 50.0,
+    "sample_rate": 48000, "timezone": "UTC"
+  },
+  "clips": [
+    {
+      "clip_id": "DJI_..._0075_D",
+      "filename": "DJI_..._0075_D.MP4",
+      "path": ".../03_developer_meeting/DJI/...",
+      "duration": 22.88,
+      "creation_time": "2026-04-02T09:01:47.000000Z",  // UTC ISO
+      "wall_offset": 0.0,                              // pre-computed in Python
+      "scene": "03_developer_meeting"
+    }
+  ],
+  "cam_layers": {
+    "04_with_wife": ["FX3", "FX3A", "iPhone"]          // optional override
+  },
+  "tx_strips": {
+    "03_developer_meeting": [
+      {
+        "tx": "TX00",
+        "filename": "TX00_MIC044_20260402_130310_orig.wav",
+        "path": ".../99_Pipeline/DJI_Audio/...",
+        "creation_time": "2026-04-02T09:03:10.000Z",
+        "duration": 1651.6,
+        "sample_rate": 48000
+      }
+    ]
+  }
+}
+</code></pre>
+
+<div class="card">
+  <div class="card-title">Backward compatibility</div>
+  <p>JSON без <code>layout_mode</code> или с <code>layout_mode: "linear"</code> обрабатывается старым <code>linearBuilder</code>. Старые поля (<code>offset</code>, <code>multicam.pairs</code>, <code>camera</code>, <code>dji_audio</code>) остаются валидными для v1.x проектов (YTCR01, YTCR02).</p>
+</div>
+
+<h2 id="arch">Architecture & module graph</h2>
+
+<div class="timeline-viz">
+<pre>                    ┌─────────────────┐
+                    │ timelineBuilder │ ← public API (dispatcher, ~80 LoC)
+                    │      .js        │
+                    └────┬────┬───────┘
+              ┌──────────┘    └────────────┐
+              ▼                            ▼
+   ┌──────────────────┐         ┌──────────────────┐
+   │ linearBuilder.js │         │ wallClockBuilder │
+   │  (legacy verbatim)│         │      .js         │
+   └──────────────────┘         └──────┬───────────┘
+                                       │ orchestrates
+                          ┌────────────┴──────────────────┐
+                          ▼                                ▼
+              ┌─────────────────────┐       ┌─────────────────────┐
+              │ layout/  (PURE JS)  │       │ placement/  (UXP)   │
+              │  ├ sceneLayout      │       │  ├ sequenceFactory  │
+              │  ├ cameraResolver   │       │  ├ clipPlacer       │
+              │  └ txResolver       │       │  └ binImporter      │
+              └─────────────────────┘       └─────────┬───────────┘
+                          │                            │
+                          └──── computeOffsetSec ──────┤
+                                                       ▼
+                                              ┌──────────────┐
+                                              │ shared/      │
+                                              │  ├ projectItemFinder
+                                              │  └ mediaSettings
+                                              └──────────────┘
+                                                       │
+                                                       ▼
+                                              ┌──────────────┐
+                                              │  premierepro │  ← UXP API
+                                              └──────────────┘</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">Layering rules (enforced by code review)</div>
+  <ol>
+    <li><code>layout/*</code> — pure JS, никаких imports из <code>premierepro</code>. Unit-тестируется Node-юнитами.</li>
+    <li><code>placement/*</code> — может импортировать <code>premierepro</code>, использует <code>layout/*</code>. Не наоборот.</li>
+    <li><code>timelineBuilder.js</code> — public API. Re-exports <code>findProjectItemByName</code>, <code>applyMediaSettings</code> для back-compat с <code>transcriptImporter.js:13</code>.</li>
+  </ol>
+</div>
+
+<h2 id="tx">TX Path B+ strategy</h2>
+
+<h3>Bin vs sequence (the key insight)</h3>
+
+<div class="timeline-viz">
+<pre>PROJECT BIN:                          SEQUENCE TIMELINE:
+├── 00_Source                         (scene-bounded TrackItems)
+│   └── 03_developer_meeting
+│       ├── DJI_..._0075_D.MP4
+│       ├── DJI_..._0076_D.MP4              0s              ...        2655s
+│       └── ... (25 clips)                  ├───────────────────────────┤
+└── TX_Strips                          V1:  [DJI75]  [76][77]  ░ [93][94]
+    └── TX00_MIC044_..._orig.wav       V2:                  [iPhone clips]
+         (FULL 1651s ProjectItem)      A3:  [━━━━━━━━━━━━━━━━━━━━━━━━]
+                                                                      ↑
+                                              TrackItem scene-bounded,
+                                              source still full,
+                                              trim handles available</pre>
+</div>
+
+<p><strong>ProjectItem in bin = always full source.</strong> A TrackItem in the sequence is an instance with its own <code>in</code> and <code>out</code> points (sub-range). Trimming a TrackItem (drag edges) doesn't modify the ProjectItem. Editor can extend trim at any time to reveal more of the original recording.</p>
+
+<h3>Where unsplit TX WAVs live (YTCR03 verified)</h3>
+
+<pre><code>/Volumes/T9-Black-RYA/YTCR/YTCR03_Vlad_Myshinskii/99_Pipeline/DJI_Audio/
+├── TX00_MIC044_20260402_130310_orig.wav     ← S03 (27:31)
+├── TX01_MIC007_20260402_124105_orig.wav     ← S02 (6:48)
+├── TX02_MIC045_20260402_141609_orig.wav     ← S07 (part)
+└── TX02_MIC046_20260402_141658_orig.wav     ← S07 (part 2, battery swap)
+</code></pre>
+
+<p>Filename pattern: <code>TX{NN}_MIC{NNN}_{YYYYMMDD}_{HHMMSS}_orig.wav</code> — datetime in <strong>local Dubai TZ (UTC+4)</strong>. Python <code>0112_collect_tx_strips.py</code> parses this, converts to UTC, validates sample_rate, maps to scenes by time overlap.</p>
+
+<h2 id="roadmap">Roadmap — 8 phases</h2>
+
+<div class="phase-grid">
+  <div class="phase">
+    <div class="phase-num">Phase 0</div>
+    <div class="phase-title">Design docs</div>
+    <div class="phase-time">~3-4 hours</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:6px">MD + HTML (this file)</div>
+  </div>
+  <div class="phase">
+    <div class="phase-num">Phase 1</div>
+    <div class="phase-title">Extract helpers</div>
+    <div class="phase-time">~2 hours</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:6px">shared/projectItemFinder, mediaSettings</div>
+  </div>
+  <div class="phase">
+    <div class="phase-num">Phase 2</div>
+    <div class="phase-title">Pure layout modules</div>
+    <div class="phase-time">~6 hours</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:6px">sceneLayout, cameraResolver, txResolver + unit tests</div>
+  </div>
+  <div class="phase">
+    <div class="phase-num">Phase 3</div>
+    <div class="phase-title">UXP placement</div>
+    <div class="phase-time">~8 hours</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:6px">sequenceFactory, clipPlacer, binImporter, wallClockBuilder + integration tests</div>
+  </div>
+  <div class="phase">
+    <div class="phase-num">Phase 4</div>
+    <div class="phase-title">Dispatcher wire</div>
+    <div class="phase-time">~2 hours</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:6px">linearBuilder extraction + timelineBuilder dispatcher</div>
+  </div>
+  <div class="phase">
+    <div class="phase-num">Phase 5</div>
+    <div class="phase-title">Python pipeline</div>
+    <div class="phase-time">~4 hours</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:6px">0111 wall_offset + new 0112_collect_tx_strips.py + 0103 audit</div>
+  </div>
+  <div class="phase">
+    <div class="phase-num">Phase 6</div>
+    <div class="phase-title">Live test YTCR03</div>
+    <div class="phase-time">~3 hours</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:6px">Backup .prproj, run pipeline, verify 7 sequences</div>
+  </div>
+  <div class="phase">
+    <div class="phase-num">Phase 7</div>
+    <div class="phase-title">Regression</div>
+    <div class="phase-time">~1 hour</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:6px">Smoke on YTCR01/02 + automated legacy fixture</div>
+  </div>
+  <div class="phase">
+    <div class="phase-num">Phase 8</div>
+    <div class="phase-title">Spec + notify</div>
+    <div class="phase-time">~1 hour</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:6px">Update 0500_uxp_spec.md + Telegram notification</div>
+  </div>
+</div>
+
+<h2 id="risks">Risks & mitigations</h2>
+
+<table>
+  <tr><th>#</th><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+  <tr class="risk-row medium"><td>1</td><td>createOverwriteItemAction с vIdx ≥ existingTrackCount не auto-create'ит V3+</td><td>Medium</td><td>High</td><td>Pre-warm placeholder на нужном vIdx + remove. Реализовать в <code>sequenceFactory.ensureTrackCount()</code>.</td></tr>
+  <tr class="risk-row low"><td>2</td><td>creation_time без TZ suffix</td><td>Low</td><td>Medium</td><td>Strict parser в sceneLayout. Python нормализует к UTC при emission.</td></tr>
+  <tr class="risk-row low"><td>3</td><td>ProjectItem.name ≠ filename (Premiere добавляет " (1)", " (2)")</td><td>Low</td><td>Medium</td><td>Regex strip suffix в findProjectItemByName.</td></tr>
+  <tr class="risk-row low"><td>4</td><td>TX sample_rate mismatch (silent time-stretch)</td><td>Low</td><td>High</td><td>Hard error в txResolver. Python <code>0112</code> валидирует через ffprobe.</td></tr>
+  <tr class="risk-row low"><td>5</td><td>Original unsplit TX WAV удалены 0103_sync_dji_audio.py</td><td>Low (verified: для YTCR03 присутствуют)</td><td>High</td><td>Audit 0103, добавить флаг сохранения. Fallback: склейка per-clip кусков.</td></tr>
+  <tr class="risk-row medium"><td>6</td><td>createSequence() создаёт seq с дефолтными HD settings</td><td>Medium</td><td>Medium</td><td>applyMediaSettings override. Verified pattern at timelineBuilder.js:287-293.</td></tr>
+  <tr class="risk-row low"><td>7</td><td>createOverwriteItemAction с vIdx=-1 для audio-only не работает</td><td>Low</td><td>Medium</td><td>Fallback на createInsertProjectItemAction (точно работает audio-only).</td></tr>
+  <tr class="risk-row medium"><td>8</td><td>TX datetime в filename — Dubai local, не UTC</td><td>High</td><td>Low</td><td>Python <code>0112</code> явно конверсит local→UTC (Dubai = UTC+4). В идеале — читать BWF bext.timeReference.</td></tr>
+  <tr class="risk-row low"><td>9</td><td>Один TX покрывает 2+ сцены</td><td>Medium</td><td>Medium</td><td>TX дублируется в tx_strips каждой сцены чьё временное окно пересекается. Trim handles обрезают.</td></tr>
+  <tr class="risk-row low"><td>10</td><td>MD+HTML doc может разъехаться</td><td>Low</td><td>Low</td><td>Источник правды — MD. HTML обновляется в том же коммите.</td></tr>
+</table>
+
+<h2 id="glossary">Glossary</h2>
+
+<table>
+  <tr><td><strong>scene_t0</strong></td><td>Earliest creation_time across all clips/TX in a scene. Zero-point of local timeline.</td></tr>
+  <tr><td><strong>wall_offset</strong></td><td>Seconds between clip's creation_time and scene_t0. Always ≥ 0.</td></tr>
+  <tr><td><strong>V-track / A-track</strong></td><td>Premiere sequence tracks. V1 = videoTrackIndex 0.</td></tr>
+  <tr><td><strong>TX</strong></td><td>Transmitter — беспроводной передатчик микрофона-петлички.</td></tr>
+  <tr><td><strong>Lavalier (петличка)</strong></td><td>Микрофон-клипса на одежде, подключенный к TX.</td></tr>
+  <tr><td><strong>BWF / bext</strong></td><td>Broadcast Wave Format extension. bext.timeReference хранит время начала записи в samples.</td></tr>
+  <tr><td><strong>ProjectItem</strong></td><td>Premiere bin entry. Full source.</td></tr>
+  <tr><td><strong>TrackItem</strong></td><td>Sequence instance of ProjectItem с in/out points.</td></tr>
+  <tr><td><strong>Trim handles</strong></td><td>Drag edges of TrackItem в timeline → расширить без re-import.</td></tr>
+  <tr><td><strong>createOverwriteItemAction</strong></td><td>UXP API: положить ProjectItem на позицию, перезаписывая существующее (не shift other tracks).</td></tr>
+  <tr><td><strong>TickTime</strong></td><td>UXP class. <code>ppro.TickTime.createWithSeconds(s)</code>.</td></tr>
+  <tr><td><strong>lockedAccess + executeTransaction</strong></td><td>UXP wrapper для thread-safe project modification.</td></tr>
+  <tr><td><strong>Path A</strong></td><td>TX как per-clip куски на позиции видеоклипов. Legacy mode.</td></tr>
+  <tr><td><strong>Path B+</strong></td><td>TX как unsplit полоса scene-bounded с trim handles. Wall-clock mode.</td></tr>
+</table>
+
+<footer>
+  📖 Full design doc: <a href="WALLCLOCK_DESIGN.md" style="color:var(--accent)">WALLCLOCK_DESIGN.md</a> &nbsp; • &nbsp;
+  📁 <code>~/YTAI/scripts/05_editing/0500_uxp/docs/wallclock/</code><br>
+  Generated 2026-05-31 — YTAI UXP Plugin Wall-Clock Layout Design v1.0
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shorts Tab — план реализации</title>
+<style>
+  :root{
+    --bg:#0A0D16; --card:#121826; --card2:#0E1420; --line:rgba(255,255,255,.08);
+    --txt:#E8ECF4; --mut:#8A94A8; --dim:#5A6478;
+    --lime:#C6FF4D; --blue:#3D7BFD; --amber:#FFC94D; --red:#FF6B6B; --green:#4DE08A;
+    --mono:ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font:15px/1.6 -apple-system,'SF Pro Text',Segoe UI,sans-serif;padding-bottom:120px}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+
+  header{padding:56px 0 8px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--lime);margin-bottom:14px}
+  h1{font-size:34px;font-weight:750;letter-spacing:-.02em;line-height:1.15}
+  .sub{color:var(--mut);margin-top:10px;max-width:720px}
+  .meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;font:12px var(--mono);color:var(--dim)}
+  .meta b{color:var(--mut);font-weight:600}
+
+  nav{position:sticky;top:0;background:rgba(10,13,22,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:50;margin-top:26px}
+  nav .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:10px;padding-bottom:10px}
+  nav a{color:var(--mut);text-decoration:none;font-size:13px;padding:5px 12px;border-radius:7px;white-space:nowrap}
+  nav a:hover{color:var(--txt);background:rgba(255,255,255,.05)}
+
+  section{margin-top:64px}
+  .snum{font:700 12px var(--mono);color:var(--lime);letter-spacing:.14em;margin-bottom:8px}
+  h2{font-size:23px;font-weight:700;letter-spacing:-.01em;margin-bottom:6px}
+  .lede{color:var(--mut);max-width:760px;margin-bottom:26px}
+  h3{font-size:15px;font-weight:650;margin-bottom:10px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
+
+  code,.mono{font-family:var(--mono);font-size:12.5px}
+  code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px;color:#CFE0FF}
+  pre{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;font:12px/1.7 var(--mono);color:#B9C6E0}
+  pre .c{color:var(--dim)} pre .k{color:#7FB0FF} pre .s{color:#A8E08F} pre .n{color:#FFD08A}
+
+  .pill{display:inline-block;font:600 11px var(--mono);padding:3px 9px;border-radius:20px;letter-spacing:.04em}
+  .pill.lime{color:#0A0D16;background:var(--lime)}
+  .pill.blue{color:#CFE0FF;background:rgba(61,123,253,.18);border:1px solid rgba(61,123,253,.35)}
+  .pill.amber{color:#FFE3A8;background:rgba(255,201,77,.12);border:1px solid rgba(255,201,77,.3)}
+  .pill.red{color:#FFC2C2;background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.3)}
+  .pill.grey{color:var(--mut);background:rgba(255,255,255,.05);border:1px solid var(--line)}
+
+  /* ── architecture flow ── */
+  .flow{display:grid;grid-template-columns:1fr 44px 1fr 44px 1fr;align-items:stretch;gap:0}
+  @media(max-width:860px){.flow{grid-template-columns:1fr}.flow .arr{transform:rotate(90deg);height:40px}}
+  .fbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .fbox h4{font-size:14px;font-weight:700;margin-bottom:4px}
+  .fbox .role{font:600 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+  .fbox ul{list-style:none}
+  .fbox li{color:var(--mut);font-size:12.5px;padding:3px 0 3px 14px;position:relative}
+  .fbox li:before{content:"·";position:absolute;left:2px;color:var(--dim)}
+  .arr{display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:20px}
+  .loopback{margin-top:14px;border:1px dashed rgba(198,255,77,.35);border-radius:12px;padding:12px 18px;display:flex;gap:14px;align-items:center;color:var(--mut);font-size:13px}
+  .loopback .mono{color:var(--lime)}
+
+  /* ── panel mockup ── */
+  .panel{background:#1D1D1D;border:1px solid #333;border-radius:10px;max-width:430px;font-size:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .panel .tabs{display:flex;background:#161616;border-bottom:1px solid #333;overflow-x:auto}
+  .panel .tabs div{padding:8px 11px;color:#999;white-space:nowrap}
+  .panel .tabs .on{background:var(--blue);color:#fff;font-weight:600}
+  .panel .body{padding:12px 14px}
+  .prow{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
+  .pstat{color:#bbb;font-family:var(--mono);font-size:11px}
+  .psec{border-top:1px solid #2c2c2c;padding:9px 0}
+  .psec .t{font:600 10px var(--mono);letter-spacing:.12em;color:#777;text-transform:uppercase;margin-bottom:7px}
+  .cand{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;margin-bottom:4px;background:#242424}
+  .cand.sel{outline:1px solid rgba(198,255,77,.4)}
+  .cand .cb{width:13px;height:13px;border:1.5px solid #666;border-radius:3px;flex:none}
+  .cand.sel .cb{background:var(--lime);border-color:var(--lime)}
+  .cand .sid{font:700 11px var(--mono);color:#ddd;flex:none}
+  .cand .sc{font:700 11px var(--mono);color:var(--lime);flex:none;width:22px}
+  .cand .du{font:11px var(--mono);color:#888;flex:none}
+  .cand .hk{color:#bbb;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+  .cand .ic{color:#777;font-size:11px;flex:none}
+  .pbtns{display:flex;gap:4px;flex-wrap:wrap}
+  .pbtn{background:#2E2E2E;border:1px solid #444;color:#ddd;border-radius:6px;padding:5px 10px;font-size:11px}
+  .pbtn.pri{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+  .stagenotes{display:flex;flex-direction:column;gap:12px}
+  .snote{display:flex;gap:12px}
+  .snote .nn{flex:none;width:26px;height:26px;border-radius:8px;background:rgba(198,255,77,.1);border:1px solid rgba(198,255,77,.3);color:var(--lime);font:700 12px var(--mono);display:flex;align-items:center;justify-content:center}
+  .snote h4{font-size:13.5px;font-weight:650}
+  .snote p{color:var(--mut);font-size:13px}
+
+  /* ── files tree ── */
+  .tree{font:12.5px/1.9 var(--mono);color:var(--mut)}
+  .tree b{color:var(--txt);font-weight:600}
+  .tree .hl{color:var(--lime)}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim);text-align:left;padding:8px 12px;border-bottom:1px solid var(--line)}
+  td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--mut)}
+  td:first-child{color:var(--txt);font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+
+  .callout{border-left:3px solid var(--amber);background:rgba(255,201,77,.06);border-radius:0 12px 12px 0;padding:14px 18px;margin-top:16px}
+  .callout.red{border-color:var(--red);background:rgba(255,107,107,.06)}
+  .callout.lime{border-color:var(--lime);background:rgba(198,255,77,.05)}
+  .callout b{display:block;margin-bottom:4px;font-size:13.5px}
+  .callout p{color:var(--mut);font-size:13px}
+
+  /* roadmap */
+  .rmap .card{position:relative;padding-top:16px}
+  .rmap h4{font-size:15px;font-weight:700;margin:8px 0 2px}
+  .rmap .goal{color:var(--mut);font-size:12.5px;margin-bottom:10px}
+  .rmap ul{list-style:none;margin-top:4px}
+  .rmap li{font-size:12.5px;color:var(--mut);padding:3px 0 3px 18px;position:relative}
+  .rmap li:before{content:"→";position:absolute;left:0;color:var(--dim);font-family:var(--mono);font-size:11px}
+  .spikes{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .spike{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--mut)}
+  .spike b{color:var(--txt);font-family:var(--mono);font-size:11.5px;display:block;margin-bottom:2px}
+
+  footer{margin-top:90px;border-top:1px solid var(--line);padding-top:22px;color:var(--dim);font-size:12px}
+  .small{font-size:12.5px;color:var(--mut)}
+  svg text{font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="kicker">YTAI · UXP Panel · Design v0.1 · 18.08.2026</div>
+  <h1>Вкладка Shorts — план реализации</h1>
+  <p class="sub">Поиск интересных моментов → витрина кандидатов → коррекция → сборка 9:16 фрейм-в-фрейм → round-trip с Claude через JSON. Пилот: <span class="mono">YTCR01_Arty_Dzis</span>, финальный рендер v16.</p>
+  <div class="meta">
+    <span><b>Спека:</b> scripts/05_editing/0500_uxp/docs/shorts/SHORTS_SPEC.md</span>
+    <span><b>Схема:</b> ytai-shorts-v1</span>
+    <span><b>Исследование:</b> 5 конкурентов + рынок, карта UXP, аудит YTCR01</span>
+  </div>
+</header>
+</div>
+
+<nav><div class="wrap">
+  <a href="#arch">Архитектура</a>
+  <a href="#modes">Два режима</a>
+  <a href="#stages">Этапы вкладки</a>
+  <a href="#files">Файлы и контракт</a>
+  <a href="#precision">Точность</a>
+  <a href="#score">Скоринг</a>
+  <a href="#reframe">Reframe</a>
+  <a href="#rivals">Конкуренты</a>
+  <a href="#roadmap">Roadmap</a>
+  <a href="#decisions">Решения</a>
+</div></nav>
+
+<div class="wrap">
+
+<!-- ═══════════ 1. АРХИТЕКТУРА ═══════════ -->
+<section id="arch">
+  <div class="snum">01</div>
+  <h2>Архитектура: Claude — мозг, панель — руки, HTML — витрина</h2>
+  <p class="lede">Никакого LLM внутри панели. Тот же проверенный паттерн, что и в Assembly-цикле (<span class="mono">_in.json / _out.json</span>), — только своя папка, своя схема и свой builder. Ни у одного конкурента такого round-trip нет.</p>
+
+  <div class="flow">
+    <div class="fbox">
+      <div class="role" style="color:var(--lime)">Мозг · Claude Code (чат)</div>
+      <h4>Поиск и скоринг</h4>
+      <ul>
+        <li>читает пословные транскрипты + vision-индекс</li>
+        <li>ищет моменты, скорит (Hook/Flow/Value/Emotion)</li>
+        <li>режет по словам с «воздухом», снап к кадру</li>
+        <li>пишет <span class="mono">_v{N}_in.json</span> + HTML-витрину</li>
+      </ul>
+    </div>
+    <div class="arr">→</div>
+    <div class="fbox">
+      <div class="role" style="color:#7FB0FF">Руки · UXP-вкладка Shorts</div>
+      <h4>Превью и сборка</h4>
+      <ul>
+        <li>список кандидатов, статусы ✓/✗</li>
+        <li>preview-секвенция с range-маркерами</li>
+        <li>read-back правок (маркеры двигал юзер)</li>
+        <li>build 9:16 на тиках + verify-гейт 2 мс</li>
+      </ul>
+    </div>
+    <div class="arr">→</div>
+    <div class="fbox">
+      <div class="role" style="color:var(--mut)">Результат · Premiere</div>
+      <h4>Секвенции в бине Shorts</h4>
+      <ul>
+        <li><span class="mono">{CODE}_S{NN}_{slug}</span> 1080×1920</li>
+        <li>опция: дубль 16:9</li>
+        <li>маркеры-метаданные (score, src tc)</li>
+        <li>экспорт мастеров → шортс-папка проекта</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="loopback">
+    <span style="font-size:18px">↩</span>
+    <div>Кнопка <b>Out → Claude</b>: панель пишет <span class="mono">_v{N}_out.json</span> (статусы, правки маркеров, отчёт сборки, issues[]) и кладёт путь в клипборд → вставляешь в чат → Claude улучшает → <span class="mono">_v{N+1}_in.json</span> с changelog → Refresh в панели.</div>
+  </div>
+</section>
+
+<!-- ═══════════ 2. ДВА РЕЖИМА ═══════════ -->
+<section id="modes">
+  <div class="snum">02</div>
+  <h2>Два режима работы</h2>
+  <p class="lede">Сначала — из готовых видео (проще и быстрее к результату), потом — сразу после инжеста.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <span class="pill lime">MODE A · finished</span> <span class="pill grey">MVP-1</span>
+      <h3 style="margin-top:12px">Из готового видео</h3>
+      <p class="small">Режем <b>сам финальный рендер</b> по его собственному пословному транскрипту. Маппинг на камерные исходники не нужен — качество уже запечено в рендер.</p>
+      <div class="tree" style="margin-top:12px">
+        вход:<br>
+        · <b>02_Exports/YTCR1_v16_Arty_Dzis.mp4</b> (31:13)<br>
+        · <span class="hl">00_Setup/05_Review/v16/YTCR01_v16_pass2.json</span><br>
+        &nbsp;&nbsp;979 сегментов, words[{word,start,end}], EN
+      </div>
+      <p class="small" style="margin-top:12px">Для будущих проектов: шаг «transcribe final export» (mlx, минуты) — уже делаем ad-hoc для QC, закрепляем как стандартный пре-шаг.</p>
+    </div>
+    <div class="card">
+      <span class="pill blue">MODE B · ingest</span> <span class="pill grey">MVP-3</span>
+      <h3 style="margin-top:12px">После инжеста</h3>
+      <p class="small">Кандидаты из исходников: может быть <b>многоблочным</b> — hook из середины + тело из другого клипа (hook-first reorder, самая недообслуженная фича рынка).</p>
+      <div class="tree" style="margin-top:12px">
+        вход:<br>
+        · <b>Transcription/…_transcript_assembly.json</b><br>
+        · <b>per_clip/&lt;scene&gt;/C####.words.json</b> + <b>_en.json</b><br>
+        · <span class="hl">06_Enrichment/full_source_index.json</span><br>
+        &nbsp;&nbsp;vision-каталог 1129 клипов: energy, emotion,<br>
+        &nbsp;&nbsp;live_score, best_tc → сигнал скоринга + B-roll
+      </div>
+      <div class="callout" style="margin-top:14px"><b>⚠️ Грабли данных</b><p>Конкатенированные SRT (<span class="mono">_transcript.srt, _wordlevel.srt</span>) сбрасывают таймкод на границах сцен — в finder не подавать. Только per-clip/scene JSON.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 3. ЭТАПЫ ВКЛАДКИ ═══════════ -->
+<section id="stages">
+  <div class="snum">03</div>
+  <h2>Этапы вкладки — как это выглядит</h2>
+  <p class="lede">Новая вкладка в существующем tab-bar панели. Пять этапов сверху вниз, вертикально компактно.</p>
+
+  <div class="grid2" style="grid-template-columns:430px 1fr;align-items:start">
+    <div class="panel">
+      <div class="tabs">
+        <div>Ingest</div><div>Assembly</div><div>Parts</div><div>Pre-Edit</div><div>Review</div><div class="on">Shorts</div><div>Doctor</div>
+      </div>
+      <div class="body">
+        <div class="prow"><div class="dot"></div><div class="pstat">v3 loaded · 12 candidates · 5 approved</div></div>
+
+        <div class="psec"><div class="t">1 · Source</div>
+          <div class="pstat" style="color:#999">mode: finished · YTCR1_v16.mp4 · fps 25 &nbsp;<span style="color:#666">[Refresh]</span></div>
+        </div>
+
+        <div class="psec"><div class="t">2 · Candidates</div>
+          <div class="cand sel"><div class="cb"></div><div class="sid">S03</div><div class="sc">87</div><div class="du">0:42</div><div class="hk">«I lost two million dollars on one phone call…»</div><div class="ic">→ ✓ ✗</div></div>
+          <div class="cand sel"><div class="cb"></div><div class="sid">S01</div><div class="sc">84</div><div class="du">0:38</div><div class="hk">«никто не верил, что я сдам brokers exam…»</div><div class="ic">→ ✓ ✗</div></div>
+          <div class="cand"><div class="cb"></div><div class="sid">S07</div><div class="sc">71</div><div class="du">0:55</div><div class="hk">«в Дубае квартиру продают за 15 минут…»</div><div class="ic">→ ✓ ✗</div></div>
+          <div style="font:10.5px var(--mono);color:#666;margin-top:5px">Hook 92 · Flow 85 · Emo 88 — “payoff в конце, цитируемо”</div>
+        </div>
+
+        <div class="psec"><div class="t">3 · Preview</div>
+          <div class="pbtns"><div class="pbtn">Build Preview Seq</div><div class="pbtn">Read Back Markers</div></div>
+        </div>
+
+        <div class="psec"><div class="t">4 · Build</div>
+          <div class="pbtns"><div class="pbtn pri">Build Approved → 9:16</div><div class="pbtn">☐ also 16:9</div></div>
+          <div style="font:10.5px var(--mono);color:#4DE08A;margin-top:6px">S03 built ✓ (drift 0ms) · S01 built ✓ (drift 0ms)</div>
+        </div>
+
+        <div class="psec"><div class="t">5 · Exchange</div>
+          <div class="pbtns"><div class="pbtn">Out → Claude</div><div class="pbtn">Open Review HTML</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stagenotes">
+      <div class="snote"><div class="nn">1</div><div><h4>Source — авторезолв</h4><p>Проект уже выбран глобально. Панель сканирует <span class="mono">00_Setup/07_Shorts/</span> на свежайший <span class="mono">_in.json</span>, режим берёт из JSON.</p></div></div>
+      <div class="snote"><div class="nn">2</div><div><h4>Candidates — демонстрация</h4><p>Карточка: чекбокс-approve, скор с именованными факторами + строка «почему» (не голая цифра — им не доверяют), длительность, hook-цитата, jump-to. В Premiere ещё ничего не пишется.</p></div></div>
+      <div class="snote"><div class="nn">3</div><div><h4>Preview — коррекция в таймлайне</h4><p>Секвенция «рендер + range-маркер на каждого кандидата». Границы правишь <b>перетаскиванием маркеров</b> — родными инструментами Premiere. Read Back забирает правки в state. Пересечения кандидатов — блокирующий гейт.</p></div></div>
+      <div class="snote"><div class="nn">4</div><div><h4>Build — сборка выбранных</h4><p>Секвенция на шорт, 1080×1920, блоки overwrite-ом на тиковой сетке, последовательные транзакции. После сборки — verify-гейт: read-back дампом, толеранс 2 мс, результат в панель и в <span class="mono">_out.json</span>.</p></div></div>
+      <div class="snote"><div class="nn">5</div><div><h4>Exchange — round-trip</h4><p>Out → Claude: пишет <span class="mono">_out.json</span>, путь в клипборд. HTML-витрина открывается в браузере — кандидатов можно смотреть плеером ещё до открытия Premiere.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 4. ФАЙЛЫ И КОНТРАКТ ═══════════ -->
+<section id="files">
+  <div class="snum">04</div>
+  <h2>Файлы и контракт данных</h2>
+  <p class="lede">Всё живёт в <span class="mono">00_Setup/07_Shorts/</span> (следующий номер после 06_Enrichment). Версии никогда не переписываются — новая генерация = v{N+1}.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Структура</h3>
+      <div class="tree">
+        {project}/00_Setup/<b>07_Shorts/</b><br>
+        ├── <span class="hl">YTCR01_Shorts_v1_in.json</span> <span style="color:var(--dim)">← Claude → панель</span><br>
+        ├── <span class="hl">YTCR01_Shorts_v1_out.json</span> <span style="color:var(--dim)">← панель → Claude</span><br>
+        ├── YTCR01_shorts_review_v1.html <span style="color:var(--dim)">← витрина с плеером</span><br>
+        └── srt/YTCR01_S03.srt <span style="color:var(--dim)">← титры per-short</span><br>
+        <br>
+        Premiere: бин <b>Shorts</b> → <span class="hl">YTCR01_S03_poteryal-2m-za-zvonok</span><br>
+        Мастера: <b>03_Shorts/</b> (старая структура) / <b>04_Shorts/</b> (v4.1)<br>
+        Имя файла: <span class="mono">{PROJECT}_S{NN}_{slug}.mp4</span> — канон 07_shorts/README
+      </div>
+    </div>
+    <div class="card">
+      <h3>Что внутри _out.json — «состояние + баги»</h3>
+      <table>
+        <tr><td>panel_state</td><td>статусы ✓/✗, заметки редактора, read-back сдвинутых маркеров</td></tr>
+        <tr><td>build_report</td><td>по каждому построенному шорту: секвенция, drift_ms, дамп клипов (tc/sec/ticks)</td></tr>
+        <tr><td>issues[]</td><td>W01 слово режется · W02 pad захватил соседнее слово · O01 пересечение · B02 дрейф &gt; 2 мс · B03 media offline · S01 дубль slug</td></tr>
+      </table>
+      <p class="small" style="margin-top:10px">Самодостаточен: Claude улучшает шорты, не открывая проект.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:22px">Ключевой фрагмент <span class="mono">ytai-shorts-v1</span> (_in.json)</h3>
+<pre>{
+  <span class="k">"schema"</span>: <span class="s">"ytai-shorts-v1"</span>, <span class="k">"version"</span>: <span class="n">3</span>, <span class="k">"project"</span>: { <span class="k">"code"</span>: <span class="s">"YTCR01"</span>, <span class="k">"mode"</span>: <span class="s">"finished"</span>, <span class="k">"fps"</span>: <span class="n">25</span>, … },
+  <span class="k">"candidates"</span>: [{
+    <span class="k">"short_id"</span>: <span class="s">"S03"</span>, <span class="k">"slug"</span>: <span class="s">"poteryal-2m-za-zvonok"</span>, <span class="k">"status"</span>: <span class="s">"proposed"</span>,
+    <span class="k">"score"</span>: { <span class="k">"total"</span>: <span class="n">87</span>, <span class="k">"hook"</span>: <span class="n">92</span>, <span class="k">"flow"</span>: <span class="n">85</span>, <span class="k">"value"</span>: <span class="n">80</span>, <span class="k">"emotion"</span>: <span class="n">88</span> },
+    <span class="k">"why"</span>: <span class="s">"цитируемый провал → урок; payoff в последней фразе"</span>,
+    <span class="k">"blocks"</span>: [{
+      <span class="k">"role"</span>: <span class="s">"hook"</span>,  <span class="c">// hook | body | payoff | broll</span>
+      <span class="c">// каждая граница в ЧЕТЫРЁХ представлениях; истина — ticks:</span>
+      <span class="k">"tc_in"</span>:  { <span class="k">"tc"</span>: <span class="s">"12:34.120"</span>, <span class="k">"sec"</span>: <span class="n">754.120</span>, <span class="k">"frame"</span>: <span class="n">18853</span>, <span class="k">"ticks"</span>: <span class="n">191554525920000</span> },
+      <span class="k">"tc_out"</span>: { <span class="k">"tc"</span>: <span class="s">"13:16.480"</span>, <span class="k">"sec"</span>: <span class="n">796.480</span>, <span class="k">"frame"</span>: <span class="n">19912</span>, <span class="k">"ticks"</span>: <span class="n">202314826080000</span> },
+      <span class="c">// самоконтроль: панель валидирует, что слова не режутся (иначе issue W01)</span>
+      <span class="k">"words"</span>: { <span class="k">"first"</span>: <span class="s">"I"</span>, <span class="k">"last"</span>: <span class="s">"call"</span>, <span class="k">"first_start_sec"</span>: <span class="n">754.32</span>, <span class="k">"last_end_sec"</span>: <span class="n">796.11</span> },
+      <span class="k">"pad_head_ms"</span>: <span class="n">200</span>, <span class="k">"pad_tail_ms"</span>: <span class="n">300</span>, <span class="k">"transcript"</span>: <span class="s">"I lost two million dollars…"</span>
+    }],
+    <span class="k">"reframe"</span>: { <span class="k">"mode"</span>: <span class="s">"static"</span>, <span class="k">"crop_center_x_pct"</span>: <span class="n">42</span> },
+    <span class="k">"captions"</span>: { <span class="k">"srt"</span>: <span class="s">"srt/YTCR01_S03.srt"</span> }, <span class="k">"editor_notes"</span>: <span class="s">""</span>
+  }],
+  <span class="k">"changelog"</span>: [ { <span class="k">"v"</span>: <span class="n">3</span>, <span class="k">"changes"</span>: [<span class="s">"S03: хвост +1 фраза (payoff)"</span>] } ]
+}</pre>
+</section>
+
+<!-- ═══════════ 5. ТОЧНОСТЬ ═══════════ -->
+<section id="precision">
+  <div class="snum">05</div>
+  <h2>Канон точности — слова не режутся в ноль</h2>
+  <p class="lede">У всех конкурентов границы «примерные» (сами документируют: «подвинь маркер, если криво»). Наш канон — пословный, с воздухом и числовой верификацией.</p>
+
+  <div class="card" style="padding:26px 22px">
+    <svg viewBox="0 0 960 190" style="width:100%;height:auto" role="img" aria-label="Диаграмма границ реза">
+      <!-- frame grid -->
+      <g stroke="rgba(255,255,255,.10)">
+        <line x1="20" y1="128" x2="940" y2="128"/>
+        <line x1="60" y1="122" x2="60" y2="134"/><line x1="140" y1="122" x2="140" y2="134"/><line x1="220" y1="122" x2="220" y2="134"/><line x1="300" y1="122" x2="300" y2="134"/><line x1="380" y1="122" x2="380" y2="134"/><line x1="460" y1="122" x2="460" y2="134"/><line x1="540" y1="122" x2="540" y2="134"/><line x1="620" y1="122" x2="620" y2="134"/><line x1="700" y1="122" x2="700" y2="134"/><line x1="780" y1="122" x2="780" y2="134"/><line x1="860" y1="122" x2="860" y2="134"/>
+      </g>
+      <text x="20" y="150" font-size="10" fill="#5A6478">сетка кадров (25p = 40 мс), истина — тики: TICKS_PER_SECOND = 254 016 000 000</text>
+
+      <!-- prev word -->
+      <rect x="30" y="60" width="90" height="34" rx="6" fill="rgba(255,255,255,.07)"/>
+      <text x="75" y="81" font-size="11" fill="#5A6478" text-anchor="middle">…prev</text>
+      <!-- gap + head pad -->
+      <rect x="120" y="60" width="66" height="34" fill="none"/>
+      <rect x="142" y="60" width="44" height="34" rx="4" fill="rgba(198,255,77,.14)"/>
+      <text x="153" y="48" font-size="10" fill="#C6FF4D">pad_head = min(gap, 250ms)</text>
+      <!-- words -->
+      <rect x="186" y="60" width="64" height="34" rx="6" fill="rgba(61,123,253,.28)"/><text x="218" y="81" font-size="11" fill="#CFE0FF" text-anchor="middle">I</text>
+      <rect x="254" y="60" width="90" height="34" rx="6" fill="rgba(61,123,253,.28)"/><text x="299" y="81" font-size="11" fill="#CFE0FF" text-anchor="middle">lost</text>
+      <rect x="348" y="60" width="80" height="34" rx="6" fill="rgba(61,123,253,.28)"/><text x="388" y="81" font-size="11" fill="#CFE0FF" text-anchor="middle">two</text>
+      <rect x="432" y="60" width="110" height="34" rx="6" fill="rgba(61,123,253,.28)"/><text x="487" y="81" font-size="11" fill="#CFE0FF" text-anchor="middle">million…</text>
+      <rect x="546" y="60" width="130" height="34" rx="6" fill="rgba(61,123,253,.28)"/><text x="611" y="81" font-size="11" fill="#CFE0FF" text-anchor="middle">phone</text>
+      <rect x="680" y="60" width="86" height="34" rx="6" fill="rgba(61,123,253,.28)"/><text x="723" y="81" font-size="11" fill="#CFE0FF" text-anchor="middle">call</text>
+      <!-- tail pad -->
+      <rect x="766" y="60" width="52" height="34" rx="4" fill="rgba(198,255,77,.14)"/>
+      <text x="742" y="48" font-size="10" fill="#C6FF4D">pad_tail = min(gap, 300ms)</text>
+      <!-- next word -->
+      <rect x="852" y="60" width="80" height="34" rx="6" fill="rgba(255,255,255,.07)"/>
+      <text x="892" y="81" font-size="11" fill="#5A6478" text-anchor="middle">next…</text>
+
+      <!-- cut lines snapped to grid -->
+      <line x1="140" y1="20" x2="140" y2="134" stroke="#C6FF4D" stroke-width="1.6"/>
+      <text x="134" y="14" font-size="10.5" fill="#C6FF4D" text-anchor="end">tc_in: снап FLOOR к кадру</text>
+      <line x1="820" y1="20" x2="820" y2="134" stroke="#C6FF4D" stroke-width="1.6"/>
+      <text x="827" y="14" font-size="10.5" fill="#C6FF4D">tc_out: снап CEIL к кадру</text>
+
+      <text x="20" y="178" font-size="10.5" fill="#8A94A8">слова из words[] (whisper, шаг ~10–20 мс) → + воздух → потом снап к кадру → в JSON уже снапнутые {tc, sec, frame, ticks}</text>
+    </svg>
+  </div>
+
+  <div class="grid3" style="margin-top:16px">
+    <div class="card"><h3>Воздух — никогда в ноль</h3><p class="small"><span class="mono">pad_head = min(gap, 250ms)</span><br><span class="mono">pad_tail = min(gap, 300ms)</span><br>gap=0 (слова впритык) → pad=0, чужое слово не захватываем; но тогда Claude обязан рассмотреть сдвиг границы на фразу.</p></div>
+    <div class="card"><h3>Позиции — только тиками</h3><p class="small"><span class="mono">TickTime.createWithTicks</span>, последовательные транзакции по возрастанию. Никаких float-секунд (double 109.44 → +1 кадр — проверено) и никаких compound overwrite (исполняются в обратном порядке).</p></div>
+    <div class="card"><h3>Верификация числом</h3><p class="small">После сборки — read-back дампом секвенции, сверка с планом, <b>толеранс 2 мс</b>. Не прошло → issue B02, секвенция помечена. Не «на глаз», а как в wordsync-канонe.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════ 6. СКОРИНГ ═══════════ -->
+<section id="score">
+  <div class="snum">06</div>
+  <h2>Скоринг-рубрика (Claude-side)</h2>
+  <div class="grid2">
+    <div class="card">
+      <table>
+        <tr><th>Фактор</th><th>Что меряет</th></tr>
+        <tr><td>Hook</td><td>первые 3 секунды останавливают скролл: вопрос, цифра, провокация, незавершённость</td></tr>
+        <tr><td>Flow</td><td>законченная мысль: началась и закрылась, никакого mid-sentence; арка внутри 20–59 с</td></tr>
+        <tr><td>Value</td><td>польза / инсайт / цитируемость</td></tr>
+        <tr><td>Emotion</td><td>пики: смех, злость, уязвимость; в ingest-режиме += energy/emotion/live_score из vision-индекса</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Правила выдачи</h3>
+      <ul style="list-style:none">
+        <li class="small" style="padding:4px 0">· <b>8–15 кандидатов</b> на видео — больше нет смысла (рынок: ~40% брак даже у топов)</li>
+        <li class="small" style="padding:4px 0">· обязательное поле <span class="mono">why</span> — одна строка на человеческом</li>
+        <li class="small" style="padding:4px 0">· длительность default <b>30–59 с</b>, таргет из канала</li>
+        <li class="small" style="padding:4px 0">· hook-first reorder разрешён (blocks с ролями), но прямой вариант всегда рядом</li>
+        <li class="small" style="padding:4px 0">· скор = порядок сортировки, не вердикт; ворота — человек</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 7. REFRAME ═══════════ -->
+<section id="reframe">
+  <div class="snum">07</div>
+  <h2>Reframe 9:16 и титры</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Reframe</h3>
+      <p class="small">MVP: <span class="mono">mode:"static"</span> — 4K-кадр в секвенции 1080×1920 со статичным сдвигом по <span class="mono">crop_center_x_pct</span> (Claude оценивает по кадрам — face_finder/vision локально). Позже: кейфреймы по треку лица.</p>
+      <div class="callout red" style="margin-top:14px"><b>⚠️ Спайк S-1 — единственный технический блокер этой части</b>
+      <p>Умеет ли UXP 25.6/26.0 ставить Motion Position/Scale (<span class="mono">ComponentParam.createSetValueAction</span>)? В кодовой базе прецедента нет, а <span class="mono">VideoClipTrackItem.cast</span> в 26.0 сломан. Fallback-и готовы: (a) кнопка Premiere Auto Reframe на построенной секвенции — так делает Firecut; (b) офлайн ffmpeg-crop по треку лица — путь «шорт вообще без Premiere» для батчей.</p></div>
+    </div>
+    <div class="card">
+      <h3>Титры</h3>
+      <p class="small">Claude пишет per-short SRT (от нуля, из words[], фразы 1–4 слова, с тем же воздухом) → <span class="mono">07_Shorts/srt/</span>.</p>
+      <p class="small" style="margin-top:8px">MVP — файл рядом, импорт руками/позже кнопкой. Burn-in стили (MOGRT/Essential Graphics) — вне MVP, отдельная история.</p>
+      <h3 style="margin-top:18px">HTML-витрина</h3>
+      <p class="small">Карточка кандидата = кнопка «play range»: встроенный плеер file:// на рендер v16 играет ровно диапазон шорта. Смотреть и выбирать можно <b>до открытия Premiere</b>. Со v2 — changelog и CHANGED-бейджи.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 8. КОНКУРЕНТЫ ═══════════ -->
+<section id="rivals">
+  <div class="snum">08</div>
+  <h2>Что взяли у конкурентов — и где наша фора</h2>
+  <table class="card" style="display:table;padding:0">
+    <tr><th style="width:170px">Продукт</th><th>Берём</th><th style="width:280px">Отвергаем / их дырка</th></tr>
+    <tr><td>Firecut</td><td>маркеры = поверхность ревью; панель-список синхронен таймлайну; overlap-гейт блокирует кнопку; выход = новые секвенции в бине</td><td>нет экспорта состояния; границы «примерные» by design</td></tr>
+    <tr><td>Premiere Copilot</td><td>скор с факторами; accept/reject per-candidate; dual 16:9+9:16; «в LLM уходит только транскрипт+метаданные»</td><td>закрытый формат, нет JSON round-trip</td></tr>
+    <tr><td>Phantom Editor</td><td>«Create Markers» как дешёвый preview-шаг отдельно от «Create Clips»; стоп-кнопка</td><td>нет пословного снапа и паддинга — наша главная фора</td></tr>
+    <tr><td>GoatEdit</td><td>streamed-лог сборки с галочками; Hook Score одним бейджем</td><td>маркетинг &gt; механика; чёрный ящик</td></tr>
+    <tr><td>Cola</td><td>manual-путь рядом с auto; auto-backup перед правками; click-word-to-seek</td><td>нет скора вовсе</td></tr>
+    <tr><td>Рынок (Opus, Klap…)</td><td>named-факторы + «why»; complete-thought границы; hook-first reorder; handles-философия</td><td>web-рендер вместо секвенций; opaque score</td></tr>
+  </table>
+  <div class="callout lime"><b>Наше уникальное (ни у кого из шести)</b>
+  <p>Пословный паддинг-канон с verify-гейтом 2 мс · полный JSON-стейт наружу для LLM-итерации · HTML-витрина с плеером до Premiere · локальный finder (токены — на мышление, не на транскрибацию).</p></div>
+</section>
+
+<!-- ═══════════ 9. ROADMAP ═══════════ -->
+<section id="roadmap" class="rmap">
+  <div class="snum">09</div>
+  <h2>Roadmap</h2>
+  <div class="grid3">
+    <div class="card" style="border-color:rgba(198,255,77,.35)">
+      <span class="pill lime">MVP-1</span>
+      <h4>Finished-путь · пилот YTCR01 v16</h4>
+      <div class="goal">от нуля до рабочего round-trip</div>
+      <ul>
+        <li>finder: препроцессинг words + кандидаты → <span class="mono">_in.json</span></li>
+        <li>HTML-витрина с плеером</li>
+        <li>вкладка: load / candidates / preview-маркеры / read-back</li>
+        <li>build 9:16 (static center, без reframe-двига)</li>
+        <li>verify-гейт 2 мс → <span class="mono">_out.json</span></li>
+        <li>спайк S-1 параллельно</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="pill blue">MVP-2</span>
+      <h4>Полировка выдачи</h4>
+      <div class="goal">от секвенции до опубликованного мастера</div>
+      <ul>
+        <li>dual 16:9</li>
+        <li>SRT-генерация per-short</li>
+        <li>ContentList: колонки N/O «Shorts»</li>
+        <li>экспорт-пресет (спайк S-3: AME из UXP или руками)</li>
+        <li>именование <span class="mono">{PROJECT}_S{NN}_{slug}.mp4</span> → шортс-папка</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="pill grey">MVP-3</span>
+      <h4>Ingest-путь</h4>
+      <div class="goal">шорты сразу после съёмки, до монтажа</div>
+      <ul>
+        <li>finder по per-clip words + full_source_index</li>
+        <li>мульти-блок + hook-first reorder</li>
+        <li>кандидатский рил с маркерами</li>
+        <li>B-roll вставки (V2)</li>
+        <li>прокси-превью в HTML</li>
+        <li>покрывает тикет ytch-shorts (~60 с)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="spikes">
+    <div class="spike"><b>S-1 · Motion params</b>ставится ли Position/Scale из UXP → static reframe</div>
+    <div class="spike"><b>S-2 · Face-track</b>трек лица → кейфреймы reframe</div>
+    <div class="spike"><b>S-3 · Batch export</b>AME из UXP или пресет руками</div>
+    <div class="spike"><b>S-4 · Диаризация v16</b>pyannote поверх финального рендера</div>
+    <div class="spike"><b>S-5 · Crossfade</b>+2 кадра audio на стыках блоков</div>
+  </div>
+</section>
+
+<!-- ═══════════ 10. РЕШЕНИЯ ═══════════ -->
+<section id="decisions">
+  <div class="snum">10</div>
+  <h2>Решения по умолчанию + файлы реализации</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Дефолты (можно переиграть одной строкой)</h3>
+      <table>
+        <tr><td>JSON-workspace</td><td><span class="mono">00_Setup/07_Shorts/</span></td></tr>
+        <tr><td>Мастера</td><td>03_Shorts/ (старая структура) · 04_Shorts/ (v4.1)</td></tr>
+        <tr><td>Бин Premiere</td><td><span class="mono">Shorts</span></td></tr>
+        <tr><td>Пилот</td><td>YTCR01 v16, 8–12 кандидатов, finished-mode</td></tr>
+        <tr><td>Язык YTCR01</td><td>hook_text EN (транскрипт v16) + title_ru</td></tr>
+        <tr><td>scripts/07_shorts</td><td>*.py устарели → rewrite под эту схему; канон имён остаётся</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Файлы, когда начнём кодить</h3>
+      <div class="tree">
+        <b>index.html</b> — таб-кнопка + #tab-shorts (+bump версии)<br>
+        <b>index.js</b> — блок SHORTS в init, shortsState,<br>&nbsp;&nbsp;setShortsStatus/Validation, Logger('SHORTS')<br>
+        <b>src/shorts/shortsBuilder.js</b> — только shared/* +<br>&nbsp;&nbsp;sequenceFactory; mock-fallback; tests/shorts/<br>
+        <b>scripts/07_shorts/find_moments.py</b> — препроцессинг<br>&nbsp;&nbsp;words; отбор/скоринг — Claude в чате<br>
+        <b>scripts/07_shorts/validate_shorts.py</b> — W01/W02/O01/S01<br>&nbsp;&nbsp;офлайн (зеркало панельного валидатора)
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  YTAI · Shorts Tab design v0.1 · 18.08.2026 · полная спека: <span class="mono">scripts/05_editing/0500_uxp/docs/shorts/SHORTS_SPEC.md</span> · схема <span class="mono">ytai-shorts-v1</span>
+</footer>
+
+</div>
+</body>
+</html>
