@@ -538,11 +538,26 @@ def _pairs(v):
 
 
 # ═══════════════════ запись ═══════════════════
+# страница ЭТОЙ вкладки — альбомная Letter с полями 36 pt: полезно 720 pt ≥ 676 pt таблицы. На портретной странице
+# (468 pt полезных) шесть колонок с двумя картинками не помещаются: в браузере Docs таблица вылезает за поля,
+# а PDF-экспорт и печать режут шестую колонку (проверено 22.09.2026 на тестовом доке). Формат задаётся только
+# своей вкладке (tabId) — остальные вкладки дока не трогаются.
+PAGE = {'pageSize': {'width': {'magnitude': 792, 'unit': 'PT'}, 'height': {'magnitude': 612, 'unit': 'PT'}},
+        'marginLeft': {'magnitude': 36, 'unit': 'PT'}, 'marginRight': {'magnitude': 36, 'unit': 'PT'},
+        'marginTop': {'magnitude': 36, 'unit': 'PT'}, 'marginBottom': {'magnitude': 36, 'unit': 'PT'}}
+
+
+def page_request(tab_id):
+    return {'updateDocumentStyle': {'tabId': tab_id, 'documentStyle': PAGE,
+                                    'fields': 'pageSize,marginLeft,marginRight,marginTop,marginBottom'}}
+
+
 def write(doc_id, title, rows, head, lang='ru', *, frozen=(), force=False, insert_images=None,
           get_doc=None, batch=None, log=print):
-    return DT.write_tab(doc_id, title, head, hdr(lang), rows, WIDTHS, col_img=C_ERR, img_w={C_ERR: IMG_W, C_FIX: IMG_W},
-                        font=FONT, frozen=frozen, force=force, insert_images=insert_images,
-                        get_doc=get_doc, batch=batch, log=log)
+    tab_id = DT.write_tab(doc_id, title, head, hdr(lang), rows, WIDTHS, col_img=C_ERR, img_w={C_ERR: IMG_W, C_FIX: IMG_W},
+                          font=FONT, frozen=frozen, force=force, insert_images=insert_images,
+                          get_doc=get_doc, batch=batch, log=log, after=[page_request])
+    return tab_id
 
 
 def _img_request(tab_id, q, uri=None):

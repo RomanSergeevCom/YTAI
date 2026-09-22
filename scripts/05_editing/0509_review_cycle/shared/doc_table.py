@@ -434,7 +434,7 @@ def _prepare(head, hdr, rows, widths, col_img):
 
 # ═══════════════════ запись ═══════════════════
 def write_tab(doc_id, title, head, hdr, rows, widths, *, col_img=3, img_w=250, font=9, frozen=(), force=False,
-              insert_images=None, get_doc=None, batch=None, log=print):
+              insert_images=None, get_doc=None, batch=None, log=print, after=()):
     """вкладка title дока doc_id ← шапка head + ОДНА таблица (hdr + rows). → tab_id
 
     head   [(kind, text)], kind: h1|meta|warn|tally|list_head|list_item|how. h1 → HEADING_1, warn и list_head —
@@ -452,6 +452,8 @@ def write_tab(doc_id, title, head, hdr, rows, widths, *, col_img=3, img_w=250, f
     frozen пары (doc_id, заголовок вкладки): такую вкладку не трогаем НИ ПРИ КАКОМ force.
     force  разрешение перезаписать НЕпустую незамороженную вкладку.
     get_doc / batch — подмена сети (FakeDocs.get_doc / FakeDocs.batch_update).
+    after — функции tab_id → запрос batchUpdate, которые идут ПОСЛЕ таблицы тем же каналом (например формат страницы
+    вкладки): в офлайн-двойнике они ложатся в дамп, в самопроверке живого пути не рвутся в сеть.
     """
     rows_n = _prepare(head, hdr, rows, widths, col_img)
     hdr = [str(h) for h in hdr]
@@ -616,6 +618,10 @@ def write_tab(doc_id, title, head, hdr, rows, widths, *, col_img=3, img_w=250, f
         LAST['images'] = insert_images(tab_id, img_reqs)
     elif img_reqs:
         log(f'картинки пропущены: {len(img_reqs)} пустых абзацев-якорей оставлены')
+    extra = [fn(tab_id) for fn in after]
+    if extra:
+        send(extra, idempotent=True)
+        log(f'после таблицы: запросов {len(extra)} (формат страницы вкладки и т.п.)')
     return tab_id
 
 

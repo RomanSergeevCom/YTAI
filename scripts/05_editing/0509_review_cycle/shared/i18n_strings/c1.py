@@ -11,6 +11,14 @@ STRINGS = {
     'c1.title': {'ru': '{kind}: «{text}»', 'en': '{kind}: “{text}”'},
     'c1.now_h': {'ru': '«{text}» — {kind}', 'en': '“{text}” — {kind}'},
     'c1.do_replace': {'ru': 'Заменить титр на «{fix}»', 'en': 'Replace the on-screen text with “{fix}”'},
+    # Что делать, когда судья дал только описание ошибки. Ключ — класс находки; без ключа
+    # блок ✅ остаётся пустым (и verify это ловит: «у каждого ТЗ непустое Как надо»).
+    'c1.do_default.language': {
+        'ru': 'Дать русский слой: русский текст крупно, английский оставить вторым и мельче — правило канала.',
+        'en': 'Add the channel language layer: local text large, the foreign original second and smaller.'},
+    'c1.do_default.foreign_trace': {
+        'ru': 'Убрать чужой след из кадра: перекрыть, обрезать или заменить материал.',
+        'en': 'Remove the foreign mark from the frame: cover, crop or replace the material.'},
     'c1.where_anchor': {'ru': ' · якорь: «{anc}»', 'en': ' · voice anchor: “{anc}”'},
     'c1.tl_arrow': {'ru': 'стрелка «где ошибка» — слой V5 ревью-секвенции',
                     'en': 'arrow “where the error is” — layer V5 of the review sequence'},

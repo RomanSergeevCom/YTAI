@@ -29,5 +29,17 @@
  },
  "drive": {"materials_folder": "Review_materials"},
  "notes_cycle": true,
+ "kb": {
+  "root": "/Volumes/T7-Blue-2-RYA/YTUVI-Digital_Originals",
+  "exclude_sources": [],
+  "min_side": 1000,
+  "per_beat": 6,
+  "footage_root": "/Volumes/T7-Blue-2-RYA/YTUVI-Footage",
+  "books_manifest": "/Volumes/T7-Blue-2-RYA/01_ScanBook-SSEF/02_Pages/halves_manifest.json",
+  "books_policy": "fallback",
+  "drive_originals_root": "1OOjGIpiLh81_fq7hSvbS93xRmzcll957",
+  "drive_footage_root": "1rMtfaQsfOKy3KShNc6KJI3Mx8KGbv9Fq",
+  "_note": "stages/kb_visuals.py: визуал из базы знаний. Роман 16.09.2026: YTUVI-Digital_Originals открыта целиком (включая 01_SSEF — Facette, статьи, презентации); сканы книг SSEF вынесены в 01_ScanBook-SSEF (плохое качество) и берутся ТОЛЬКО если в базе ничего не нашлось (books_policy fallback, пометка ⚠️). drive_originals_root — Drive-зеркало Digital_Originals, drive_footage_root — YTUVI S1/YTUVI-Footage: ссылки ТЗ на сами файлы."
+ },
  "fact_check": {"max_claims": 40}
 }

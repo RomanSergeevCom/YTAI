@@ -967,3 +967,92 @@ if want('I'):
               T('d.ig.nm_terms2_note'), T('d.ig.nm_terms_foot'))
 
 print('\nготово →', OUT)
+
+
+# ═══════════ J. ЗАСТАВКИ ГЛАВ: плашка ch_ov_NN + три варианта дизайна ═══════════
+# Генератора плашек глав в репо не было: ch_ov_*.png первого фильма сделал разовый скрипт
+# в ~/Downloads, а make_review_v6._ch_plate() просто подбирал готовый файл. Переносим сюда.
+#
+# Роман 22.09.2026: «мне не нравится дизайн глав… главы + подглавы и на весь экран, может быть
+# контраста не хватает». В кате v2 действительно два несогласованных приёма — мелкое «01. РУБИН»
+# в углу и полноэкранная засечка без номера, и оба ивори по светлому фону.
+# Вариант берём из карточки (`ch_plate_variant`: a | b | c), по умолчанию «a».
+CHOV_VARIANT = str(P.get('ch_plate_variant', 'a')).lower()
+# кадр под демо: секунды БЕЗ экранного текста (иначе макет ложится на старый титр)
+CHOV_DEMO_SECS = [int(x) for x in P.get('ch_demo_secs', [])] or [790]
+CHOV_CSS = f"""
+.pl {{ position:absolute; inset:0; overflow:hidden; }}
+.pl .shot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
+.pl .num {{ font-family:Helvetica,Arial,sans-serif; font-weight:bold; letter-spacing:.28em;
+            text-transform:uppercase; }}
+.pl .nm {{ font-family:{FONT}; font-weight:bold; text-transform:uppercase; letter-spacing:.03em;
+           color:{IVORY}; line-height:1.02; }}
+.pl .sub {{ font-family:{FONT}; color:{IVORY}; opacity:.92; }}
+.pl .rule {{ background:{RED}; border-radius:4px; }}
+
+/* A — полотно: кадр уходит в затемнение, всё по центру */
+.va .scrim {{ position:absolute; inset:0; background:rgba(8,8,10,.72); }}
+.va .box {{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+            justify-content:center; gap:34px; text-align:center; }}
+.va .num {{ font-size:62px; color:#E8586A; }}
+.va .nm {{ font-size:184px; max-width:2900px; text-shadow:0 8px 40px rgba(0,0,0,.9); }}
+.va .rule {{ width:280px; height:8px; }}
+.va .sub {{ font-size:58px; opacity:.86; }}
+
+/* B — шторка: плотная левая треть, кадр справа чистый */
+.vb .panel {{ position:absolute; left:0; top:0; bottom:0; width:1340px;
+              background:linear-gradient(90deg, rgba(10,10,14,.97) 72%, rgba(10,10,14,0)); }}
+.vb .box {{ position:absolute; left:170px; top:0; bottom:0; width:1060px; display:flex;
+            flex-direction:column; justify-content:center; gap:30px; }}
+.vb .num {{ font-size:56px; color:#E8586A; }}
+.vb .nm {{ font-size:138px; }}
+.vb .rule {{ width:220px; height:8px; }}
+.vb .sub {{ font-size:50px; opacity:.85; }}
+
+/* C — нижняя треть: кадр цел, плотная подложка снизу */
+.vc .band {{ position:absolute; left:0; right:0; bottom:0; height:760px;
+             background:linear-gradient(0deg, rgba(8,8,10,.95) 42%, rgba(8,8,10,0)); }}
+.vc .box {{ position:absolute; left:170px; right:170px; bottom:150px; }}
+.vc .num {{ font-size:56px; color:#E8586A; margin-bottom:20px; }}
+.vc .nm {{ font-size:132px; }}
+.vc .rule {{ width:200px; height:7px; margin:26px 0 20px; }}
+.vc .sub {{ font-size:48px; opacity:.85; }}
+"""
+
+
+def _chov_body(variant, num, name, sub, shot):
+    """плашка главы: номер, имя, подглава; shot — кадр-подложка (для демо) или пусто (альфа)"""
+    v = {'a': 'va', 'b': 'vb', 'c': 'vc'}[variant]
+    bg = f'<div class="shot" style="background-image:url(\'file://{shot}\')"></div>' if shot else ''
+    lay = {'a': '<div class="scrim"></div>', 'b': '<div class="panel"></div>',
+           'c': '<div class="band"></div>'}[variant]
+    subl = f'<div class="sub">▸ {esc(sub)}</div>' if sub else ''
+    return (f'<div class="pl {v}">{bg}{lay}<div class="box">'
+            f'<div class="num">{T("core.chapter")} {num}</div>'
+            f'<div class="nm">{esc(name)}</div><div class="rule"></div>{subl}</div></div>')
+
+
+def _first_sub(no):
+    """первая подглава главы — для примера в демо; у YTUVI01 подглав пока нет"""
+    for x in SUB:
+        if int(x[1]) == int(no):
+            return x[2]
+    return ''
+
+
+if want('J'):
+    for i, nm in enumerate(CH_NAME):                       # CH_NAME — список, индекс = глава − 1
+        page(f'ch_ov_{i + 1:02d}', _chov_body(CHOV_VARIANT, f'{i + 1:02d}', nm, '', ''), CHOV_CSS)
+    # три варианта на одном кадре — Роману на выбор (поверх настоящей заставки главы)
+    di = 4 if len(CH_NAME) >= 5 else 0
+    demo_no = f'{di + 1:02d}'
+    shot = next((f for f in (W6 / 'hires').glob('h0*.jpg')
+                 if f.name in {n: n for n in [f'h{t:04d}.jpg' for t in CHOV_DEMO_SECS]}), None) \
+        or OUT / f'ch_card_{demo_no}.jpg'
+    if shot.exists():
+        for v in ('a', 'b', 'c'):
+            page(f'ch_demo_{v}', _chov_body(v, demo_no, CH_NAME[di], _first_sub(di + 1), shot),
+                 CHOV_CSS, draft=False)
+    else:
+        print(f'  !! нет кадра {shot.name} — демо вариантов не собрал')
+    print(f'заставки глав: {len(CH_NAME)} (вариант {CHOV_VARIANT}) + демо a/b/c по главе {demo_no}')

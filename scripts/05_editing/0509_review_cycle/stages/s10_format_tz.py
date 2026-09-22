@@ -28,6 +28,7 @@ from make_infographics_v6_data import (SUB, CH_NAME, CH_BOUNDS, NEW_CH, PROG, PR
                                        PROG_FINAL, PROG_NOTE)
 from terms_catalog import TERMS, LOCS, PLACE, TERM_EXTRA, place_family  # noqa: E402
 from typo_diff import typo_line  # noqa: E402
+from i18n import has as i18n_has  # noqa: E402
 
 
 PRAVKI = M / 'pravki_v2.json'
@@ -545,6 +546,16 @@ def parts_from_audit(p):
     tl = [T('c1.tl_arrow')]
     if p['num'] in tz_has_fix:
         tl.append(T('c1.tl_draft', fn=p['num'].replace('ТЗ-', 'tz')))
+    if not do:
+        # ТЗ без «что делать» — монтажёру бесполезна. Раньше это пряталось: ❌ и ✅ жили в одной
+        # ячейке, и блок «СЕЙЧАС» читался как всё ТЗ. С 22.09.2026 у «Как надо» своя колонка, и
+        # девять ТЗ класса «английский без перевода» оказались пустыми (YTUVI01 v2). Правило канала
+        # для них известно — подставляем его, а не оставляем монтажёра гадать.
+        kinds = {k.get('kind') for k in (fs or []) if k.get('kind')}
+        for kind in sorted(kinds):
+            key = f'c1.do_default.{kind}'
+            if i18n_has(key):
+                do.append(T(key))
     return {'now': now, 'do': do, 'where': where, 'src': srcs, 'tl': tl}
 
 
