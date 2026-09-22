@@ -33,8 +33,8 @@ a = ap.parse_args()
 
 DOC_ID = P.need('doc_id')
 TAB_TITLE = a.tab or f'Главы · {P.CUT_VERSION}'
-HDR = ['№', 'Кадр из ката', 'Глава и подглавы', '⏱', 'Что не так']
-WIDTHS = [30, 262, 300, 70, 300]
+HDR = ['№', 'Кадр из ката', 'Глава и подглавы', '⏱', 'Что сейчас', 'Как надо']
+WIDTHS = [30, 262, 260, 70, 300, 300]
 IMG_W = 250
 FONT = 10
 DEMOS = [('a', 'ПОЛОТНО', 'кадр уходит в затемнение, номер и имя по центру — максимум контраста, кадр почти не виден'),
@@ -68,15 +68,17 @@ CH_IMG = P.get('ch_img', {})
 SUB = [(int(s), int(c), str(t)) for s, c, t in P.get('sub', [])]
 DUR = int(P.duration_sec())
 shots = json.loads((M / 'shots_ids.json').read_text(encoding='utf-8')) if (M / 'shots_ids.json').exists() else {}
-notes = P.get('ch_notes', {})                     # {"04": "заставка без номера"} — из карточки
+STATE = P.get('ch_state', {})     # {'04': ['что сейчас', 'как надо']} — из карточки
+EXTRA = P.get('ch_extra', [])     # места, похожие на заставку, но не привязанные к главе
 
 rows = []
 for i, (sec, no) in enumerate(CHAP):
     end = CHAP[i + 1][0] if i + 1 < len(CHAP) else DUR
     subs = [f'▸ {tmm(s)} · {t}' for s, c, t in SUB if f'{c:02d}' == no]
     body = f'{no}. {CH_NAME.get(no, "")}' + ('\n' + '\n'.join(subs) if subs else '\n▸ подглав в кате нет')
+    st = STATE.get(no) or ['', '']
     rows.append({'no': no, 'img': CH_IMG.get(no, ''), 'body': body,
-                 'tc': f'{tmm(sec)}–{tmm(end)}', 'note': notes.get(no, '')})
+                 'tc': f'{tmm(sec)}–{tmm(end)}', 'now': st[0], 'do': st[1] if len(st) > 1 else ''})
 
 head = [(1, f'{P.CODE} · {TAB_TITLE} — все главы фильма и дизайн заставок', {'bold': True}),
         (0, f'Кат {P.CUT_VERSION}, {tmm(DUR)}. Заставки глав в кате несогласованы: у семи есть номер, '
@@ -192,10 +194,12 @@ def main():
 
     cur = tab_body(tab_id)[-1]['endIndex'] - 1
     batch_update(DOC_ID, [{'insertTable': {'location': {'tabId': tab_id, 'index': cur},
-                                           'rows': len(rows) + 1, 'columns': len(HDR)}}])
-    tbl = fresh_table(tab_id, len(rows) + 1, empty=True)
+                                           'rows': len(rows) + len(EXTRA) + 1, 'columns': len(HDR)}}])
+    tbl = fresh_table(tab_id, len(rows) + len(EXTRA) + 1, empty=True)
     cells = [r['tableCells'] for r in tbl['table']['tableRows']]
-    all_cells = [HDR] + [[r['no'], '', r['body'], r['tc'], r['note']] for r in rows]
+    all_cells = ([HDR] + [[r['no'], '', r['body'], r['tc'], r['now'], r['do']] for r in rows]
+                 + [['—', '', 'ПОХОЖЕ НА ЗАСТАВКУ, но это не глава', t, w, 'решить: переоформить или оставить']
+                    for t, w in EXTRA])
     treqs = []
     for ri in range(len(all_cells) - 1, -1, -1):
         for cj in range(len(HDR) - 1, -1, -1):
@@ -208,7 +212,7 @@ def main():
         batch_update(DOC_ID, treqs[i:i + 200])
     print(f'таблица: {len(rows)} глав', flush=True)
 
-    trows = fresh_table(tab_id, len(rows) + 1)['table']['tableRows']
+    trows = fresh_table(tab_id, len(rows) + len(EXTRA) + 1)['table']['tableRows']
     ireqs = []
     for ri in range(len(rows), 0, -1):
         name = rows[ri - 1]['img']
@@ -223,7 +227,7 @@ def main():
         batch_update(DOC_ID, ireqs[i:i + 40])
     print(f'кадры глав: {len(ireqs)}', flush=True)
 
-    tbl = fresh_table(tab_id, len(rows) + 1)
+    tbl = fresh_table(tab_id, len(rows) + len(EXTRA) + 1)
     tstart = tbl['startIndex']            # начало таблицы — у элемента, а не «первая ячейка − 1»
     trows = tbl['table']['tableRows']
     sreqs = []

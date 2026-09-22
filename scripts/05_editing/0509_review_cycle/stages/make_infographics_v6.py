@@ -994,29 +994,29 @@ CHOV_CSS = f"""
 .va .scrim {{ position:absolute; inset:0; background:rgba(8,8,10,.72); }}
 .va .box {{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
             justify-content:center; gap:34px; text-align:center; }}
-.va .num {{ font-size:62px; color:#E8586A; }}
-.va .nm {{ font-size:184px; max-width:2900px; text-shadow:0 8px 40px rgba(0,0,0,.9); }}
-.va .rule {{ width:280px; height:8px; }}
-.va .sub {{ font-size:58px; opacity:.86; }}
+.va .num {{ font-size:104px; color:#E8586A; }}
+.va .nm {{ font-size:380px; max-width:3400px; text-shadow:0 10px 50px rgba(0,0,0,.92); }}
+.va .rule {{ width:460px; height:14px; }}
+.va .sub {{ font-size:120px; opacity:.88; }}
 
 /* B: side panel */
-.vb .panel {{ position:absolute; left:0; top:0; bottom:0; width:1340px;
+.vb .panel {{ position:absolute; left:0; top:0; bottom:0; width:1900px;
               background:linear-gradient(90deg, rgba(10,10,14,.97) 72%, rgba(10,10,14,0)); }}
-.vb .box {{ position:absolute; left:170px; top:0; bottom:0; width:1060px; display:flex;
+.vb .box {{ position:absolute; left:170px; top:0; bottom:0; width:1560px; display:flex;
             flex-direction:column; justify-content:center; gap:30px; }}
-.vb .num {{ font-size:56px; color:#E8586A; }}
-.vb .nm {{ font-size:138px; }}
-.vb .rule {{ width:220px; height:8px; }}
-.vb .sub {{ font-size:50px; opacity:.85; }}
+.vb .num {{ font-size:92px; color:#E8586A; }}
+.vb .nm {{ font-size:300px; }}
+.vb .rule {{ width:360px; height:13px; }}
+.vb .sub {{ font-size:104px; opacity:.86; }}
 
 /* C: lower band */
-.vc .band {{ position:absolute; left:0; right:0; bottom:0; height:760px;
+.vc .band {{ position:absolute; left:0; right:0; bottom:0; height:1180px;
              background:linear-gradient(0deg, rgba(8,8,10,.95) 42%, rgba(8,8,10,0)); }}
 .vc .box {{ position:absolute; left:170px; right:170px; bottom:150px; }}
-.vc .num {{ font-size:56px; color:#E8586A; margin-bottom:20px; }}
-.vc .nm {{ font-size:132px; }}
-.vc .rule {{ width:200px; height:7px; margin:26px 0 20px; }}
-.vc .sub {{ font-size:48px; opacity:.85; }}
+.vc .num {{ font-size:92px; color:#E8586A; margin-bottom:26px; }}
+.vc .nm {{ font-size:290px; }}
+.vc .rule {{ width:340px; height:12px; margin:32px 0 24px; }}
+.vc .sub {{ font-size:100px; opacity:.86; }}
 """
 
 
