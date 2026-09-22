@@ -1,0 +1,822 @@
+{
+ "version": 2,
+ "project": "YTEVO03_Plechko_day",
+ "generated": "2026-09-21T10:32:49+0300",
+ "clips": {
+  "01_Morning_Run/DJI_20260918072725_0008_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "01_Morning_Run/DJI_20260918072736_0009_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "01_Morning_Run/RYA-FX3-1212.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "01_Morning_Run/RYA-FX3-1213.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "01_Morning_Run/RYA-FX3-1214.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "01_Morning_Run/RYA-FX3-1215.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "01_Morning_Run/RYA-FX3-1216.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "01_Morning_Run/RYA-FX3-1217.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "01_Morning_Run/RYA-FX3-1218.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "01_Morning_Run/RYA-FX3-1219.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "02_Moyka_Walk_Darya/RYA-FX3-1220.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "02_Moyka_Walk_Darya/RYA-FX3-1221.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "02_Moyka_Walk_Darya/RYA-FX3-1222.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "03_Driving_Thoughts_Darya/DJI_20260918063432_0004_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "03_Driving_Thoughts_Darya/DJI_20260918063651_0005_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "03_Driving_Thoughts_Darya/DJI_20260918063659_0006_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "03_Driving_Thoughts_Darya/DJI_20260918063715_0007_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "04_Before_Isaakiy_Rostislav/DJI_20260918074416_0010_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "04_Before_Isaakiy_Rostislav/DJI_20260918074802_0011_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "04_Before_Isaakiy_Rostislav/DJI_20260918074949_0012_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "04_Before_Isaakiy_Rostislav/DJI_20260918080911_0013_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "04_Before_Isaakiy_Rostislav/DJI_20260918081256_0014_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "04_Before_Isaakiy_Rostislav/DJI_20260918081519_0015_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "04_Before_Isaakiy_Rostislav/DJI_20260918081751_0016_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918083358_0017_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918083509_0018_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918083800_0019_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918084642_0020_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918084904_0021_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085009_0022_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085040_0023_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085244_0024_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085313_0025_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085327_0026_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085412_0027_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085442_0028_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085506_0029_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085547_0030_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918085617_0031_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918090159_0032_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918090526_0033_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918091910_0035_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918091948_0036_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918092023_0037_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918092128_0038_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918092220_0040_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918092317_0041_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918092837_0042_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093136_0044_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093325_0045_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093349_0046_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093504_0047_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093532_0048_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093601_0049_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093639_0050_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093753_0051_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093821_0052_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093852_0053_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918093934_0054_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918094648_0055_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918094734_0056_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918094817_0057_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918094936_0058_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918094941_0059_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "05_Isaakiy_Cathedral_Service/DJI_20260918095017_0060_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-FX3-1223.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-FX3-1224.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-FX3-1225.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1892.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1893.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1894.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1895.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1896.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1897.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1898.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1899.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1900.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1901.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1902.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1903.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1904.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1905.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1906.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1907.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "06_Lunch_With_Father_Arkady/RYA-ZVE1-1908.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "07_Before_Isaakiy_Darya/RYA-FX3-1226.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "07_Before_Isaakiy_Darya/RYA-FX3-1227.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "07_Before_Isaakiy_Darya/RYA-FX3-1228.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/DJI_20260918120207_0061_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/DJI_20260918183407_0062_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/DJI_20260918194212_0065_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/DJI_20260918200349_0066_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1234.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1235.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1236.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1237.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1238.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1239.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1240.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1241.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1242.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1243.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1244.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1245.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1246.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1247.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-FX3-1248.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1909.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1910.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1911.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1912.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1913.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1914.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1915.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1916.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1917.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1918.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1919.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1922.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1923.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1924.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1925.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1926.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1942.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1943.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "08_Driving_Thoughts_Rostislav/RYA-ZVE1-1944.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "09_Office_Rostislav/RYA-FX3-1229.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "09_Office_Rostislav/RYA-FX3-1230.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "09_Office_Rostislav/RYA-ZVE1-1920.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuvj420p"
+  },
+  "09_Office_Rostislav/RYA-ZVE1-1921.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "10_Rooftop_Thoughts_Darya/RYA-FX3-1231.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "10_Rooftop_Thoughts_Darya/RYA-FX3-1232.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "10_Rooftop_Thoughts_Darya/RYA-FX3-1233.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "11_Driving_Talk_Father_Arkady/DJI_20260918184116_0063_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "11_Driving_Talk_Father_Arkady/DJI_20260918190253_0064_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  },
+  "11_Driving_Talk_Father_Arkady/RYA-ZVE1-1939.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "11_Driving_Talk_Father_Arkady/RYA-ZVE1-1940.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "11_Driving_Talk_Father_Arkady/RYA-ZVE1-1941.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1249.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1250.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1251.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1252.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1253.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1254.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1255.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1256.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1257.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1258.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1259.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-FX3-1260.MP4": {
+   "cam": "CAM-A_FX3",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1927.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "rec709",
+   "pix_fmt": "yuv420p"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1928.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1929.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1930.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1931.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1932.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1933.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1934.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1935.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1936.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1937.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "12_Site_Blessing/RYA-ZVE1-1938.MP4": {
+   "cam": "CAM-B_ZVE1",
+   "gamma": "s-log3-cine",
+   "pix_fmt": "yuv422p10le"
+  },
+  "13_General/DJI_20260918091848_0034_D.MP4": {
+   "cam": "CAM-C_Pocket",
+   "gamma": "D-Log2",
+   "pix_fmt": "yuv420p10le"
+  }
+ }
+}
