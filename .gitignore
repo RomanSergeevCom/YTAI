@@ -50,3 +50,13 @@ config/
 Bots/*/inventory_photos/
 # Bots data — generated prompt-packs (per-project, not for source repo)
 Bots/*/_prompts/
+
+# Sync layer — machine state (bisync workdir + mirror registry, per-machine)
+scripts/11_sync/1101_mirror/state/
+
+# yt_subtitles extension — native host runtime log (regenerated locally)
+utils/video_downloader/native-host/ytdl_host.log
+
+# Color layer — cube store (~670 MB, mirrored to Shared Drive YTAI) and machine state
+scripts/15_color/1501_lut_library/store/
+scripts/15_color/*/state/
