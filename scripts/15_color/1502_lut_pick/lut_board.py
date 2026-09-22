@@ -575,6 +575,13 @@ def build_html(ctx) -> str:
     h.append("<div class=kpi>" + "".join(
         f"<b>{esc(a)} <i>{esc(b)}</i></b>" for a, b in k) + "</div>")
 
+    h.append('<div class=built>Внутри Lumetri картинка идёт '
+             '<b>проявка → экспозиция → покраска</b> — это порядок обработки, '
+             'и он вытащен из твоего же шаблона проекта. Решения принимаются в '
+             '<b>другом</b> порядке: сначала две настройки на весь канал '
+             '(проявка на камеру, look), и только потом — экспозиция по каждому '
+             'клипу под ними. Выбирать экспозицию, не зная look, бессмысленно: '
+             'он сдвигает яркость.</div>')
     h.append("<div class=built>Кадры собраны так: <b>цепочкой из двух lut3d</b>, "
              "а не через склеенный куб — в превью ошибки склейки нет вообще. "
              "Склейка в один куб точна не для всякого look'а (замер 22.09: Baza "
@@ -582,15 +589,32 @@ def build_html(ctx) -> str:
              "в Premiere.</div>")
 
     # ── ступень 2: проявка
-    h.append('<div class=sec><h2><span class=ic>🎞</span>Ступень 2 · Проявка — '
-             'решает камера, не вкус</h2>')
-    h.append('<p class=why>Проявка переводит лог в Rec.709 и выбирается '
-             'детерминированно по камере и гамме клипа. Кандидаты ниже — из '
-             'библиотеки, отобраны под гамму этой камеры и отсортированы по '
-             'цене в тенях. <b>Красное число = куб съедает картинку:</b> '
-             'чёрное выше 1 % значит зажатые тени, пережог выше 2 % — выбитые света. '
-             'Исходники дня проверены: в них 0,00 % чистого чёрного, поэтому всё '
-             'зажатое создаёт именно лут.</p>')
+    h.append('<div class=sec><h2><span class=ic>🎞</span>Решение 1 · Проявка — '
+             'ОДИН выбор на камеру, навсегда</h2>')
+    h.append('<p class=why><b>Здесь нечего корректировать по клипам.</b> '
+             'Проявка определяется камерой и гаммой, а не вкусом: выбрал один '
+             'раз — и он живёт в профиле канала, пока сам не поменяешь. '
+             'Кандидатов всего по два на гамму, и победитель по числам уже '
+             'отмечен — тебе остаётся глянуть и согласиться.<br>'
+             'Строки ниже — <b>не отдельные решения</b>, а те же два куба на '
+             'разном материале, чтобы разницу было видно. Клик по любому кадру '
+             'выбирает куб для <b>всей камеры</b> сразу.<br>'
+             '<b>Красное число = куб съедает картинку:</b> чёрное выше 1 % — '
+             'зажатые тени, пережог выше 2 % — выбитые света. Исходники дня '
+             'проверены: в них 0,00 % чистого чёрного, значит всё зажатое '
+             'создаёт именно лут.</p>')
+    # Сводка решения — чтобы выбор читался числами, не только картинками.
+    for camx in ctx["cams"]:
+        if not camx["develops"]:
+            continue
+        best = min(camx["develops"], key=lambda d: d["metrics"].get("black_share", 9))
+        h.append('<div class=built style="margin:0 0 12px">'
+                 f'<b>{esc(camx["cam"])}</b> · гамма {esc(camx["gamma"] or "?")} → '
+                 f'мой выбор <code>{esc(best["id"])}</code>. ')
+        h.append(" · ".join(
+            f'{esc(d["id"].split("__")[-1])}: зажатых теней '
+            f'{d["metrics"].get("black_share", 0)*100:.1f} %'
+            for d in camx["develops"]) + '</div>')
     for cam in ctx["cams"]:
         h.append(f'<div class=camttl>{esc(cam["cam"] or "без камеры")}</div>')
         h.append(f'<div class=gam>гамма {esc(cam["gamma"] or "НЕ ОПРЕДЕЛЕНА")} '
@@ -610,48 +634,26 @@ def build_html(ctx) -> str:
             h.append("</div>")
     h.append("</div>")
 
-    # ── ступень 3: экспозиция
-    h.append('<div class=sec><h2><span class=ic>🔆</span>Ступень 3 · Экспозиция — '
-             'по лицу, правится потом</h2>')
-    h.append(f'<p class=why>Экспозиция — <b>не лут</b>, а число: слайдер Exposure '
-             f'в Basic Correction. Порядок обработки внутри Lumetri вытащен из '
-             f'твоего же шаблона проекта и выглядит так: '
-             f'<code>LUT (проявка) → BasicCorrection3 (Exposure) → LUT (покраска)</code>. '
-             f'То есть экспозиция живёт ровно между ступенями, и превью ниже '
-             f'повторяет этот порядок.<br>'
-             f'Замер идёт <b>по лицу</b> и только на проявленном кадре — на логе '
-             f'пороги бессмысленны. Цель <b>{ctx["target"]:.0f}</b> '
-             f'({esc(ctx["target_src"])}). Пунктиром обведено предложение машины; '
-             f'твой выбор её переучивает. Монтажёр потом двигает тот же слайдер '
-             f'и видит, что там стоит — в отличие от куба, который непрозрачен.</p>')
-    for row in ctx["expo_rows"]:
-        lock = row.get("locked")
-        note = (' · <span style="color:var(--warn)">лица нет — экспозиция не '
-                'предлагается</span>' if lock else
-                (f' · промах {row["miss_stops"]:+.2f} стопа'
-                 + (' · <span style="color:var(--warn)">лестницы не хватает — '
-                    'снято сильно мимо либо тёмный по замыслу</span>'
-                    if row.get("out_of_range") else '')))
-        h.append(f'<div class=lbl>{esc(row["label"])} · {esc(row["develop"])}{note}</div>')
-        h.append('<div class=row>')
-        for st in row["steps"]:
-            m = st["m"]
-            nm = ("0 (как снято)" if abs(st["stop"]) < 1e-6
-                  else f'{st["stop"]:+.1f} стопа')
-            mm = (f'лицо {m["luma"]:.0f} · переж {m["clip"]*100:.1f}%'
-                  if m.get("roi") == "face"
-                  else f'кадр {m["luma"]:.0f} · переж {m["clip"]*100:.1f}%')
-            sel = ' style="outline:2px dashed var(--acc);outline-offset:3px"' \
-                if (not lock and abs(st["stop"] - row["machine"]) < 1e-6) else ''
-            cls = "cell base" if lock else "cell pick"
-            attr = "" if lock else (f' data-expo="{st["stop"]}" '
-                                    f'data-clip="{esc(row["clip_key"])}"')
-            h.append(f'<div class="{cls}"{attr}{sel}>'
-                     f'<img loading="lazy" decoding="async" width="232" height="130" '
-                     f'src="{esc(st["rel"])}" alt="{esc(nm)}">'
-                     f'<div class="nm">{esc(nm)}</div><div class="m">{mm}</div></div>')
-        h.append('</div>')
-    h.append('</div>')
+    # ── ступень 4: покраска
+    h.append('<div class=sec><h2><span class=ic>🎨</span>Решение 2 · Покраска — '
+             'ДНК канала</h2>')
+    h.append(f'<p class=why>Один look на весь канал. Слева закреплён кадр '
+             f'<b>без покраски</b> — это база сравнения. Все варианты положены '
+             f'поверх одной и той же проявки '
+             f'(<code>{esc(ctx["look_base_name"])}</code>), поэтому разница между '
+             f'колонками — это ровно покраска и ничего больше.<br>'
+             f'<b>Тоже один выбор — на весь канал</b>, а не по клипам. Строки — '
+             f'тот же набор на разном материале. Клик по колонке выбирает look '
+             f'канала.</p>')
+    for s in ctx["look_rows"]:
+        h.append(f'<div class=lbl>{esc(s["label"])}</div><div class=row>')
+        h.append(cell_html(s["base_rel"], "только проявка", s["base_m"], None, "base"))
+        h.append('<div class=arrow>→</div>')
+        for lk in s["looks"]:
+            h.append(cell_html(lk["rel"], lk["name"], lk["m"], s["base_m"],
+                               "pick", lk["id"]))
+        h.append("</div>")
+    h.append("</div>")
 
     # ── покрытие: все клипы дня
     cov = ctx["coverage"]
@@ -682,8 +684,8 @@ def build_html(ctx) -> str:
         h.append('</pre>')
 
     # ── сетка по каждому клипу
-    h.append('<div class=sec><h2><span class=ic>🎬</span>Каждый клип — '
-             f'{len(ctx["per_clip"])} штук, мой выбор уже отмечен</h2>')
+    h.append('<div class=sec><h2><span class=ic>🎬</span>Решение 3 · Экспозиция — '
+             f'по каждому из {len(ctx["per_clip"])} клипов, мой выбор отмечен</h2>')
     h.append(f'<p class=why>Здесь <b>весь день</b>, а не выборка, и в каждой строке '
              f'уже стоит моё предложение — правь только то, с чем не согласен. '
              f'Кадры показывают <b>итог</b>: проявка + экспозиция + look '
@@ -720,24 +722,6 @@ def build_html(ctx) -> str:
                      f'<div class="m">{"мой выбор" if mine else "&nbsp;"}</div></div>')
         h.append('</div>')
     h.append('</div>')
-
-    # ── ступень 4: покраска
-    h.append('<div class=sec><h2><span class=ic>🎨</span>Ступень 4 · Покраска — '
-             'ДНК канала</h2>')
-    h.append(f'<p class=why>Один look на весь канал. Слева закреплён кадр '
-             f'<b>без покраски</b> — это база сравнения. Все варианты положены '
-             f'поверх одной и той же проявки '
-             f'(<code>{esc(ctx["look_base_name"])}</code>), поэтому разница между '
-             f'колонками — это ровно покраска и ничего больше.</p>')
-    for s in ctx["look_rows"]:
-        h.append(f'<div class=lbl>{esc(s["label"])}</div><div class=row>')
-        h.append(cell_html(s["base_rel"], "только проявка", s["base_m"], None, "base"))
-        h.append('<div class=arrow>→</div>')
-        for lk in s["looks"]:
-            h.append(cell_html(lk["rel"], lk["name"], lk["m"], s["base_m"],
-                               "pick", lk["id"]))
-        h.append("</div>")
-    h.append("</div>")
 
     h.append('<div class=foot>')
     h.append(f'<b>Версия v{v} · собрано {esc(ctx["when"])}</b><br>')
@@ -831,7 +815,10 @@ def main(argv=None) -> int:
     ap.add_argument("--frames-from", help="зеркало прокси, откуда снимать кадры")
     ap.add_argument("--jobs", type=int, default=4)
     ap.add_argument("--samples", type=int, default=SAMPLES_PER_CAM,
-                    help=f"клипов на камеру (по умолчанию {SAMPLES_PER_CAM})")
+                    help=f"клипов на камеру для ступени 3 (по умолчанию {SAMPLES_PER_CAM})")
+    ap.add_argument("--develop-rows", type=int, default=2,
+                    help="клипов на камеру на ступени 2; это ОДИН выбор, "
+                         "строки нужны только чтобы увидеть разницу")
     ap.add_argument("--develops", type=int, default=MAX_DEVELOP)
     ap.add_argument("--looks", type=int, default=MAX_LOOKS)
     ap.add_argument("--look-rows", type=int, default=4, help="клипов на лук-борде")
@@ -896,7 +883,7 @@ def main(argv=None) -> int:
           f"лицо найдено у {nface}")
 
     # ── 3. Две выборки, потому что ступени спрашивают разное
-    samples = pick_samples(by_cam, args.samples,
+    samples = pick_samples(by_cam, args.develop_rows,
                            {k: v["luma"] for k, v in probe.items()})
     face_samples = pick_face_samples(by_cam, args.samples, probe)
     print(f"  ступень 2 (проявка): {sum(len(v) for v in samples.values())} клипов, "
