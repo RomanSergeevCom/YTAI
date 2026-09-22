@@ -46,6 +46,10 @@ import lut_select as S        # noqa: E402  — store и манифест
 
 SCHEMA = "color-plan-v1"
 
+ADOBE_LUTS = Path.home() / "Library" / "Application Support" / "Adobe" / "Common" / "LUTs"
+CREATIVE_DIR = ADOBE_LUTS / "Creative" / "YTAI"   # сюда — покрасочные (Lumetri → Creative → Look)
+INPUT_DIR = ADOBE_LUTS / "Input" / "YTAI"         # сюда — проявочные (Basic Correction → Input LUT)
+
 
 def die(msg, code=2):
     print(f"\n✗ {msg}\n", file=sys.stderr)
@@ -256,8 +260,12 @@ def build(project: Path, code: str) -> dict:
             "_why": "Откуда панель берёт кубы, чтобы Premiere их увидел. ⚠️ Общая "
                     "папка Adobe читается ПРИ СТАРТЕ Premiere — копировать нужно "
                     "до запуска, панель изнутри программы уже опоздала.",
-            "creative_dir": "~/Library/Application Support/Adobe/Common/LUTs/Creative/YTAI",
-            "input_dir": "~/Library/Application Support/Adobe/Common/LUTs/Technical/YTAI",
+            # ⚠️ Папки называются Creative / Input / Output — «Technical» у Adobe НЕТ.
+            # Сверено с диском: рядом уже лежат Input/peresvet.cube и Input/nedosvet.cube
+            # прошлого поколения. Ошибиться здесь значит выписать план, указывающий
+            # в несуществующую папку, и обнаружить это только в Premiere.
+            "creative_dir": str(CREATIVE_DIR),
+            "input_dir": str(INPUT_DIR),
             "files": files,
         },
         "plan": plan,
@@ -300,6 +308,48 @@ def report(doc: dict):
         print(f"  ✗ ОТКАЗ  {k} — {why}")
 
 
+def install_cubes(doc: dict, apply: bool) -> int:
+    """Разложить кубы плана по папкам Adobe. Проблемных — вернуть числом.
+
+    ⚠️ Общая папка Adobe читается ПРИ СТАРТЕ Premiere. Поэтому раскладка кубов —
+    шаг ДО запуска программы, и панель изнутри Premiere сделать его не может: она
+    уже опоздала. Если кубы скопированы при запущенной программе, Premiere надо
+    перезапустить, иначе выпадающий список их не увидит.
+
+    Копия сверяется по sha256 с манифестом: одинаковое имя при разном содержимом —
+    ровно тот класс ошибки, на котором слой уже обжёгся (`eastman` и `eastmanrm`
+    схлопывались обрезкой id, и кадр молча показывал не тот куб, что подписан).
+    """
+    import hashlib
+    import shutil
+    bad = 0
+    for f in doc["install"]["files"]:
+        src = Path(f["store_path"])
+        dst = Path(f["dir"] == "creative_dir" and CREATIVE_DIR or INPUT_DIR) / f["install_name"]
+        if not src.exists():
+            print(f"  ✗ нет в store: {f['install_name']}")
+            bad += 1
+            continue
+        if dst.exists():
+            have = hashlib.sha256(dst.read_bytes()).hexdigest()
+            if have == f["sha256"]:
+                print(f"  = на месте   {f['install_name']}")
+                continue
+            print(f"  ≠ РАЗОШЁЛСЯ  {f['install_name']} — то же имя, другое содержимое")
+        if not apply:
+            print(f"  + поставил БЫ {f['install_name']} → {dst.parent}")
+            continue
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        got = hashlib.sha256(dst.read_bytes()).hexdigest()
+        if got != f["sha256"]:
+            print(f"  ✗ копия не сошлась по sha256: {f['install_name']}")
+            bad += 1
+        else:
+            print(f"  + поставил   {f['install_name']} → {dst.parent}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser(description="Раскладка цвета по клипам")
     ap.add_argument("--project", required=True)
@@ -309,6 +359,8 @@ def main():
                     help="сверить кубы плана со store по sha256")
     ap.add_argument("--allow-refused", action="store_true",
                     help="записать план, даже если часть клипов отказная")
+    ap.add_argument("--install", action="store_true",
+                    help="разложить кубы плана по папкам Adobe (до запуска Premiere)")
     a = ap.parse_args()
 
     project = Path(a.project).expanduser()
@@ -332,6 +384,17 @@ def main():
                 bad += 1
             print(f"  {mark:10} {f['install_name']}")
         print(f"\n  кубов {len(doc['install']['files'])}, проблемных {bad}")
+
+    if a.install:
+        print("\n  РАСКЛАДКА КУБОВ В ПАПКИ ADOBE")
+        bad = install_cubes(doc, a.apply)
+        if not a.apply:
+            print("  (сухой прогон — ничего не скопировано; повтори с --apply)")
+        elif bad:
+            die(f"кубов с проблемой: {bad}", 4)
+        else:
+            print("  ⚠️ если Premiere был открыт — перезапусти его: список лутов "
+                  "читается при СТАРТЕ программы")
 
     out = project / "00_Setup" / "01_Ingest" / f"{code}_color_plan.json"
     gamma_rec = doc.pop("_gamma_records", {})

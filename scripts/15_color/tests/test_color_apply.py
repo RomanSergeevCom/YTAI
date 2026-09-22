@@ -611,3 +611,33 @@ class TestHonesty:
         assert src["profile"] == str(world.profile_path)
         assert src["choice_doc_version"] == 3
         assert doc["project"] == CODE and doc["channel"] == "YTEVO"
+
+
+class TestAdobeFolders:
+    """Куда именно ложатся кубы. Найдено сверкой с живым диском 22.09."""
+
+    def test_adobe_folder_is_input_not_technical(self):
+        """CLR-13: проявочные идут в Input/YTAI, покрасочные — в Creative/YTAI.
+
+        ⚠️ В первой версии было написано `Technical/YTAI` — такой папки у Adobe
+        НЕТ вовсе. Раскладка указывала в пустоту, и обнаружилось бы это только
+        в Premiere. Настоящий набор — Creative / Input / Output; рядом уже лежат
+        Input/peresvet.cube и Input/nedosvet.cube прошлого поколения.
+        """
+        assert color_apply.INPUT_DIR.name == "YTAI"
+        assert color_apply.INPUT_DIR.parent.name == "Input"
+        assert color_apply.CREATIVE_DIR.parent.name == "Creative"
+        assert "Technical" not in str(color_apply.INPUT_DIR)
+        assert color_apply.ADOBE_LUTS.parts[-3:] == ("Adobe", "Common", "LUTs")
+
+    def test_install_name_is_derived_and_prefixed(self):
+        """CLR-14: имя установки выводится из id и несёт префикс YTAI_.
+
+        ⚠️ Lumetri ссылается на ИМЯ ФАЙЛА, поэтому `look__newstar.cube` в общей
+        папке — столкновение, ждущее своего часа. И выводиться оно обязано из id,
+        а не из orig_name: переименовывать луты в сданных проектах нельзя никогда,
+        значит имя должно быть выводимым и вечным.
+        """
+        n = color_apply.install_name("sony__slog3_sgamut3cine__rec709__neutral__legacy")
+        assert n == "YTAI_sony__slog3_sgamut3cine__rec709__neutral__legacy.cube"
+        assert n.startswith("YTAI_") and n.endswith(".cube")
