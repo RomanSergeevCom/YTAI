@@ -990,7 +990,7 @@ CHOV_CSS = f"""
 .pl .sub {{ font-family:{FONT}; color:{IVORY}; opacity:.92; }}
 .pl .rule {{ background:{RED}; border-radius:4px; }}
 
-/* A — полотно: кадр уходит в затемнение, всё по центру */
+/* A: scrim */
 .va .scrim {{ position:absolute; inset:0; background:rgba(8,8,10,.72); }}
 .va .box {{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
             justify-content:center; gap:34px; text-align:center; }}
@@ -999,7 +999,7 @@ CHOV_CSS = f"""
 .va .rule {{ width:280px; height:8px; }}
 .va .sub {{ font-size:58px; opacity:.86; }}
 
-/* B — шторка: плотная левая треть, кадр справа чистый */
+/* B: side panel */
 .vb .panel {{ position:absolute; left:0; top:0; bottom:0; width:1340px;
               background:linear-gradient(90deg, rgba(10,10,14,.97) 72%, rgba(10,10,14,0)); }}
 .vb .box {{ position:absolute; left:170px; top:0; bottom:0; width:1060px; display:flex;
@@ -1009,7 +1009,7 @@ CHOV_CSS = f"""
 .vb .rule {{ width:220px; height:8px; }}
 .vb .sub {{ font-size:50px; opacity:.85; }}
 
-/* C — нижняя треть: кадр цел, плотная подложка снизу */
+/* C: lower band */
 .vc .band {{ position:absolute; left:0; right:0; bottom:0; height:760px;
              background:linear-gradient(0deg, rgba(8,8,10,.95) 42%, rgba(8,8,10,0)); }}
 .vc .box {{ position:absolute; left:170px; right:170px; bottom:150px; }}
