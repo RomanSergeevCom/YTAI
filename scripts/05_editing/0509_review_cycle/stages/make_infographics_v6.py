@@ -66,6 +66,25 @@ def page(name, body, css='', draft=True):
     print('✓', name, flush=True)
 
 
+def flatten_jpg(name, width=1920):
+    """4K PNG с альфой → плоский jpg рядом: гугл-док вставляет картинку по ссылке и альфу не показывает.
+    Раньше такие jpg делали руками, и после правки CSS во вкладке оставалась старая картинка."""
+    if os.environ.get('YTAI_RENDER_HTML_ONLY') == '1':
+        return None
+    src = OUT / f'{name}.png'
+    if not src.exists():
+        return None
+    from PIL import Image
+    im = Image.open(src).convert('RGBA')
+    flat = Image.new('RGB', im.size, (12, 12, 14))         # подложка цвета канала, а не белая
+    flat.paste(im, (0, 0), im)
+    if width and flat.width > width:
+        flat = flat.resize((width, round(flat.height * width / flat.width)), Image.LANCZOS)
+    out = OUT / f'{name}.jpg'
+    flat.save(out, quality=86)
+    return out
+
+
 # ═══════════════════════════ A. термины ═══════════════════════════
 TERM_CSS = f"""
 .tp {{ position:absolute; right:120px; top:700px; width:1180px; background:{PANEL};
@@ -1057,6 +1076,7 @@ if want('J'):
         for v in ('a', 'b', 'c'):
             page(f'ch_demo_{v}', _chov_body(v, demo_no, CH_NAME[di], _first_sub(di + 1), shot),
                  CHOV_CSS, draft=False)
+            flatten_jpg(f'ch_demo_{v}')      # вкладка «Главы» вставляет плоский jpg, а не 4K с альфой
     else:
         print(f'  !! нет кадра {shot.name} — демо вариантов не собрал')
     print(f'заставки глав: {len(CH_NAME)} (вариант {CHOV_VARIANT}) + демо a/b/c по главе {demo_no}')
@@ -1144,7 +1164,7 @@ if want('L'):
         if _shot is not None and not _shot.exists():
             print(f'  !! нет кадра {_shot.name} для {tz_label(_i)} — макет на альфе')
             _shot = None
-        _photo = _lo.get('photo')
+        _photo = _lo.get('photo') or ''          # '' = кружок есть, но пустой — место под фото
         if _photo:
             _photo = Path(_photo) if Path(_photo).is_absolute() else (M.parent / _photo)
             if not _photo.exists():

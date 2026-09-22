@@ -53,6 +53,17 @@ def u16(s):
     return len(s.encode('utf-16-le')) // 2
 
 
+def shot_id(name, shots):
+    """id картинки в публичной папке кадров. Панель перечисления лежит в mockups 4K-PNG с альфой —
+    в доке от неё остался бы тёмный прямоугольник без кадра, поэтому сначала ищем композит s12
+    («панель поверх настоящего кадра», dp_*.jpg), потом плоский jpg, и только потом сам PNG."""
+    stem = name.rsplit('.', 1)[0]
+    for cand in (f'dp_{stem}.jpg', f'{stem}.jpg', f'{stem}.png'):
+        if shots.get(cand):
+            return shots[cand], cand
+    return None, name
+
+
 def tmm(sec):
     return f'{int(sec) // 60}:{int(sec) % 60:02d}'
 
@@ -232,10 +243,12 @@ def main():
     print(f'шапка: {len(head)} абзацев + {len(DEMOS)} вариантов + подглав {len(PROG)}', flush=True)
 
     for name, at in sorted(demo_at, key=lambda x: -x[1]):           # с конца — индексы не едут
-        did = shots.get(name)
+        did, used = shot_id(name, shots)
         if not did:
             print(f'  !! нет id картинки {name} — пропуск', flush=True)
             continue
+        if used != name:
+            print(f'     {name} → {used}', flush=True)
         batch_update(DOC_ID, [{'insertInlineImage': {
             'location': {'tabId': tab_id, 'index': at},
             'uri': f'https://drive.google.com/uc?export=download&id={did}',
@@ -266,7 +279,7 @@ def main():
     ireqs = []
     for ri in range(len(rows), 0, -1):
         name = rows[ri - 1]['img']
-        did = shots.get(name)
+        did, _ = shot_id(name, shots)
         if not did:
             continue
         ireqs.append({'insertInlineImage': {
