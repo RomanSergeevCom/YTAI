@@ -538,8 +538,34 @@ h1{font:800 26px/1.2 'Space Grotesk','Inter',sans-serif;margin:0 0 6px}
 .kpi b{background:var(--card);border:1px solid var(--line);border-radius:8px;
        padding:6px 11px;font:600 12.5px ui-monospace,monospace;color:var(--dim)}
 .kpi b i{font-style:normal;color:var(--tx)}
-.built{background:#1b2030;border:1px solid var(--acc);border-radius:10px;
-       padding:10px 14px;margin:0 0 20px;font-size:13.5px}
+.built{background:#141821;border:1px solid var(--line);border-left:3px solid var(--acc);
+       border-radius:10px;padding:11px 15px;margin:0 0 14px;font-size:13.5px;color:var(--dim)}
+.built b{color:var(--tx)}
+/* Сводка решения по камере — карточка, а не тревожная рамка. */
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px;
+     margin:0 0 20px}
+.sumc{background:#141821;border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.sumc .cam{font:700 14px 'Inter',sans-serif;color:var(--tx)}
+.sumc .gam{font:500 11.5px ui-monospace,monospace;color:var(--dim);margin-left:8px}
+.sumc .opt{display:flex;align-items:center;gap:9px;margin-top:9px;
+           font:500 12px ui-monospace,monospace;color:var(--dim)}
+.sumc .opt .nm{flex:1;color:var(--dim)}
+.sumc .opt.on .nm{color:var(--acc);font-weight:700}
+/* Полоску убрал: при двух кандидатах она ничего не добавляет к числу, а на
+   тёмном фоне теряется. Цену показывает само число — зелёным когда даром,
+   красным когда куб платит тенями. */
+.sumc .cost{flex:0 0 96px;text-align:right;color:var(--ok);font-weight:600}
+.sumc .cost.bad{color:var(--bad)}
+.sumc .val{flex:0 0 60px;text-align:right}
+.sumc .tick{flex:0 0 14px;color:var(--acc)}
+/* Плашка «что выбрано сейчас» — одно место, где видно всё решение целиком. */
+.now{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;
+     background:#141821;border:1px solid var(--line);border-radius:12px;
+     padding:14px 16px;margin:0 0 16px}
+.now .t{font:600 11px ui-monospace,monospace;color:var(--dim);text-transform:uppercase;
+        letter-spacing:.05em}
+.now .v{font:700 14px 'Inter',sans-serif;color:var(--acc);margin-top:4px;word-break:break-word}
+.now .s{font:500 11.5px ui-monospace,monospace;color:var(--dim);margin-top:2px}
 .sec{background:var(--card);border:1px solid var(--line);border-radius:14px;
      padding:18px 18px 8px;margin:0 0 18px}
 .sec h2{font:700 18px/1.3 'Space Grotesk','Inter',sans-serif;margin:0 0 4px}
@@ -658,6 +684,22 @@ def build_html(ctx) -> str:
     h.append("<div class=kpi>" + "".join(
         f"<b>{esc(a)} <i>{esc(bb)}</i></b>" for a, bb in k) + "</div>")
 
+    nowc = []
+    for camx in ctx["cams"]:
+        if not camx["develops"]:
+            continue
+        cur = ctx.get("rec_dev", {}).get(camx["cam"])
+        best = next((d for d in camx["develops"] if d["id"] == cur), camx["develops"][0])
+        nowc.append((camx["cam"], short_name(best["id"]),
+                     f'{camx["gamma"]} · зажимает '
+                     f'{best["metrics"].get("black_share", 0)*100:.1f} % теней'))
+    nowc.append(("покраска канала", short_name(ctx["rec_look"] or "—"),
+                 f'{len(ctx["look_rows"] and ctx["look_rows"][0]["looks"] or [])} кандидатов показано'))
+    nowc.append(("цель по лицу", f'{ctx["target"]:.0f}', esc(ctx["target_src"])))
+    h.append('<div class=now>' + "".join(
+        f'<div><div class=t>{esc(a)}</div><div class=v>{esc(b)}</div>'
+        f'<div class=s>{esc(c)}</div></div>' for a, b, c in nowc) + '</div>')
+
     h.append('<div class=nav>'
              '<a href="#s1">1 · Проявка<b>один выбор на камеру</b></a>'
              '<a href="#s2">2 · Покраска<b>один выбор на канал</b></a>'
@@ -691,17 +733,31 @@ def build_html(ctx) -> str:
              'Эту деталь не вернуть ничем. Исходники дня проверены: в них '
              '0,00 % чистого чёрного, значит всё зажатое создал именно лут.</p>'
              '</details>')
+    h.append('<div class=sum>')
     for camx in ctx["cams"]:
         if not camx["develops"]:
             continue
-        best = min(camx["develops"], key=lambda d: d["metrics"].get("black_share", 9))
-        h.append('<div class=built style="margin:0 0 12px">'
-                 f'<b>{esc(camx["cam"])}</b> · {esc(camx["gamma"] or "?")} → '
-                 f'<b style="color:var(--acc)">{esc(short_name(best["id"]))}</b> — '
-                 + " · ".join(
-                     f'{esc(short_name(d["id"]))} зажимает '
-                     f'{d["metrics"].get("black_share", 0)*100:.1f} %'
-                     for d in camx["develops"]) + '</div>')
+        cur = ctx.get("rec_dev", {}).get(camx["cam"])
+        best_bs = min((d["metrics"].get("black_share", 0) for d in camx["develops"]),
+                      default=0.0)
+        h.append(f'<div class=sumc><span class=cam>{esc(camx["cam"])}</span>'
+                 f'<span class=gam>{esc(camx["gamma"] or "?")}</span>')
+        for d in camx["develops"]:
+            bs = d["metrics"].get("black_share", 0.0)
+            on = (d["id"] == cur)
+            # полоска — доля зажатых теней относительно худшего кандидата,
+            # чтобы цена выбора читалась без чтения цифр
+            # Красным — то, что ХУЖЕ лучшего доступного, а не то, что просто
+            # не ноль. У DJI даже лучший куб зажимает 6.2 %, и красить его
+            # тревожным значило бы ругать выбор, которому нет альтернативы.
+            costly = bs > best_bs + 0.01
+            h.append(f'<div class="opt{" on" if on else ""}">'
+                     f'<span class=tick>{"✓" if on else ""}</span>'
+                     f'<span class=nm>{esc(short_name(d["id"]))}</span>'
+                     f'<span class="cost{" bad" if costly else ""}">'
+                     f'{"теней" if costly else "лучший ·"} {bs*100:.1f} %</span></div>')
+        h.append('</div>')
+    h.append('</div>')
     for cam in ctx["cams"]:
         h.append(f'<div class=camttl>{esc(cam["cam"] or "без камеры")}</div>')
         h.append(f'<div class=gam>гамма {esc(cam["gamma"] or "НЕ ОПРЕДЕЛЕНА")} '
@@ -724,6 +780,11 @@ def build_html(ctx) -> str:
     # ── решение 2: покраска, крупными карточками
     h.append('<div class=sec id=s2><h2><span class=ic>🎨</span>Решение 2 · '
              'Покраска — один выбор на канал</h2>')
+    h.append(f'<div class=built>Сейчас выбрано: '
+             f'<b>{esc(short_name(ctx["rec_look"] or "—"))}</b>. '
+             f'Поверх проявки <b>{esc(short_name(ctx["look_base_name"]))}</b>. '
+             f'Кандидатов в коллекции — <b>{len(ctx["look_rows"][0]["looks"]) if ctx["look_rows"] else 0}</b>, '
+             f'показаны все.</div>')
     h.append(f'<p class=why>Характер канала. Кладётся поверх проявки '
              f'(<code>{esc(short_name(ctx["look_base_name"]))}</code>), поэтому '
              f'разница между карточками — это ровно покраска. '
@@ -782,6 +843,8 @@ def build_html(ctx) -> str:
         h.append('</pre>')
 
     # ── сетка по каждому клипу
+    _dev_line = " · ".join(f'{esc(c)} → {esc(short_name(d))}'
+                           for c, d in (ctx.get("rec_dev") or {}).items() if d)
     h.append('<div class=sec id=s3><h2><span class=ic>🎬</span>Решение 3 · Экспозиция — '
              f'по каждому из {len(ctx["per_clip"])} клипов, мой выбор отмечен</h2>')
     h.append(f'<p class=why>Здесь <b>весь день</b>, а не выборка, и в каждой строке '
@@ -792,6 +855,10 @@ def build_html(ctx) -> str:
              f'Экспозицию предлагаю только там, где найдено лицо: без лица мерить '
              f'нечего, и трогать её — значит гадать. Такие клипы стоят на нуле '
              f'и помечены.</p>')
+    h.append(f'<div class=built>Кадры ниже собраны под: {_dev_line} · look '
+             f'<b>{esc(short_name(ctx["rec_look"] or "—"))}</b> · цель по лицу '
+             f'<b>{ctx["target"]:.0f}</b>. Поменяешь проявку или look — '
+             f'страницу надо пересобрать, кадры обновятся.</div>')
     for row in ctx["per_clip"]:
         tag = ''
         if not row["face"]:
@@ -834,6 +901,7 @@ def build_html(ctx) -> str:
     # таблица «клип → стоп → яркость лица»: по ней страница считает медиану
     # того, что Роман выбрал, и это и есть выученная цель.
     code_json = json.dumps(ctx["code"])
+    from_saved = "true" if ctx.get("from_saved") else "false"
     mine_json = json.dumps({
         "develop": {c: d for c, d in (ctx.get("rec_dev") or {}).items() if d},
         "look": ctx.get("rec_look"),
@@ -871,7 +939,8 @@ function refresh(){{
   for(var c in CH.develop){{ if(MINE.develop[c]!==CH.develop[c]) ch++; }}
   if(MINE.look!==CH.look) ch++;
   document.getElementById('st').textContent =
-    'мой выбор проставлен · ты поправил: ' + ch +
+    ({from_saved} ? 'твой сохранённый выбор · изменено сейчас: '
+                  : 'мой выбор проставлен · ты поправил: ') + ch +
     ' · цель по лицу ≈ ' + med + ' · look: ' + (CH.look || 'нет');
 }}
 document.addEventListener('click', function(e){{
