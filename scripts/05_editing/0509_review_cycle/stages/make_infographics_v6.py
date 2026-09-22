@@ -404,11 +404,12 @@ if want('C'):
 
 # ═══════════════════════════ D. прогресс перечислений (V6) ═══════════════════════════
 # Кегль поднят в 2,4 раза 22.09.2026 — та же просьба Романа, что и по заставкам глав (стадия J):
-# панель 1120 px на кадре 3840 читалась только при стоп-кадре. Позиция не меняется: верх кадра
-# занят титрами ката, поэтому перечисления живут слева-посередине (грабля README).
+# панель 1120 px на кадре 3840 читалась только при стоп-кадре. Ширина — по содержимому (фиксированные
+# 2600 px закрывали ведущую в центре кадра), верх поднят с 640 до 420: снизу слева у ката свой титр
+# подтемы, а сверху заставка главы кончается к 250 px.
 PROG_CSS = f"""
-.pg {{ position:absolute; left:150px; top:640px; width:2600px; background:{PANEL}; border-radius:40px;
-  padding:60px 80px 66px 80px; }}
+.pg {{ position:absolute; left:150px; top:420px; width:max-content; max-width:2200px;
+  background:{PANEL}; border-radius:40px; padding:60px 96px 66px 80px; }}
 .pg .h {{ font-family:Helvetica,Arial,sans-serif; font-size:66px; letter-spacing:.2em; color:{MUT}; display:flex;
   justify-content:space-between; gap:60px; }}
 .pg .h b {{ color:{IVORY}; }}
