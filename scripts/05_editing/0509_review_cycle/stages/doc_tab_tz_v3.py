@@ -196,7 +196,8 @@ def tz_row(p, shots_ids, proj_ids, drive_clips):
     if tech:
         err += '\n' + tech
     do = p.get('nado_do') or ''
-    _do_off = len(do.split('\n')) + 1 if do else 0
+    # склейка «текст ✅ + материалы» идёт через \n, значит строка материала i лежит на len(do_lines) + i
+    _do_off = len(do.split('\n')) if do else 0
     dec = T('c2.decision_prefix')                          # '❓ РЕШЕНИЕ РОМАНА: '
     roman, purple = [], []
     if p.get('decision'):
