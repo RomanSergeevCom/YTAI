@@ -4,7 +4,7 @@
  "_note": "Цветовая ДНК канала. Проявка выбирается ДЕТЕРМИНИРОВАННО по камере+гамме — это технический шаг, не вкус. Look — решение Романа, ОДИН на канал.",
  "develop": {
   "S-Log3": {
-   "lut": "sony__slog3_sgamut3cine__rec709__neutral",
+   "lut": "sony__slog3_sgamut3cine__rec709__neutral__legacy",
    "cameras": [
     "CAM-A_FX3",
     "CAM-B_ZVE1"

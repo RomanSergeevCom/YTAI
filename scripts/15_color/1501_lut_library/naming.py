@@ -227,7 +227,15 @@ def build_id(meta: dict, fallback: str) -> str:
         return check_id(join_id("pre", token(meta.get("in_gamma") or "any"), "wdr")[:MAX_ID])
 
     if stage == "look":
-        return check_id(join_id("look", slugify(stem))[:MAX_ID])
+        # Отдельно стоящий знак в конце — часть названия («Contr -» ≠ «Contr +»),
+        # но добавляется ЯВНО: через таблицу замен он бы заехал в дефисы внутри
+        # слов и превратил S-Log3 в sminuslog3.
+        sign = ""
+        if re.search(r"(?:^|[\s_])-\s*$", stem):
+            sign = "minus"
+        elif re.search(r"(?:^|[\s_])\+\s*$", stem):
+            sign = "plus"
+        return check_id(join_id("look", slugify(stem), sign)[:MAX_ID])
 
     if stage == "legacy":
         return check_id(meta["id"])

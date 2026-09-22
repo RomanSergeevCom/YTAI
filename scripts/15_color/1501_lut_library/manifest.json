@@ -2,7 +2,7 @@
  "schema": "lut-manifest-v1",
  "_note": "Источник правды по каждому кубу. Байты лежат в store/ (не в git), сюда пишутся метаданные и хэши. Метаданные из ИМЕНИ файла доказательством не считаются — смотри поля evidence и conflicts.",
  "version": 2,
- "generated": "2026-09-22T21:12:38+0300",
+ "generated": "2026-09-22T21:37:21+0300",
  "tool": "scripts/15_color/1501_lut_library/lut_lib.py",
  "store_root": "store",
  "counts": {
@@ -74,7 +74,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:20+0300"
+   "imported": "2026-09-22T21:37:02+0300"
   },
   {
    "id": "look__b_w_2",
@@ -138,7 +138,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:21+0300"
+   "imported": "2026-09-22T21:37:02+0300"
   },
   {
    "id": "look__baza",
@@ -202,7 +202,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:21+0300"
+   "imported": "2026-09-22T21:37:03+0300"
   },
   {
    "id": "look__blumarine",
@@ -266,12 +266,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:21+0300"
+   "imported": "2026-09-22T21:37:03+0300"
   },
   {
-   "id": "look__contr_plus",
+   "id": "look__contr__plus",
    "stage": "look",
-   "file": "look/look__contr_plus.cube",
+   "file": "look/look__contr__plus.cube",
    "sha256": "5b01971c7abc1d2a8a34649493546c5c72c2a064ce57fb21a7a07f2b5489c06d",
    "bytes": 7100011,
    "size": 65,
@@ -330,12 +330,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:21+0300"
+   "imported": "2026-09-22T21:37:03+0300"
   },
   {
-   "id": "look__contr_minus",
+   "id": "look__contr__minus",
    "stage": "look",
-   "file": "look/look__contr_minus.cube",
+   "file": "look/look__contr__minus.cube",
    "sha256": "0cb5b65d369cf7b53850d9af3ac8c5ba9d9a49957985e9ddeac7e707c1d19e98",
    "bytes": 7333201,
    "size": 65,
@@ -394,7 +394,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:22+0300"
+   "imported": "2026-09-22T21:37:03+0300"
   },
   {
    "id": "look__film_1",
@@ -458,7 +458,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:22+0300"
+   "imported": "2026-09-22T21:37:04+0300"
   },
   {
    "id": "look__gold",
@@ -522,7 +522,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:22+0300"
+   "imported": "2026-09-22T21:37:04+0300"
   },
   {
    "id": "look__gtavi",
@@ -586,7 +586,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:22+0300"
+   "imported": "2026-09-22T21:37:04+0300"
   },
   {
    "id": "look__green_bowl",
@@ -650,7 +650,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:22+0300"
+   "imported": "2026-09-22T21:37:04+0300"
   },
   {
    "id": "look__idol",
@@ -714,7 +714,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:23+0300"
+   "imported": "2026-09-22T21:37:05+0300"
   },
   {
    "id": "look__limitless",
@@ -778,7 +778,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:23+0300"
+   "imported": "2026-09-22T21:37:05+0300"
   },
   {
    "id": "look__london",
@@ -842,7 +842,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:23+0300"
+   "imported": "2026-09-22T21:37:05+0300"
   },
   {
    "id": "look__malibu",
@@ -906,7 +906,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:23+0300"
+   "imported": "2026-09-22T21:37:05+0300"
   },
   {
    "id": "look__milka",
@@ -970,7 +970,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:23+0300"
+   "imported": "2026-09-22T21:37:06+0300"
   },
   {
    "id": "look__newstar",
@@ -1034,7 +1034,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:24+0300"
+   "imported": "2026-09-22T21:37:06+0300"
   },
   {
    "id": "look__porsche_xblue_contrast",
@@ -1098,7 +1098,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:24+0300"
+   "imported": "2026-09-22T21:37:06+0300"
   },
   {
    "id": "look__porsche_xblue",
@@ -1162,7 +1162,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:24+0300"
+   "imported": "2026-09-22T21:37:06+0300"
   },
   {
    "id": "look__ritter_sport",
@@ -1226,7 +1226,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:24+0300"
+   "imported": "2026-09-22T21:37:07+0300"
   },
   {
    "id": "look__silver_look_contrast",
@@ -1290,7 +1290,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:24+0300"
+   "imported": "2026-09-22T21:37:07+0300"
   },
   {
    "id": "look__silver_look",
@@ -1354,7 +1354,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:24+0300"
+   "imported": "2026-09-22T21:37:07+0300"
   },
   {
    "id": "look__souffle",
@@ -1418,7 +1418,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:25+0300"
+   "imported": "2026-09-22T21:37:07+0300"
   },
   {
    "id": "look__street_contrast",
@@ -1482,7 +1482,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:25+0300"
+   "imported": "2026-09-22T21:37:07+0300"
   },
   {
    "id": "look__street",
@@ -1546,7 +1546,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:25+0300"
+   "imported": "2026-09-22T21:37:08+0300"
   },
   {
    "id": "look__travel",
@@ -1610,7 +1610,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:25+0300"
+   "imported": "2026-09-22T21:37:08+0300"
   },
   {
    "id": "look__idealniy_2",
@@ -1679,7 +1679,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:26+0300"
+   "imported": "2026-09-22T21:37:08+0300"
   },
   {
    "id": "look__idealniy",
@@ -1743,7 +1743,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:26+0300"
+   "imported": "2026-09-22T21:37:09+0300"
   },
   {
    "id": "dji_action__unknown_unknown__rec709__blue__legacy",
@@ -1815,7 +1815,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:26+0300"
+   "imported": "2026-09-22T21:37:09+0300"
   },
   {
    "id": "dji_action__unknown_unknown__rec709__blue",
@@ -1888,12 +1888,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:26+0300"
+   "imported": "2026-09-22T21:37:09+0300"
   },
   {
-   "id": "dji__dminuslogm__rec709__basic",
+   "id": "dji__dlogm__rec709__basic",
    "stage": "develop",
-   "file": "develop/dji__dminuslogm__rec709__basic.cube",
+   "file": "develop/dji__dlogm__rec709__basic.cube",
    "sha256": "f6b5c358de6736badbd88656b7677b072caa9ebc797ac4c333125c7683e2bc0a",
    "bytes": 1042316,
    "size": 33,
@@ -1969,7 +1969,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:26+0300"
+   "imported": "2026-09-22T21:37:09+0300"
   },
   {
    "id": "pre__any__wdr",
@@ -2045,7 +2045,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:26+0300"
+   "imported": "2026-09-22T21:37:09+0300"
   },
   {
    "id": "dji_action__unknown_unknown__rec709__everyday__legacy",
@@ -2117,7 +2117,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:26+0300"
+   "imported": "2026-09-22T21:37:09+0300"
   },
   {
    "id": "dji_action__unknown_unknown__rec709__everyday",
@@ -2190,12 +2190,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:27+0300"
+   "imported": "2026-09-22T21:37:10+0300"
   },
   {
-   "id": "dji_pocket4__dminuslog__rec709__blue",
+   "id": "dji_pocket4__dlog__rec709__blue",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dminuslog__rec709__blue.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__blue.cube",
    "sha256": "ec9730faabc370e87ebb8e39221395215ed189896c4c59a23550b3efa367639b",
    "bytes": 6704857,
    "size": 65,
@@ -2263,12 +2263,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:27+0300"
+   "imported": "2026-09-22T21:37:10+0300"
   },
   {
-   "id": "dji_pocket4__dminuslog__rec709__ocean",
+   "id": "dji_pocket4__dlog__rec709__ocean",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dminuslog__rec709__ocean.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__ocean.cube",
    "sha256": "010b28478f0d3dc35792fb3f2bb74c1746e367a1853b9538b0c0489a29f3ef2c",
    "bytes": 7206870,
    "size": 65,
@@ -2337,12 +2337,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:27+0300"
+   "imported": "2026-09-22T21:37:10+0300"
   },
   {
-   "id": "dji_pocket4__dminuslog__rec709__blue__plus",
+   "id": "dji_pocket4__dlog__rec709__blue__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dminuslog__rec709__blue__plus.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__blue__plus.cube",
    "sha256": "6fe82cbc4a60876bcbf3056a725de07d5ef70b6550037c345678dfad67a13e78",
    "bytes": 6196600,
    "size": 65,
@@ -2410,12 +2410,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:27+0300"
+   "imported": "2026-09-22T21:37:10+0300"
   },
   {
-   "id": "dji_pocket4__dminuslog__rec709__plus",
+   "id": "dji_pocket4__dlog__rec709__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dminuslog__rec709__plus.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__plus.cube",
    "sha256": "bb3c9b282c21e2974e67d73c9b62ef6c3bc9092d63b713c44ecc4e0de3eccfad",
    "bytes": 1401638,
    "size": 33,
@@ -2486,12 +2486,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:27+0300"
+   "imported": "2026-09-22T21:37:10+0300"
   },
   {
-   "id": "dji_pocket4__dminuslog__rec709",
+   "id": "dji_pocket4__dlog__rec709",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dminuslog__rec709.cube",
+   "file": "develop/dji_pocket4__dlog__rec709.cube",
    "sha256": "ca8bc7d3bf382512ed9501137c8b88d1829ae9b22a84965d7d2e1339f615de72",
    "bytes": 1401638,
    "size": 33,
@@ -2562,12 +2562,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:27+0300"
+   "imported": "2026-09-22T21:37:10+0300"
   },
   {
-   "id": "dji_pocket4__dminuslog__rec709__everyday__plus",
+   "id": "dji_pocket4__dlog__rec709__everyday__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dminuslog__rec709__everyday__plus.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__everyday__plus.cube",
    "sha256": "bece423091a673ef1b381300ecd3b5a37efa3c46245525a932604b6c0762fc6a",
    "bytes": 6175917,
    "size": 65,
@@ -2635,12 +2635,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:27+0300"
+   "imported": "2026-09-22T21:37:11+0300"
   },
   {
-   "id": "dji_pocket4__dminuslog__rec709__everyday",
+   "id": "dji_pocket4__dlog__rec709__everyday",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dminuslog__rec709__everyday.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__everyday.cube",
    "sha256": "f273eac6e45c6fd182a439a81be15e2ebb61bff5b8d3df413bec8e1b697cd6e1",
    "bytes": 7065237,
    "size": 65,
@@ -2708,12 +2708,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:28+0300"
+   "imported": "2026-09-22T21:37:11+0300"
   },
   {
-   "id": "dji_pocket4p__dminuslog__rec709__minus",
+   "id": "dji_pocket4p__dlog__rec709__minus",
    "stage": "develop",
-   "file": "develop/dji_pocket4p__dminuslog__rec709__minus.cube",
+   "file": "develop/dji_pocket4p__dlog__rec709__minus.cube",
    "sha256": "04757dd8dd669d60a2d58ea1834f185616ca9952922c168fe69dba29bb2be1b1",
    "bytes": 1401638,
    "size": 33,
@@ -2784,12 +2784,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:28+0300"
+   "imported": "2026-09-22T21:37:11+0300"
   },
   {
-   "id": "dji_pocket4p__dminuslog2__rec709__plus",
+   "id": "dji_pocket4p__dlog2__rec709__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4p__dminuslog2__rec709__plus.cube",
+   "file": "develop/dji_pocket4p__dlog2__rec709__plus.cube",
    "sha256": "32b9b49d52fde38f95cbc1d0a4f486fcbf176eb82d28481b25d4f9a0b006734e",
    "bytes": 10710470,
    "size": 65,
@@ -2860,12 +2860,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:28+0300"
+   "imported": "2026-09-22T21:37:11+0300"
   },
   {
-   "id": "dji_pocket4p__dminuslog__rec709__plus",
+   "id": "dji_pocket4p__dlog__rec709__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4p__dminuslog__rec709__plus.cube",
+   "file": "develop/dji_pocket4p__dlog__rec709__plus.cube",
    "sha256": "95afff501afd0343c3c1a5f1cf7bc34c8d5ed5765474444b58e9db8a8b7e58fb",
    "bytes": 1401638,
    "size": 33,
@@ -2936,12 +2936,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:28+0300"
+   "imported": "2026-09-22T21:37:11+0300"
   },
   {
-   "id": "dji_pocket4p__dminuslog2__rec709__minus",
+   "id": "dji_pocket4p__dlog2__rec709__minus",
    "stage": "develop",
-   "file": "develop/dji_pocket4p__dminuslog2__rec709__minus.cube",
+   "file": "develop/dji_pocket4p__dlog2__rec709__minus.cube",
    "sha256": "fa6537da3235c281da6e361806d3e9ee93f5532ad95471878c5d6c05157caa9c",
    "bytes": 6566125,
    "size": 65,
@@ -3012,12 +3012,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:28+0300"
+   "imported": "2026-09-22T21:37:11+0300"
   },
   {
-   "id": "insta360_luna__iminuslog__rec709",
+   "id": "insta360_luna__ilog__rec709",
    "stage": "develop",
-   "file": "develop/insta360_luna__iminuslog__rec709.cube",
+   "file": "develop/insta360_luna__ilog__rec709.cube",
    "sha256": "06db0a02784fed3a5db4ef7fb3ee617c63c3b45b699653108927fa3917578d80",
    "bytes": 10710503,
    "size": 65,
@@ -3086,7 +3086,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:29+0300"
+   "imported": "2026-09-22T21:37:12+0300"
   },
   {
    "id": "dji_pocket3__unknown_unknown__rec709__blue",
@@ -3156,7 +3156,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:29+0300"
+   "imported": "2026-09-22T21:37:12+0300"
   },
   {
    "id": "dji_pocket3__unknown_unknown__rec709__everyday",
@@ -3226,7 +3226,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:29+0300"
+   "imported": "2026-09-22T21:37:12+0300"
   },
   {
    "id": "dji_pocket3__unknown_unknown__rec709__ocean",
@@ -3296,12 +3296,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:29+0300"
+   "imported": "2026-09-22T21:37:12+0300"
   },
   {
-   "id": "fujifilm__fminuslog2_fminusgamut__rec709__clear",
+   "id": "fujifilm__flog2_fgamut__rec709__clear",
    "stage": "develop",
-   "file": "develop/fujifilm__fminuslog2_fminusgamut__rec709__clear.cube",
+   "file": "develop/fujifilm__flog2_fgamut__rec709__clear.cube",
    "sha256": "e3454871b009e7573ec283b6f5990f2079ef20826c91015a239d72156fe92d73",
    "bytes": 4602161,
    "size": 65,
@@ -3364,12 +3364,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "fujifilm__fminuslog2_fminusgamut__rec709__idol",
+   "id": "fujifilm__flog2_fgamut__rec709__idol",
    "stage": "develop",
-   "file": "develop/fujifilm__fminuslog2_fminusgamut__rec709__idol.cube",
+   "file": "develop/fujifilm__flog2_fgamut__rec709__idol.cube",
    "sha256": "4929995ee52ada2484e7505862c7225454eb568087130055ed83d12dc6446741",
    "bytes": 6832922,
    "size": 65,
@@ -3432,12 +3432,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__bleach",
+   "id": "canon__clog2_canoncinemagamut__rec709__bleach",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__bleach.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__bleach.cube",
    "sha256": "3d76e6b3184adc98bda4e6a864da4667c3b0f464913d50049212816514adda5a",
    "bytes": 1024216,
    "size": 33,
@@ -3500,12 +3500,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__bleach__legacy",
+   "id": "canon__clog2_canoncinemagamut__rec709__bleach__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__bleach__legacy.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__bleach__legacy.cube",
    "sha256": "eaf919ce3bb7410daa48cc7e3eef772113eeb07840808cd2a791b628afa77889",
    "bytes": 1025784,
    "size": 33,
@@ -3568,12 +3568,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__visionteal__legacy",
+   "id": "canon__clog2_canoncinemagamut__rec709__visionteal__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__visionteal__legacy.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__visionteal__legacy.cube",
    "sha256": "08d02fcd98ed5d89d34e8b45648c244e4e6ccd66e2310bc475b949730b496678",
    "bytes": 1011747,
    "size": 33,
@@ -3636,12 +3636,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__vision__legacy",
+   "id": "canon__clog2_canoncinemagamut__rec709__vision__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__vision__legacy.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__vision__legacy.cube",
    "sha256": "6bb0bcc49de538dd311c1fd831f2f0fe6ce9f8c95439dbb379f5e4d8555ef705",
    "bytes": 1009434,
    "size": 33,
@@ -3704,12 +3704,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__visionteal",
+   "id": "canon__clog2_canoncinemagamut__rec709__visionteal",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__visionteal.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__visionteal.cube",
    "sha256": "fd35ae1d7ac7fbf145c8d17c740dd20276597cd2612998789145206adbcb1fda",
    "bytes": 1010871,
    "size": 33,
@@ -3772,12 +3772,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__eastman",
+   "id": "canon__clog2_canoncinemagamut__rec709__eastman",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__eastman.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__eastman.cube",
    "sha256": "438ec9b33e5e8088b98f5408bb8b0d65dceafae8409d252f944ba24dab22d730",
    "bytes": 1012241,
    "size": 33,
@@ -3840,12 +3840,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__eastmanrm__legacy",
+   "id": "canon__clog2_canoncinemagamut__rec709__eastmanrm__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__eastmanrm__legacy.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__eastmanrm__legacy.cube",
    "sha256": "e02dcf7484eb3e5a560181b2bd564b25f08f044eb9728fcefcb2e27f138da26d",
    "bytes": 1012516,
    "size": 33,
@@ -3908,12 +3908,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__eastman__legacy",
+   "id": "canon__clog2_canoncinemagamut__rec709__eastman__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__eastman__legacy.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__eastman__legacy.cube",
    "sha256": "8d3346874f21115f3d905e1e3196b3a7b552fbca3582bb8df1e259b618bb2609",
    "bytes": 1012614,
    "size": 33,
@@ -3976,12 +3976,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__vision",
+   "id": "canon__clog2_canoncinemagamut__rec709__vision",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__vision.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__vision.cube",
    "sha256": "8102620eec42663d5909e0d00f5a597758502a72e3702b2c2b841f603dccde83",
    "bytes": 1011149,
    "size": 33,
@@ -4044,12 +4044,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__eterna",
+   "id": "canon__clog2_canoncinemagamut__rec709__eterna",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__eterna.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__eterna.cube",
    "sha256": "d9f92dc57e980d17b36c99a5cbd74f603f1f89453b9fafff9183ba5261b2c9ca",
    "bytes": 1007285,
    "size": 33,
@@ -4112,12 +4112,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__eterna__legacy",
+   "id": "canon__clog2_canoncinemagamut__rec709__eterna__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__eterna__legacy.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__eterna__legacy.cube",
    "sha256": "f9bfde772bea5c93372452aad700d3708edaafdddd8d95f345c9e7a4c26482c1",
    "bytes": 1006481,
    "size": 33,
@@ -4180,12 +4180,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog2_canoncinemagamut__rec709__eastmanrm",
+   "id": "canon__clog2_canoncinemagamut__rec709__eastmanrm",
    "stage": "develop",
-   "file": "develop/canon__cminuslog2_canoncinemagamut__rec709__eastmanrm.cube",
+   "file": "develop/canon__clog2_canoncinemagamut__rec709__eastmanrm.cube",
    "sha256": "8b887c99e4c4bd4a2c78b3adbd48fc1cbb4c0fbcf89aecb310505d3940658bb7",
    "bytes": 1010992,
    "size": 33,
@@ -4248,12 +4248,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__bleach__legacy",
+   "id": "canon__clog3_canoncinemagamut__rec709__bleach__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__bleach__legacy.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__bleach__legacy.cube",
    "sha256": "605611daf599e3f9b6c17cd022088d496c72776ea1d6b93621d543b07f73c3a2",
    "bytes": 1017524,
    "size": 33,
@@ -4316,12 +4316,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__bleach",
+   "id": "canon__clog3_canoncinemagamut__rec709__bleach",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__bleach.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__bleach.cube",
    "sha256": "7b2915f7d8092958c5b48f82066ce01876a6479a5f50232d7b652dc82c50a2fb",
    "bytes": 1017177,
    "size": 33,
@@ -4384,12 +4384,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__visionteal",
+   "id": "canon__clog3_canoncinemagamut__rec709__visionteal",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__visionteal.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__visionteal.cube",
    "sha256": "c997a9bae14f55f1e4f4c79e89e0823486c4cb93d1b2af182418291c5d91de6b",
    "bytes": 1007462,
    "size": 33,
@@ -4452,12 +4452,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__vision__legacy",
+   "id": "canon__clog3_canoncinemagamut__rec709__vision__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__vision__legacy.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__vision__legacy.cube",
    "sha256": "eb3ae09811ebb166d5dafb705c2a6759315ee4933955794c91bb914f6688bbf8",
    "bytes": 1005026,
    "size": 33,
@@ -4520,12 +4520,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__visionteal__legacy",
+   "id": "canon__clog3_canoncinemagamut__rec709__visionteal__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__visionteal__legacy.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__visionteal__legacy.cube",
    "sha256": "a567536a8e74008d6dd2baca2c8f1462f3eb55fc9e631f7fe97ce8bbdf87b8c0",
    "bytes": 1008374,
    "size": 33,
@@ -4588,12 +4588,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__eastman__legacy",
+   "id": "canon__clog3_canoncinemagamut__rec709__eastman__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__eastman__legacy.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__eastman__legacy.cube",
    "sha256": "f9b260f2190d184132c57c17e9e741729e9ab4ee1ce13731f4e935fb73ba9b2a",
    "bytes": 1006886,
    "size": 33,
@@ -4656,12 +4656,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__eastmanrm__legacy",
+   "id": "canon__clog3_canoncinemagamut__rec709__eastmanrm__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__eastmanrm__legacy.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__eastmanrm__legacy.cube",
    "sha256": "6f7cc893555bc7672978a8474da4bdd52d8c7bb55c830f235a9def47486aee03",
    "bytes": 1007691,
    "size": 33,
@@ -4724,12 +4724,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__eastman",
+   "id": "canon__clog3_canoncinemagamut__rec709__eastman",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__eastman.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__eastman.cube",
    "sha256": "0daf73cc72f82ee83a8eed2e34c30c96251be468dab0b5641b2a510193f82cd7",
    "bytes": 1006038,
    "size": 33,
@@ -4792,12 +4792,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__eastmanrm",
+   "id": "canon__clog3_canoncinemagamut__rec709__eastmanrm",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__eastmanrm.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__eastmanrm.cube",
    "sha256": "47ee1336fa35fe508916fbe725921b9ace9131922b6ac0f84e30c3b2fb994ffe",
    "bytes": 1006269,
    "size": 33,
@@ -4860,12 +4860,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__eterna__legacy",
+   "id": "canon__clog3_canoncinemagamut__rec709__eterna__legacy",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__eterna__legacy.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__eterna__legacy.cube",
    "sha256": "ab74c1489c424f97776773dc7f111ec56e7ca8f0926171c1be7e163e5a7d92ee",
    "bytes": 1003843,
    "size": 33,
@@ -4928,12 +4928,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__eterna",
+   "id": "canon__clog3_canoncinemagamut__rec709__eterna",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__eterna.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__eterna.cube",
    "sha256": "51725262772d5f6af4ff015e32fce6793a77909c8f65fea48dfa142b8c170f08",
    "bytes": 1004220,
    "size": 33,
@@ -4996,12 +4996,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "canon__cminuslog3_canoncinemagamut__rec709__vision",
+   "id": "canon__clog3_canoncinemagamut__rec709__vision",
    "stage": "develop",
-   "file": "develop/canon__cminuslog3_canoncinemagamut__rec709__vision.cube",
+   "file": "develop/canon__clog3_canoncinemagamut__rec709__vision.cube",
    "sha256": "904c3fd68db2330898b575139321c318c85e814a4a075fa304f5f4d6e7d9afbd",
    "bytes": 1008990,
    "size": 33,
@@ -5064,12 +5064,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__bleach",
+   "id": "panasonic__vlog_vgamut__rec709__bleach",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__bleach.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__bleach.cube",
    "sha256": "4d24b184668d03f884fffc0b89bb20021fe37a72a68850303859b50618d131aa",
    "bytes": 1015082,
    "size": 33,
@@ -5132,12 +5132,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:13+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eastman__legacy",
+   "id": "panasonic__vlog_vgamut__rec709__eastman__legacy",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eastman__legacy.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eastman__legacy.cube",
    "sha256": "76287fce21b2860919d47002d4d530f3ebea8539a543577866431c1051e63d5e",
    "bytes": 1012715,
    "size": 33,
@@ -5200,12 +5200,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__vision",
+   "id": "panasonic__vlog_vgamut__rec709__vision",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__vision.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__vision.cube",
    "sha256": "4ea6d2560dab06a07e9242b0fa5d455c13599e2e15a638840b4237404ba1d388",
    "bytes": 1009371,
    "size": 33,
@@ -5268,12 +5268,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:30+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__visionteal",
+   "id": "panasonic__vlog_vgamut__rec709__visionteal",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__visionteal.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__visionteal.cube",
    "sha256": "5de186762f79babbe29df2eef462f9338206ab23b90a7e3953e98fb73583eab6",
    "bytes": 1010188,
    "size": 33,
@@ -5336,12 +5336,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__visionteal__legacy",
+   "id": "panasonic__vlog_vgamut__rec709__visionteal__legacy",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__visionteal__legacy.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__visionteal__legacy.cube",
    "sha256": "71c38690067661c0df8c98418b808dd2c64ddf58474803413594a3c6612e0516",
    "bytes": 1012869,
    "size": 33,
@@ -5404,12 +5404,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__vision__legacy",
+   "id": "panasonic__vlog_vgamut__rec709__vision__legacy",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__vision__legacy.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__vision__legacy.cube",
    "sha256": "51eb53a59b6bfd2845dc73d545da44d487edda53637977cfbaf7999ce03c6dcf",
    "bytes": 1011097,
    "size": 33,
@@ -5472,12 +5472,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__bleach__legacy",
+   "id": "panasonic__vlog_vgamut__rec709__bleach__legacy",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__bleach__legacy.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__bleach__legacy.cube",
    "sha256": "932f63772099ab1ff25a076a7ac3682c33edeab760a5f317a6eb00dd985684cf",
    "bytes": 1017243,
    "size": 33,
@@ -5540,12 +5540,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eastmanrm__legacy",
+   "id": "panasonic__vlog_vgamut__rec709__eastmanrm__legacy",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eastmanrm__legacy.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eastmanrm__legacy.cube",
    "sha256": "e71664fa8419f9778d36fc44081dce7dcd0b09697428787f8f5e548a1482302d",
    "bytes": 1014456,
    "size": 33,
@@ -5608,12 +5608,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eterna__legacy",
+   "id": "panasonic__vlog_vgamut__rec709__eterna__legacy",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eterna__legacy.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eterna__legacy.cube",
    "sha256": "94e7bfc60a1897f925a0fcdc57591cc8f3b06017631328e933177780eb2c94b9",
    "bytes": 1008656,
    "size": 33,
@@ -5676,12 +5676,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eastmanrm",
+   "id": "panasonic__vlog_vgamut__rec709__eastmanrm",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eastmanrm.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eastmanrm.cube",
    "sha256": "57e09ee3406836fce4b50809970e24d24236c2636fa7a2dd476e268c581d3def",
    "bytes": 1012357,
    "size": 33,
@@ -5744,12 +5744,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eterna",
+   "id": "panasonic__vlog_vgamut__rec709__eterna",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eterna.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eterna.cube",
    "sha256": "a612ccd8be87de9fa7dd9e9caf44eaa58cdd22c54bb74f928b1c37b90d0f8138",
    "bytes": 1008255,
    "size": 33,
@@ -5812,12 +5812,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eastman",
+   "id": "panasonic__vlog_vgamut__rec709__eastman",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eastman.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eastman.cube",
    "sha256": "89c03256650733e4d80743ac11a41adff444c8f9c13a6a38ec52ef1052ef04e6",
    "bytes": 1010703,
    "size": 33,
@@ -5880,12 +5880,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eastmanrm__legacy__wbo",
+   "id": "panasonic__vlog_vgamut__rec709__eastmanrm__legacy__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eastmanrm__legacy__wbo.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eastmanrm__legacy__wboffset.cube",
    "sha256": "d98e86b0b2615fd0a7cd9b525b9555fd8a4096071e5558e7a17e780196f808c4",
    "bytes": 1014833,
    "size": 33,
@@ -5948,12 +5948,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eastmanrm__wboffset",
+   "id": "panasonic__vlog_vgamut__rec709__eastmanrm__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eastmanrm__wboffset.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eastmanrm__wboffset.cube",
    "sha256": "fb695d7acbdb7d156f88c663ae194bd34dcf2383d6c3e8c1c0639e85eb794000",
    "bytes": 1012665,
    "size": 33,
@@ -6016,12 +6016,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eterna__wboffset",
+   "id": "panasonic__vlog_vgamut__rec709__eterna__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eterna__wboffset.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eterna__wboffset.cube",
    "sha256": "62334a12eecaa484732c01e80063f54807884013495325092a99630377aa713b",
    "bytes": 1008217,
    "size": 33,
@@ -6084,12 +6084,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__vision__wboffset",
+   "id": "panasonic__vlog_vgamut__rec709__vision__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__vision__wboffset.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__vision__wboffset.cube",
    "sha256": "2bc7bf9b41520fe03d63d1bf11d7ad39a3574c5780ecae2c957d04181492424a",
    "bytes": 1009107,
    "size": 33,
@@ -6152,12 +6152,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eastman__legacy__wboff",
+   "id": "panasonic__vlog_vgamut__rec709__eastman__legacy__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eastman__legacy__wboff.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eastman__legacy__wboffset.cube",
    "sha256": "da94a530e6eebb5ff2c977647e613b111be66bb851c1bfd82bdaf03eb744be50",
    "bytes": 1012825,
    "size": 33,
@@ -6220,12 +6220,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eterna__legacy__wboffs",
+   "id": "panasonic__vlog_vgamut__rec709__eterna__legacy__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eterna__legacy__wboffs.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eterna__legacy__wboffset.cube",
    "sha256": "6e0dd5e764f782c22bb8dfb2646b01f6fa147b95c04eff3093faa92f0e807e08",
    "bytes": 1008810,
    "size": 33,
@@ -6288,12 +6288,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__eastman__wboffset",
+   "id": "panasonic__vlog_vgamut__rec709__eastman__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__eastman__wboffset.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__eastman__wboffset.cube",
    "sha256": "3dac15abaa0a3bf6a574a504ef2bb10dffbdfbdd5abd1b34bccd919cda65d171",
    "bytes": 1011136,
    "size": 33,
@@ -6356,12 +6356,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__visionteal__wboffset",
+   "id": "panasonic__vlog_vgamut__rec709__visionteal__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__visionteal__wboffset.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__visionteal__wboffset.cube",
    "sha256": "2e56990dd37eefa87a98b7056a10e50d4e2bb8fa601e0fbc4d91f11842ce556e",
    "bytes": 1010292,
    "size": 33,
@@ -6424,12 +6424,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__bleach__legacy__wboffs",
+   "id": "panasonic__vlog_vgamut__rec709__bleach__legacy__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__bleach__legacy__wboffs.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__bleach__legacy__wboffset.cube",
    "sha256": "39c71d77964264a5910ec09fcddbc89f127745497ac7c9b03d1a3818f961c2ca",
    "bytes": 1017220,
    "size": 33,
@@ -6492,12 +6492,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__visionteal__legacy__wb",
+   "id": "panasonic__vlog_vgamut__rec709__visionteal__legacy__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__visionteal__legacy__wb.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__visionteal__legacy__wboffset.cube",
    "sha256": "f451c6f4f3ea9bf9ada38dbbc5771aad27983a3afa735ceca1dfd8e9b927f581",
    "bytes": 1012609,
    "size": 33,
@@ -6560,12 +6560,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__vision__legacy__wboffs",
+   "id": "panasonic__vlog_vgamut__rec709__vision__legacy__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__vision__legacy__wboffs.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__vision__legacy__wboffset.cube",
    "sha256": "158bccd2ed0525745ab2d28eff35b4dba926894ad7fd29c906a6c1c42761e03c",
    "bytes": 1011348,
    "size": 33,
@@ -6628,12 +6628,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
-   "id": "panasonic__vminuslog_vminusgamut__rec709__bleach__wboffset",
+   "id": "panasonic__vlog_vgamut__rec709__bleach__wboffset",
    "stage": "develop",
-   "file": "develop/panasonic__vminuslog_vminusgamut__rec709__bleach__wboffset.cube",
+   "file": "develop/panasonic__vlog_vgamut__rec709__bleach__wboffset.cube",
    "sha256": "7d03c9e930d0336a483be0e92d47891480be454d6ce9671de7e4dd6f40813822",
    "bytes": 1014942,
    "size": 33,
@@ -6696,7 +6696,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__bleach__legacy",
@@ -6767,7 +6767,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:31+0300"
+   "imported": "2026-09-22T21:37:14+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eastmanrm",
@@ -6838,7 +6838,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:32+0300"
+   "imported": "2026-09-22T21:37:15+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eastmanrm__legacy",
@@ -6909,7 +6909,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:32+0300"
+   "imported": "2026-09-22T21:37:15+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eterna__legacy",
@@ -6980,7 +6980,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:32+0300"
+   "imported": "2026-09-22T21:37:15+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__bleach",
@@ -7051,7 +7051,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:32+0300"
+   "imported": "2026-09-22T21:37:15+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eterna",
@@ -7122,7 +7122,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:32+0300"
+   "imported": "2026-09-22T21:37:16+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__visionteal__legacy",
@@ -7193,7 +7193,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:33+0300"
+   "imported": "2026-09-22T21:37:16+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__visionteal",
@@ -7264,7 +7264,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:33+0300"
+   "imported": "2026-09-22T21:37:16+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eastman",
@@ -7335,7 +7335,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:33+0300"
+   "imported": "2026-09-22T21:37:16+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__vision__legacy",
@@ -7406,7 +7406,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:33+0300"
+   "imported": "2026-09-22T21:37:17+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eastman__legacy",
@@ -7477,7 +7477,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:33+0300"
+   "imported": "2026-09-22T21:37:17+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__vision",
@@ -7548,7 +7548,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:34+0300"
+   "imported": "2026-09-22T21:37:17+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__tungsten",
@@ -7619,7 +7619,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:34+0300"
+   "imported": "2026-09-22T21:37:17+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__neutral",
@@ -7690,7 +7690,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:34+0300"
+   "imported": "2026-09-22T21:37:17+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__utopia__legacy",
@@ -7761,7 +7761,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:34+0300"
+   "imported": "2026-09-22T21:37:18+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__tungsten__legacy",
@@ -7832,7 +7832,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:35+0300"
+   "imported": "2026-09-22T21:37:18+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__utopia",
@@ -7903,7 +7903,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:35+0300"
+   "imported": "2026-09-22T21:37:18+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__neutral__legacy",
@@ -7974,7 +7974,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:35+0300"
+   "imported": "2026-09-22T21:37:18+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__jamaica",
@@ -8045,7 +8045,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:36+0300"
+   "imported": "2026-09-22T21:37:19+0300"
   },
   {
    "id": "pre__applelog__wdr",
@@ -8112,7 +8112,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:36+0300"
+   "imported": "2026-09-22T21:37:19+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__iceblue",
@@ -8183,7 +8183,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:36+0300"
+   "imported": "2026-09-22T21:37:19+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__iceblue__legacy",
@@ -8254,7 +8254,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:36+0300"
+   "imported": "2026-09-22T21:37:19+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__jamaica__legacy",
@@ -8325,12 +8325,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:19+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__utopia",
+   "id": "sony__slog2_sgamut3cine__rec709__utopia",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__utopia.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__utopia.cube",
    "sha256": "793d10568fbacfabbc974edfe4353517e1ebc63327c793a584baaeb4e347c0f3",
    "bytes": 969760,
    "size": 33,
@@ -8396,12 +8396,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:19+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__tungsten",
+   "id": "sony__slog2_sgamut3cine__rec709__tungsten",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__tungsten.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__tungsten.cube",
    "sha256": "da4a59fffaa6b2d1aa7678e96cab135403b314688ad1417a2e78a4a82cb4559a",
    "bytes": 981880,
    "size": 33,
@@ -8467,12 +8467,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:19+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__iceblue",
+   "id": "sony__slog2_sgamut3cine__rec709__iceblue",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__iceblue.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__iceblue.cube",
    "sha256": "bfa40a0e9007bd20d9635edc00a67c2309ac9d16bd769d4860ae22ad76990f71",
    "bytes": 1004487,
    "size": 33,
@@ -8538,12 +8538,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__utopia__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__utopia__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__utopia__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__utopia__legacy.cube",
    "sha256": "4f441512df5f22d660ebc99dd02577b8b9757026931e1e15f2a4b7853b8b852f",
    "bytes": 971021,
    "size": 33,
@@ -8609,12 +8609,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__tungsten__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__tungsten__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__tungsten__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__tungsten__legacy.cube",
    "sha256": "4b5e90bb560211b30e8fd10631991214e9f388a9b9345e890e4ebb7a6618779f",
    "bytes": 984309,
    "size": 33,
@@ -8680,12 +8680,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__jamaica",
+   "id": "sony__slog2_sgamut3cine__rec709__jamaica",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__jamaica.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__jamaica.cube",
    "sha256": "a43dc6647603650dc70216ec66351345b7abac102f783ff2c442bc6597dcd394",
    "bytes": 980871,
    "size": 33,
@@ -8751,12 +8751,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__jamaica__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__jamaica__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__jamaica__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__jamaica__legacy.cube",
    "sha256": "dfd052c94d1b93bacb1961c69a3de190a0ee28d7e118cbbd4591c3c9f33568d4",
    "bytes": 983066,
    "size": 33,
@@ -8822,12 +8822,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__iceblue__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__iceblue__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__iceblue__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__iceblue__legacy.cube",
    "sha256": "e5f518901e2a08418ebb65648ade4f4dc5cc3df7a43ecddec3e4fba5ec69fd36",
    "bytes": 1005122,
    "size": 33,
@@ -8893,12 +8893,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__neutral",
+   "id": "sony__slog2_sgamut3cine__rec709__neutral",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__neutral.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__neutral.cube",
    "sha256": "60a0f9517a8ba8f1233c5bfbe296def61650fb7a97339a145e9a3961289d1c04",
    "bytes": 968188,
    "size": 33,
@@ -8964,12 +8964,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__neutral__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__neutral__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__neutral__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__neutral__legacy.cube",
    "sha256": "996a8429e1e41c16ce33049a601f10d69ecac8a464159ebd91f537012b92ebfc",
    "bytes": 992170,
    "size": 33,
@@ -9035,12 +9035,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__utopia",
+   "id": "sony__slog3_sgamut3cine__rec709__utopia",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__utopia.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__utopia.cube",
    "sha256": "442219e7a541bd392cef725039dc89d3469e025a11470b6052971605637d4b40",
    "bytes": 963460,
    "size": 33,
@@ -9106,12 +9106,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "unknown__sminuslog3_sminusgamut3cine__rec709__carla",
+   "id": "unknown__slog3_sgamut3cine__rec709__carla",
    "stage": "develop",
-   "file": "develop/unknown__sminuslog3_sminusgamut3cine__rec709__carla.cube",
+   "file": "develop/unknown__slog3_sgamut3cine__rec709__carla.cube",
    "sha256": "fd30a0578664a4d83ee628b4382d2fcd05b734bab6122dc312651e5984839f21",
    "bytes": 916605,
    "size": 33,
@@ -9177,12 +9177,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__iceblue",
+   "id": "sony__slog3_sgamut3cine__rec709__iceblue",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__iceblue.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__iceblue.cube",
    "sha256": "ab8ceb7ea4d8a6778dcda8a43bcf88dbe124def9cd9ad97f39f0f685bbf22dc3",
    "bytes": 1007496,
    "size": 33,
@@ -9248,12 +9248,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__jamaica",
+   "id": "sony__slog3_sgamut3cine__rec709__jamaica",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__jamaica.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__jamaica.cube",
    "sha256": "ce6fcfff9cdd3b31d9f62f5c6c75f0f977879dcb95bded511174306e2fd2f9c2",
    "bytes": 988301,
    "size": 33,
@@ -9319,12 +9319,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__neutral",
+   "id": "sony__slog3_sgamut3cine__rec709__neutral",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__neutral.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__neutral.cube",
    "sha256": "0b29637c3e778a78f70815b841dbf6e53ef932705dff88f4c7b028149afa9e49",
    "bytes": 970085,
    "size": 33,
@@ -9390,12 +9390,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__iceblue__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__iceblue__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__iceblue__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__iceblue__legacy.cube",
    "sha256": "c0f2b821b8643da6c18077c14b09a994b1364dd38a229adb7295076119476a82",
    "bytes": 1007959,
    "size": 33,
@@ -9461,12 +9461,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__jamaica__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__jamaica__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__jamaica__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__jamaica__legacy.cube",
    "sha256": "9685421e713c731327e0896694a18722d01c906793dd92a58b8f192485521c1f",
    "bytes": 992525,
    "size": 33,
@@ -9532,12 +9532,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__utopia__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__utopia__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__utopia__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__utopia__legacy.cube",
    "sha256": "dcddce9584a05cd606366eccb1b7a8514647541c5213d10a979345f60305453a",
    "bytes": 966711,
    "size": 33,
@@ -9603,12 +9603,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__tungsten",
+   "id": "sony__slog3_sgamut3cine__rec709__tungsten",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__tungsten.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__tungsten.cube",
    "sha256": "4d264b788c612b8f6db08e9cf140729c4a5e2acf4ad11dd96ef320bc39271c4c",
    "bytes": 984568,
    "size": 33,
@@ -9674,12 +9674,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__tungsten__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__tungsten__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__tungsten__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__tungsten__legacy.cube",
    "sha256": "70728021d91a2a1ceaa382fde4555062f0f37856d07c1ec73112a8cddd9f5f49",
    "bytes": 988222,
    "size": 33,
@@ -9745,12 +9745,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__neutral__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__neutral__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__neutral__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__neutral__legacy.cube",
    "sha256": "c69c48934d1bd0a5e19d259f43e72a392eb047e6dc2982aaa09ea52f72fefb60",
    "bytes": 995351,
    "size": 33,
@@ -9816,12 +9816,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__eterna",
+   "id": "sony__slog2_sgamut3cine__rec709__eterna",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__eterna.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eterna.cube",
    "sha256": "4ece74e4a0f2f6268a693005fa7cec0d68f21cc58e8162ce222057a8106af1f3",
    "bytes": 1004521,
    "size": 33,
@@ -9887,12 +9887,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__vision__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__vision__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__vision__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__vision__legacy.cube",
    "sha256": "898fff368ae3377697ec4bda70c6f0305359cd461ef522e7f91aba36784c949b",
    "bytes": 1004151,
    "size": 33,
@@ -9958,12 +9958,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__visionteal",
+   "id": "sony__slog2_sgamut3cine__rec709__visionteal",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__visionteal.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__visionteal.cube",
    "sha256": "db4b62c2643c7a798dc92eab5022a87aba47d4c4c064026207addce7b5521e37",
    "bytes": 1004825,
    "size": 33,
@@ -10029,12 +10029,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__eastmanrm__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__eastmanrm__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__eastmanrm__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eastmanrm__legacy.cube",
    "sha256": "909cfa983658a2b31660a9579537c345822fe28b35e0cc43327281a3277dea09",
    "bytes": 1007958,
    "size": 33,
@@ -10100,12 +10100,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__vision",
+   "id": "sony__slog2_sgamut3cine__rec709__vision",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__vision.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__vision.cube",
    "sha256": "c795cc695e7e893e85bec9a95c4f7423969d93d0cbcd1b1d8041563e7dce3182",
    "bytes": 1003513,
    "size": 33,
@@ -10171,12 +10171,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:37+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__bleach",
+   "id": "sony__slog2_sgamut3cine__rec709__bleach",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__bleach.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__bleach.cube",
    "sha256": "d4b311c8cbdd6c2eba8240ba6ad88fef5d5dc0e308e06b4d9e5b6b0f5412d8b9",
    "bytes": 1009885,
    "size": 33,
@@ -10242,12 +10242,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__eastmanrm",
+   "id": "sony__slog2_sgamut3cine__rec709__eastmanrm",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__eastmanrm.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eastmanrm.cube",
    "sha256": "85b461c9715d34888f71a18044f3b547b2cb99c36b7fa220be73f257144f5140",
    "bytes": 1006408,
    "size": 33,
@@ -10313,12 +10313,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__eastman",
+   "id": "sony__slog2_sgamut3cine__rec709__eastman",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__eastman.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eastman.cube",
    "sha256": "96ac123e1c3aff71ab37444fdd17f27e75deea233ca9d0d0b0851a9a210bb353",
    "bytes": 1005299,
    "size": 33,
@@ -10384,12 +10384,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__bleach__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__bleach__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__bleach__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__bleach__legacy.cube",
    "sha256": "5daa6ce3b57599890cccdeedf344620973a756660091ca6b5f9879c3da87fee1",
    "bytes": 1011308,
    "size": 33,
@@ -10455,12 +10455,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__eterna__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__eterna__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__eterna__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eterna__legacy.cube",
    "sha256": "98c073107f7e0333570aa6749c102a697cdb4edc16d6a774e8938af30319945a",
    "bytes": 1004656,
    "size": 33,
@@ -10526,12 +10526,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__eastman__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__eastman__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__eastman__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eastman__legacy.cube",
    "sha256": "97a59cc0a594fb29639e35b50ebc4cc1040689c4af36e32d69a045451ae8a633",
    "bytes": 1006709,
    "size": 33,
@@ -10597,12 +10597,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:20+0300"
   },
   {
-   "id": "sony__sminuslog2_sminusgamut3cine__rec709__visionteal__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__visionteal__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog2_sminusgamut3cine__rec709__visionteal__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__visionteal__legacy.cube",
    "sha256": "e9b3737641221b394455417de625e01411581901427d08a28e7102be92742153",
    "bytes": 1005912,
    "size": 33,
@@ -10668,12 +10668,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__vision__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__vision__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__vision__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__vision__legacy.cube",
    "sha256": "dc1f34139c85fd4f4d1cc50e97205273b13f146c9c18801d3a73de85a3d67b5b",
    "bytes": 1007729,
    "size": 33,
@@ -10739,12 +10739,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__eterna__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__eterna__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__eterna__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eterna__legacy.cube",
    "sha256": "c4bbc9325e4e8989742ac0b292405ed3f2359b96294feedc9b6e98fa2a1eccc0",
    "bytes": 1007841,
    "size": 33,
@@ -10810,12 +10810,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__vision",
+   "id": "sony__slog3_sgamut3cine__rec709__vision",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__vision.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__vision.cube",
    "sha256": "35cdc1e7245db0ba5237b2cdf1274c3d7cbe810e8a830e3eeceed355bfd7b07d",
    "bytes": 1006729,
    "size": 33,
@@ -10881,12 +10881,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__eterna",
+   "id": "sony__slog3_sgamut3cine__rec709__eterna",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__eterna.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eterna.cube",
    "sha256": "37fc73c46cb60029ef5700a143f3540e9e22d3ab37c65e3e335a08fbe164a53e",
    "bytes": 1007640,
    "size": 33,
@@ -10952,12 +10952,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__eastmanrm__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__eastmanrm__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__eastmanrm__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eastmanrm__legacy.cube",
    "sha256": "e5366d69441f32185a00f7ae8c85f6bed7e2d1f24047a7c85430145b563fc3c3",
    "bytes": 1012743,
    "size": 33,
@@ -11023,12 +11023,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__bleach",
+   "id": "sony__slog3_sgamut3cine__rec709__bleach",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__bleach.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__bleach.cube",
    "sha256": "281569f70dca6fa82f7ff5d2ed2cdcff84bdb93bbc697bc4541412e93fb5dd99",
    "bytes": 1015819,
    "size": 33,
@@ -11094,12 +11094,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__eastmanrm",
+   "id": "sony__slog3_sgamut3cine__rec709__eastmanrm",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__eastmanrm.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eastmanrm.cube",
    "sha256": "cf56ee546fe7fbee9126fc2b3bf227ea2343d553b43c0d08ce747e320eaa7a4d",
    "bytes": 1011097,
    "size": 33,
@@ -11165,12 +11165,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__visionteal",
+   "id": "sony__slog3_sgamut3cine__rec709__visionteal",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__visionteal.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__visionteal.cube",
    "sha256": "6a3007199f9275cb78d1a71005f0fd0ea2e15f31bd9e4e1cd2dbbc7fbcd0000b",
    "bytes": 1008507,
    "size": 33,
@@ -11236,12 +11236,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__visionteal__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__visionteal__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__visionteal__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__visionteal__legacy.cube",
    "sha256": "3dfa630b29b770f386a5798458622ceb151815137a771bcb1b5a98f8d4b24799",
    "bytes": 1009982,
    "size": 33,
@@ -11307,12 +11307,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__bleach__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__bleach__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__bleach__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__bleach__legacy.cube",
    "sha256": "20af0f093e0e16980928fbcf8501d647decd4aab0ccf9b6ce9aa4bece2517e2a",
    "bytes": 1017947,
    "size": 33,
@@ -11378,12 +11378,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__eastman",
+   "id": "sony__slog3_sgamut3cine__rec709__eastman",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__eastman.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eastman.cube",
    "sha256": "0e4cec599955020ca4910b5a205015992725bba9e5282d74a666ac65bae03988",
    "bytes": 1010594,
    "size": 33,
@@ -11449,12 +11449,12 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
-   "id": "sony__sminuslog3_sminusgamut3cine__rec709__eastman__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__eastman__legacy",
    "stage": "develop",
-   "file": "develop/sony__sminuslog3_sminusgamut3cine__rec709__eastman__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eastman__legacy.cube",
    "sha256": "8715bbd77ddb30f730f01a8d58dfbcd8b9d9b231347328661d95fe5419031b69",
    "bytes": 1012180,
    "size": 33,
@@ -11520,7 +11520,7 @@
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
    "id": "legacy_arthur_popov__slog3__rec709__pull",
@@ -11575,7 +11575,7 @@
    ],
    "status": "archived",
    "notes": "В сданных проектах НЕ переименовывать и НЕ удалять: имя лута = имя Look в доноре Premiere, переименование ломает готовые таймлайны.",
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
    "id": "legacy_arthur_popov__slog3__rec709__flat",
@@ -11628,7 +11628,7 @@
    ],
    "status": "archived",
    "notes": "В сданных проектах НЕ переименовывать и НЕ удалять: имя лута = имя Look в доноре Premiere, переименование ломает готовые таймлайны.",
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   },
   {
    "id": "legacy_arthur_popov__slog3__rec709__push",
@@ -11683,7 +11683,7 @@
    ],
    "status": "archived",
    "notes": "В сданных проектах НЕ переименовывать и НЕ удалять: имя лута = имя Look в доноре Premiere, переименование ломает готовые таймлайны.",
-   "imported": "2026-09-22T21:12:38+0300"
+   "imported": "2026-09-22T21:37:21+0300"
   }
  ],
  "duplicates": [
@@ -11774,5 +11774,5 @@
   }
  ],
  "rejected": [],
- "generated_ru": "22 сентября 2026, 21:12"
+ "generated_ru": "22 сентября 2026, 21:37"
 }
