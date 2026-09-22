@@ -2,17 +2,17 @@
   "schema": "lut-taxonomy-v1",
   "_note": "Словари для разбора имён коллекции и пороги метрик. Пороги КАЛИБРОВАНЫ на 166 уникальных кубах коллекции 22.09.2026, не выдуманы. Разбор калибровки — project_knowledge/stage_detect_calibration.md.",
   "updated": "2026-09-22",
-
   "stage_detect": {
     "_verdict": "АВТОКЛАССИФИКАТОР СТУПЕНИ ОТВЕРГНУТ как решающий. Ни одна метрика не разделяет коллекцию чисто: в папке «Проявочные» лежат 19 стилизованных кубов DJI с наклоном 0.97-1.38, то есть по поведению это look'и. Папка говорит о ЗАМЫСЛЕ автора, метрики — о ПОВЕДЕНИИ, и это разные вещи. Поэтому ступень берётся из папки-источника, а метрики работают только как ФЛАГ на проверку человеком.",
     "_calibration": "develop без плёночных паков n=34: наклон min 1.46 · плёночные n=84: min 1.41 · стилизованные DJI n=19: min 0.97 · look n=27: max 1.47 (мимо порога проходят ровно два — Film 1 и idealniy 2) · pre n=2: 0.87 и 1.40",
     "slope_mid_develop_min": 1.41,
-    "slope_mid_look_max": 1.40,
+    "slope_mid_look_max": 1.4,
     "_slope_mid": "Усиление контраста в средних тонах: (LUT(0.60) - LUT(0.20)) / 0.40. Проявка обязана разжать логарифм и поэтому даёт >= 1.41; look работает поверх нормальной картинки и даёт <= 1.40. Два look'а коллекции (Film 1 = 1.47, idealniy 2 = 1.41) порог перешагивают — это известные ложные срабатывания, не повод двигать порог.",
     "identity_rmse255_note": "Не разделяет: develop min 8.41 против look max 35.77, перекрытие 158 кубов из 166. Хранится в манифесте как справка, в решении не участвует.",
-    "neutral_drift255_note": "Не разделяет совсем. Плёночные проявки (Vision, Eterna, VisionTeal) тонируют серое намеренно до 10.1, а Ч/Б и контрастные look'и (B&W 1/2, Baza, Contr +/-) не тонируют вовсе — 0.00. Хранится как справка."
+    "neutral_drift255_note": "Не разделяет совсем. Плёночные проявки (Vision, Eterna, VisionTeal) тонируют серое намеренно до 10.1, а Ч/Б и контрастные look'и (B&W 1/2, Baza, Contr +/-) не тонируют вовсе — 0.00. Хранится как справка.",
+    "neutral_drift255_develop_max": 3.0,
+    "_neutral_drift_develop": "ЧИСТАЯ проявка не имеет права тонировать серое — её работа тональная, а не цветовая. Замер 22.09 по S-Log3: neutral 1.0 и neutral legacy 0.8, а дальше разрыв — Tungsten 6.4, Eastman 7.4, Vision 9.5, Utopia 11.2, IceBlue 19.8. Всё, что выше 3.0, — это проявка с покраской внутри, то есть ровно то, что мы разделяем. В ступень 2 такие не предлагаются, но из библиотеки не выбрасываются: как look поверх нейтральной проявки они годятся."
   },
-
   "quality": {
     "_note": "Эти метрики РАБОТАЮТ и остаются в деле. Замер 22.09: black_share по серому клину верно предсказал, какие кубы Sony зажмут тени на реальных кадрах — Neutral A7s3 даёт 12.3% и зажал 32 кадра из 132, у остальных 0.0% и ноль зажатых кадров.",
     "black_share_warn": 0.05,
@@ -23,83 +23,192 @@
     "dip_total255_error": 2.0,
     "dip_max255_warn": 0.4,
     "_dips": "Монотонность меряется величиной, а не булевым флагом. Замер 22.09 на 166 кубах: настоящие кубы дрожат на доли кодового значения между узлами (Canon Vision — одна просадка 0.59/255, Apple Log Pre-LUT — 0.53/255). Это квантование. Перевёрнутая тональная кривая теряет десятки кодовых значений, поэтому порог ошибки — 2.0/255 суммарно.",
-    "monotonic_required_for": ["develop", "pre"]
+    "monotonic_required_for": [
+      "develop",
+      "pre"
+    ]
   },
-
-  "skip_folders": ["LUTs для сьемки на айфон"],
+  "skip_folders": [
+    "LUTs для сьемки на айфон"
+  ],
   "_skip_why": "Вшиваются при съёмке через Blackmagic Cam, к постпродакшну отношения не имеют.",
-
   "folder_stage": {
     "Проявочные LUTs": "develop",
     "Universal LUTs": "look"
   },
-
   "gamma_by_path": {
-    "SLOG3": ["S-Log3", "S-Gamut3.Cine"],
-    "SLog3": ["S-Log3", "S-Gamut3.Cine"],
-    "SLOG2": ["S-Log2", "S-Gamut3.Cine"],
-    "SLog2+Sgamut3cine": ["S-Log2", "S-Gamut3.Cine"],
-    "C-Log 2": ["C-Log2", "Canon Cinema Gamut"],
-    "C-Log 3": ["C-Log3", "Canon Cinema Gamut"],
-    "LOG film panasonic": ["V-Log", "V-Gamut"],
-    "LOG iphone": ["Apple Log", "Rec.2020"],
-    "LOG iPhone film": ["Apple Log", "Rec.2020"],
-    "Fujifilm F-log2": ["F-Log2", "F-Gamut"]
+    "SLOG3": [
+      "S-Log3",
+      "S-Gamut3.Cine"
+    ],
+    "SLog3": [
+      "S-Log3",
+      "S-Gamut3.Cine"
+    ],
+    "SLOG2": [
+      "S-Log2",
+      "S-Gamut3.Cine"
+    ],
+    "SLog2+Sgamut3cine": [
+      "S-Log2",
+      "S-Gamut3.Cine"
+    ],
+    "C-Log 2": [
+      "C-Log2",
+      "Canon Cinema Gamut"
+    ],
+    "C-Log 3": [
+      "C-Log3",
+      "Canon Cinema Gamut"
+    ],
+    "LOG film panasonic": [
+      "V-Log",
+      "V-Gamut"
+    ],
+    "LOG iphone": [
+      "Apple Log",
+      "Rec.2020"
+    ],
+    "LOG iPhone film": [
+      "Apple Log",
+      "Rec.2020"
+    ],
+    "Fujifilm F-log2": [
+      "F-Log2",
+      "F-Gamut"
+    ]
   },
-
   "gamma_by_name": {
-    "D-Log2": ["D-Log2", "DJI"],
-    "D-Log M": ["D-Log M", "DJI"],
-    "D-Log": ["D-Log", "DJI"],
-    "I-Log": ["I-Log", "Insta360"],
-    "V-Log": ["V-Log", "V-Gamut"],
-    "F-Log2": ["F-Log2", "F-Gamut"],
-    "Apple Log": ["Apple Log", "Rec.2020"]
+    "D-Log2": [
+      "D-Log2",
+      "DJI"
+    ],
+    "D-Log M": [
+      "D-Log M",
+      "DJI"
+    ],
+    "D-Log": [
+      "D-Log",
+      "DJI"
+    ],
+    "I-Log": [
+      "I-Log",
+      "Insta360"
+    ],
+    "V-Log": [
+      "V-Log",
+      "V-Gamut"
+    ],
+    "F-Log2": [
+      "F-Log2",
+      "F-Gamut"
+    ],
+    "Apple Log": [
+      "Apple Log",
+      "Rec.2020"
+    ]
   },
-
   "vendor_by_token": {
-    "A7s3": "sony", "Iphone15": "apple", "iPhone_15": "apple",
-    "Canon": "canon", "V-Log": "panasonic", "F-Log2": "fujifilm",
-    "DJI": "dji", "Luna": "insta360", "Osmo": "dji", "Pocket": "dji"
+    "A7s3": "sony",
+    "Iphone15": "apple",
+    "iPhone_15": "apple",
+    "Canon": "canon",
+    "V-Log": "panasonic",
+    "F-Log2": "fujifilm",
+    "DJI": "dji",
+    "Luna": "insta360",
+    "Osmo": "dji",
+    "Pocket": "dji"
   },
-
   "camera_by_token": {
     "A7s3": "a7s3",
-    "Iphone15": "iphone15", "iPhone_15": "iphone15",
-    "Pocket 4P": "pocket4p", "Pocket 4p": "pocket4p", "Pocket 4": "pocket4",
-    "Osmo Pocket 3": "pocket3", "Osmo Nano": "osmonano",
-    "Action": "action", "Luna": "luna"
+    "Iphone15": "iphone15",
+    "iPhone_15": "iphone15",
+    "Pocket 4P": "pocket4p",
+    "Pocket 4p": "pocket4p",
+    "Pocket 4": "pocket4",
+    "Osmo Pocket 3": "pocket3",
+    "Osmo Nano": "osmonano",
+    "Action": "action",
+    "Luna": "luna"
   },
   "_camera_caution": "⚠️ Модель из ИМЕНИ брать нельзя. DJI Action basic.cube внутри содержит «# Mavic 3 Pro, D-Log M, 2023-03-24», то есть имя врёт, и байт-в-байт тот же файл лежит как DJI OSMO Osmo Nano D-Log M.cube. Модель принимается только если её подтверждает комментарий внутри куба либо человек.",
-
   "family_by_token": {
-    "Neutral": "neutral", "IceBlue": "iceblue", "Tungsten": "tungsten",
-    "Utopia": "utopia", "Jamaica": "jamaica", "Carla": "carla",
-    "Bleach": "bleach", "Vision": "vision", "VisionTeal": "visionteal",
-    "Eastman": "eastman", "EastmanRM": "eastmanrm", "Eterna": "eterna",
-    "Clear": "clear", "IDOL": "idol",
-    "Blue": "blue", "Everyday": "everyday", "Ocean": "ocean", "basic": "basic"
+    "Neutral": "neutral",
+    "IceBlue": "iceblue",
+    "Tungsten": "tungsten",
+    "Utopia": "utopia",
+    "Jamaica": "jamaica",
+    "Carla": "carla",
+    "Bleach": "bleach",
+    "Vision": "vision",
+    "VisionTeal": "visionteal",
+    "Eastman": "eastman",
+    "EastmanRM": "eastmanrm",
+    "Eterna": "eterna",
+    "Clear": "clear",
+    "IDOL": "idol",
+    "Blue": "blue",
+    "Everyday": "everyday",
+    "Ocean": "ocean",
+    "basic": "basic"
   },
-
   "variant_by_token": {
     "Legacy": "legacy",
-    "WBO": "wboffset", "WB Offset": "wboffset",
-    "+": "plus", "-": "minus"
+    "WBO": "wboffset",
+    "WB Offset": "wboffset",
+    "+": "plus",
+    "-": "minus"
   },
   "_variant_caution": "push/pull — НАША лестница экспозиции (что лут делает). plus/minus — АВТОРСКИЙ вариант контраста. Смешивать нельзя: у одного id не может стоять и то, и другое.",
-
   "transliterate": {
-    "а":"a","б":"b","в":"v","г":"g","д":"d","е":"e","ё":"e","ж":"zh","з":"z",
-    "и":"i","й":"y","к":"k","л":"l","м":"m","н":"n","о":"o","п":"p","р":"r",
-    "с":"s","т":"t","у":"u","ф":"f","х":"h","ц":"c","ч":"ch","ш":"sh","щ":"sch",
-    "ъ":"","ы":"y","ь":"","э":"e","ю":"yu","я":"ya"
+    "а": "a",
+    "б": "b",
+    "в": "v",
+    "г": "g",
+    "д": "d",
+    "е": "e",
+    "ё": "e",
+    "ж": "zh",
+    "з": "z",
+    "и": "i",
+    "й": "y",
+    "к": "k",
+    "л": "l",
+    "м": "m",
+    "н": "n",
+    "о": "o",
+    "п": "p",
+    "р": "r",
+    "с": "s",
+    "т": "t",
+    "у": "u",
+    "ф": "f",
+    "х": "h",
+    "ц": "c",
+    "ч": "ch",
+    "ш": "sh",
+    "щ": "sch",
+    "ъ": "",
+    "ы": "y",
+    "ь": "",
+    "э": "e",
+    "ю": "yu",
+    "я": "ya"
   },
-
   "char_replace": {
-    "+": "_plus", "-": "_", "&": "_", " ": "_", ".": "_", "(": "", ")": "",
-    "'": "", "\"": "", ",": "_", "/": "_"
+    "+": "_plus",
+    "-": "_",
+    "&": "_",
+    " ": "_",
+    ".": "_",
+    "(": "",
+    ")": "",
+    "'": "",
+    "\"": "",
+    ",": "_",
+    "/": "_"
   },
-
   "legacy_ytai": {
     "_note": "Три куба канала, происхождение отдельное — ни один не совпал md5 ни с чем в коллекции Романа. Атрибуция со слов Романа 22.09.2026, технического подтверждения нет.",
     "author": "Arthur Popov",
@@ -109,21 +218,37 @@
         "id": "legacy_arthur_popov__slog3__rec709__push",
         "role": "push",
         "intent": "проявка с подъёмом экспозиции; применялась к НЕДОсвеченным кадрам",
-        "aliases": ["03_dark_scene", "dark", "nedosvet"]
+        "aliases": [
+          "03_dark_scene",
+          "dark",
+          "nedosvet"
+        ]
       },
       "6bf0c1692e846a07bccb98241d7b1d38": {
         "id": "legacy_arthur_popov__slog3__rec709__pull",
         "role": "pull",
         "intent": "проявка с опусканием экспозиции; применялась к ПЕРЕсвеченным кадрам",
-        "aliases": ["01_bright_scene", "bright", "peresvet"]
+        "aliases": [
+          "01_bright_scene",
+          "bright",
+          "peresvet"
+        ]
       },
       "e5050dd531d497d1a63ea083684ef018": {
         "id": "legacy_arthur_popov__slog3__rec709__flat",
         "role": "flat",
         "intent": "проявка без экспокоррекции, рабочая середина",
-        "aliases": ["02_normal_scene", "normal"]
+        "aliases": [
+          "02_normal_scene",
+          "normal"
+        ]
       }
     },
     "_naming_why": "Старые имена описывали, каким СНЯТ кадр (bright = для пересвеченного, поэтому давит). Новые описывают, что лут ДЕЛАЕТ: push поднимает, pull опускает, flat не трогает."
-  }
+  },
+  "body_independent_gammas": [
+    "S-Log3",
+    "S-Log2"
+  ],
+  "_body_independent": "Гаммы, одинаковые у всех тушек вендора, — в имени куба тушку НЕ пишем. S-Log3/S-Gamut3.Cine это стандарт Sony: FX3A, ZV-E1 и A7S III пишут одну и ту же кривую (проверено по метаданным клипов YTEVO03 — обе камеры Романа отдают s-log3-cine / S-Gamut3.Cine). Автор коллекции собирал под свою A7S III, но ставить чужую тушку в имя нашей библиотеки нельзя. У DJI наоборот: под каждую камеру свой рендер, Pocket 4 и Pocket 4P — разные кубы под одним именем D-Log +. Там тушка ОБЯЗАНА остаться, иначе они схлопнутся."
 }

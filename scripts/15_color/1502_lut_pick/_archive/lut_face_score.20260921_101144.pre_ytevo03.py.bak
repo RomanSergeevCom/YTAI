@@ -1,0 +1,380 @@
+#!/usr/bin/env python3
+"""
+lut_face_score.py — per-CLIP LUT picker by FACE brightness/saturation, fully local.
+
+For every clip in every scene folder {project}/01_Source/{NN_Scene}/ :
+  1. sample frames (1-3 per clip depending on duration),
+  2. render each sample through every .cube LUT in 01_Source/00_LUT/ (ffmpeg lut3d)
+     plus the ungraded original,
+  3. detect the largest face (Apple Vision, VNDetectFaceRectanglesRequest — offline),
+  4. measure the face patch: mean luma, mean saturation, clipped-highlight share,
+  5. score = brightness + saturation − clipping penalty; clip verdict = best mean.
+
+Review HTML is interactive PER CLIP: click a frame card / chip to choose that
+clip's LUT (favourite pre-selected), per-scene note field, sticky "Скопировать
+фидбек" bar → JSON {type: lut_feedback, choices: {scene/clip: lut}, notes} to
+paste back into Claude chat.
+
+Outputs (into {project}/00_Setup/01_Ingest/):
+  {CODE}_lut_review.html        — interactive review (open via file://)
+  {CODE}_lut_review_files/      — jpg frames (relative links)
+  {CODE}_lut_plan.json          — {"scene/clip.MP4" → lut} for the UXP
+                                  per-range adjustment stage
+
+Usage:
+  source ~/YTAI/environment/.venv_vlm/bin/activate   # pyobjc Vision + numpy + Pillow
+  python3 lut_face_score.py --project "/Volumes/T7-Beige-RYA/YTCH/YTCH13_Kirill_2"
+
+Env: needs ffmpeg/ffprobe in PATH; macOS only (Apple Vision via pyobjc).
+"""
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+try:
+    import Vision
+    import Quartz
+    from Foundation import NSURL
+    HAVE_VISION = True
+except ImportError:
+    HAVE_VISION = False
+
+FRAME_WIDTH = 960
+JPEG_Q = "3"
+CLIP_THRESHOLD = 250   # 8-bit value counted as clipped
+FACE_CORE = 0.70       # central share of the face bbox used for skin metrics
+
+# score = luma + saturation bonus − clipping penalty (weights tuned for
+# "максимальная яркость лица без пережога": brightness dominates, clip kills)
+W_LUMA, W_SAT, W_CLIP = 1.0, 0.55, 900.0
+
+
+def run(cmd):
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def ffprobe_duration(path):
+    r = run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "csv=p=0", str(path)])
+    try:
+        return float(r.stdout.strip())
+    except ValueError:
+        return 0.0
+
+
+def clip_sample_points(clip):
+    """1-3 (tc) samples inside one clip, by duration."""
+    dur = ffprobe_duration(clip)
+    if dur <= 0:
+        return []
+    if dur < 120:
+        fracs = (0.5,)
+    elif dur < 900:
+        fracs = (0.25, 0.75)
+    else:
+        fracs = (0.15, 0.5, 0.85)
+    return [max(0.5, dur * f) for f in fracs]
+
+
+def extract_frame(video, tc, out_jpg, lut=None):
+    vf = f"lut3d=file='{lut}',scale={FRAME_WIDTH}:-2" if lut else f"scale={FRAME_WIDTH}:-2"
+    r = run(["ffmpeg", "-y", "-v", "error", "-ss", f"{tc:.3f}", "-i", str(video),
+             "-vf", vf, "-frames:v", "1", "-q:v", JPEG_Q, str(out_jpg)])
+    return out_jpg.exists() and r.returncode == 0
+
+
+def detect_face(jpg_path):
+    """Largest face bbox as (x, y, w, h) in pixels (top-left origin), or None."""
+    if not HAVE_VISION:
+        return None
+    url = NSURL.fileURLWithPath_(str(jpg_path))
+    src = Quartz.CGImageSourceCreateWithURL(url, None)
+    if src is None:
+        return None
+    img = Quartz.CGImageSourceCreateImageAtIndex(src, 0, None)
+    if img is None:
+        return None
+    w, h = Quartz.CGImageGetWidth(img), Quartz.CGImageGetHeight(img)
+    handler = Vision.VNImageRequestHandler.alloc().initWithCGImage_options_(img, None)
+    req = Vision.VNDetectFaceRectanglesRequest.alloc().init()
+    ok, _err = handler.performRequests_error_([req], None)
+    if not ok or not req.results():
+        return None
+    best = max(req.results(), key=lambda o: o.boundingBox().size.width * o.boundingBox().size.height)
+    bb = best.boundingBox()  # normalized, origin bottom-left
+    return (int(bb.origin.x * w),
+            int((1.0 - bb.origin.y - bb.size.height) * h),
+            int(bb.size.width * w),
+            int(bb.size.height * h))
+
+
+def face_metrics(jpg_path, bbox):
+    """Mean luma / saturation / clip share over the central FACE_CORE of bbox."""
+    im = np.asarray(Image.open(jpg_path).convert("RGB"), dtype=np.float32)
+    x, y, w, h = bbox
+    pad_x, pad_y = w * (1 - FACE_CORE) / 2, h * (1 - FACE_CORE) / 2
+    x0, x1 = int(max(0, x + pad_x)), int(min(im.shape[1], x + w - pad_x))
+    y0, y1 = int(max(0, y + pad_y)), int(min(im.shape[0], y + h - pad_y))
+    if x1 <= x0 or y1 <= y0:
+        return None
+    patch = im[y0:y1, x0:x1]
+    r, g, b = patch[..., 0], patch[..., 1], patch[..., 2]
+    luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    mx = patch.max(axis=2)
+    mn = patch.min(axis=2)
+    sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
+    return {
+        "luma": float(luma.mean()),
+        "sat": float(sat.mean()),
+        "clip": float((mx >= CLIP_THRESHOLD).mean()),
+    }
+
+
+def score_of(m):
+    return W_LUMA * m["luma"] + W_SAT * 255.0 * m["sat"] - W_CLIP * m["clip"]
+
+
+def build_html(code, scenes_data, luts, out_dir, files_dirname):
+    css = """
+    :root { color-scheme: dark; }
+    body { background:#0A0D16; color:#E8ECF4; font:14px/1.5 -apple-system,'SF Pro Text',sans-serif;
+           margin:0; padding:32px 40px 120px; }
+    h1 { font-size:22px; font-weight:700; margin:0 0 6px; }
+    .sub { color:#8A93A6; margin-bottom:28px; max-width:900px; }
+    .scene { margin-bottom:56px; }
+    .scene > h2 { font-size:17px; font-weight:700; margin:0 0 12px; border-bottom:1px solid #2A3347;
+                  padding-bottom:8px; }
+    .clip { margin:0 0 26px 0; }
+    .cliphead { display:flex; align-items:center; gap:14px; margin-bottom:8px; }
+    .cliphead .fname { font-size:14px; font-weight:700; }
+    .badge { display:inline-block; padding:1px 9px; border-radius:10px; font-size:11px;
+             font-weight:700; background:#1B2231; color:#8A93A6; }
+    .chip { display:inline-block; padding:3px 12px; border-radius:13px; font-size:12px;
+            border:1px solid #2A3347; color:#8A93A6; cursor:pointer; margin-right:6px;
+            user-select:none; }
+    .chip.sel { background:#C6FF4F; color:#0A0D16; border-color:#C6FF4F; font-weight:700; }
+    .sample { display:flex; gap:10px; margin-bottom:10px; overflow-x:auto; }
+    .var { flex:0 0 auto; width:226px; cursor:pointer; border-radius:8px; padding:4px; }
+    .var img { width:100%; border-radius:6px; display:block; }
+    .var.winner img { outline:2px dashed #5A6B8C; }
+    .var.sel { background:#18202F; }
+    .var.sel img { outline:2px solid #C6FF4F; }
+    .cap { font-size:11px; color:#8A93A6; margin:4px 0 0; }
+    .cap b { color:#E8ECF4; }
+    .cap .win { color:#C6FF4F; }
+    .note { color:#5A6B8C; font-size:11px; margin-top:2px; }
+    .scene-note { width:520px; max-width:90%; background:#121826; border:1px solid #2A3347;
+                  border-radius:8px; color:#E8ECF4; padding:7px 12px; font-size:13px; }
+    .bar { position:fixed; left:0; right:0; bottom:0; background:#0E1320EE;
+           border-top:1px solid #2A3347; padding:12px 40px; display:flex; gap:16px;
+           align-items:center; backdrop-filter:blur(6px); }
+    .bar button { background:#C6FF4F; color:#0A0D16; border:0; border-radius:10px;
+                  padding:9px 22px; font-size:14px; font-weight:700; cursor:pointer; }
+    .bar .state { color:#8A93A6; font-size:13px; }
+    #fb-out { position:fixed; left:40px; right:40px; bottom:70px; height:140px;
+              background:#121826; color:#C6FF4F; border:1px solid #2A3347;
+              border-radius:10px; padding:10px; font:12px/1.4 monospace; display:none; }
+    """
+    parts = [
+        "<!doctype html><html><head><meta charset='utf-8'>",
+        f"<title>{code} LUT review</title><style>{css}</style></head><body>",
+        f"<h1>{code} — какой LUT на какой клип</h1>",
+        "<div class='sub'>Выбор — <b>по каждому клипу отдельно</b>: клик по карточке кадра или чипу "
+        "у клипа. Предвыбран фаворит скоринга (пунктир); твой выбор — сплошная рамка. Скоринг по лицу: "
+        "яркость + насыщенность − пережог (Apple Vision). Внизу — «Скопировать фидбек»: вставь JSON в чат Claude.</div>",
+    ]
+    defaults = {}
+    for sd in scenes_data:
+        parts.append(f"<div class='scene'><h2>{sd['scene']}</h2>")
+        for cl in sd["clips"]:
+            cid = f"{sd['scene']}/{cl['name']}"
+            if cl["verdict"]:
+                defaults[cid] = cl["verdict"]
+            chips = "".join(
+                f"<span class='chip' data-id='{cid}' data-lut='{l}' onclick='pick(this)'>{l}</span>"
+                for l in luts)
+            parts.append(f"<div class='clip'><div class='cliphead'>"
+                         f"<span class='fname'>{cl['name']}</span>"
+                         f"<span class='badge'>score: {cl['verdict'] or 'нет лица'}</span>"
+                         f"<span>{chips}</span></div>")
+            for smp in cl["samples"]:
+                parts.append("<div class='sample'>")
+                for var in smp["variants"]:
+                    m = var.get("metrics")
+                    cap = (f"<b>{var['name']}</b> · Y {m['luma']:.0f} · S {m['sat']*100:.0f}% "
+                           f"· clip {m['clip']*100:.1f}% · <span class='win'>{var['score']:.0f}</span>"
+                           if m else f"<b>{var['name']}</b> · —")
+                    win = " winner" if var["name"] == smp.get("winner") else ""
+                    click = (f" data-id='{cid}' data-lut='{var['name']}' onclick='pick(this)'"
+                             if var["name"] != "orig" else "")
+                    parts.append(f"<div class='var{win}'{click}><img src='{files_dirname}/{var['img']}'>"
+                                 f"<div class='cap'>{cap}</div></div>")
+                parts.append("</div>")
+                parts.append(f"<div class='note'>@ {smp['tc']:.1f}s"
+                             + (" · лицо не найдено — метрики по центру кадра" if smp.get("noface") else "")
+                             + "</div>")
+            parts.append("</div>")
+        parts.append(f"<input class='scene-note' data-scene='{sd['scene']}' "
+                     f"placeholder='заметка по сцене (не обязательно)'>")
+        parts.append("</div>")
+
+    parts.append(f"""
+<textarea id='fb-out' readonly></textarea>
+<div class='bar'>
+  <button onclick='copyFeedback()'>&#128203; Скопировать фидбек</button>
+  <span class='state' id='fb-state'>LUT выбирается по каждому клипу — предвыбраны фавориты счёта</span>
+</div>
+<script>
+var PROJECT = {json.dumps(code)};
+var choices = {json.dumps(defaults, ensure_ascii=False)};
+function refresh() {{
+  document.querySelectorAll('.chip').forEach(function (c) {{
+    c.classList.toggle('sel', choices[c.dataset.id] === c.dataset.lut);
+  }});
+  document.querySelectorAll('.var[data-lut]').forEach(function (v) {{
+    v.classList.toggle('sel', choices[v.dataset.id] === v.dataset.lut);
+  }});
+}}
+function pick(el) {{ choices[el.dataset.id] = el.dataset.lut; refresh(); }}
+function copyFeedback() {{
+  var notes = {{}};
+  document.querySelectorAll('.scene-note').forEach(function (n) {{
+    if (n.value.trim()) notes[n.dataset.scene] = n.value.trim();
+  }});
+  var payload = JSON.stringify({{ type: 'lut_feedback', project: PROJECT,
+                                  choices: choices, notes: notes }}, null, 2);
+  var out = document.getElementById('fb-out');
+  out.value = payload; out.style.display = 'block'; out.select();
+  var done = false;
+  try {{ done = document.execCommand('copy'); }} catch (e) {{}}
+  if (!done && navigator.clipboard) {{
+    navigator.clipboard.writeText(payload).then(function () {{ mark(true); }},
+                                               function () {{ mark(false); }});
+  }} else {{ mark(done); }}
+}}
+function mark(ok) {{
+  document.getElementById('fb-state').textContent = ok
+    ? 'скопировано — вставь в чат Claude'
+    : 'авто-копирование не удалось — текст выделен, нажми Cmd+C';
+}}
+refresh();
+</script></body></html>""")
+    html_path = out_dir / f"{code}_lut_review.html"
+    html_path.write_text("\n".join(parts), encoding="utf-8")
+    return html_path
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--project", required=True)
+    args = ap.parse_args()
+
+    project = Path(args.project)
+    code_m = re.match(r"^(YT[A-Z]{2,4}\d+)_", project.name)
+    code = code_m.group(1) if code_m else project.name
+
+    source = project / "01_Source"
+    lut_dir = source / "00_LUT"
+    if not lut_dir.is_dir():
+        lut_dir = source / "LUT"
+    # Semantic order for review columns/chips: bright | normal | dark —
+    # "normal" sits in the CENTER (decision 18.08.2026); alphabetical fallback
+    # for LUTs outside the trio.
+    LUT_ORDER = ("bright", "normal", "dark")
+
+    def lut_key(p):
+        for i, k in enumerate(LUT_ORDER):
+            if k in p.stem:
+                return (i, p.stem)
+        return (len(LUT_ORDER), p.stem)
+
+    luts = sorted(lut_dir.glob("*.cube"), key=lut_key)
+    if not luts:
+        sys.exit(f"No .cube LUTs in {lut_dir}")
+
+    out_dir = project / "00_Setup" / "01_Ingest"
+    files_dirname = f"{code}_lut_review_files"
+    files_dir = out_dir / files_dirname
+    files_dir.mkdir(parents=True, exist_ok=True)
+
+    scene_dirs = sorted(d for d in source.iterdir()
+                        if d.is_dir() and re.match(r"^\d\d_", d.name)
+                        and not d.name.startswith("00_"))
+    if not HAVE_VISION:
+        print("WARN: pyobjc Vision unavailable — falling back to frame-center metrics",
+              file=sys.stderr)
+
+    scenes_data, lut_plan = [], {}
+    for sdir in scene_dirs:
+        clips = sorted(sdir.glob("*.MP4")) + sorted(sdir.glob("*.mp4"))
+        if not clips:
+            continue
+        print(f"— {sdir.name}: {len(clips)} clip(s)")
+        clips_out = []
+        for clip in clips:
+            samples_out = []
+            totals = {l.stem: [] for l in luts}
+            for si, tc in enumerate(clip_sample_points(clip)):
+                base = f"{sdir.name}_{clip.stem}_s{si}"
+                orig_jpg = files_dir / f"{base}_orig.jpg"
+                if not extract_frame(clip, tc, orig_jpg):
+                    continue
+                variants = [{"name": "orig", "img": orig_jpg.name, "path": orig_jpg}]
+                for lut in luts:
+                    vjpg = files_dir / f"{base}_{lut.stem}.jpg"
+                    if extract_frame(clip, tc, vjpg, lut=lut):
+                        variants.append({"name": lut.stem, "img": vjpg.name, "path": vjpg})
+
+                det_src = next((v["path"] for v in variants if "normal" in v["name"]),
+                               variants[0]["path"])
+                bbox = detect_face(det_src)
+                noface = bbox is None
+                if noface:
+                    im = Image.open(orig_jpg)
+                    w, h = im.size
+                    bbox = (int(w * 0.3), int(h * 0.15), int(w * 0.4), int(h * 0.6))
+
+                winner, best = None, -1e9
+                for v in variants:
+                    m = face_metrics(v["path"], bbox)
+                    v["metrics"] = m
+                    v["score"] = score_of(m) if m else -1e9
+                    del v["path"]
+                    if v["name"] != "orig" and m and v["score"] > best:
+                        best, winner = v["score"], v["name"]
+                    if v["name"] != "orig" and m:
+                        totals[v["name"]].append(v["score"])
+                samples_out.append({"tc": tc, "noface": noface,
+                                    "variants": variants, "winner": winner})
+
+            means = {k: (sum(v) / len(v)) for k, v in totals.items() if v}
+            verdict = max(means, key=means.get) if means else None
+            clips_out.append({"name": clip.name, "samples": samples_out, "verdict": verdict})
+            if verdict:
+                lut_plan[f"{sdir.name}/{clip.name}"] = verdict
+        v_summary = {}
+        for c in clips_out:
+            if c["verdict"]:
+                v_summary[c["verdict"]] = v_summary.get(c["verdict"], 0) + 1
+        print(f"  → {v_summary}")
+        scenes_data.append({"scene": sdir.name, "clips": clips_out})
+
+    html_path = build_html(code, scenes_data, [l.stem for l in luts], out_dir, files_dirname)
+    plan_path = out_dir / f"{code}_lut_plan.json"
+    plan_path.write_text(json.dumps(
+        {"version": 2, "project": project.name, "luts_dir": str(lut_dir),
+         "scoring": "face luma+sat-clip per clip (lut_face_score.py)",
+         "plan": lut_plan},
+        ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"\nHTML:  {html_path}\nPLAN:  {plan_path}")
+
+
+if __name__ == "__main__":
+    main()

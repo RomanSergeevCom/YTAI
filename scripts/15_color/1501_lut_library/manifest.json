@@ -2,7 +2,7 @@
  "schema": "lut-manifest-v1",
  "_note": "Источник правды по каждому кубу. Байты лежат в store/ (не в git), сюда пишутся метаданные и хэши. Метаданные из ИМЕНИ файла доказательством не считаются — смотри поля evidence и conflicts.",
  "version": 2,
- "generated": "2026-09-22T18:12:05+0300",
+ "generated": "2026-09-22T18:29:37+0300",
  "tool": "scripts/15_color/1501_lut_library/lut_lib.py",
  "store_root": "store",
  "counts": {
@@ -66,12 +66,15 @@
     "neutral_drift255": 0.0,
     "black_share": 0.0462,
     "white_share": 0.0308,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:39+0300"
+   "imported": "2026-09-22T18:29:21+0300"
   },
   {
    "id": "look__b_w_2",
@@ -127,12 +130,15 @@
     "neutral_drift255": 0.0,
     "black_share": 0.0154,
     "white_share": 0.0308,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.997,
+    "value_min": 0.0186
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:39+0300"
+   "imported": "2026-09-22T18:29:21+0300"
   },
   {
    "id": "look__baza",
@@ -188,12 +194,15 @@
     "neutral_drift255": 0.0,
     "black_share": 0.0615,
     "white_share": 0.0154,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:39+0300"
+   "imported": "2026-09-22T18:29:22+0300"
   },
   {
    "id": "look__blumarine",
@@ -249,12 +258,15 @@
     "neutral_drift255": 44.9027,
     "black_share": 0.0308,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0078
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:39+0300"
+   "imported": "2026-09-22T18:29:22+0300"
   },
   {
    "id": "look__contr_plus",
@@ -310,12 +322,15 @@
     "neutral_drift255": 0.0,
     "black_share": 0.0462,
     "white_share": 0.0308,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:40+0300"
+   "imported": "2026-09-22T18:29:22+0300"
   },
   {
    "id": "look__contr",
@@ -371,12 +386,15 @@
     "neutral_drift255": 0.0,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9431,
+    "value_min": 0.0431
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:40+0300"
+   "imported": "2026-09-22T18:29:22+0300"
   },
   {
    "id": "look__film_1",
@@ -432,12 +450,15 @@
     "neutral_drift255": 17.9806,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:40+0300"
+   "imported": "2026-09-22T18:29:22+0300"
   },
   {
    "id": "look__gold",
@@ -493,12 +514,15 @@
     "neutral_drift255": 50.9686,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0091
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:40+0300"
+   "imported": "2026-09-22T18:29:23+0300"
   },
   {
    "id": "look__gtavi",
@@ -554,12 +578,15 @@
     "neutral_drift255": 37.8017,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.951,
+    "value_min": 0.0045
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:41+0300"
+   "imported": "2026-09-22T18:29:23+0300"
   },
   {
    "id": "look__green_bowl",
@@ -615,12 +642,15 @@
     "neutral_drift255": 18.183,
     "black_share": 0.0154,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.7783,
+    "value_min": 0.0141
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:41+0300"
+   "imported": "2026-09-22T18:29:23+0300"
   },
   {
    "id": "look__idol",
@@ -676,12 +706,15 @@
     "neutral_drift255": 23.2415,
     "black_share": 0.0154,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0109
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:41+0300"
+   "imported": "2026-09-22T18:29:23+0300"
   },
   {
    "id": "look__limitless",
@@ -737,12 +770,15 @@
     "neutral_drift255": 36.467,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9824,
+    "value_min": 0.0391
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:41+0300"
+   "imported": "2026-09-22T18:29:23+0300"
   },
   {
    "id": "look__london",
@@ -798,12 +834,15 @@
     "neutral_drift255": 11.9844,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0353
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:41+0300"
+   "imported": "2026-09-22T18:29:24+0300"
   },
   {
    "id": "look__malibu",
@@ -859,12 +898,15 @@
     "neutral_drift255": 31.5991,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.8651,
+    "value_min": 0.0279
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:42+0300"
+   "imported": "2026-09-22T18:29:24+0300"
   },
   {
    "id": "look__milka",
@@ -920,12 +962,15 @@
     "neutral_drift255": 13.7667,
     "black_share": 0.0462,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9896,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:42+0300"
+   "imported": "2026-09-22T18:29:24+0300"
   },
   {
    "id": "look__newstar",
@@ -981,12 +1026,15 @@
     "neutral_drift255": 12.5526,
     "black_share": 0.0,
     "white_share": 0.0154,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:42+0300"
+   "imported": "2026-09-22T18:29:24+0300"
   },
   {
    "id": "look__porsche_xblue_contrast",
@@ -1042,12 +1090,15 @@
     "neutral_drift255": 25.5487,
     "black_share": 0.0154,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9554,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:42+0300"
+   "imported": "2026-09-22T18:29:24+0300"
   },
   {
    "id": "look__porsche_xblue",
@@ -1103,12 +1154,15 @@
     "neutral_drift255": 25.5331,
     "black_share": 0.0154,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9512,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:42+0300"
+   "imported": "2026-09-22T18:29:25+0300"
   },
   {
    "id": "look__ritter_sport",
@@ -1164,12 +1218,15 @@
     "neutral_drift255": 15.8016,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9744,
+    "value_min": 0.0038
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:43+0300"
+   "imported": "2026-09-22T18:29:25+0300"
   },
   {
    "id": "look__silver_look_contrast",
@@ -1225,12 +1282,15 @@
     "neutral_drift255": 18.4281,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:43+0300"
+   "imported": "2026-09-22T18:29:25+0300"
   },
   {
    "id": "look__silver_look",
@@ -1286,12 +1346,15 @@
     "neutral_drift255": 18.5798,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:43+0300"
+   "imported": "2026-09-22T18:29:25+0300"
   },
   {
    "id": "look__souffle",
@@ -1347,12 +1410,15 @@
     "neutral_drift255": 14.9417,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.8942,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:43+0300"
+   "imported": "2026-09-22T18:29:25+0300"
   },
   {
    "id": "look__street_contrast",
@@ -1408,12 +1474,15 @@
     "neutral_drift255": 31.0738,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9295,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:43+0300"
+   "imported": "2026-09-22T18:29:26+0300"
   },
   {
    "id": "look__street",
@@ -1469,12 +1538,15 @@
     "neutral_drift255": 31.1947,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9251,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:44+0300"
+   "imported": "2026-09-22T18:29:26+0300"
   },
   {
    "id": "look__travel",
@@ -1530,12 +1602,15 @@
     "neutral_drift255": 12.0816,
     "black_share": 0.0,
     "white_share": 0.0615,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:44+0300"
+   "imported": "2026-09-22T18:29:26+0300"
   },
   {
    "id": "look__idealniy_2",
@@ -1596,12 +1671,15 @@
     "neutral_drift255": 12.6979,
     "black_share": 0.0769,
     "white_share": 0.0154,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:44+0300"
+   "imported": "2026-09-22T18:29:26+0300"
   },
   {
    "id": "look__idealniy",
@@ -1657,12 +1735,15 @@
     "neutral_drift255": 17.7743,
     "black_share": 0.0154,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:44+0300"
+   "imported": "2026-09-22T18:29:26+0300"
   },
   {
    "id": "dji_action__unknown_unknown__rec709__blue__legacy",
@@ -1726,12 +1807,15 @@
     "neutral_drift255": 8.0623,
     "black_share": 0.0923,
     "white_share": 0.0154,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:44+0300"
+   "imported": "2026-09-22T18:29:26+0300"
   },
   {
    "id": "dji_action__unknown_unknown__rec709__blue",
@@ -1796,17 +1880,20 @@
     "neutral_drift255": 8.0702,
     "black_share": 0.0923,
     "white_share": 0.0462,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:44+0300"
+   "imported": "2026-09-22T18:29:27+0300"
   },
   {
-   "id": "dji__dlogm_dji__rec709__basic",
+   "id": "dji__dlogm__rec709__basic",
    "stage": "develop",
-   "file": "develop/dji__dlogm_dji__rec709__basic.cube",
+   "file": "develop/dji__dlogm__rec709__basic.cube",
    "sha256": "f6b5c358de6736badbd88656b7677b072caa9ebc797ac4c333125c7683e2bc0a",
    "bytes": 1042316,
    "size": 33,
@@ -1874,12 +1961,15 @@
     "neutral_drift255": 0.6673,
     "black_share": 0.0923,
     "white_share": 0.0462,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:45+0300"
+   "imported": "2026-09-22T18:29:27+0300"
   },
   {
    "id": "pre__any__wdr",
@@ -1947,12 +2037,15 @@
     "neutral_drift255": 0.0,
     "black_share": 0.0,
     "white_share": 0.0154,
-    "monotonic": true,
-    "out_of_range": 0.0303
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0303,
+    "value_max": 1.0509,
+    "value_min": 0.0242
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:45+0300"
+   "imported": "2026-09-22T18:29:27+0300"
   },
   {
    "id": "dji_action__unknown_unknown__rec709__everyday__legacy",
@@ -2016,12 +2109,15 @@
     "neutral_drift255": 1.2452,
     "black_share": 0.1077,
     "white_share": 0.0154,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:45+0300"
+   "imported": "2026-09-22T18:29:27+0300"
   },
   {
    "id": "dji_action__unknown_unknown__rec709__everyday",
@@ -2086,17 +2182,20 @@
     "neutral_drift255": 0.9534,
     "black_share": 0.0923,
     "white_share": 0.0462,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:45+0300"
+   "imported": "2026-09-22T18:29:27+0300"
   },
   {
-   "id": "dji_pocket4__dlog_dji__rec709__blue",
+   "id": "dji_pocket4__dlog__rec709__blue",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dlog_dji__rec709__blue.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__blue.cube",
    "sha256": "ec9730faabc370e87ebb8e39221395215ed189896c4c59a23550b3efa367639b",
    "bytes": 6704857,
    "size": 65,
@@ -2156,17 +2255,20 @@
     "neutral_drift255": 7.4279,
     "black_share": 0.1231,
     "white_share": 0.1077,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:45+0300"
+   "imported": "2026-09-22T18:29:27+0300"
   },
   {
-   "id": "dji_pocket4__dlog_dji__rec709__ocean",
+   "id": "dji_pocket4__dlog__rec709__ocean",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dlog_dji__rec709__ocean.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__ocean.cube",
    "sha256": "010b28478f0d3dc35792fb3f2bb74c1746e367a1853b9538b0c0489a29f3ef2c",
    "bytes": 7206870,
    "size": 65,
@@ -2227,17 +2329,20 @@
     "neutral_drift255": 32.9261,
     "black_share": 0.1077,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0109
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:45+0300"
+   "imported": "2026-09-22T18:29:27+0300"
   },
   {
-   "id": "dji_pocket4__dlog_dji__rec709__blue__plus",
+   "id": "dji_pocket4__dlog__rec709__blue__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dlog_dji__rec709__blue__plus.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__blue__plus.cube",
    "sha256": "6fe82cbc4a60876bcbf3056a725de07d5ef70b6550037c345678dfad67a13e78",
    "bytes": 6196600,
    "size": 65,
@@ -2297,17 +2402,20 @@
     "neutral_drift255": 7.319,
     "black_share": 0.1385,
     "white_share": 0.1077,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:46+0300"
+   "imported": "2026-09-22T18:29:28+0300"
   },
   {
-   "id": "dji_pocket4__dlog_dji__rec709__plus",
+   "id": "dji_pocket4__dlog__rec709__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dlog_dji__rec709__plus.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__plus.cube",
    "sha256": "bb3c9b282c21e2974e67d73c9b62ef6c3bc9092d63b713c44ecc4e0de3eccfad",
    "bytes": 1401638,
    "size": 33,
@@ -2370,17 +2478,20 @@
     "neutral_drift255": 1.8002,
     "black_share": 0.1538,
     "white_share": 0.2462,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:46+0300"
+   "imported": "2026-09-22T18:29:28+0300"
   },
   {
-   "id": "dji_pocket4__dlog_dji__rec709",
+   "id": "dji_pocket4__dlog__rec709",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dlog_dji__rec709.cube",
+   "file": "develop/dji_pocket4__dlog__rec709.cube",
    "sha256": "ca8bc7d3bf382512ed9501137c8b88d1829ae9b22a84965d7d2e1339f615de72",
    "bytes": 1401638,
    "size": 33,
@@ -2443,17 +2554,20 @@
     "neutral_drift255": 0.4629,
     "black_share": 0.0615,
     "white_share": 0.1846,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:46+0300"
+   "imported": "2026-09-22T18:29:28+0300"
   },
   {
-   "id": "dji_pocket4__dlog_dji__rec709__everyday__plus",
+   "id": "dji_pocket4__dlog__rec709__everyday__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dlog_dji__rec709__everyday__plus.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__everyday__plus.cube",
    "sha256": "bece423091a673ef1b381300ecd3b5a37efa3c46245525a932604b6c0762fc6a",
    "bytes": 6175917,
    "size": 65,
@@ -2513,17 +2627,20 @@
     "neutral_drift255": 2.6382,
     "black_share": 0.1385,
     "white_share": 0.1077,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:46+0300"
+   "imported": "2026-09-22T18:29:28+0300"
   },
   {
-   "id": "dji_pocket4__dlog_dji__rec709__everyday",
+   "id": "dji_pocket4__dlog__rec709__everyday",
    "stage": "develop",
-   "file": "develop/dji_pocket4__dlog_dji__rec709__everyday.cube",
+   "file": "develop/dji_pocket4__dlog__rec709__everyday.cube",
    "sha256": "f273eac6e45c6fd182a439a81be15e2ebb61bff5b8d3df413bec8e1b697cd6e1",
    "bytes": 7065237,
    "size": 65,
@@ -2583,17 +2700,20 @@
     "neutral_drift255": 2.4126,
     "black_share": 0.1231,
     "white_share": 0.0923,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:46+0300"
+   "imported": "2026-09-22T18:29:28+0300"
   },
   {
-   "id": "dji_pocket4p__dlog_dji__rec709__minus",
+   "id": "dji_pocket4p__dlog__rec709__minus",
    "stage": "develop",
-   "file": "develop/dji_pocket4p__dlog_dji__rec709__minus.cube",
+   "file": "develop/dji_pocket4p__dlog__rec709__minus.cube",
    "sha256": "04757dd8dd669d60a2d58ea1834f185616ca9952922c168fe69dba29bb2be1b1",
    "bytes": 1401638,
    "size": 33,
@@ -2656,17 +2776,20 @@
     "neutral_drift255": 3.6192,
     "black_share": 0.1231,
     "white_share": 0.0923,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:46+0300"
+   "imported": "2026-09-22T18:29:28+0300"
   },
   {
-   "id": "dji_pocket4p__dlog2_dji__rec709__plus",
+   "id": "dji_pocket4p__dlog2__rec709__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4p__dlog2_dji__rec709__plus.cube",
+   "file": "develop/dji_pocket4p__dlog2__rec709__plus.cube",
    "sha256": "32b9b49d52fde38f95cbc1d0a4f486fcbf176eb82d28481b25d4f9a0b006734e",
    "bytes": 10710470,
    "size": 65,
@@ -2729,17 +2852,20 @@
     "neutral_drift255": 0.0,
     "black_share": 0.0923,
     "white_share": 0.3231,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:46+0300"
+   "imported": "2026-09-22T18:29:28+0300"
   },
   {
-   "id": "dji_pocket4p__dlog_dji__rec709__plus",
+   "id": "dji_pocket4p__dlog__rec709__plus",
    "stage": "develop",
-   "file": "develop/dji_pocket4p__dlog_dji__rec709__plus.cube",
+   "file": "develop/dji_pocket4p__dlog__rec709__plus.cube",
    "sha256": "95afff501afd0343c3c1a5f1cf7bc34c8d5ed5765474444b58e9db8a8b7e58fb",
    "bytes": 1401638,
    "size": 33,
@@ -2802,17 +2928,20 @@
     "neutral_drift255": 2.7821,
     "black_share": 0.1385,
     "white_share": 0.2462,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:46+0300"
+   "imported": "2026-09-22T18:29:28+0300"
   },
   {
-   "id": "dji_pocket4p__dlog2_dji__rec709__minus",
+   "id": "dji_pocket4p__dlog2__rec709__minus",
    "stage": "develop",
-   "file": "develop/dji_pocket4p__dlog2_dji__rec709__minus.cube",
+   "file": "develop/dji_pocket4p__dlog2__rec709__minus.cube",
    "sha256": "fa6537da3235c281da6e361806d3e9ee93f5532ad95471878c5d6c05157caa9c",
    "bytes": 6566125,
    "size": 65,
@@ -2875,17 +3004,20 @@
     "neutral_drift255": 0.0,
     "black_share": 0.0615,
     "white_share": 0.2769,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:46+0300"
+   "imported": "2026-09-22T18:29:29+0300"
   },
   {
-   "id": "insta360_luna__ilog_insta360__rec709",
+   "id": "insta360_luna__ilog__rec709",
    "stage": "develop",
-   "file": "develop/insta360_luna__ilog_insta360__rec709.cube",
+   "file": "develop/insta360_luna__ilog__rec709.cube",
    "sha256": "06db0a02784fed3a5db4ef7fb3ee617c63c3b45b699653108927fa3917578d80",
    "bytes": 10710503,
    "size": 65,
@@ -2946,12 +3078,15 @@
     "neutral_drift255": 0.2062,
     "black_share": 0.1231,
     "white_share": 0.1231,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:47+0300"
+   "imported": "2026-09-22T18:29:29+0300"
   },
   {
    "id": "dji_pocket3__unknown_unknown__rec709__blue",
@@ -3013,12 +3148,15 @@
     "neutral_drift255": 7.8989,
     "black_share": 0.1077,
     "white_share": 0.0308,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:47+0300"
+   "imported": "2026-09-22T18:29:29+0300"
   },
   {
    "id": "dji_pocket3__unknown_unknown__rec709__everyday",
@@ -3080,12 +3218,15 @@
     "neutral_drift255": 1.9923,
     "black_share": 0.1077,
     "white_share": 0.0462,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:47+0300"
+   "imported": "2026-09-22T18:29:29+0300"
   },
   {
    "id": "dji_pocket3__unknown_unknown__rec709__ocean",
@@ -3147,12 +3288,15 @@
     "neutral_drift255": 33.5136,
     "black_share": 0.0615,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0109
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:47+0300"
+   "imported": "2026-09-22T18:29:29+0300"
   },
   {
    "id": "fujifilm__flog2_fgamut__rec709__clear",
@@ -3212,12 +3356,15 @@
     "neutral_drift255": 0.0,
     "black_share": 0.1385,
     "white_share": 0.1385,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "fujifilm__flog2_fgamut__rec709__idol",
@@ -3277,12 +3424,15 @@
     "neutral_drift255": 23.1479,
     "black_share": 0.1077,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0109
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__bleach",
@@ -3342,12 +3492,15 @@
     "neutral_drift255": 15.8368,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0444,
+    "dip_max255": 0.0373,
+    "out_of_range": 0.0,
+    "value_max": 0.9656,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__bleach__legacy",
@@ -3407,12 +3560,15 @@
     "neutral_drift255": 15.9028,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0378,
+    "dip_max255": 0.0316,
+    "out_of_range": 0.0,
+    "value_max": 0.9655,
+    "value_min": 0.0005
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__visionteal__legacy",
@@ -3472,12 +3628,15 @@
     "neutral_drift255": 9.4202,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0217,
+    "dip_max255": 0.0212,
+    "out_of_range": 0.0,
+    "value_max": 0.9637,
+    "value_min": 0.0184
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__vision__legacy",
@@ -3537,12 +3696,15 @@
     "neutral_drift255": 9.4554,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0529,
+    "dip_max255": 0.0524,
+    "out_of_range": 0.0,
+    "value_max": 0.9523,
+    "value_min": 0.0186
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__visionteal",
@@ -3602,12 +3764,15 @@
     "neutral_drift255": 9.2917,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1467,
+    "dip_max255": 0.1467,
+    "out_of_range": 0.0,
+    "value_max": 0.9649,
+    "value_min": 0.0121
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__eastman",
@@ -3667,12 +3832,15 @@
     "neutral_drift255": 7.8795,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.001,
+    "dip_max255": 0.001,
+    "out_of_range": 0.0,
+    "value_max": 0.977,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__eastmanrm__legacy",
@@ -3732,12 +3900,15 @@
     "neutral_drift255": 10.5258,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1369,
+    "dip_max255": 0.0705,
+    "out_of_range": 0.0,
+    "value_max": 0.9533,
+    "value_min": 0.0287
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__eastman__legacy",
@@ -3797,12 +3968,15 @@
     "neutral_drift255": 7.8757,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1563,
+    "dip_max255": 0.0707,
+    "out_of_range": 0.0,
+    "value_max": 0.9784,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__vision",
@@ -3862,12 +4036,15 @@
     "neutral_drift255": 9.4018,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0151,
+    "dip_max255": 0.0148,
+    "out_of_range": 0.0,
+    "value_max": 0.9523,
+    "value_min": 0.0168
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__eterna",
@@ -3927,12 +4104,15 @@
     "neutral_drift255": 17.5127,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0789,
+    "dip_max255": 0.0783,
+    "out_of_range": 0.0,
+    "value_max": 0.9778,
+    "value_min": 0.0022
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__eterna__legacy",
@@ -3992,12 +4172,15 @@
     "neutral_drift255": 17.4669,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0391,
+    "dip_max255": 0.035,
+    "out_of_range": 0.0,
+    "value_max": 0.9782,
+    "value_min": 0.0208
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog2_canoncinemagamut__rec709__eastmanrm",
@@ -4057,12 +4240,15 @@
     "neutral_drift255": 10.5044,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0456,
+    "dip_max255": 0.0443,
+    "out_of_range": 0.0,
+    "value_max": 0.9533,
+    "value_min": 0.0244
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__bleach__legacy",
@@ -4122,12 +4308,15 @@
     "neutral_drift255": 15.8987,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0371,
+    "dip_max255": 0.0371,
+    "out_of_range": 0.0,
+    "value_max": 0.9662,
+    "value_min": 0.0037
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__bleach",
@@ -4187,12 +4376,15 @@
     "neutral_drift255": 15.8406,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0632,
+    "dip_max255": 0.0632,
+    "out_of_range": 0.0,
+    "value_max": 0.9678,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__visionteal",
@@ -4252,12 +4444,15 @@
     "neutral_drift255": 9.2802,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": false,
-    "out_of_range": 0.0
+    "dip_total255": 0.8055,
+    "dip_max255": 0.74,
+    "out_of_range": 0.0,
+    "value_max": 0.9414,
+    "value_min": 0.0121
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__vision__legacy",
@@ -4317,12 +4512,15 @@
     "neutral_drift255": 9.5135,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.2247,
+    "dip_max255": 0.1667,
+    "out_of_range": 0.0,
+    "value_max": 0.9437,
+    "value_min": 0.0187
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__visionteal__legacy",
@@ -4382,12 +4580,15 @@
     "neutral_drift255": 9.3307,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.4387,
+    "dip_max255": 0.3565,
+    "out_of_range": 0.0,
+    "value_max": 0.9396,
+    "value_min": 0.0187
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__eastman__legacy",
@@ -4447,12 +4648,15 @@
     "neutral_drift255": 7.817,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1811,
+    "dip_max255": 0.0851,
+    "out_of_range": 0.0,
+    "value_max": 0.943,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__eastmanrm__legacy",
@@ -4512,12 +4716,15 @@
     "neutral_drift255": 10.786,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.4094,
+    "dip_max255": 0.2221,
+    "out_of_range": 0.0,
+    "value_max": 0.9454,
+    "value_min": 0.0307
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__eastman",
@@ -4577,12 +4784,15 @@
     "neutral_drift255": 7.7392,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9342,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__eastmanrm",
@@ -4642,12 +4852,15 @@
     "neutral_drift255": 10.5955,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.4885,
+    "dip_max255": 0.4574,
+    "out_of_range": 0.0,
+    "value_max": 0.9461,
+    "value_min": 0.024
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__eterna__legacy",
@@ -4707,12 +4920,15 @@
     "neutral_drift255": 11.7938,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.6532,
+    "dip_max255": 0.3262,
+    "out_of_range": 0.0,
+    "value_max": 0.9746,
+    "value_min": 0.0256
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__eterna",
@@ -4772,12 +4988,15 @@
     "neutral_drift255": 11.8463,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": false,
-    "out_of_range": 0.0
+    "dip_total255": 1.1552,
+    "dip_max255": 0.5331,
+    "out_of_range": 0.0,
+    "value_max": 0.9731,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "canon__clog3_canoncinemagamut__rec709__vision",
@@ -4837,12 +5056,15 @@
     "neutral_drift255": 9.4849,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": false,
-    "out_of_range": 0.0
+    "dip_total255": 0.6516,
+    "dip_max255": 0.5893,
+    "out_of_range": 0.0,
+    "value_max": 0.9462,
+    "value_min": 0.0159
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__bleach",
@@ -4902,12 +5124,15 @@
     "neutral_drift255": 15.8562,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0251,
+    "dip_max255": 0.0251,
+    "out_of_range": 0.0,
+    "value_max": 0.964,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eastman__legacy",
@@ -4967,12 +5192,15 @@
     "neutral_drift255": 7.4241,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0947,
+    "dip_max255": 0.0551,
+    "out_of_range": 0.0,
+    "value_max": 0.9536,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__vision",
@@ -5032,12 +5260,15 @@
     "neutral_drift255": 9.5038,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0981,
+    "dip_max255": 0.0919,
+    "out_of_range": 0.0,
+    "value_max": 0.9533,
+    "value_min": 0.0178
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__visionteal",
@@ -5097,12 +5328,15 @@
     "neutral_drift255": 9.6071,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0606,
+    "dip_max255": 0.0467,
+    "out_of_range": 0.0,
+    "value_max": 0.9485,
+    "value_min": 0.012
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:30+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__visionteal__legacy",
@@ -5162,12 +5396,15 @@
     "neutral_drift255": 9.6303,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.141,
+    "dip_max255": 0.1218,
+    "out_of_range": 0.0,
+    "value_max": 0.9455,
+    "value_min": 0.014
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:48+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__vision__legacy",
@@ -5227,12 +5464,15 @@
     "neutral_drift255": 9.4319,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0799,
+    "dip_max255": 0.0506,
+    "out_of_range": 0.0,
+    "value_max": 0.9504,
+    "value_min": 0.0187
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__bleach__legacy",
@@ -5292,12 +5532,15 @@
     "neutral_drift255": 15.8717,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0235,
+    "dip_max255": 0.0235,
+    "out_of_range": 0.0,
+    "value_max": 0.9628,
+    "value_min": 0.0003
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eastmanrm__legacy",
@@ -5357,12 +5600,15 @@
     "neutral_drift255": 10.4353,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1755,
+    "dip_max255": 0.1357,
+    "out_of_range": 0.0,
+    "value_max": 0.9519,
+    "value_min": 0.0272
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eterna__legacy",
@@ -5422,12 +5668,15 @@
     "neutral_drift255": 10.3264,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1372,
+    "dip_max255": 0.0731,
+    "out_of_range": 0.0,
+    "value_max": 0.9799,
+    "value_min": 0.0226
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eastmanrm",
@@ -5487,12 +5736,15 @@
     "neutral_drift255": 10.3464,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1385,
+    "dip_max255": 0.1119,
+    "out_of_range": 0.0,
+    "value_max": 0.9539,
+    "value_min": 0.0239
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eterna",
@@ -5552,12 +5804,15 @@
     "neutral_drift255": 10.124,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1509,
+    "dip_max255": 0.088,
+    "out_of_range": 0.0,
+    "value_max": 0.9787,
+    "value_min": 0.0072
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eastman",
@@ -5617,12 +5872,15 @@
     "neutral_drift255": 7.358,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9524,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eastmanrm__legacy__wboffset",
@@ -5682,12 +5940,15 @@
     "neutral_drift255": 26.2178,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1825,
+    "dip_max255": 0.1182,
+    "out_of_range": 0.0,
+    "value_max": 0.9519,
+    "value_min": 0.0271
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eastmanrm__wboffset",
@@ -5747,12 +6008,15 @@
     "neutral_drift255": 25.284,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1255,
+    "dip_max255": 0.0937,
+    "out_of_range": 0.0,
+    "value_max": 0.9538,
+    "value_min": 0.0239
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eterna__wboffset",
@@ -5812,12 +6076,15 @@
     "neutral_drift255": 18.4971,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1406,
+    "dip_max255": 0.1007,
+    "out_of_range": 0.0,
+    "value_max": 0.9787,
+    "value_min": 0.0072
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__vision__wboffset",
@@ -5877,12 +6144,15 @@
     "neutral_drift255": 20.7978,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1065,
+    "dip_max255": 0.101,
+    "out_of_range": 0.0,
+    "value_max": 0.9532,
+    "value_min": 0.0179
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eastman__legacy__wboffset",
@@ -5942,12 +6212,15 @@
     "neutral_drift255": 15.2141,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0914,
+    "dip_max255": 0.0522,
+    "out_of_range": 0.0,
+    "value_max": 0.9538,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eterna__legacy__wboffset",
@@ -6007,12 +6280,15 @@
     "neutral_drift255": 19.0447,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1355,
+    "dip_max255": 0.0798,
+    "out_of_range": 0.0,
+    "value_max": 0.9799,
+    "value_min": 0.0241
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__eastman__wboffset",
@@ -6072,12 +6348,15 @@
     "neutral_drift255": 14.358,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0006,
+    "dip_max255": 0.0006,
+    "out_of_range": 0.0,
+    "value_max": 0.9529,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__visionteal__wboffset",
@@ -6137,12 +6416,15 @@
     "neutral_drift255": 24.4749,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0927,
+    "dip_max255": 0.0856,
+    "out_of_range": 0.0,
+    "value_max": 0.9483,
+    "value_min": 0.0121
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__bleach__legacy__wboffset",
@@ -6202,12 +6484,15 @@
     "neutral_drift255": 30.3657,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.016,
+    "dip_max255": 0.016,
+    "out_of_range": 0.0,
+    "value_max": 0.9628,
+    "value_min": 0.0006
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__visionteal__legacy__wboffset",
@@ -6267,12 +6552,15 @@
     "neutral_drift255": 25.1792,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1718,
+    "dip_max255": 0.1553,
+    "out_of_range": 0.0,
+    "value_max": 0.9455,
+    "value_min": 0.0149
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__vision__legacy__wboffset",
@@ -6332,12 +6620,15 @@
     "neutral_drift255": 21.3891,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0673,
+    "dip_max255": 0.0365,
+    "out_of_range": 0.0,
+    "value_max": 0.9504,
+    "value_min": 0.0187
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "panasonic__vlog_vgamut__rec709__bleach__wboffset",
@@ -6397,12 +6688,15 @@
     "neutral_drift255": 29.607,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0183,
+    "dip_max255": 0.0183,
+    "out_of_range": 0.0,
+    "value_max": 0.9641,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__bleach__legacy",
@@ -6465,12 +6759,15 @@
     "neutral_drift255": 15.8442,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9685,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eastmanrm",
@@ -6533,12 +6830,15 @@
     "neutral_drift255": 16.1127,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0804,
+    "dip_max255": 0.0713,
+    "out_of_range": 0.0,
+    "value_max": 0.9551,
+    "value_min": 0.0283
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:49+0300"
+   "imported": "2026-09-22T18:29:31+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eastmanrm__legacy",
@@ -6601,12 +6901,15 @@
     "neutral_drift255": 15.0817,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1454,
+    "dip_max255": 0.1193,
+    "out_of_range": 0.0,
+    "value_max": 0.9534,
+    "value_min": 0.0297
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:50+0300"
+   "imported": "2026-09-22T18:29:32+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eterna__legacy",
@@ -6669,12 +6972,15 @@
     "neutral_drift255": 11.0894,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.2606,
+    "dip_max255": 0.2529,
+    "out_of_range": 0.0,
+    "value_max": 0.9746,
+    "value_min": 0.0099
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:50+0300"
+   "imported": "2026-09-22T18:29:32+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__bleach",
@@ -6737,12 +7043,15 @@
     "neutral_drift255": 15.8365,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9689,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:50+0300"
+   "imported": "2026-09-22T18:29:32+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eterna",
@@ -6805,12 +7114,15 @@
     "neutral_drift255": 9.5487,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.2672,
+    "dip_max255": 0.2555,
+    "out_of_range": 0.0,
+    "value_max": 0.9745,
+    "value_min": 0.0083
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:50+0300"
+   "imported": "2026-09-22T18:29:32+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__visionteal__legacy",
@@ -6873,12 +7185,15 @@
     "neutral_drift255": 12.2374,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0324,
+    "dip_max255": 0.0272,
+    "out_of_range": 0.0,
+    "value_max": 0.9474,
+    "value_min": 0.0126
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:50+0300"
+   "imported": "2026-09-22T18:29:32+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__visionteal",
@@ -6941,12 +7256,15 @@
     "neutral_drift255": 12.113,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0051,
+    "dip_max255": 0.0026,
+    "out_of_range": 0.0,
+    "value_max": 0.9494,
+    "value_min": 0.0122
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:51+0300"
+   "imported": "2026-09-22T18:29:33+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eastman",
@@ -7009,12 +7327,15 @@
     "neutral_drift255": 7.3815,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0013,
+    "dip_max255": 0.0013,
+    "out_of_range": 0.0,
+    "value_max": 0.9589,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:51+0300"
+   "imported": "2026-09-22T18:29:33+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__vision__legacy",
@@ -7077,12 +7398,15 @@
     "neutral_drift255": 9.5018,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9523,
+    "value_min": 0.0175
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:51+0300"
+   "imported": "2026-09-22T18:29:33+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__eastman__legacy",
@@ -7145,12 +7469,15 @@
     "neutral_drift255": 7.471,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1439,
+    "dip_max255": 0.0532,
+    "out_of_range": 0.0,
+    "value_max": 0.9565,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:51+0300"
+   "imported": "2026-09-22T18:29:33+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__vision",
@@ -7213,12 +7540,15 @@
     "neutral_drift255": 9.5487,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0013,
+    "dip_max255": 0.0013,
+    "out_of_range": 0.0,
+    "value_max": 0.9542,
+    "value_min": 0.0168
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:51+0300"
+   "imported": "2026-09-22T18:29:33+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__tungsten",
@@ -7281,12 +7611,15 @@
     "neutral_drift255": 11.0934,
     "black_share": 0.1538,
     "white_share": 0.2,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0182,
+    "dip_max255": 0.0182,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:52+0300"
+   "imported": "2026-09-22T18:29:34+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__neutral",
@@ -7349,12 +7682,15 @@
     "neutral_drift255": 0.0,
     "black_share": 0.1692,
     "white_share": 0.1846,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:52+0300"
+   "imported": "2026-09-22T18:29:34+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__utopia__legacy",
@@ -7417,12 +7753,15 @@
     "neutral_drift255": 10.9183,
     "black_share": 0.0,
     "white_share": 0.1692,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0325,
+    "dip_max255": 0.0168,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:52+0300"
+   "imported": "2026-09-22T18:29:34+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__tungsten__legacy",
@@ -7485,12 +7824,15 @@
     "neutral_drift255": 7.0234,
     "black_share": 0.0,
     "white_share": 0.2,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0117,
+    "dip_max255": 0.0117,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:52+0300"
+   "imported": "2026-09-22T18:29:34+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__utopia",
@@ -7553,12 +7895,15 @@
     "neutral_drift255": 10.8639,
     "black_share": 0.0,
     "white_share": 0.1692,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0104,
+    "dip_max255": 0.0052,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:52+0300"
+   "imported": "2026-09-22T18:29:34+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__neutral__legacy",
@@ -7621,12 +7966,15 @@
     "neutral_drift255": 0.0,
     "black_share": 0.0,
     "white_share": 0.1846,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:53+0300"
+   "imported": "2026-09-22T18:29:35+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__jamaica",
@@ -7689,12 +8037,15 @@
     "neutral_drift255": 13.2294,
     "black_share": 0.0,
     "white_share": 0.1538,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.2647,
+    "dip_max255": 0.1739,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:53+0300"
+   "imported": "2026-09-22T18:29:35+0300"
   },
   {
    "id": "pre__applelog__wdr",
@@ -7753,12 +8104,15 @@
     "neutral_drift255": 2.1459,
     "black_share": 0.1692,
     "white_share": 0.0462,
-    "monotonic": false,
-    "out_of_range": 0.0
+    "dip_total255": 0.5305,
+    "dip_max255": 0.5305,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:53+0300"
+   "imported": "2026-09-22T18:29:35+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__iceblue",
@@ -7821,12 +8175,15 @@
     "neutral_drift255": 20.2414,
     "black_share": 0.0,
     "white_share": 0.1846,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0272,
+    "dip_max255": 0.0143,
+    "out_of_range": 0.0,
+    "value_max": 0.9989,
+    "value_min": 0.0095
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:53+0300"
+   "imported": "2026-09-22T18:29:35+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__iceblue__legacy",
@@ -7889,12 +8246,15 @@
     "neutral_drift255": 23.3932,
     "black_share": 0.0,
     "white_share": 0.1846,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0233,
+    "dip_max255": 0.013,
+    "out_of_range": 0.0,
+    "value_max": 0.9989,
+    "value_min": 0.0095
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:53+0300"
+   "imported": "2026-09-22T18:29:35+0300"
   },
   {
    "id": "apple_iphone15__applelog_rec2020__rec709__jamaica__legacy",
@@ -7957,17 +8317,20 @@
     "neutral_drift255": 14.7938,
     "black_share": 0.0,
     "white_share": 0.1538,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.2633,
+    "dip_max255": 0.1856,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:53+0300"
+   "imported": "2026-09-22T18:29:35+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__utopia",
+   "id": "sony__slog2_sgamut3cine__rec709__utopia",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__utopia.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__utopia.cube",
    "sha256": "793d10568fbacfabbc974edfe4353517e1ebc63327c793a584baaeb4e347c0f3",
    "bytes": 969760,
    "size": 33,
@@ -8025,17 +8388,20 @@
     "neutral_drift255": 11.2612,
     "black_share": 0.0,
     "white_share": 0.0923,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:35+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__tungsten",
+   "id": "sony__slog2_sgamut3cine__rec709__tungsten",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__tungsten.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__tungsten.cube",
    "sha256": "da4a59fffaa6b2d1aa7678e96cab135403b314688ad1417a2e78a4a82cb4559a",
    "bytes": 981880,
    "size": 33,
@@ -8093,17 +8459,20 @@
     "neutral_drift255": 17.7198,
     "black_share": 0.0,
     "white_share": 0.1385,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0239,
+    "dip_max255": 0.0239,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:35+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__iceblue",
+   "id": "sony__slog2_sgamut3cine__rec709__iceblue",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__iceblue.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__iceblue.cube",
    "sha256": "bfa40a0e9007bd20d9635edc00a67c2309ac9d16bd769d4860ae22ad76990f71",
    "bytes": 1004487,
    "size": 33,
@@ -8161,17 +8530,20 @@
     "neutral_drift255": 13.4261,
     "black_share": 0.0,
     "white_share": 0.1385,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0091,
+    "dip_max255": 0.0071,
+    "out_of_range": 0.0,
+    "value_max": 0.999,
+    "value_min": 0.0088
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__utopia__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__utopia__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__utopia__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__utopia__legacy.cube",
    "sha256": "4f441512df5f22d660ebc99dd02577b8b9757026931e1e15f2a4b7853b8b852f",
    "bytes": 971021,
    "size": 33,
@@ -8229,17 +8601,20 @@
     "neutral_drift255": 11.4076,
     "black_share": 0.0,
     "white_share": 0.1077,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__tungsten__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__tungsten__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__tungsten__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__tungsten__legacy.cube",
    "sha256": "4b5e90bb560211b30e8fd10631991214e9f388a9b9345e890e4ebb7a6618779f",
    "bytes": 984309,
    "size": 33,
@@ -8297,17 +8672,20 @@
     "neutral_drift255": 12.0777,
     "black_share": 0.0,
     "white_share": 0.1385,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0973,
+    "dip_max255": 0.0796,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__jamaica",
+   "id": "sony__slog2_sgamut3cine__rec709__jamaica",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__jamaica.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__jamaica.cube",
    "sha256": "a43dc6647603650dc70216ec66351345b7abac102f783ff2c442bc6597dcd394",
    "bytes": 980871,
    "size": 33,
@@ -8365,17 +8743,20 @@
     "neutral_drift255": 11.1907,
     "black_share": 0.0,
     "white_share": 0.1231,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0003,
+    "dip_max255": 0.0003,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__jamaica__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__jamaica__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__jamaica__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__jamaica__legacy.cube",
    "sha256": "dfd052c94d1b93bacb1961c69a3de190a0ee28d7e118cbbd4591c3c9f33568d4",
    "bytes": 983066,
    "size": 33,
@@ -8433,17 +8814,20 @@
     "neutral_drift255": 12.2181,
     "black_share": 0.0,
     "white_share": 0.1077,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.052,
+    "dip_max255": 0.052,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__iceblue__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__iceblue__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__iceblue__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__iceblue__legacy.cube",
    "sha256": "e5f518901e2a08418ebb65648ade4f4dc5cc3df7a43ecddec3e4fba5ec69fd36",
    "bytes": 1005122,
    "size": 33,
@@ -8501,17 +8885,20 @@
     "neutral_drift255": 15.1692,
     "black_share": 0.0,
     "white_share": 0.1385,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0479,
+    "dip_max255": 0.0266,
+    "out_of_range": 0.0,
+    "value_max": 0.999,
+    "value_min": 0.0108
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__neutral",
+   "id": "sony__slog2_sgamut3cine__rec709__neutral",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__neutral.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__neutral.cube",
    "sha256": "60a0f9517a8ba8f1233c5bfbe296def61650fb7a97339a145e9a3961289d1c04",
    "bytes": 968188,
    "size": 33,
@@ -8569,17 +8956,20 @@
     "neutral_drift255": 0.8784,
     "black_share": 0.1077,
     "white_share": 0.1077,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__neutral__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__neutral__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__neutral__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__neutral__legacy.cube",
    "sha256": "996a8429e1e41c16ce33049a601f10d69ecac8a464159ebd91f537012b92ebfc",
    "bytes": 992170,
    "size": 33,
@@ -8637,17 +9027,20 @@
     "neutral_drift255": 0.7928,
     "black_share": 0.0,
     "white_share": 0.1231,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__utopia",
+   "id": "sony__slog3_sgamut3cine__rec709__utopia",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__utopia.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__utopia.cube",
    "sha256": "442219e7a541bd392cef725039dc89d3469e025a11470b6052971605637d4b40",
    "bytes": 963460,
    "size": 33,
@@ -8705,12 +9098,15 @@
     "neutral_drift255": 11.1571,
     "black_share": 0.0,
     "white_share": 0.1231,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0023,
+    "dip_max255": 0.0023,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
    "id": "unknown__slog3_sgamut3cine__rec709__carla",
@@ -8773,17 +9169,20 @@
     "neutral_drift255": 20.284,
     "black_share": 0.0,
     "white_share": 0.1385,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.029
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__iceblue",
+   "id": "sony__slog3_sgamut3cine__rec709__iceblue",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__iceblue.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__iceblue.cube",
    "sha256": "ab8ceb7ea4d8a6778dcda8a43bcf88dbe124def9cd9ad97f39f0f685bbf22dc3",
    "bytes": 1007496,
    "size": 33,
@@ -8841,17 +9240,20 @@
     "neutral_drift255": 19.8288,
     "black_share": 0.0,
     "white_share": 0.1692,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0117,
+    "dip_max255": 0.0092,
+    "out_of_range": 0.0,
+    "value_max": 0.999,
+    "value_min": 0.0089
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__jamaica",
+   "id": "sony__slog3_sgamut3cine__rec709__jamaica",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__jamaica.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__jamaica.cube",
    "sha256": "ce6fcfff9cdd3b31d9f62f5c6c75f0f977879dcb95bded511174306e2fd2f9c2",
    "bytes": 988301,
    "size": 33,
@@ -8909,17 +9311,20 @@
     "neutral_drift255": 14.359,
     "black_share": 0.0,
     "white_share": 0.1538,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__neutral",
+   "id": "sony__slog3_sgamut3cine__rec709__neutral",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__neutral.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__neutral.cube",
    "sha256": "0b29637c3e778a78f70815b841dbf6e53ef932705dff88f4c7b028149afa9e49",
    "bytes": 970085,
    "size": 33,
@@ -8977,17 +9382,20 @@
     "neutral_drift255": 0.9606,
     "black_share": 0.1231,
     "white_share": 0.1538,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__iceblue__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__iceblue__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__iceblue__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__iceblue__legacy.cube",
    "sha256": "c0f2b821b8643da6c18077c14b09a994b1364dd38a229adb7295076119476a82",
    "bytes": 1007959,
    "size": 33,
@@ -9045,17 +9453,20 @@
     "neutral_drift255": 21.0029,
     "black_share": 0.0,
     "white_share": 0.1692,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0662,
+    "dip_max255": 0.0322,
+    "out_of_range": 0.0,
+    "value_max": 0.999,
+    "value_min": 0.011
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__jamaica__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__jamaica__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__jamaica__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__jamaica__legacy.cube",
    "sha256": "9685421e713c731327e0896694a18722d01c906793dd92a58b8f192485521c1f",
    "bytes": 992525,
    "size": 33,
@@ -9113,17 +9524,20 @@
     "neutral_drift255": 15.9416,
     "black_share": 0.0,
     "white_share": 0.1538,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.5046,
+    "dip_max255": 0.2804,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__utopia__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__utopia__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__utopia__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__utopia__legacy.cube",
    "sha256": "dcddce9584a05cd606366eccb1b7a8514647541c5213d10a979345f60305453a",
    "bytes": 966711,
    "size": 33,
@@ -9181,17 +9595,20 @@
     "neutral_drift255": 11.2588,
     "black_share": 0.0,
     "white_share": 0.1385,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0077,
+    "dip_max255": 0.0026,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__tungsten",
+   "id": "sony__slog3_sgamut3cine__rec709__tungsten",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__tungsten.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__tungsten.cube",
    "sha256": "4d264b788c612b8f6db08e9cf140729c4a5e2acf4ad11dd96ef320bc39271c4c",
    "bytes": 984568,
    "size": 33,
@@ -9249,17 +9666,20 @@
     "neutral_drift255": 8.9085,
     "black_share": 0.0923,
     "white_share": 0.1692,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.087,
+    "dip_max255": 0.0759,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__tungsten__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__tungsten__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__tungsten__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__tungsten__legacy.cube",
    "sha256": "70728021d91a2a1ceaa382fde4555062f0f37856d07c1ec73112a8cddd9f5f49",
    "bytes": 988222,
    "size": 33,
@@ -9317,17 +9737,20 @@
     "neutral_drift255": 6.4489,
     "black_share": 0.0,
     "white_share": 0.1846,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0934,
+    "dip_max255": 0.0786,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__neutral__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__neutral__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__neutral__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__neutral__legacy.cube",
    "sha256": "c69c48934d1bd0a5e19d259f43e72a392eb047e6dc2982aaa09ea52f72fefb60",
    "bytes": 995351,
    "size": 33,
@@ -9385,17 +9808,20 @@
     "neutral_drift255": 0.7967,
     "black_share": 0.0,
     "white_share": 0.1692,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0065,
+    "dip_max255": 0.0065,
+    "out_of_range": 0.0,
+    "value_max": 1.0,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__eterna",
+   "id": "sony__slog2_sgamut3cine__rec709__eterna",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__eterna.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eterna.cube",
    "sha256": "4ece74e4a0f2f6268a693005fa7cec0d68f21cc58e8162ce222057a8106af1f3",
    "bytes": 1004521,
    "size": 33,
@@ -9453,17 +9879,20 @@
     "neutral_drift255": 8.2918,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0122,
+    "dip_max255": 0.0089,
+    "out_of_range": 0.0,
+    "value_max": 0.978,
+    "value_min": 0.0125
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__vision__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__vision__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__vision__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__vision__legacy.cube",
    "sha256": "898fff368ae3377697ec4bda70c6f0305359cd461ef522e7f91aba36784c949b",
    "bytes": 1004151,
    "size": 33,
@@ -9521,17 +9950,20 @@
     "neutral_drift255": 9.4942,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.1065,
+    "dip_max255": 0.1027,
+    "out_of_range": 0.0,
+    "value_max": 0.9502,
+    "value_min": 0.0188
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__visionteal",
+   "id": "sony__slog2_sgamut3cine__rec709__visionteal",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__visionteal.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__visionteal.cube",
    "sha256": "db4b62c2643c7a798dc92eab5022a87aba47d4c4c064026207addce7b5521e37",
    "bytes": 1004825,
    "size": 33,
@@ -9589,17 +10021,20 @@
     "neutral_drift255": 8.8638,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0065,
+    "dip_max255": 0.004,
+    "out_of_range": 0.0,
+    "value_max": 0.9474,
+    "value_min": 0.0122
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__eastmanrm__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__eastmanrm__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__eastmanrm__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eastmanrm__legacy.cube",
    "sha256": "909cfa983658a2b31660a9579537c345822fe28b35e0cc43327281a3277dea09",
    "bytes": 1007958,
    "size": 33,
@@ -9657,17 +10092,20 @@
     "neutral_drift255": 10.4902,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0429,
+    "dip_max255": 0.0123,
+    "out_of_range": 0.0,
+    "value_max": 0.9594,
+    "value_min": 0.0332
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__vision",
+   "id": "sony__slog2_sgamut3cine__rec709__vision",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__vision.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__vision.cube",
    "sha256": "c795cc695e7e893e85bec9a95c4f7423969d93d0cbcd1b1d8041563e7dce3182",
    "bytes": 1003513,
    "size": 33,
@@ -9725,17 +10163,20 @@
     "neutral_drift255": 9.4903,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0013,
+    "dip_max255": 0.0011,
+    "out_of_range": 0.0,
+    "value_max": 0.9523,
+    "value_min": 0.0187
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__bleach",
+   "id": "sony__slog2_sgamut3cine__rec709__bleach",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__bleach.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__bleach.cube",
    "sha256": "d4b311c8cbdd6c2eba8240ba6ad88fef5d5dc0e308e06b4d9e5b6b0f5412d8b9",
    "bytes": 1009885,
    "size": 33,
@@ -9793,17 +10234,20 @@
     "neutral_drift255": 15.782,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9684,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__eastmanrm",
+   "id": "sony__slog2_sgamut3cine__rec709__eastmanrm",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__eastmanrm.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eastmanrm.cube",
    "sha256": "85b461c9715d34888f71a18044f3b547b2cb99c36b7fa220be73f257144f5140",
    "bytes": 1006408,
    "size": 33,
@@ -9861,17 +10305,20 @@
     "neutral_drift255": 10.2648,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9539,
+    "value_min": 0.0288
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__eastman",
+   "id": "sony__slog2_sgamut3cine__rec709__eastman",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__eastman.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eastman.cube",
    "sha256": "96ac123e1c3aff71ab37444fdd17f27e75deea233ca9d0d0b0851a9a210bb353",
    "bytes": 1005299,
    "size": 33,
@@ -9929,17 +10376,20 @@
     "neutral_drift255": 7.4047,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0086,
+    "dip_max255": 0.0086,
+    "out_of_range": 0.0,
+    "value_max": 0.9487,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__bleach__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__bleach__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__bleach__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__bleach__legacy.cube",
    "sha256": "5daa6ce3b57599890cccdeedf344620973a756660091ca6b5f9879c3da87fee1",
    "bytes": 1011308,
    "size": 33,
@@ -9997,17 +10447,20 @@
     "neutral_drift255": 15.7899,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9692,
+    "value_min": 0.0008
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__eterna__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__eterna__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__eterna__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eterna__legacy.cube",
    "sha256": "98c073107f7e0333570aa6749c102a697cdb4edc16d6a774e8938af30319945a",
    "bytes": 1004656,
    "size": 33,
@@ -10065,17 +10518,20 @@
     "neutral_drift255": 9.4887,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0182,
+    "dip_max255": 0.0128,
+    "out_of_range": 0.0,
+    "value_max": 0.9782,
+    "value_min": 0.0301
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__eastman__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__eastman__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__eastman__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__eastman__legacy.cube",
    "sha256": "97a59cc0a594fb29639e35b50ebc4cc1040689c4af36e32d69a045451ae8a633",
    "bytes": 1006709,
    "size": 33,
@@ -10133,17 +10589,20 @@
     "neutral_drift255": 7.2762,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0117,
+    "dip_max255": 0.0081,
+    "out_of_range": 0.0,
+    "value_max": 0.9527,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog2_sgamut3cine__rec709__visionteal__legacy",
+   "id": "sony__slog2_sgamut3cine__rec709__visionteal__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog2_sgamut3cine__rec709__visionteal__legacy.cube",
+   "file": "develop/sony__slog2_sgamut3cine__rec709__visionteal__legacy.cube",
    "sha256": "e9b3737641221b394455417de625e01411581901427d08a28e7102be92742153",
    "bytes": 1005912,
    "size": 33,
@@ -10201,17 +10660,20 @@
     "neutral_drift255": 9.1438,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0333,
+    "dip_max255": 0.0302,
+    "out_of_range": 0.0,
+    "value_max": 0.9454,
+    "value_min": 0.0185
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__vision__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__vision__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__vision__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__vision__legacy.cube",
    "sha256": "dc1f34139c85fd4f4d1cc50e97205273b13f146c9c18801d3a73de85a3d67b5b",
    "bytes": 1007729,
    "size": 33,
@@ -10269,17 +10731,20 @@
     "neutral_drift255": 9.5681,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0378,
+    "dip_max255": 0.0333,
+    "out_of_range": 0.0,
+    "value_max": 0.9502,
+    "value_min": 0.0188
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__eterna__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__eterna__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__eterna__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eterna__legacy.cube",
    "sha256": "c4bbc9325e4e8989742ac0b292405ed3f2359b96294feedc9b6e98fa2a1eccc0",
    "bytes": 1007841,
    "size": 33,
@@ -10337,17 +10802,20 @@
     "neutral_drift255": 12.1235,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0506,
+    "dip_max255": 0.0439,
+    "out_of_range": 0.0,
+    "value_max": 0.9784,
+    "value_min": 0.0298
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__vision",
+   "id": "sony__slog3_sgamut3cine__rec709__vision",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__vision.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__vision.cube",
    "sha256": "35cdc1e7245db0ba5237b2cdf1274c3d7cbe810e8a830e3eeceed355bfd7b07d",
    "bytes": 1006729,
    "size": 33,
@@ -10405,17 +10873,20 @@
     "neutral_drift255": 9.5293,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0026,
+    "dip_max255": 0.0019,
+    "out_of_range": 0.0,
+    "value_max": 0.9523,
+    "value_min": 0.0188
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:36+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__eterna",
+   "id": "sony__slog3_sgamut3cine__rec709__eterna",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__eterna.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eterna.cube",
    "sha256": "37fc73c46cb60029ef5700a143f3540e9e22d3ab37c65e3e335a08fbe164a53e",
    "bytes": 1007640,
    "size": 33,
@@ -10473,17 +10944,20 @@
     "neutral_drift255": 11.0754,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0272,
+    "dip_max255": 0.0263,
+    "out_of_range": 0.0,
+    "value_max": 0.9786,
+    "value_min": 0.0118
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:54+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__eastmanrm__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__eastmanrm__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__eastmanrm__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eastmanrm__legacy.cube",
    "sha256": "e5366d69441f32185a00f7ae8c85f6bed7e2d1f24047a7c85430145b563fc3c3",
    "bytes": 1012743,
    "size": 33,
@@ -10541,17 +11015,20 @@
     "neutral_drift255": 10.2839,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0952,
+    "dip_max255": 0.043,
+    "out_of_range": 0.0,
+    "value_max": 0.9519,
+    "value_min": 0.0292
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:55+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__bleach",
+   "id": "sony__slog3_sgamut3cine__rec709__bleach",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__bleach.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__bleach.cube",
    "sha256": "281569f70dca6fa82f7ff5d2ed2cdcff84bdb93bbc697bc4541412e93fb5dd99",
    "bytes": 1015819,
    "size": 33,
@@ -10609,17 +11086,20 @@
     "neutral_drift255": 15.8016,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9688,
+    "value_min": 0.0
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:55+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__eastmanrm",
+   "id": "sony__slog3_sgamut3cine__rec709__eastmanrm",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__eastmanrm.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eastmanrm.cube",
    "sha256": "cf56ee546fe7fbee9126fc2b3bf227ea2343d553b43c0d08ce747e320eaa7a4d",
    "bytes": 1011097,
    "size": 33,
@@ -10677,17 +11157,20 @@
     "neutral_drift255": 10.0585,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0047,
+    "dip_max255": 0.0047,
+    "out_of_range": 0.0,
+    "value_max": 0.9532,
+    "value_min": 0.0261
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:55+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__visionteal",
+   "id": "sony__slog3_sgamut3cine__rec709__visionteal",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__visionteal.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__visionteal.cube",
    "sha256": "6a3007199f9275cb78d1a71005f0fd0ea2e15f31bd9e4e1cd2dbbc7fbcd0000b",
    "bytes": 1008507,
    "size": 33,
@@ -10745,17 +11228,20 @@
     "neutral_drift255": 9.0428,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0091,
+    "dip_max255": 0.0075,
+    "out_of_range": 0.0,
+    "value_max": 0.9474,
+    "value_min": 0.0121
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:55+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__visionteal__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__visionteal__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__visionteal__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__visionteal__legacy.cube",
    "sha256": "3dfa630b29b770f386a5798458622ceb151815137a771bcb1b5a98f8d4b24799",
    "bytes": 1009982,
    "size": 33,
@@ -10813,17 +11299,20 @@
     "neutral_drift255": 9.1285,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0039,
+    "dip_max255": 0.0019,
+    "out_of_range": 0.0,
+    "value_max": 0.9454,
+    "value_min": 0.0183
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:55+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__bleach__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__bleach__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__bleach__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__bleach__legacy.cube",
    "sha256": "20af0f093e0e16980928fbcf8501d647decd4aab0ccf9b6ce9aa4bece2517e2a",
    "bytes": 1017947,
    "size": 33,
@@ -10881,17 +11370,20 @@
     "neutral_drift255": 15.786,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9692,
+    "value_min": 0.0013
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:55+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__eastman",
+   "id": "sony__slog3_sgamut3cine__rec709__eastman",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__eastman.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eastman.cube",
    "sha256": "0e4cec599955020ca4910b5a205015992725bba9e5282d74a666ac65bae03988",
    "bytes": 1010594,
    "size": 33,
@@ -10949,17 +11441,20 @@
     "neutral_drift255": 7.4243,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0,
+    "dip_max255": 0.0,
+    "out_of_range": 0.0,
+    "value_max": 0.9535,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:55+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
-   "id": "sony_a7s3__slog3_sgamut3cine__rec709__eastman__legacy",
+   "id": "sony__slog3_sgamut3cine__rec709__eastman__legacy",
    "stage": "develop",
-   "file": "develop/sony_a7s3__slog3_sgamut3cine__rec709__eastman__legacy.cube",
+   "file": "develop/sony__slog3_sgamut3cine__rec709__eastman__legacy.cube",
    "sha256": "8715bbd77ddb30f730f01a8d58dfbcd8b9d9b231347328661d95fe5419031b69",
    "bytes": 1012180,
    "size": 33,
@@ -11017,12 +11512,15 @@
     "neutral_drift255": 7.4006,
     "black_share": 0.0,
     "white_share": 0.0,
-    "monotonic": true,
-    "out_of_range": 0.0
+    "dip_total255": 0.0274,
+    "dip_max255": 0.0115,
+    "out_of_range": 0.0,
+    "value_max": 0.9538,
+    "value_min": 0.039
    },
    "status": "shelf",
    "checked_by": null,
-   "imported": "2026-09-22T18:08:55+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
    "id": "legacy_arthur_popov__slog3__rec709__pull",
@@ -11077,7 +11575,7 @@
    ],
    "status": "archived",
    "notes": "В сданных проектах НЕ переименовывать и НЕ удалять: имя лута = имя Look в доноре Premiere, переименование ломает готовые таймлайны.",
-   "imported": "2026-09-22T18:12:05+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
    "id": "legacy_arthur_popov__slog3__rec709__flat",
@@ -11130,7 +11628,7 @@
    ],
    "status": "archived",
    "notes": "В сданных проектах НЕ переименовывать и НЕ удалять: имя лута = имя Look в доноре Premiere, переименование ломает готовые таймлайны.",
-   "imported": "2026-09-22T18:12:05+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   },
   {
    "id": "legacy_arthur_popov__slog3__rec709__push",
@@ -11185,7 +11683,7 @@
    ],
    "status": "archived",
    "notes": "В сданных проектах НЕ переименовывать и НЕ удалять: имя лута = имя Look в доноре Premiere, переименование ломает готовые таймлайны.",
-   "imported": "2026-09-22T18:12:05+0300"
+   "imported": "2026-09-22T18:29:37+0300"
   }
  ],
  "duplicates": [
@@ -11276,5 +11774,5 @@
   }
  ],
  "rejected": [],
- "generated_ru": "22 сентября 2026, 18:12"
+ "generated_ru": "22 сентября 2026, 18:29"
 }

@@ -232,12 +232,28 @@ def build_id(meta: dict, fallback: str) -> str:
     if stage == "legacy":
         return check_id(meta["id"])
 
+    # ⚠️ Тушка камеры в id НЕ ставится. Проявка определяется ГАММОЙ, а не телом:
+    # S-Log3/S-Gamut3.Cine — стандарт Sony, и FX3A, ZV-E1 и A7S III пишут одну и ту
+    # же кривую (проверено по метаданным клипов YTEVO03). Автор коллекции собирал
+    # под свою A7S III, но ставить «a7s3» в имя нашей библиотеки значит заявлять
+    # чужую камеру там, где её нет. Тушка автора живёт в манифесте как
+    # author_camera, а имя говорит то, что действительно решает, — гамму.
     vendor = token(meta.get("vendor") or "unknown")
-    camera = token(meta.get("camera") or "")
-    head = f"{vendor}_{camera}" if camera else vendor
-    gamma = token(meta.get("in_gamma") or "unknown")
+    gamma_raw = meta.get("in_gamma") or "unknown"
+    gamma = token(gamma_raw)
     gamut = token(meta.get("in_gamut") or "unknown")
-    candidate = join_id(head, f"{gamma}_{gamut}", "rec709",
+    # Тушка остаётся только там, где она реально различает кубы. У Sony не
+    # различает — S-Log3 стандарт, одна кривая на все тела. У DJI различает:
+    # Pocket 4 и Pocket 4P шлют разные кубы под одинаковым именем «D-Log +»,
+    # и без тушки они схлопываются в один id.
+    body = "" if gamma_raw in taxonomy().get("body_independent_gammas", []) \
+        else token(meta.get("camera") or "")
+    base_vendor = vendor
+    if body:
+        vendor = f"{vendor}_{body}"
+    # гамут не повторяем, если он и так равен вендору (dji__dlog2, а не dji__dlog2_dji)
+    gblock = gamma if gamut in ("", base_vendor) else f"{gamma}_{gamut}"
+    candidate = join_id(vendor, gblock, "rec709",
                         token(meta.get("family") or ""),
                         meta.get("variant") or "")
     if not candidate.strip("_"):

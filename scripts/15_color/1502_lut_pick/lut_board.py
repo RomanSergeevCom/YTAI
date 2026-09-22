@@ -44,6 +44,8 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(LIB))
 
 import lut_pick as P          # noqa: E402  — reuse the proven frame/gamma plumbing
+import naming as _N           # noqa: E402
+N_TAX = _N.taxonomy()
 
 STORE = LIB / "store"
 MANIFEST = LIB / "manifest.json"
@@ -178,19 +180,21 @@ def develop_candidates(luts, gamma, limit=MAX_DEVELOP):
             and normalize_gamma((l.get("input") or {}).get("gamma")) == g]
     if not pool:
         return []
+    # ⚠️ Проявка не имеет права тонировать серое. Её работа тональная — разжать
+    # логарифм; цвет начинается на следующей ступени. Кубы, которые красят
+    # (Tungsten 6.4, Eastman 7.4, Vision 9.5, Utopia 11.2, IceBlue 19.8 по
+    # neutral_drift255) — это проявка с покраской внутри, то есть ровно то, что
+    # мы разделяем. Предлагать их как «проявку» значит протащить вкус обратно
+    # в технический шаг. В библиотеке они остаются и годятся как look.
+    drift_max = N_TAX["stage_detect"]["neutral_drift255_develop_max"]
+    flavoured = [l for l in pool
+                 if l["metrics"].get("neutral_drift255", 0.0) > drift_max]
+    pool = [l for l in pool
+            if l["metrics"].get("neutral_drift255", 0.0) <= drift_max]
+    if not pool:
+        return []
     pool.sort(key=lambda l: (l["metrics"].get("black_share", 0.0), l["id"]))
-    picked, seen_family = [], set()
-    for l in pool:
-        fam = l.get("family") or l["id"]
-        if fam in seen_family:                 # не показывать legacy рядом с базовым
-            continue
-        seen_family.add(fam)
-        picked.append(l)
-        if len(picked) >= limit:
-            break
-    neutral = next((l for l in pool if (l.get("family") or "") == "neutral"), None)
-    if neutral and neutral["id"] not in {p["id"] for p in picked}:
-        picked[-1] = neutral
+    picked = pool[:limit]
     return picked
 
 
