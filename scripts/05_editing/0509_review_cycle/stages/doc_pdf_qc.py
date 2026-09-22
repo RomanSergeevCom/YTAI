@@ -157,6 +157,38 @@ def parse_xml(pdf):
 HDR_NUM_RE = re.compile(r'^\d+\s+')          # шапка v5: «7 Описание ошибки» — номер колонки перед именем
 
 
+def hdr_lefts(same):
+    """левые края колонок по НОМЕРНЫМ префиксам шапки («1 №», «7 Материал / ссылки»), → [x…] или None.
+
+    Брать k-й фрагмент строки как k-ю колонку нельзя: pdftohtml режет шапку как попало — у вкладки
+    YTUVI01 v5 девять колонок пришли двенадцатью фрагментами («1 №  2 », «⏱», « TC », «5 », «✅»,
+    « »). Из-за сдвига границы уезжали, весь текст «Как надо» считался «Материалом», и QA рапортовал
+    «нет блока СДЕЛАТЬ» у каждой ТЗ (22.09.2026). Номер печатает сам сборщик вкладки (doc_tab_tz_v3),
+    так что он есть у каждой колонки, включая пустую «категорию».
+    """
+    xs = [None] * len(TZ_HDR)
+    for f in same:
+        t = f.text
+        if not t:
+            continue
+        for m in re.finditer(r'(?<!\d)(\d{1,2})\s', t):
+            cj = int(m.group(1)) - 1
+            if 0 <= cj < len(TZ_HDR) and xs[cj] is None:
+                # несколько колонок в одном фрагменте — край по доле позиции в тексте
+                xs[cj] = f.left + (f.w * m.start() / len(t) if f.w else 0)
+    known = [j for j, x in enumerate(xs) if x is not None]
+    if len(known) < 3 or 0 not in known or known[-1] != len(TZ_HDR) - 1:
+        return None
+    scale = (xs[known[-1]] - xs[known[0]]) / max(1e-6, sum(WIDTHS[known[0]:known[-1]]))
+    for j in range(len(xs)):                       # дырки (склеенные фрагменты) — по ширинам колонок
+        if xs[j] is None:
+            prev = max(k for k in known if k < j)
+            xs[j] = xs[prev] + sum(WIDTHS[prev:j]) * scale
+    if any(xs[j] >= xs[j + 1] for j in range(len(xs) - 1)):
+        return None                                # не возрастает — это не шапка таблицы
+    return [x - 6 for x in xs]
+
+
 def find_columns(pages):
     """Левые границы ВСЕХ колонок вкладки (v5: девять). Ищем строку-шапку, иначе — пропорции
     WIDTHS от левого края картинок (XML-масштаб 1,5 px на pt).
@@ -173,14 +205,8 @@ def find_columns(pages):
             if not HDR_NUM_RE.sub('', clean(mat.text)).startswith(TZ_HDR[C_MAT].split(' ')[0]):
                 continue
             same = sorted([f for f in pg['frags'] if abs(f.top - mat.top) <= LINE_TOL], key=lambda f: f.left)
-            if len(same) >= len(TZ_HDR) - 1:          # пустая колонка категории фрагмента не даёт
-                xs, k = [], 0
-                for cj in range(len(TZ_HDR)):
-                    if not TZ_HDR[cj] and cj > 0:     # категория: между соседями
-                        xs.append(xs[-1] + WIDTHS[cj - 1] * 1.5)
-                        continue
-                    xs.append(same[k].left - 6 if k < len(same) else xs[-1] + WIDTHS[cj - 1] * 1.5)
-                    k += 1
+            xs = hdr_lefts(same)
+            if xs:
                 return aliases(xs, pg['n'], mat.top)
     lefts = [i['left'] for pg in pages for i in pg['imgs']]
     if not lefts:
@@ -299,7 +325,10 @@ def read_rows(pages, cols):
                    'pages': {pg['n']}, 'first_page_tz_lines': 0}
             rows.append(row)
             start_rows[s_top] = row
-        for c in ('tz', 'mat', 'num', 'say'):                # say — речь ката: хранится, но в проверки не идёт
+        # v5 22.09.2026: «Как надо» (do) и комментарии Романа — отдельные колонки. Раньше цикл их не
+        # раскладывал по строкам, и проверки видели только «Описание ошибки»: блок «СДЕЛАТЬ» и подписи
+        # под картинками «как надо» оказывались «потеряны» у КАЖДОЙ ТЗ.
+        for c in ('tz', 'mat', 'do', 'roman', 'num', 'say'):   # say — речь ката: хранится, но в проверки не идёт
             for ln in lines[c]:
                 r = row_for(ln['top'])
                 if r is None:
@@ -433,9 +462,17 @@ def check_text(qc, tz, lines_tz, lines_mat, sev_high='high', is_head=False):
 
 def check_row(qc, row, pages_by_n, n_pages):
     tz = row['num']
-    lt, lm = row['lines']['tz'], row['lines']['mat']
-    check_text(qc, tz, lt, lm)
-    text_all = '\n'.join(ln['text'] for ln in lt)
+    # текст ТЗ живёт в ДВУХ колонках (раскладка Романа 22.09.2026): «Описание ошибки» и «Как надо».
+    # Проверять их НАДО ПОРОЗНЬ: колонки стоят рядом, и у строк одинаковый top — общий список
+    # склеил бы соседние ячейки в один абзац («свечение в ультрафиолете / хром заставляет…»).
+    l_err, l_mat = row['lines']['tz'], row['lines']['mat']
+    # в «Как надо» под драфтом стоит подпись «M:SS · что видно» — это подпись картинки, не текст ТЗ
+    l_do = [ln for ln in row['lines']['do'] if not CAP_RE.match(ln['text'].strip())]
+    check_text(qc, tz, l_err, l_mat)
+    check_text(qc, tz, l_do, l_mat)
+    # подписи ищем и в «Материале», и в «Как надо» — картинки есть в обеих колонках
+    lm = sorted(l_mat + row['lines']['do'], key=lambda ln: (ln['page'], ln['top']))
+    text_all = '\n'.join(ln['text'] for ln in l_err + row['lines']['do'])
     if DO_LABEL not in text_all:                              # знак блока меняется — ищем по слову, не по эмодзи
         qc.add(row['page'], tz, 'high', 'no_do', f'нет блока «{T("core.lbl_do")}»')
     # сирота: на первой странице строки ≤ ORPHAN_LINES строк текста, а сама строка продолжается дальше
