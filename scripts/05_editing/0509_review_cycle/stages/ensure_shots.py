@@ -35,13 +35,16 @@ def wanted(pravki):
             for k in ('preview', 'img'):
                 if it.get(k):
                     out.setdefault(it[k], i + 1)
-    for no, name in sorted((P.get('ch_img', {}) or {}).items()):
-        if name:
-            out.setdefault(name, 0)                    # 0 = глава, не ТЗ (в отчёте «глава NN»)
+    for key in ('ch_img', 'sub_img'):               # кадры глав И подглав (Роман 22.09.2026)
+        for no, name in sorted((P.get(key, {}) or {}).items()):
+            if name:
+                out.setdefault(name, 0)                # 0 = глава/подглава, не ТЗ
     # шапка вкладки «Главы»: варианты заставки, варианты панели подглав, карта выпуска и обзорные
     # панели перечислений. Их не держит ни одна ТЗ, поэтому раньше они молча не доезжали до Drive.
-    for name in (['ch_demo_a.jpg', 'ch_demo_b.jpg', 'ch_demo_c.jpg', 'prog_demo_a.jpg', 'prog_demo_b.jpg',
-                  'info_structure_map.png']
+    # глобом, а не списком: новая буква варианта иначе молча не доедет до Drive
+    for name in ([p.name for p in sorted(Path(P.MOCK).glob('ch_demo_*.jpg'))]
+                 + [p.name for p in sorted(Path(P.MOCK).glob('prog_demo_*.jpg'))]
+                 + ['info_structure_map.png']
                  + [f'prog_{no}_0.png' for no in sorted(P.get('prog', {}) or {})]):
         if (Path(P.MOCK) / name).exists():
             out.setdefault(name, 0)

@@ -427,75 +427,105 @@ if want('C'):
   <div class="sname"><span class="tri">▸</span>{label}</div></div></div>""", SUB_CSS, draft=False)
 
 # ═══════════════════════════ D. прогресс перечислений (V6) ═══════════════════════════
-# Кегль поднят в 2,4 раза 22.09.2026 — та же просьба Романа, что и по заставкам глав (стадия J):
-# панель 1120 px на кадре 3840 читалась только при стоп-кадре. Ширина — по содержимому (фиксированные
-# 2600 px закрывали ведущую в центре кадра), верх поднят с 640 до 420: снизу слева у ката свой титр
-# подтемы, а сверху заставка главы кончается к 250 px.
-PROG_CSS = f"""
+# Переписано 22.09.2026 по пресету «YTCG P01 · 1.1 Side slide», который выбрал Роман:
+# боковая страница, заголовок сверху, под ним список, который НАКАПЛИВАЕТСЯ — пункт за пунктом
+# по ходу речи. Будущих пунктов не видно, подсвечивать нечего: свежий пункт дописывается снизу.
+#
+# Прошлые варианты a/b (тёмная коробка со скруглением, кружки-радиокнопки, полоса прогресса,
+# акцент из палитры маркеров Premiere) Роман забраковал: «крайне важно сделать крутой дизайн
+# подглав, мне пока не нравится».
+#
+# Что решили замером по самому кату, а не на вкус:
+#  · все пункты одного кегля = текущий искать глазами; размер пре-аттентивен, цвет на пёстром
+#    кадре нет. Накопительный список снимает вопрос: свежий пункт всегда последняя строка;
+#  · полоса накрывала собственный титр главы ката — страница начинается НИЖЕ него (y 204…260);
+#  · кегль 88 px: самая длинная строка «ФЛЮСОВОЕ ЗАЛЕЧИВАНИЕ» (1380 px) влезает в одну строку;
+#  · тире короткое (en, 0.5 em) и висячий отступ ровно по его ширине — переносы по тексту.
+#    ⚠️ text-indent наследуется: без `text-indent:0` на inline-block тире уезжает влево на IND;
+#  · черта 570 × 10 — ровно вдвое больше собственной черты подтемы ката (285 × 5 на 1920).
+#
+# Две темы (card `prog_variant`): `z` — тёмная (принята Романом), `h` — светлая, для примера.
+# ⚠️ Тёмная НЕпрозрачна: на 94 % сквозь неё просвечивали титры ката. Заодно на непрозрачной
+# темноте настоящий рубин канала даёт 3,2 : 1 и работает как черта/тире/цифра — на полупрозрачном
+# скриме он давал 2,08 и был непригоден.
+PROG_X, PROG_RM, PROG_BAND, PROG_TOP = 148, 148, 1780, 300
+PROG_COL = PROG_BAND - PROG_X - PROG_RM
+PROG_ITEM, PROG_DASH, PROG_GAP = 88, 44, 24
+PROG_IND = PROG_DASH + PROG_GAP
+PROG_GRAPH = '#7A7365'              # пройденные ПО кости: 3,93 : 1 (профильный MUT там 1,42 — слепой)
+PROG_DARK = '#141110'
+PROG_THEMES = {
+    'z': dict(bg=PROG_DARK, hdr=MUT, rule=RED, cnum=RED, cden=MUT,
+              new=IVORY, old=MUT, dnew=RED, dold=MUT, oldop='.45'),
+    'h': dict(bg=IVORY, hdr=RED, rule=RED, cnum=RED, cden=PROG_GRAPH,
+              new=RED, old=PROG_GRAPH, dnew=RED, dold=PROG_GRAPH, oldop='1'),
+}
+PROG_VARIANT = str(P.get('prog_variant') or 'z').strip().lower()
+if PROG_VARIANT not in PROG_THEMES:                    # буква без темы = панель без цвета, лучше упасть
+    raise SystemExit(f'блок D: неизвестный prog_variant «{PROG_VARIANT}», есть {sorted(PROG_THEMES)}')
+# нумерация Романа: содержательных глав восемь (01..08), хук и финал без номера.
+# Сама панель номер главы больше не печатает (в кадре он уже стоит титром ката), но карта
+# выпуска блока H по-прежнему считает подписи отсюда — константа общая, не переносить в блок D.
+CH_NO_FINAL = P.get('ch_no_final', {})
+
+
+def _prog_css(v):
+    t = PROG_THEMES[v]
+    return f"""
 .pshot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
-.pg {{ position:absolute; left:150px; width:max-content; max-width:2200px;
-  background:{PANEL}; border-radius:40px; padding:54px 96px 66px 0; display:flex; gap:46px; }}
-.pg.va {{ bottom:170px; }}          /* вместо титра подтемы ката */
-.pg.vb {{ top:420px; }}             /* слева-посередине, титр подтемы остаётся */
-.pg .sbar {{ width:18px; border-radius:9px; flex:none; margin-left:-0px; }}
-.pg .ch {{ font-family:Helvetica,Arial,sans-serif; font-size:44px; letter-spacing:.24em; font-weight:bold;
-  margin-bottom:22px; }}
-.pg .h {{ font-family:Helvetica,Arial,sans-serif; font-size:66px; letter-spacing:.2em; color:{MUT}; display:flex;
-  justify-content:space-between; gap:60px; }}
-.pg .h b {{ color:{IVORY}; }}
-.pg .row {{ display:flex; align-items:center; gap:44px; margin-top:34px; }}
-.pg .dot {{ width:48px; height:48px; border-radius:50%; flex:none; border:6px solid {MUT}; }}
-.pg .it {{ font-size:96px; color:{MUT}; }}
-.pg .row.on .dot {{ background:{RED}; border-color:{RED}; box-shadow:0 0 48px {RED}; }}
-.pg .row.on .it {{ color:{IVORY}; font-weight:bold; }}
-.pg .row.done .dot {{ background:{MUT}; }}
-.pg .row.done .it {{ color:{IVORY}; opacity:.75; }}
-.pg .bar {{ height:16px; background:rgba(255,255,255,.14); border-radius:8px; margin-top:50px; overflow:hidden; }}
-.pg .bar i {{ display:block; height:100%; }}
+.pgb {{ position:absolute; left:0; top:{PROG_TOP}px; bottom:0; width:{PROG_BAND}px; background:{t['bg']}; }}
+.pgt {{ position:absolute; left:{PROG_X}px; top:692px; width:{PROG_COL}px; display:flex;
+  justify-content:space-between; align-items:baseline; }}
+.pgt .hd {{ font-family:Helvetica,Arial,sans-serif; font-weight:300; text-transform:uppercase;
+  font-size:56px; letter-spacing:.20em; color:{t['hdr']}; }}
+.pgt .cn {{ color:{t['cnum']}; letter-spacing:.02em; white-space:nowrap; }}
+.pgt .cn b {{ font-size:88px; }}
+.pgt .cn i {{ font-size:46px; font-style:normal; color:{t['cden']}; }}
+.pgr {{ position:absolute; left:{PROG_X}px; top:828px; width:570px; height:10px; background:{t['rule']}; }}
+.pgl {{ position:absolute; left:{PROG_X}px; top:922px; width:{PROG_COL}px; }}
+.pgl .r {{ font-size:{PROG_ITEM}px; line-height:1.14; letter-spacing:.02em; color:{t['old']};
+  opacity:{t['oldop']}; margin-bottom:46px; padding-left:{PROG_IND}px; text-indent:-{PROG_IND}px; }}
+.pgl .r:last-child {{ margin-bottom:0; }}
+.pgl .r .d {{ color:{t['dold']}; display:inline-block; width:{PROG_DASH}px;
+  margin-right:{PROG_GAP}px; text-indent:0; }}
+.pgl .r .q {{ font-family:Helvetica,Arial,sans-serif; font-weight:300; text-transform:uppercase;
+  font-size:40px; letter-spacing:.22em; color:inherit; opacity:.8; margin-left:22px; }}
+.pgl .r.new {{ color:{t['new']}; opacity:1; }}
+.pgl .r.new .d {{ color:{t['dnew']}; }}
 """
-# Роман 22.09.2026: «усиль расположение подглав, чтобы связь с главами была». Панель получает
-# подпись главы и ту же цветную планку слева, что у плашки подглавы (блок C) — обе читаются как одна
-# семья. Где панель стоит — решение вкуса, поэтому два варианта (card `prog_variant`: a | b):
-#   a — ВМЕСТО титра подтемы ката, внизу слева: в шапке «ГЛАВА NN · ИМЯ», панель самодостаточна;
-#   b — слева-посередине, в шапке только «ГЛАВА NN»: имя главы читается из верхнего титра ката,
-#       собственный титр подтемы остаётся внизу.
-PROG_VARIANT = str(P.get('prog_variant', 'a')).lower()
-CH_NO_FINAL = P.get('ch_no_final', {})                # нумерация Романа: 8 глав 01..08, хук и финал без номера
 
 
 def _prog_body(ch, k, variant=None):
-    title, items, acc = PROG[ch]
+    """k=0 — страница пришла с одним заголовком (первый такт пресета); k≥1 — дописано k пунктов."""
+    title, items, _acc = PROG[ch]
     n = len(items)
-    v = (variant or PROG_VARIANT)
-    ch_no = CH_NO_FINAL.get(ch, ch)
-    sig = f"{T('core.chapter')} {ch_no}" + (f" · {esc(P.get('ch_name', {}).get(ch, ''))}" if v == 'a' else '')
-    rows = ''.join(
-        f'<div class="row {"on" if j == k else ("done" if j < k else "")}"><div class="dot"></div>'
-        f'<div class="it">{j} · {it}</div></div>' for j, it in enumerate(items, 1))
-    return (f'<div class="pg v{v}" style="border-top:22px solid {acc}">'
-            f'<div class="sbar" style="background:{acc}"></div>'
-            f'<div><div class="ch" style="color:{acc}">{sig}</div>'
-            f'<div class="h"><span>{title}</span>'
-            f"<b>{T('d.ig.prog_k_of_n', k=k, n=n) if k else T('d.ig.prog_next')}</b></div>{rows}"
-            f'<div class="bar"><i style="width:{k / n * 100:.0f}%;background:{acc}"></i></div></div></div>')
+    rows = []
+    for j, it in enumerate(items[:k], 1):              # только пройденное: список продолжается
+        nm, _, q = esc(it).partition(' · ')
+        qq = f'<span class="q">{q}</span>' if q else ''
+        rows.append(f'<div class="r {"new" if j == k else ""}">'
+                    f'<span class="d">&#8211;</span>{nm}{qq}</div>')
+    cn = (f'<div class="cn"><b>{k}</b><i>&#8201;/&#8201;{n}</i></div>' if k else
+          f'<div class="cn hd">{T("d.ig.prog_next")}</div>')
+    return (f'<div class="pgb"></div><div class="pgt"><div class="hd">{esc(title)}</div>{cn}</div>'
+            f'<div class="pgr"></div><div class="pgl">{"".join(rows)}</div>')
 
 
 if want('D'):
     for ch in PROG:
-        for k in range(0, len(PROG[ch][1]) + 1):       # k=0 — обзор списка ДО первого пункта (Роман 09.09)
-            page(f'prog_{ch}_{k}', _prog_body(ch, k), PROG_CSS, draft=False)
-    # два варианта места на одном настоящем кадре — Роману на выбор, как с заставками глав
+        for k in range(0, len(PROG[ch][1]) + 1):       # k=0 остаётся: на него завязан make_review_v6
+            page(f'prog_{ch}_{k}', _prog_body(ch, k), _prog_css(PROG_VARIANT), draft=False)
+    # демо обеих тем на настоящем кадре: принятая тёмная и светлая «для примера»
     _dch = next((c for c in PROG if len(PROG[c][1]) >= 4), next(iter(PROG), None))
     if _dch:
         _dsec = int(P.get('prog_demo_sec', 0)) or int(PROG_T.get(_dch, [0])[1] if len(PROG_T.get(_dch, [])) > 1 else 0)
         _shot = W6 / 'hires' / f'h{_dsec + 1:04d}.jpg'
-        for v in ('a', 'b'):
-            body = _prog_body(_dch, 2, v)
-            bg = (f'<div class="pshot" style="background-image:url(\'file://{_shot}\')"></div>'
-                  if _shot.exists() else '')
-            page(f'prog_demo_{v}', bg + body, PROG_CSS, draft=False)
+        bg = (f'<div class="pshot" style="background-image:url(\'file://{_shot}\')"></div>'
+              if _shot.exists() else '')
+        for v in PROG_THEMES:
+            page(f'prog_demo_{v}', bg + _prog_body(_dch, 2, v), _prog_css(v), draft=False)
             flatten_jpg(f'prog_demo_{v}')
-        print(f'варианты панели подглав: a/b по главе {_dch}, кадр {_shot.name}')
+        print(f'панель подглав: тема {PROG_VARIANT}, демо z/h по главе {_dch}, кадр {_shot.name}')
 
 # ═══════════════════════════ E. прозрачные версии тёмных драфтов (V3) ═══════════════════════════
 CENTER_CSS = f"""
