@@ -90,6 +90,87 @@ Winston, см. память `reference_editor_handoff_drive`).
 
 Entry: `python3 scripts/11_sync/1101_mirror/mirror.py --project <path|CODE> --dry-run`.
 
+## Media Prep (подготовка носителей перед съёмкой)
+
+When the user wants to **clear camera cards before a shoot** — check whether a card's contents
+are on Google Drive, upload the gaps, wipe the card, or fix volume labels (keywords: "подготовь
+карты", "почисти карту", "что на карте есть на диске", "проверь архивы", "метки карт", "card
+prep", "wipe card"): use the **Media layer** `scripts/14_media/1401_card_prep/` (cross-cutting,
+on-demand — like Sync and Acquire, NOT part of `run_pipeline`). KB 0.5 `/kb/media-prep/`.
+
+**Правило: карту чистим только после того, как каждый её файл подтверждён на Drive.**
+Подтверждение = имя + **точный размер в байтах**; по одному имени HEVC-прокси из
+`01_Source_Proxy/` засчитывается за оригинал, и карта стирается зря.
+
+- Сверять по **всему** Drive, не «папка в папку» — клипы одного дня расходятся по разным проектам.
+- Shared Drive **`Archive`** обязателен в индексе: там прошлые выгрузки карт (`Archive:DJI-TX/`).
+- Целые `*_orig.wav` → `{проект}/99_Pipeline/DJI_Audio/`; срезы `__S##` целый файл не заменяют.
+- Ничейный футаж → `YTCH S3/_unassigned_footage/{источник}_{дата}/`.
+- Журнал операций → `YTAI:_ops_log/media_prep/{год}/` (хронология, поиск задним числом).
+- Чистим **с Mac, не форматом в камере** (формат сбрасывает метку); `.Trashes` на карте — явно.
+
+Entry: `python3 scripts/14_media/1401_card_prep/media_prep.py --audit --report`
+(без `--apply` всё сухо). Парк и метки — `cards.json` + KB 0.2 `/kb/storage/`.
+
+## Editing Proxies (прокси монтажёру)
+
+When the user wants to **build or rebuild a proxy kit** — собрать прокси проекту, пересобрать
+комплект канала, проверить уже собранные прокси (keywords: «собери прокси», «прокси монтажёру»,
+«пересобери комплект», «проверь прокси», «кадр-в-кадр», «build proxies»): use the **proxy stage**
+`scripts/16_proxy/` (cross-cutting, on-demand — как Sync, Media и Color; НЕ часть `run_pipeline`).
+KB 3.4 `/kb/proxy/`.
+
+**Прокси — лёгкая копия, а не мелкая.** Единственное, ради чего она делается, — вес файла.
+Всё остальное обязано совпасть, потому что подмена на оригинал — это смена одной корневой
+папки. Контракт из восьми пунктов проверяется **на каждом клипе**: разрешение · fps строкой
+(29.97 = `30000/1001` ≠ `30`) · число кадров по пакетам · **битность с источника** (10 бит →
+`main10`/`p010le`, 8 бит → `main`/`yuv420p`; не повышать и не понижать) · имена и относительные
+пути 1:1 · число дорожек и каналов (не схлопывать — L и R часто разные микрофоны) ·
+**таймкод с источника** (Sony держит его на data-дорожке `rtmd`, `format_tags` пуст) ·
+цветовые теги как есть (**не форсить bt709 на логе**; FX3 не несёт тегов вообще — прокси
+обязана остаться такой же пустой).
+
+- ⚠️ **Рецепт живёт в одном месте** — `16_proxy/1601_build/contract.py`. Своей копии заводить
+  нельзя: именно три разошедшиеся копии стоили комплекта YTCH (441 прокси 8-битными и без TC).
+- ⚠️ **Не жать то, что уже лёгкое.** Айфон копируется байт-в-байт. Клип с недекодируемой
+  дорожкой (`apac` 4ch) не перекодируется вообще — ни одна дорожка не должна пропасть.
+- ⚠️ `-pix_fmt p010le` на входе даёт в файле `yuv420p10le` — сверять pix_fmt строкой нельзя.
+- Ночная пересборка канала — `rebuild.py`: кодирование и заливка внахлёст, стейджинг с потолком
+  (кодировщик ждёт заливку, иначе очередь обгонит место на диске).
+
+Entry: `python3 scripts/16_proxy/1601_build/proxy.py --src <01_Source> --dst <01_Source_Proxy> --dry-run`
+
+## Color (проявка, экспозиция, покраска)
+
+When the user wants to **choose or apply colour** — подобрать проявку под камеру, выбрать
+look канала, выставить экспозицию по клипам, собрать раскладку цвета, пополнить библиотеку
+лутов (keywords: «цвет», «проявка», «покраска», «look канала», «экспозиция по клипам»,
+«витрина лутов», «раскладка цвета», «библиотека кубов», «lut», «color»): use the **Color layer**
+`scripts/15_color/` (cross-cutting, on-demand — как Sync, Media и Proxy; НЕ часть `run_pipeline`).
+KB 3.8 `/kb/luts/`.
+
+**Цвет — это ступени, а не один куб.** До сентября 2026 три куба
+(`01_bright/02_normal/03_dark_scene`) делали проявку и покраску сразу, и все были под S-Log3:
+на YTEVO03 это покрасило **61 клип DJI из 163** чужой математикой. Теперь:
+проявка (log → Rec.709, детерминированно по **гамме+камере**) · экспозиция (**число в стопах**,
+не лут) · покраска (look, ДНК канала, один на канал).
+
+- ⚠️ **Незнакомая гамма = отказ, а не «mismatch и поехали».** Ровно эта снисходительность и
+  стоила 37 % съёмочного дня. Клип без проявки не должен молча остаться без слоя.
+- ⚠️ **Стоп витрины ≠ стоп Lumetri, множитель ровно 2,4.** Превью считает экспозицию фильтром
+  ffmpeg поверх гамма-кодированного Rec.709, Lumetri линеаризует ДО экспозиции. Кадры, которые
+  Роман утверждал, верны как изображение — расходится только число. Предел ползунка ±7.
+- ⚠️ **Параметр Lumetri адресуется по ИНДЕКСУ, а не по имени** — имена дублируются
+  (`Look` ×2, `Input LUT` ×2, `Saturation` ×4), а сеттер панели берёт последнее совпадение.
+- ДНК канала — `YTs/{КАНАЛ}/color_profile.json`; выбор дня —
+  `{проект}/00_Setup/01_Ingest/{CODE}_color_choice.json`; раскладка — `{CODE}_color_plan.json`.
+- ⚠️ **Кубы не в git, манифест в git.** Глобальное правило `*.cube` в `.gitignore` добавлять
+  нельзя — под git лежат 12 кубов (шаблоны папок и бандл панели).
+- ⛔ На таймлайн раскладка пока не ложится: проба Premiere (`Input LUT` / `Exposure`) не сделана.
+
+Entry: `python3 scripts/15_color/1503_color_apply/color_apply.py --project <путь>`
+(без `--apply` всё сухо). Витрина выбора — `1502_lut_pick/lut_board.py`, библиотека — `1501_lut_library/`.
+
 ## Cut Review & Montage TZ (ревью ката, ТЗ монтажёру)
 
 When the user wants to **review an editor's cut**, build the editor's ТЗ, audit on-screen titles,
@@ -97,11 +178,37 @@ regenerate the review timeline / doc tabs after his edits, or build a montage li
 (keywords: "ревью ката", "ревью сборки", "ТЗ монтажёру", "аудит экранов", "правки в доке",
 "монтажный лист из исходников", "review cut"): use the **`/review` skill** (`.claude/skills/review/SKILL.md`).
 
-It drives stage `scripts/05_editing/0509_review_cycle/` (`review.py`, KB 4.7 /kb/review-cycle/):
+It drives stage `scripts/05_editing/0509_review_cycle/` (`review.py`, KB 6.2 /kb/review-cycle/):
 card `{project}/00_Setup/05_Review/review_card.json` + channel profile `YTs/{CH}/review_profile.json`,
 Memex runs frames/OCR/transcript/VLM/LLM autonomously, ONE cloud pass per film (≤10 agents, text-only),
 all surfaces (6-layer timeline, doc tabs, sheet, Drive, phone brief) from one `pravki`. Never write
 ad-hoc scripts into a project and never Read frames/large JSON into the thread (see skill hygiene).
+
+## Knowledge Archives (где искать материал для сценария)
+
+Когда нужен факт, картинка или сюжет для видео — **путь не угадывать**, брать из карты:
+
+```
+YTs/{CHANNEL}/library.json          машиночитаемая карта архивов канала
+```
+
+Для YTUVI (драгоценные камни) — два архива на `T7-Blue-2-RYA`, у каждого зеркало
+в Shared Drive «YTUVI»:
+
+| Корень | policy | Что |
+|---|---|---|
+| `YTUVI-Digital_Originals` | **primary** | 20 лабораторий и журналов, 37 ГБ. Искать ВСЕГДА здесь первым |
+| `YTUVI-Book_Scans` | **fallback** | Сканы учебников Романа. Качество хуже цифры — только если в primary пусто, с пометкой «⚠️ скан книги» |
+
+- Поиск: `python3 scripts/999_extra/gem_kb/search.py "<запрос>" [--kind figure|image|text]`
+- ⚠️ **Индекс — не надмножество.** У части источников записей мало относительно числа
+  файлов (Rivista, Lotus, ICA): там `search.py` промахнётся, идти надо в их каталог
+  сюжетов `_INDEX.html`. У кого какой — поле `catalog` и `search_hint` в `library.json`.
+- Пересобрать карту: `python3 scripts/999_extra/gem_kb/build_library.py`
+  (`--check` — сверить, не переписывая). Текст правится в `library_seed.json`,
+  цифры измеряются с диска и руками не набираются.
+- ⚠️ Старые планы и вкладки могут нести путь `01_SSEF/01_Book/…` или `01_ScanBook-SSEF` —
+  это **сканы книг**, ныне `YTUVI-Book_Scans` (см. `aliases` в карте).
 
 ## Content Acquisition (Download)
 
@@ -174,8 +281,9 @@ python ~/YTAI/scripts/05_editing/0506_marker_export/export_markers_from_prproj.p
 │       ├── captions/{CODE}_2_Assembly_v{N}_captions.srt
 │       └── {scene}/
 ├── 01_Source_Proxy/            ← прокси-комплект монтажёру: зеркало сцен 01_Source (HEVC ~8 Мбит/с,
-│                                 кадр-в-кадр) + Transcription + 00_LUT. Живёт ВНУТРИ проекта,
-│                                 не папкой-соседкой (решение 17.08.2026, YTCH10)
+│                                 кадр-в-кадр, битность и таймкод С ИСТОЧНИКА) + Transcription
+│                                 + 00_LUT. Живёт ВНУТРИ проекта, не папкой-соседкой
+│                                 (решение 17.08.2026, YTCH10). Контракт — этап 16_proxy
 ├── 02_Edit/
 │   ├── Sound/
 │   ├── AE_Projects/
