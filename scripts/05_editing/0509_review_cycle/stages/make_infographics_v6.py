@@ -1225,16 +1225,24 @@ if want('K'):
 # ТЗ описывало плашку словами, а монтажёр рисовал её на глаз. Источник — поле `lower` записи ТЗ:
 # {name, role?, sec?, photo?}; `sec` — секунда ката под подложку (без неё макет на альфе, как титр).
 # Место — нижняя треть слева: правило самого ТЗ-41 «подпись под человеком, а не по диагонали от него».
+# Переделано 22.09.2026 по просьбе Романа «сделай обновлённый дизайн плашки на спикера».
+# Плашка приведена к языку принятой панели подглав: жёсткие края без скругления, непрозрачная
+# тёплая темнота (сквозь полупрозрачную просвечивали титры ката), левая колонка 148 — та же,
+# в которой стоят собственные титры фильма, рубиновая черта 570×10 — тот же объект, что у них.
+# Кружок-аватар заменён прямоугольным портретом: круглых форм у фильма нет нигде, а вырезка-портрет
+# в прямоугольной карточке у него своя (страница «1892–1902 гг.», 25:14).
 LOWER_CSS = f"""
 .lw {{ position:absolute; inset:0; overflow:hidden; }}
 .lw .shot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
-.lw .box {{ position:absolute; left:210px; bottom:300px; display:flex; align-items:center; gap:56px;
-  background:{PANEL}; border-radius:28px; border-left:18px solid {RED}; padding:52px 86px 56px 64px; }}
-.lw .ava {{ width:230px; height:230px; border-radius:50%; flex:none; background-size:cover;
-  background-position:center; border:7px solid rgba(255,255,255,.22); }}
-.lw .ava.empty {{ background:rgba(255,255,255,.10); }}
-.lw .nm {{ font-size:132px; font-weight:bold; letter-spacing:.02em; color:{IVORY}; line-height:1.04; }}
-.lw .rl {{ font-family:Helvetica,Arial,sans-serif; font-size:58px; color:{MUT}; margin-top:18px; }}
+.lw .box {{ position:absolute; left:148px; bottom:210px; display:flex; align-items:stretch;
+  background:{PROG_DARK}; }}
+.lw .ava {{ width:300px; flex:none; background-size:cover; background-position:center top; }}
+.lw .ava.empty {{ display:none; }}
+.lw .txt {{ padding:56px 96px 60px 72px; }}
+.lw .hr {{ width:470px; height:10px; background:{RED}; margin-bottom:30px; }}
+.lw .nm {{ font-size:132px; font-weight:bold; letter-spacing:.015em; color:{IVORY}; line-height:1.02; }}
+.lw .rl {{ font-family:Helvetica,Arial,sans-serif; font-weight:300; text-transform:uppercase;
+  font-size:52px; letter-spacing:.22em; color:{MUT}; margin-top:26px; }}
 """
 
 
@@ -1244,7 +1252,8 @@ def _lower_body(name, role, shot, photo):
            '<div class="ava empty"></div>' if photo is not None else '')
     rl = f'<div class="rl">{esc(role)}</div>' if role else ''
     return (f'<div class="lw">{bg}<div class="box">{ava}'
-            f'<div><div class="nm">{esc(name)}</div>{rl}</div></div></div>')
+            f'<div class="txt"><div class="hr"></div><div class="nm">{esc(name)}</div>{rl}</div>'
+            f'</div></div>')
 
 
 if want('L'):
