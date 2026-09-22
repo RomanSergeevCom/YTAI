@@ -47,6 +47,12 @@ FONT = 10
 DEMOS = [('a', 'ПОЛОТНО', 'кадр уходит в затемнение, номер и имя по центру — максимум контраста, кадр почти не виден'),
          ('b', 'ШТОРКА', 'плотная левая треть, ведущая и кадр справа остаются чистыми'),
          ('c', 'НИЖНЯЯ ТРЕТЬ', 'кадр цел целиком, подложка только снизу — мягче всех, но и слабее по акценту')]
+PROG_DEMOS = [('a', 'ВМЕСТО ТИТРА ПОДТЕМЫ',
+               'панель встаёт туда, где сейчас стоит собственный титр подтемы ката, и заменяет его: '
+               'в шапке «ГЛАВА NN · ИМЯ ГЛАВЫ», элемент один, спорить нечему'),
+              ('b', 'РЯДОМ С ТИТРОМ ПОДТЕМЫ',
+               'панель слева-посередине, собственный титр подтемы остаётся внизу: в шапке только «ГЛАВА NN», '
+               'имя главы читается из верхнего титра ката')]
 
 
 def u16(s):
@@ -92,26 +98,62 @@ NOTES = P.get('ch_notes', {})     # {'04': '⚠️ НЕТ НОМЕРА · 11:17 
 PROG = P.get('prog', {})          # {'08': {'title': …, 'items': [...]}} — перечисления внутри главы
 PICKED = str(P.get('ch_plate_variant', '')).strip().lower()   # выбранная Романом буква заставки
 NO_NUM = [no for no, t in sorted(NOTES.items()) if 'НЕТ НОМЕРА' in str(t)]
+# нумерация Романа 22.09.2026: содержательных глав восемь (01..08), хук и финал — без номера.
+# В колонке «№» стоит она, в «Что сейчас» — номер, который реально стоит на заставке ката.
+FINAL = P.get('ch_no_final', {})
+
+
+def fin(no):
+    return str(FINAL.get(no, no))
+
 
 rows = []
 for i, (sec, no) in enumerate(CHAP):
     end = CHAP[i + 1][0] if i + 1 < len(CHAP) else DUR
     subs = [f'▸ {tmm(s)} · {t}' for s, c, t in SUB if f'{c:02d}' == no]
     pg = PROG.get(no) or {}
-    if not subs and pg:                       # подглавы этой главы — перечисление, а не титульные экраны
-        subs = [f'▸ «{pg.get("title", "")}» — панель перечисления:'] + \
-               [f'      {k} · {it}' for k, it in enumerate(pg.get('items') or [], 1)]
-    body = f'{no}. {CH_NAME.get(no, "")}' + ('\n' + '\n'.join(subs) if subs else '\n▸ подглав в кате нет')
-    st = STATE.get(no) or ['', '']
-    rows.append({'no': no, 'img': CH_IMG.get(no, ''), 'body': body,
+    if pg:                                    # у главы есть перечисление — оно и есть её подглавы
+        subs = [f'▸ панель «{pg.get("title", "")}»:'] + \
+               [f'      {k} · {it}' for k, it in enumerate(pg.get('items') or [], 1)] + subs
+    head = (f'ГЛАВА {fin(no)}. ' if fin(no) != '—' else '') + str(CH_NAME.get(no, ''))
+    body = head + ('\n' + '\n'.join(subs) if subs else '\n▸ подглав в кате нет')
+    st = list(STATE.get(no) or ['', ''])
+    if fin(no) != no:                         # номер на экране придётся перерисовать
+        cut_no = f'на заставке ката стоит «{no}. {CH_NAME.get(no, "")}»'
+        want_no = (f'номер сменить на {fin(no)}' if fin(no) != '—' else 'номер убрать — это не глава, а хук/финал')
+        st[0] = (st[0] + '\n' if st[0] else '') + cut_no
+        st[1] = (st[1] + '\n' if len(st) > 1 and st[1] else '') + want_no
+    rows.append({'no': fin(no), 'img': CH_IMG.get(no, ''), 'body': body,
                  'tc': f'{tmm(sec)}–{tmm(end)}', 'now': st[0], 'do': st[1] if len(st) > 1 else ''})
 
 _no_num = (f'У глав {", ".join(NO_NUM)} номера на заставке нет, у остальных есть — два разных приёма в одном фильме. '
            if NO_NUM else '')
+# карта фильма в начале страницы — Роман 22.09.2026: «очень помогает проверять и ориентироваться»
+n_sub = sum(1 for _ in SUB) + sum(len(v.get('items') or []) for v in PROG.values())
+n_ch = sum(1 for _, no in CHAP if fin(no) != '—')
+map_lines = []
+for i, (sec, no) in enumerate(CHAP):
+    end = CHAP[i + 1][0] if i + 1 < len(CHAP) else DUR
+    ttl = (f'ГЛАВА {fin(no)}. ' if fin(no) != '—' else '') + str(CH_NAME.get(no, ''))
+    map_lines.append((0, f'{ttl}   {tmm(sec)}–{tmm(end)}', {'bold': True}))
+    pg = PROG.get(no) or {}
+    for k, it in enumerate(pg.get('items') or [], 1):
+        map_lines.append((0, f'        {k} · {it}', {}))
+    for sc, c, t in SUB:
+        if f'{c:02d}' == no:
+            map_lines.append((0, f'        {tmm(sc)}  ▸ {t}', {}))
+    if not pg and not any(f'{c:02d}' == no for _, c, _ in SUB):
+        map_lines.append((0, '        ▸ подглав в кате нет', {}))
+
 head = [(1, f'{P.CODE} · {TAB_TITLE} — все главы фильма и дизайн заставок', {'bold': True}),
         (0, f'Кат {P.CUT_VERSION}, {tmm(DUR)}. Заставки глав в кате несогласованы. {_no_num}'
             f'Оба приёма — светлый текст по светлому кадру, контраста не хватает. '
             f'Здесь всё про главы в одном месте: что в кате сейчас, что надо, и как выглядит новая заставка.', {}),
+        (0, '', {}),
+        (2, f'КАРТА ВЫПУСКА — {n_ch} глав · {n_sub} подглав', {'bold': True}),
+        (0, f'Нумерация: содержательных глав {n_ch}, они и нумеруются 01–{n_ch:02d}; вступление и финал — '
+            f'без номера. На заставках ката номера пока другие, это отдельная правка (см. таблицу ниже).', {}),
+        ] + map_lines + [
         (0, '', {}),
         (2, ('ВАРИАНТЫ ЗАСТАВКИ — выбран ' + PICKED.upper()) if PICKED else 'ВАРИАНТЫ ЗАСТАВКИ — выбери букву',
          {'bold': True}),
@@ -221,8 +263,24 @@ def main():
         for lvl, text, opts in [(2, 'ПОДГЛАВЫ — ПАНЕЛИ ПЕРЕЧИСЛЕНИЙ', {'bold': True}),
                                 (0, 'Там, где ведущая перечисляет по пунктам, зритель теряет счёт. Панель слева '
                                     'держит весь список на экране и подсвечивает текущий пункт; справа — «ЧТО ДАЛЬШЕ» '
-                                    'или «k из n». Ниже — обзорный кадр каждой панели (пункт ещё ни один не '
-                                    'подсвечен); полный набор кадров и таймкоды — в ТЗ монтажёру.', {})]:
+                                    'или «k из n». Связь с главой держат две вещи: подпись «ГЛАВА NN» в шапке '
+                                    'панели и цветная планка слева — та же, что у плашки подглавы.', {}),
+                                (0, 'Где панель стоит — на выбор, скажи букву:', {'bold': True})]:
+            t = text + '\n'
+            reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': t}})
+            if lvl:
+                reqs.append({'updateParagraphStyle': {
+                    'range': {'tabId': tab_id, 'startIndex': cur, 'endIndex': cur + u16(t)},
+                    'paragraphStyle': {'namedStyleType': f'HEADING_{lvl}'}, 'fields': 'namedStyleType'}})
+            if opts.get('bold'):
+                reqs.append({'updateTextStyle': {
+                    'range': {'tabId': tab_id, 'startIndex': cur, 'endIndex': cur + u16(t) - 1},
+                    'textStyle': {'bold': True}, 'fields': 'bold'}})
+            cur += u16(t)
+        for v, nm, why in PROG_DEMOS:
+            block(f'{v.upper()} — {nm}', why, f'prog_demo_{v}.jpg')
+        for lvl, text, opts in [(0, 'Ниже — обзорный кадр каждой панели (ни один пункт ещё не подсвечен); '
+                                    'полный набор кадров и таймкоды — в ТЗ монтажёру.', {})]:
             t = text + '\n'
             reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': t}})
             if lvl:

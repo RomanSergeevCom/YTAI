@@ -28,7 +28,9 @@ CH_NAME = [_NAMES.get(n, f'{T("core.chapter")} {n}') for _, n in _CHAP]   # им
 CH_ACCENT = list(P.get('ch_accent') or [_PALETTE[i % len(_PALETTE)] for i in range(len(_CHAP))])
 
 # (сек от, сек до, №) — карта структуры (стадия H) и списки ТЗ (s10) из одного места
-_END = int(float(P.get('total_sec', P.duration_sec() + 19.16)) + 0.5)
+# конец последней главы = конец ката. Было `duration + 19.16` — хвост фикстуры первого фильма:
+# на кате v2 карта структуры писала финал «34:42–35:35» при длине ката 35:16 (22.09.2026).
+_END = int(float(P.get('total_sec', P.duration_sec())) + 0.5)
 CH_BOUNDS = [(int(t), int(e), int(n)) for (t, n), e in zip(_CHAP, [t for t, _ in _CHAP[1:]] + [_END])]
 NEW_CH = set(int(x) for x in P.get('new_ch', []))
 

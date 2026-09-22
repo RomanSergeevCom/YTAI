@@ -20,7 +20,8 @@ from _bootstrap import P, W6, M, HERE, ROOT, T, LANG, tz_label  # noqa: E402
 import i18n  # noqa: E402  (has() — есть ли перевод иконки категории)
 from render import render  # noqa: E402
 from terms_catalog import TERMS, LOCS, PLACE, PLACES, TERM_EXTRA, place_family  # noqa: E402
-from make_infographics_v6_data import SUB, CH_ACCENT, CH_NAME, PROG, CH_BOUNDS, NEW_CH  # noqa: E402
+from make_infographics_v6_data import (SUB, CH_ACCENT, CH_NAME, PROG, PROG_T,  # noqa: E402
+                                       CH_BOUNDS, NEW_CH)
 from typo_diff import spans_for_fragment  # noqa: E402
 
 
@@ -55,6 +56,10 @@ STAGES = set(sys.argv[1:]) or {'all'}
 
 def want(s):
     return 'all' in STAGES or s in STAGES
+
+
+def esc(t):
+    return str(t).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 
 def page(name, body, css='', draft=True):
@@ -427,8 +432,14 @@ if want('C'):
 # 2600 px закрывали ведущую в центре кадра), верх поднят с 640 до 420: снизу слева у ката свой титр
 # подтемы, а сверху заставка главы кончается к 250 px.
 PROG_CSS = f"""
-.pg {{ position:absolute; left:150px; top:420px; width:max-content; max-width:2200px;
-  background:{PANEL}; border-radius:40px; padding:60px 96px 66px 80px; }}
+.pshot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
+.pg {{ position:absolute; left:150px; width:max-content; max-width:2200px;
+  background:{PANEL}; border-radius:40px; padding:54px 96px 66px 0; display:flex; gap:46px; }}
+.pg.va {{ bottom:170px; }}          /* вместо титра подтемы ката */
+.pg.vb {{ top:420px; }}             /* слева-посередине, титр подтемы остаётся */
+.pg .sbar {{ width:18px; border-radius:9px; flex:none; margin-left:-0px; }}
+.pg .ch {{ font-family:Helvetica,Arial,sans-serif; font-size:44px; letter-spacing:.24em; font-weight:bold;
+  margin-bottom:22px; }}
 .pg .h {{ font-family:Helvetica,Arial,sans-serif; font-size:66px; letter-spacing:.2em; color:{MUT}; display:flex;
   justify-content:space-between; gap:60px; }}
 .pg .h b {{ color:{IVORY}; }}
@@ -442,17 +453,49 @@ PROG_CSS = f"""
 .pg .bar {{ height:16px; background:rgba(255,255,255,.14); border-radius:8px; margin-top:50px; overflow:hidden; }}
 .pg .bar i {{ display:block; height:100%; }}
 """
+# Роман 22.09.2026: «усиль расположение подглав, чтобы связь с главами была». Панель получает
+# подпись главы и ту же цветную планку слева, что у плашки подглавы (блок C) — обе читаются как одна
+# семья. Где панель стоит — решение вкуса, поэтому два варианта (card `prog_variant`: a | b):
+#   a — ВМЕСТО титра подтемы ката, внизу слева: в шапке «ГЛАВА NN · ИМЯ», панель самодостаточна;
+#   b — слева-посередине, в шапке только «ГЛАВА NN»: имя главы читается из верхнего титра ката,
+#       собственный титр подтемы остаётся внизу.
+PROG_VARIANT = str(P.get('prog_variant', 'a')).lower()
+CH_NO_FINAL = P.get('ch_no_final', {})                # нумерация Романа: 8 глав 01..08, хук и финал без номера
+
+
+def _prog_body(ch, k, variant=None):
+    title, items, acc = PROG[ch]
+    n = len(items)
+    v = (variant or PROG_VARIANT)
+    ch_no = CH_NO_FINAL.get(ch, ch)
+    sig = f"{T('core.chapter')} {ch_no}" + (f" · {esc(P.get('ch_name', {}).get(ch, ''))}" if v == 'a' else '')
+    rows = ''.join(
+        f'<div class="row {"on" if j == k else ("done" if j < k else "")}"><div class="dot"></div>'
+        f'<div class="it">{j} · {it}</div></div>' for j, it in enumerate(items, 1))
+    return (f'<div class="pg v{v}" style="border-top:22px solid {acc}">'
+            f'<div class="sbar" style="background:{acc}"></div>'
+            f'<div><div class="ch" style="color:{acc}">{sig}</div>'
+            f'<div class="h"><span>{title}</span>'
+            f"<b>{T('d.ig.prog_k_of_n', k=k, n=n) if k else T('d.ig.prog_next')}</b></div>{rows}"
+            f'<div class="bar"><i style="width:{k / n * 100:.0f}%;background:{acc}"></i></div></div></div>')
+
+
 if want('D'):
-    for ch, (title, items, acc) in PROG.items():
-        n = len(items)
-        for k in range(0, n + 1):                      # k=0 — обзор списка ДО первого пункта (Роман 09.09)
-            rows = ''.join(
-                f'<div class="row {"on" if j == k else ("done" if j < k else "")}"><div class="dot"></div>'
-                f'<div class="it">{j} · {it}</div></div>' for j, it in enumerate(items, 1))
-            page(f'prog_{ch}_{k}', f"""
-<div class="pg" style="border-top:22px solid {acc}">
- <div class="h"><span>{title}</span><b>{T('d.ig.prog_k_of_n', k=k, n=n) if k else T('d.ig.prog_next')}</b></div>{rows}
- <div class="bar"><i style="width:{k / n * 100:.0f}%;background:{acc}"></i></div></div>""", PROG_CSS, draft=False)
+    for ch in PROG:
+        for k in range(0, len(PROG[ch][1]) + 1):       # k=0 — обзор списка ДО первого пункта (Роман 09.09)
+            page(f'prog_{ch}_{k}', _prog_body(ch, k), PROG_CSS, draft=False)
+    # два варианта места на одном настоящем кадре — Роману на выбор, как с заставками глав
+    _dch = next((c for c in PROG if len(PROG[c][1]) >= 4), next(iter(PROG), None))
+    if _dch:
+        _dsec = int(P.get('prog_demo_sec', 0)) or int(PROG_T.get(_dch, [0])[1] if len(PROG_T.get(_dch, [])) > 1 else 0)
+        _shot = W6 / 'hires' / f'h{_dsec + 1:04d}.jpg'
+        for v in ('a', 'b'):
+            body = _prog_body(_dch, 2, v)
+            bg = (f'<div class="pshot" style="background-image:url(\'file://{_shot}\')"></div>'
+                  if _shot.exists() else '')
+            page(f'prog_demo_{v}', bg + body, PROG_CSS, draft=False)
+            flatten_jpg(f'prog_demo_{v}')
+        print(f'варианты панели подглав: a/b по главе {_dch}, кадр {_shot.name}')
 
 # ═══════════════════════════ E. прозрачные версии тёмных драфтов (V3) ═══════════════════════════
 CENTER_CSS = f"""
@@ -561,10 +604,6 @@ def ann_kind(kind):
 
 def clean_sp(t):
     return re.sub(r'\s+', ' ', str(t)).strip()
-
-
-def esc(t):
-    return str(t).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 
 def sample_colours(frame, bbox):
@@ -817,6 +856,12 @@ STRUCT_CSS = f"""
 """
 
 
+def _ch_lab(n):
+    """подпись главы по нумерации Романа (ch_no_final): содержательные 01..08, хук и финал без номера"""
+    fin = str(CH_NO_FINAL.get(f'{n:02d}', f'{n:02d}'))
+    return f'{T("core.chapter")} {fin}' if fin not in ('—', '') else T('d.ig.sm_no_no')
+
+
 def _struct_blocks(here=None, subs=True):
     out = []
     for a, b, n in CH_BOUNDS:
@@ -829,31 +874,51 @@ def _struct_blocks(here=None, subs=True):
         now = f'<span class="now">{T("d.ig.here")}</span>' if here == n else ''
         out.append(
             '<div class="chb %s"><div class="bar" style="background:%s"></div><div class="bd">'
-            '<div class="lab" style="color:%s">%s %02d<span class="tc">%s–%s</span>%s%s</div>'
+            '<div class="lab" style="color:%s">%s<span class="tc">%s–%s</span>%s%s</div>'
             '<div class="nm">%s</div>%s%s</div></div>'
-            % ('on' if here == n else '', acc, acc, T('core.chapter'), n, _tc(a), _tc(b), plus, now,
+            % ('on' if here == n else '', acc, acc, _ch_lab(n), _tc(a), _tc(b), plus, now,
                CH_NAME[n - 1], ('<ul>%s</ul>' % li) if li else '', none))
     return out
 
 
 if want('H'):
+    # карта на 4K держит примерно 50 строк в колонке; у ката v2 подглав 62 против 36 у первого —
+    # низ уезжал за кадр. Масштаб считаем по фактическому числу строк, а не подбираем руками.
+    # В колонку на 4K влезает ~40 строк (левая несёт ещё и легенду). У ката v2 подглав 62 (у первого было 36) — в две колонки
+    # низ уезжал за кадр. Считаем строки по блокам и раскладываем в столько колонок, сколько нужно.
+    _wt = [2 + sum(1 for s_, ch_, _ in SUB if a <= s_ < b) for a, b, _ in CH_BOUNDS]
+    _ncol = 2 if sum(_wt) <= 70 else 3
+    STRUCT_CSS += '\n.cols { gap:56px; }\n.chb .nm { font-size:46px; }\n.chb li { font-size:30px; }' \
+                  '\n.chb li .t { font-size:25px; min-width:104px; }' if _ncol > 2 else ''
     bl = _struct_blocks()
     # шапка и легенда — из карточки проекта: было зашито «10 ГЛАВ · 36 ПОДГЛАВ · кат 40:40»
     # и номера ТЗ первого фильма, то есть карта структуры врала на любом другом кате.
     half = (len(bl) + 1) // 2
     _legend = [f'<div class="lgi">{T("d.ig.sm_legend_map")}</div>',
                f'<div class="lgi">{T("d.ig.sm_legend_sub", n=len(SUB))}</div>']
-    _legend += [f'<div class="lgi">{T("d.ig.sm_legend_prog", k=k, title=v[0], n=len(v[1]))}</div>'
+    _legend += [f'<div class="lgi">{T("d.ig.sm_legend_prog", k=CH_NO_FINAL.get(k, k), title=v[0], n=len(v[1]))}</div>'
                 for k, v in sorted(PROG.items())]
     _legend += [f'<div class="lgi">{T("d.ig.sm_legend_new", n=n)}</div>' for n in sorted(NEW_CH)]
+    lim = (sum(_wt) + (len(_legend) + 1 if _ncol == 2 else 0)) / _ncol
+    cols, cur_col, load = [], [], 0.0
+    for b, w in zip(bl, _wt):                       # раскладка по колонкам с балансом по строкам
+        if cur_col and load + w / 2 > lim and len(cols) < _ncol - 1:
+            cols.append(cur_col); cur_col, load = [], 0.0
+        cur_col.append(b); load += w
+    cols.append(cur_col)
+    lg = (f'<div class="lg"><div class="lgh">{T("d.ig.sm_legend_h")}</div>' + ''.join(_legend) + '</div>')
+    body = ''.join('<div class="col">' + ''.join(c) + (lg if (_ncol == 2 and i == 0) else '') + '</div>'
+                   for i, c in enumerate(cols))
     _html = (
-        '<div class="sm"><div class="hd"><h1>' + T('d.ig.sm_h1', nch=len(CH_BOUNDS), nsub=len(SUB)) + '</h1>'
-        f'<div class="s">{T("d.ig.sm_sub", tc=_tc(CH_BOUNDS[-1][1]))}</div></div>'
-        '<div class="cols"><div class="col">' + ''.join(bl[:half]) +
-        f'<div class="lg"><div class="lgh">{T("d.ig.sm_legend_h")}</div>' + ''.join(_legend) + '</div>'
-        '</div><div class="col">' + ''.join(bl[half:]) + '</div></div>'
+        '<div class="sm"><div class="hd"><h1>'
+        + T('d.ig.sm_h1', nch=sum(1 for _, _, n in CH_BOUNDS
+                                  if str(CH_NO_FINAL.get(f'{n:02d}', f'{n:02d}')) not in ('—', '')),
+            nsub=len(SUB)) + '</h1>'
+        f'<div class="s">{T("d.ig.sm_sub", tc=_tc(P.duration_sec()))}</div></div>'
+        f'<div class="cols">{body}</div>' + ('' if _ncol == 2 else lg) +
         f'<div class="foot2"><span>{T("d.ig.sm_foot_plus")}</span>'
         f'<span>{DRAFT_TXT}</span></div></div>')
+    print(f'  карта структуры: строк {sum(_wt)}, колонок {_ncol}')
     page('info_structure_map', _html, STRUCT_CSS, draft=False)
     VM_CSS = STRUCT_CSS + """
 .vm { position:absolute; inset:0; background:%s; display:flex; flex-direction:column;

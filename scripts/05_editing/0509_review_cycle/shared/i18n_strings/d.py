@@ -81,6 +81,8 @@ STRINGS = {
                             'en': 'list progress ch.{k}: {title} — overview BEFORE, then the next item highlighted ({n} items)'},
     'd.ig.sm_legend_new': {'ru': 'гл.{n:02d} — заставки нет в кате, создать',
                            'en': 'ch.{n:02d} — no title card in the cut, create one'},
+    # хук и финал главами не нумеруются (решение Романа 22.09.2026) — у них вместо номера эта метка
+    'd.ig.sm_no_no': {'ru': 'БЕЗ НОМЕРА', 'en': 'NO NUMBER'},
     'd.ig.sm_h1': {'ru': 'СТРУКТУРА ВЫПУСКА: <span class="r">{nch} ГЛАВ · {nsub} ПОДГЛАВ</span>',
                    'en': 'EPISODE STRUCTURE: <span class="r">{nch} CHAPTERS · {nsub} SUB-CHAPTERS</span>'},
     'd.ig.sm_sub': {'ru': 'кат {tc} · главы = заставки · подглавы = титульные экраны подтем',
