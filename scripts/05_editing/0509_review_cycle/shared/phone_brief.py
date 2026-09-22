@@ -13,7 +13,7 @@ usage:
 
 Разделы: шапка (фильм · кат · дата · ссылки) → «Вердикт» (work/{cut}/producer_summary.json или авто)
 → «Обязательно» (severity high / класс fact·typo·mismatch: строка «ТЗ-NN · tc · заголовок», кадр,
-строки ✅ СДЕЛАТЬ) → «Убрать / вырезать» (category cut) → «Решить Роману» (поле decision)
+строки блока «Как надо») → «Убрать / вырезать» (category cut) → «Решить Роману» (поле decision)
 → «Все ТЗ» (компакт, без картинок). Снятые Романом (status rejected) не показываются, ⚠️ = sensitive.
 
 Размер держится в --max-kb: сначала падает качество/ширина JPEG, потом снимаются кадры с конца
@@ -33,6 +33,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'stages'))
 from _bootstrap import P, W6, M, REVIEW_DIR, MOCK  # noqa: E402
 from pravki_lib import (KIND_RU, CAT_RU, CAT_ICON, SEV_RANK, load_pravki, counts, verdict_lines,  # noqa: E402
                         load_summary, jpeg_data_uri, favicon_href, latest_review_json, sec_tc)
+import i18n  # noqa: E402
+
+DO_LBL = i18n.TL('ru', 'core.lbl_do')      # бриф Романа всегда по-русски; знак берём из таблицы, не литералом
 
 TG_CHAT = '155880671'
 E = html.escape
@@ -176,12 +179,12 @@ def must_card(p, uri):
     o.append(f'<div class="t">{E(p["_title"])}</div>')
     do = p['_do']
     if do:
-        o.append(f'<div class="do"><b>✅ СДЕЛАТЬ</b> · {E(do[0])}</div>')
+        o.append(f'<div class="do"><b>{E(DO_LBL)}</b> · {E(do[0])}</div>')
         if len(do) > 1:
             o.append(f'<details><summary>ещё {len(do) - 1}</summary>' +
                      ''.join(f'<div class="do">{E(x)}</div>' for x in do[1:]) + '</details>')
     else:
-        o.append('<div class="do none">✅ СДЕЛАТЬ · см. полный текст ТЗ в доке</div>')
+        o.append(f'<div class="do none">{E(DO_LBL)} · см. полный текст ТЗ в доке</div>')
     o.append('</div></div>')
     return ''.join(o)
 

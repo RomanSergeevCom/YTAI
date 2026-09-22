@@ -403,20 +403,23 @@ if want('C'):
   <div class="sname"><span class="tri">▸</span>{label}</div></div></div>""", SUB_CSS, draft=False)
 
 # ═══════════════════════════ D. прогресс перечислений (V6) ═══════════════════════════
+# Кегль поднят в 2,4 раза 22.09.2026 — та же просьба Романа, что и по заставкам глав (стадия J):
+# панель 1120 px на кадре 3840 читалась только при стоп-кадре. Позиция не меняется: верх кадра
+# занят титрами ката, поэтому перечисления живут слева-посередине (грабля README).
 PROG_CSS = f"""
-.pg {{ position:absolute; left:150px; top:640px; width:1120px; background:{PANEL}; border-radius:24px;
-  padding:30px 44px 34px 44px; }}
-.pg .h {{ font-family:Helvetica,Arial,sans-serif; font-size:30px; letter-spacing:.2em; color:{MUT}; display:flex;
-  justify-content:space-between; }}
+.pg {{ position:absolute; left:150px; top:640px; width:2600px; background:{PANEL}; border-radius:40px;
+  padding:60px 80px 66px 80px; }}
+.pg .h {{ font-family:Helvetica,Arial,sans-serif; font-size:66px; letter-spacing:.2em; color:{MUT}; display:flex;
+  justify-content:space-between; gap:60px; }}
 .pg .h b {{ color:{IVORY}; }}
-.pg .row {{ display:flex; align-items:center; gap:22px; margin-top:18px; }}
-.pg .dot {{ width:22px; height:22px; border-radius:50%; flex:none; border:3px solid {MUT}; }}
-.pg .it {{ font-size:40px; color:{MUT}; }}
-.pg .row.on .dot {{ background:{RED}; border-color:{RED}; box-shadow:0 0 22px {RED}; }}
+.pg .row {{ display:flex; align-items:center; gap:44px; margin-top:34px; }}
+.pg .dot {{ width:48px; height:48px; border-radius:50%; flex:none; border:6px solid {MUT}; }}
+.pg .it {{ font-size:96px; color:{MUT}; }}
+.pg .row.on .dot {{ background:{RED}; border-color:{RED}; box-shadow:0 0 48px {RED}; }}
 .pg .row.on .it {{ color:{IVORY}; font-weight:bold; }}
 .pg .row.done .dot {{ background:{MUT}; }}
 .pg .row.done .it {{ color:{IVORY}; opacity:.75; }}
-.pg .bar {{ height:8px; background:rgba(255,255,255,.14); border-radius:4px; margin-top:26px; overflow:hidden; }}
+.pg .bar {{ height:16px; background:rgba(255,255,255,.14); border-radius:8px; margin-top:50px; overflow:hidden; }}
 .pg .bar i {{ display:block; height:100%; }}
 """
 if want('D'):
@@ -427,7 +430,7 @@ if want('D'):
                 f'<div class="row {"on" if j == k else ("done" if j < k else "")}"><div class="dot"></div>'
                 f'<div class="it">{j} · {it}</div></div>' for j, it in enumerate(items, 1))
             page(f'prog_{ch}_{k}', f"""
-<div class="pg" style="border-top:12px solid {acc}">
+<div class="pg" style="border-top:22px solid {acc}">
  <div class="h"><span>{title}</span><b>{T('d.ig.prog_k_of_n', k=k, n=n) if k else T('d.ig.prog_next')}</b></div>{rows}
  <div class="bar"><i style="width:{k / n * 100:.0f}%;background:{acc}"></i></div></div>""", PROG_CSS, draft=False)
 
@@ -1056,3 +1059,46 @@ if want('J'):
     else:
         print(f'  !! нет кадра {shot.name} — демо вариантов не собрал')
     print(f'заставки глав: {len(CH_NAME)} (вариант {CHOV_VARIANT}) + демо a/b/c по главе {demo_no}')
+
+
+# ═══════════ K. «БЫЛО → НАДО»: карточка замен для ТЗ со списком правок ═══════════
+# Роман 22.09.2026 к ТЗ-16: «Показывай пример как было текст и как надо». Драфт `fix_tzNN`
+# (стадия G) рисует ОДНУ замену по bbox и для такой ТЗ не годится: там несколько подписей в
+# разных местах кадра (у ТЗ-16 — четыре английские подписи на научной иллюстрации).
+# Источник — поле `wasnow: [[было, надо], …]` записи ТЗ (ставится через pravki/tz_overrides.json).
+WASNOW_CSS = f"""
+.wn {{ position:absolute; inset:0; background:{BG}; padding:110px 140px; }}
+.wn .hd {{ font-family:Helvetica,Arial,sans-serif; font-size:48px; letter-spacing:.2em; color:{MUT}; }}
+.wn .ttl {{ font-size:104px; font-weight:bold; line-height:1.1; margin:26px 0 70px; letter-spacing:.02em; }}
+.wn table {{ width:100%; border-collapse:collapse; }}
+.wn th {{ font-family:Helvetica,Arial,sans-serif; font-size:44px; letter-spacing:.18em; text-align:left;
+  padding-bottom:28px; border-bottom:6px solid rgba(255,255,255,.18); }}
+.wn th.a {{ color:{RED}; width:46%; }}
+.wn th.b {{ color:#3FA34D; padding-left:90px; }}
+.wn td {{ font-size:62px; line-height:1.32; padding:38px 0; vertical-align:top;
+  border-bottom:3px solid rgba(255,255,255,.10); }}
+.wn td.a {{ color:{MUT}; }}
+.wn td.b {{ color:{IVORY}; font-weight:bold; padding-left:90px; }}
+.wn td.b .ar {{ color:{RED}; font-weight:normal; margin-right:26px; }}
+"""
+
+
+def _wasnow_body(title, pairs, hdr_a, hdr_b):
+    rows = ''.join(f'<tr><td class="a">{subsup(esc(str(a)))}</td>'
+                   f'<td class="b"><span class="ar">→</span>{subsup(esc(str(b)))}</td></tr>' for a, b in pairs)
+    return (f'<div class="wn"><div class="hd">{esc(T("core.lbl_do"))}</div><div class="ttl">{esc(title)}</div>'
+            f'<table><tr><th class="a">{esc(hdr_a)}</th><th class="b">{esc(hdr_b)}</th></tr>{rows}</table></div>')
+
+
+if want('K'):
+    _pr = json.load(open(MONT / 'pravki_v2.json'))['all']
+    _n = 0
+    for _i, _p in enumerate(_pr, 1):
+        _pairs = [x for x in (_p.get('wasnow') or []) if isinstance(x, (list, tuple)) and len(x) == 2]
+        if not _pairs or _p.get('status') == 'rejected':
+            continue
+        page(f'wasnow_tz{_i:02d}',
+             _wasnow_body(_p.get('title') or tz_label(_i), _pairs,
+                          T('d.ig.wasnow_a'), T('d.ig.wasnow_b')), WASNOW_CSS)
+        _n += 1
+    print(f'карточек «было → надо»: {_n}')

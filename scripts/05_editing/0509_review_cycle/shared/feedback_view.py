@@ -61,7 +61,7 @@ JARGON = [re.compile(r'\b(?:align\w*|OCR|VLM|overlap|status_by|bucket|dup_of|sco
           re.compile(r'\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b')]      # имена правил и полей: fund_entry_min, last_sound_rule
 # после этих сокращений точка — не конец предложения
 ABBR = {'т', 'е', 'г', 'ул', 'см', 'руб', 'мин', 'сек', 'тыс', 'млн', 'стр', 'им', 'др', 'пр', 'гг', 'vs', 'etc'}
-_SENT = re.compile(r'[.!?]["»”)]?\s+(?=[A-ZА-ЯЁ«“"(\d❌✅📍⚠])')
+_SENT = re.compile(r'[.!?]["»”)]?\s+(?=[A-ZА-ЯЁ«“"(\d❌✅▶📍⚠])')
 _CLAUSE = re.compile(r'(?:;|\s—|,)\s+')
 
 

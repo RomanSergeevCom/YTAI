@@ -19,7 +19,7 @@ load_pravki(P, W6, M, MOCK) → (список ТЗ, путь файла). Каж
   _screen    id экрана (s031): из аннотации или имени кадра v6_err_sNNN.jpg в material_rich
   _frame     Path лучшего кадра ТЗ: err_frames_annotated → картинка из material_rich → hires/hNNNN.jpg
              (кадр N = секунда N−1) → None
-  _do        строки «✅ СДЕЛАТЬ» (parts.do → разбор поля nado)
+  _do        строки «▶ СДЕЛАТЬ» (parts.do → разбор поля nado)
   _rejected  status == rejected
   _sensitive bool (sensitive.flag или sensitive == true)
   _must      обязательная: не снята и (severity high или класс fact/typo/mismatch)
@@ -61,9 +61,11 @@ _EN_KINDS = ('typo', 'grammar', 'fact', 'currency', 'language', 'mismatch', 'for
              'check_source', 'design')
 EN_KIND_UP = {i18n.TL('en', f'core.kind_up.{k}'): k for k in _EN_KINDS}
 TITLE_CLASS_EN = list(EN_KIND_UP.items()) + [('MISMATCH', 'mismatch'), ('LAYOUT', 'design'), ('CUT', 'cut')]
-# метка блока «✅ СДЕЛАТЬ» в поле nado: русская и английская (core.lbl_do)
-DO_LABELS = (i18n.TL('ru', 'core.lbl_do'), i18n.TL('en', 'core.lbl_do'))
-# маркеры блоков в поле nado — на них заканчивается блок «✅ СДЕЛАТЬ»
+# метка блока «Как надо» в поле nado: русская и английская (core.lbl_do) + та же метка до 22.09.2026
+# (core.lbl_do_legacy) — в прошлых кругах `nado` собран с ней, и их текст ещё разбирается.
+DO_LABELS = (i18n.TL('ru', 'core.lbl_do'), i18n.TL('en', 'core.lbl_do'),
+             i18n.TL('ru', 'core.lbl_do_legacy'), i18n.TL('en', 'core.lbl_do_legacy'))
+# маркеры блоков в поле nado — на них заканчивается блок «▶ СДЕЛАТЬ»
 NADO_MARKERS = ('❌', '📍', '📚', '🎞', '🗺', '⏱', '📌', '🔗', '🎬', '📎', '❓')
 
 
@@ -193,7 +195,7 @@ def frame_for(p, W6, MOCK=None):
 
 
 def do_lines(p):
-    """Строки «✅ СДЕЛАТЬ»: parts.do (строки или {h, items}) → иначе разбор nado."""
+    """Строки «▶ СДЕЛАТЬ»: parts.do (строки или {h, items}) → иначе разбор nado."""
     out = []
     do = ((p.get('parts') or {}).get('do')) or []
     for d in do:
@@ -206,9 +208,12 @@ def do_lines(p):
     if out:
         return out
     nado = str(p.get('nado') or '')
-    lbl, i = DO_LABELS[0], nado.find(DO_LABELS[0])
-    if i < 0:
-        lbl, i = DO_LABELS[1], nado.find(DO_LABELS[1])
+    lbl, i = '', -1
+    for cand in DO_LABELS:                       # текущая метка, затем английская, затем легаси
+        j = nado.find(cand)
+        if j >= 0:
+            lbl, i = cand, j
+            break
     if i < 0:
         return out
     block = nado[i + len(lbl):]

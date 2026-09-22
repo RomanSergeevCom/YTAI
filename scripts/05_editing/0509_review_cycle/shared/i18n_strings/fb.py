@@ -3,7 +3,7 @@
 поверхности — HTML-страница продюсера (shared/feedback_page.py) и вкладка дока монтажёру (stages/doc_tab_feedback_v1.py).
 
 Зачем отдельный владелец: жанра «сверка версий» в каноне 5.6 нет, его слова живут здесь и нигде не дублируются.
-Метки блоков (❌ СЕЙЧАС / ✅ СДЕЛАТЬ / 📍 ГДЕ), «было → стало», «ГЛАВА», префикс ТЗ — в core.py.
+Метки блоков (❌ СЕЙЧАС / ▶ СДЕЛАТЬ / 📍 ГДЕ), «было → стало», «ГЛАВА», префикс ТЗ — в core.py.
 RU — полные рабочие строки; EN — короткие рабочие (selftest review.py требует en у каждого ru).
 Значения-списки — формы числа: ru [1, 2–4, 5+], en [1, много]; их выбирает feedback_view.plural().
 Запрещено в видимом тексте: жаргон движка (имена кадров, названия проходов и полей модели).
@@ -46,9 +46,9 @@ STRINGS = {
                         'приблизительно, сверь по кадру',
                   'en': 'all timecodes refer to the new cut {ver}; “≈” before a timecode — the spot is approximate, '
                         'check the frame'},
-    'fb.how_blocks': {'ru': 'в пункте: ❌ СЕЙЧАС — что в кате, ✅ СДЕЛАТЬ — действие, 📍 ГДЕ — место; строка под '
+    'fb.how_blocks': {'ru': 'в пункте: ❌ СЕЙЧАС — что в кате, ▶ СДЕЛАТЬ — действие, 📍 ГДЕ — место; строка под '
                             'заголовком — на чём основан вывод',
-                      'en': 'in a note: ❌ NOW — what is in the cut, ✅ DO — the action, 📍 WHERE — the spot; the line '
+                      'en': 'in a note: ❌ NOW — what is in the cut, ▶ DO — the action, 📍 WHERE — the spot; the line '
                             'under the title — what the conclusion rests on'},
     'fb.how_typo': {'ru': 'опечатки: красным жирным — как «было», зелёным жирным — как «стало»',
                     'en': 'typos: bold red — as it was, bold green — as it should be'},

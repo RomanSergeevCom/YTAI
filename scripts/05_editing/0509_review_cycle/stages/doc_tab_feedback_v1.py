@@ -244,7 +244,7 @@ def _item_row(row, fb, lang, have, visuals, say, bucket):
         err.nl().add(_caption(ve, row, lang), 'cap')
         imgs.append((C_ERR, 0, visual_name(row, 'err')))
 
-    fix = _Cell()                                           # колонка 6: ✅ и 📍, затем якорь + подпись + источник
+    fix = _Cell()                                           # колонка 6: ▶ и 📍, затем якорь + подпись + источник
     _blocks(fix, ('do', 'where'), sb, lang)
     vf = _visual(visuals, row, 'fix')
     if vf and vis_key(row, 'fix') in have:
@@ -1018,6 +1018,8 @@ def selftest():
     import subprocess
     import tempfile
     quiet = lambda *a, **k: None                            # noqa: E731
+    # метка блока «Как надо» меняется (22.09.2026 ✅ → ▶) — проверки берут её из таблицы, не литералом
+    DO_RU, DO_EN = i18n.TL('ru', 'core.lbl_do'), i18n.TL('en', 'core.lbl_do')
     fb = synthetic()
     assert V.lint(fb) == [] or all(lv == 'WARN' for lv, _, _ in V.lint(fb)), V.lint(fb)
     tmp = Path(tempfile.mkdtemp(prefix='doc_tab_feedback_selftest_'))
@@ -1057,7 +1059,8 @@ def selftest():
             ('【Опечатка в титре с именем героини】', 'title')} <= got, got
     assert r1['spans'][C_VERDICT][0] == (0, len('❌ НЕПРАВИЛЬНО'), 'was'), 'вердикт — первый спан, первая строка'
     f = r1['cells'][C_FIX].split('\n')
-    assert f[:3] == ['✅ СДЕЛАТЬ · исправить фамилию в титре', '     проверить тот же титр в финале', '📍 ГДЕ · 0:42–0:47'], f
+    assert f[:3] == [f"{DO_RU} · исправить фамилию в титре", '     проверить тот же титр в финале',
+                     '📍 ГДЕ · 0:42–0:47'], f
     assert f[3] == '' and f[4] == '0:42 · как надо: исправить фамилию в титре' and f[5] == 'Источник: наш драфт по кадру v5 0:42', f
     assert r1['imgs'] == [(C_ERR, 0, 'fb_p1_001_err.jpg'), (C_FIX, 3, 'fb_p1_001_fix.jpg')], r1['imgs']
     assert r1['cells'][C_ERR] == '\n0:42 · Опечатка в титре с именем героини 👁' and r1['spans'][C_ERR] == [(1, len(r1['cells'][C_ERR]), 'cap')]
@@ -1080,7 +1083,7 @@ def selftest():
     v9 = r9['cells'][C_VERDICT].split('\n')
     assert '\x07' not in r9['cells'][C_VERDICT] and v9[0] == '❌ НЕПРАВИЛЬНО' and v9[2] == 'Почему: реплика на месте'
     assert v9[3].startswith('❌ СЕЙЧАС · 5:10 ▸ Фонд входит') and v9[-1] == 'ещё 9 строк — вкладка ТЗ v4, ТЗ-09', v9
-    assert r9['cells'][C_FIX].count('✅ СДЕЛАТЬ ·') == 1 and '        ' + TB.FIG + '5:12  ▸ первая' in r9['cells'][C_FIX]
+    assert r9['cells'][C_FIX].count(f'{DO_RU} ·') == 1 and '        ' + TB.FIG + '5:12  ▸ первая' in r9['cells'][C_FIX]
     r11 = by[(2, 11)]
     assert '\n15:00 · подпись без времени впереди\n' in r11['cells'][C_FIX], r11['cells'][C_FIX]   # подпись индекса добита по канону
     r31 = by[(2, 31)]
@@ -1109,7 +1112,7 @@ def selftest():
     assert stats(rows) == {'sec': 7, 'part2': 1, 'item': 11, 'dup': 1, 'list': 2, 'картинок': 19, 'ошибка': 8, 'как надо': 11}, stats(rows)
     assert build_rows(fb, have_frames=have, visuals=visuals, say=say) == (rows, head), 'build_rows обязана быть детерминированной'
     en_rows, en_head = build_rows(fb, 'en', have, visuals=visuals)
-    assert en_head[0][1].startswith('Feedback on cut v5') and '✅ DO ·' in en_rows[2]['cells'][C_FIX]
+    assert en_head[0][1].startswith('Feedback on cut v5') and f"{DO_EN} ·" in en_rows[2]['cells'][C_FIX]
     assert en_rows[2]['cells'][C_VERDICT].startswith('❌ WRONG\n') and 'Source: ' in en_rows[2]['cells'][C_FIX]
     assert i18n.LANG in ('ru', 'en') and build_rows(fb, have_frames=have, visuals=visuals, say=say)[1] == head   # язык возвращён
     assert _source({'source': {'text': '', 'url': 'x y'}}) == ('—', None) and _source({'source': 'кадр'}) == ('кадр', None)

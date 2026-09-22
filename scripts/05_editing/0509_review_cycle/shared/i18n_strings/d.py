@@ -53,6 +53,9 @@ STRINGS = {
     # D. прогресс перечислений
     'd.ig.prog_k_of_n': {'ru': '{k} из {n}', 'en': '{k} of {n}'},
     'd.ig.prog_next': {'ru': 'ЧТО ДАЛЬШЕ', 'en': 'COMING UP'},
+    # K. карточка «было → надо» (ТЗ с несколькими заменами в одном кадре)
+    'd.ig.wasnow_a': {'ru': 'БЫЛО НА ЭКРАНЕ', 'en': 'ON SCREEN NOW'},
+    'd.ig.wasnow_b': {'ru': 'НАДО', 'en': 'SHOULD BE'},
     # G. стрелки / исправления / LT-плашки ТЗ
     'd.ig.kind_currency': {'ru': 'ФОРМАТ ЧИСЛА/ВАЛЮТЫ', 'en': 'CURRENCY'},
     'd.ig.kind_language': {'ru': 'ПЕРЕВЕСТИ', 'en': 'LANGUAGE'},

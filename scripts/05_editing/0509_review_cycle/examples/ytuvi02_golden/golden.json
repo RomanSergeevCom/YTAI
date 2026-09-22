@@ -3,8 +3,8 @@
  "project": "YTUVI02",
  "real": "/Volumes/T7-Blue-2-RYA/YTUVI-Projects/YTUVI02_Ruby_Certificate/00_Setup/05_Review",
  "sandbox": "/Users/romansergeev/YTAI_work/_golden/YTUVI02/00_Setup/05_Review",
- "taken": "2026-09-22T13:56:22",
- "code_version": "93952a0",
+ "taken": "2026-09-22T15:07:39",
+ "code_version": "3033f02",
  "inputs": {
   "YTUVI02_v1.words.json": "ba7efddebec7b9df834d40ad98c8c6c9f4e93be3",
   "pravki/drive_clips.json": "9564a5660d8d7f5748377011015e9607a113c8b6",
@@ -89,8 +89,8 @@
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
     "_stdout.txt": "da7b69d2d121b7b84dce91e590c645ce80f74365",
-    "pravki/pravki_v2.json": "92c1d949db11a9a23fc3d77198f5a1d259664c3b",
-    "work/v1/lint_v7.json": "f30fe49db20870efed81576a533818fd79b3f868"
+    "pravki/pravki_v2.json": "0437a32d2e7a217cf6ae14b92afd1c87b98e74de",
+    "work/v1/lint_v7.json": "2fb7fd5a78c56b2d70f9e245bef2d694a1ef7797"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/s10_format_tz.py",
    "env": {}
@@ -101,7 +101,7 @@
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
     "_stdout.txt": "630234be2826ad0855dc35c93d70e4b55b0a9e1e",
-    "pravki/pravki_v2.json": "92c1d949db11a9a23fc3d77198f5a1d259664c3b"
+    "pravki/pravki_v2.json": "0437a32d2e7a217cf6ae14b92afd1c87b98e74de"
    },
    "cmd": "/opt/homebrew/opt/python@3.14/bin/python3.14 <STAGE>/stages/s11_apply_sources.py",
    "env": {}
@@ -111,7 +111,7 @@
    "rc": 0,
    "outputs": {
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
-    "_stdout.txt": "6dc8299e93337ba02b256592e12387bd9653c458",
+    "_stdout.txt": "0177d9a14bf454f85af744d796b11a10e3c416ab",
     "mockups/src/ann_tz01.html": "e520714a51466a53bc5a6e47660dc81d88d850ce",
     "mockups/src/ann_tz02.html": "e38c99ca53ed86f66f5a9aef684add2bd2e7037f",
     "mockups/src/ann_tz03.html": "157b740c87e13041ceef2769947a7ac7dee4a2a6",
@@ -158,11 +158,11 @@
     "mockups/src/ann_tz44.html": "069177c59cf678668a5102bb99e48a4cb9df2198",
     "mockups/src/ann_tz45.html": "37a535bb5b275b9b70f09aa4706a1c731e5ac0e6",
     "mockups/src/ann_tz46.html": "ea5944ea38fdf15b1fc9a8fbcf709e199a4b5391",
-    "mockups/src/ch_ov_01.html": "1bfdd7093b37097e5f40f1e9f5aabe0e6d5641cc",
-    "mockups/src/ch_ov_02.html": "5a469b36923d2cf7f99a6cf3e8ca94f6bee06551",
-    "mockups/src/ch_ov_03.html": "c597c20a6ca525121781034ff9d24b3586a7733a",
-    "mockups/src/ch_ov_04.html": "36ab30847644df4755a1a88cb41bba703599f36a",
-    "mockups/src/ch_ov_05.html": "93774a46ee565c9396be1aca5455f0c03443b66d",
+    "mockups/src/ch_ov_01.html": "8ecc52424676b76715de4ba0b1efd24d4b9b4e45",
+    "mockups/src/ch_ov_02.html": "a258cf8c535f747448b770e590f218c2a1954228",
+    "mockups/src/ch_ov_03.html": "4edf9c549e7b20441f39fc7a04c7f2598685a284",
+    "mockups/src/ch_ov_04.html": "4ec320cacfe6c48f8452d011bf60b7f3902d6fe1",
+    "mockups/src/ch_ov_05.html": "be55a7139e8e1b899e8eb4a802f1bc1a85fd8776",
     "mockups/src/fix_tz04.html": "68d048f83ec0a1e24b68e6532bfe5d4a9f26096c",
     "mockups/src/fix_tz05.html": "4c91733c67e493b360c7918ece1db20939ec4d22",
     "mockups/src/fix_tz08.html": "fce5876e2ee8a55a852c544f7c11e8f57233754b",
@@ -209,23 +209,23 @@
     "mockups/src/mapfull_belt_2.html": "ab712718435c95d5d5ca44b034ee34eddf0ba19e",
     "mockups/src/mapfull_belt_3.html": "62a5e82eedd6cb4f66e5dd5d1707ea35cd9401ce",
     "mockups/src/mapfull_burma.html": "b84d6f4a4c3b738419c32243cc3e25bf9580f8cd",
-    "mockups/src/prog_03_0.html": "817a723d7c215c4bee5fca20c093185aa0f579ad",
-    "mockups/src/prog_03_1.html": "9b416a5a11c2c1ce6da1635a30aba442703f3dd6",
-    "mockups/src/prog_03_2.html": "eae34401f44c5cc93615fa83523b6fb66458aa5d",
-    "mockups/src/prog_03_3.html": "9acfd575b243d01bb112bd6575e4f8eba5e58c91",
-    "mockups/src/prog_03_4.html": "6f4ae7969009a371c545c4f74742fa228264911a",
-    "mockups/src/prog_04_0.html": "af216571eaa88496993a29382aeb91247ccc6d34",
-    "mockups/src/prog_04_1.html": "5e542666fa90371be1844133a782636a3c879119",
-    "mockups/src/prog_04_2.html": "4df2a525c2e2bbdaec177746eff727c5dcf38cd7",
-    "mockups/src/prog_04_3.html": "70b29d51725ca0b011fa9eeee01fcd1bc8cef5b1",
-    "mockups/src/prog_04_4.html": "6e248a4751895710a71327ac6601dcb4b392800c",
-    "mockups/src/prog_05_0.html": "ffeca303905b292b5932ffd4bb5c35db214e330f",
-    "mockups/src/prog_05_1.html": "d143dcce3292dd8308b881f44673f731782b01c5",
-    "mockups/src/prog_05_2.html": "5794716ab544ee7a2d024897d00115e4493d5bc7",
-    "mockups/src/prog_05_3.html": "0175e8ee4068e3f4557b991549bdfc079e91cd56",
-    "mockups/src/prog_05_4.html": "080393133c55ebfc65f768e7394d4bdb3b2ee9e6",
-    "mockups/src/prog_05_5.html": "6705497c58c8e8f6cea44f690d73804c5c0778c4",
-    "mockups/src/prog_05_6.html": "f2ccc7de36f10d0c910a70c55e31df7ce595c1bf",
+    "mockups/src/prog_03_0.html": "1572d3a3160e94f72198e50be4a1d3aab7cab6e2",
+    "mockups/src/prog_03_1.html": "724c29491cab415f479cced2ab5dcc19bcfee0f0",
+    "mockups/src/prog_03_2.html": "417b9dffaef6cb6302ef9ced2cd7b93bc7439c70",
+    "mockups/src/prog_03_3.html": "e436585f0bfa7be7b1351f8afc24867c70defc21",
+    "mockups/src/prog_03_4.html": "5f7e82544e70c0afca516600eabf1b26f85cbef3",
+    "mockups/src/prog_04_0.html": "cd7e2ad303eeabb34d35da8c6dd72c3c98af6703",
+    "mockups/src/prog_04_1.html": "f9d7bd75e78729f233a714c2538afa857768dd13",
+    "mockups/src/prog_04_2.html": "866bfba428ce715b68186d188342ad860a0c6a61",
+    "mockups/src/prog_04_3.html": "a7c49788ec206318c607788a222759750e8250ff",
+    "mockups/src/prog_04_4.html": "ed72d209b68eea846dee43ab0792610d330286bd",
+    "mockups/src/prog_05_0.html": "e2e8c82b93a97d9f0814ecc4ab572347ecbef21b",
+    "mockups/src/prog_05_1.html": "55332af46b3246c93e7639dc03b45fbcdbf862a5",
+    "mockups/src/prog_05_2.html": "59a42af5148de1900671fcaa247f612f90d42dac",
+    "mockups/src/prog_05_3.html": "961a1e48706134795aca646ce50c55a3cea0508b",
+    "mockups/src/prog_05_4.html": "d07ad218ff2f84a3b3c57a80b0fca42dcaba2407",
+    "mockups/src/prog_05_5.html": "b2a9d9a2fc963022382019065b8ae873c34ee745",
+    "mockups/src/prog_05_6.html": "e42799a7cc663124db23604d7c09682db7add298",
     "mockups/src/sub_01.html": "274b4063576b1a294de975d52dab32c51916ef50",
     "mockups/src/sub_02.html": "e7bcf30aaa83d6e21af25b85b09dd98ae9141cc6",
     "mockups/src/sub_03.html": "8490a88229ca8719954ee614fb2ca896da86c2c9",
@@ -422,7 +422,7 @@
    "name": "review_json",
    "rc": 0,
    "outputs": {
-    "YTUVI02_review_v6.json": "076956428925e56468977b04488f71c46a0ac8d3",
+    "YTUVI02_review_v6.json": "7ba08b75e23c8ee4099ef1768b98c4706477276e",
     "YTUVI02_review_v6_summary.md": "8ac4843cdb5a9dfca466a27da5d3866ca34caf6e",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
     "_stdout.txt": "7f65aec9d170b5c635bbe72478a114b5ecbcfff4"
@@ -444,7 +444,7 @@
    "name": "sheet_dump",
    "rc": 0,
    "outputs": {
-    "_dump/sheet_rows.json": "bc38d40b3a1a85faf408afc06322cb92037d1744",
+    "_dump/sheet_rows.json": "ea915503e1ece378aaa2ff777025d0ee5bdf38bf",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
     "_stdout.txt": "0011919bfe9e2cbb95c1edd79c3b1dc12d6b7fb5"
    },
@@ -455,7 +455,7 @@
    "name": "tz_dump",
    "rc": 0,
    "outputs": {
-    "_dump/tz_requests.json": "a527a2c82ec1f1e4be0d5160de302e024a82e84f",
+    "_dump/tz_requests.json": "55f688eef570b57c42a0bf68690567ecd183d08c",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
     "_stdout.txt": "c5a8f51f8d9c0e91331a45912500448043e43ee1"
    },
@@ -477,7 +477,7 @@
    "name": "phone_brief",
    "rc": 0,
    "outputs": {
-    "YTUVI02_v1_brief.html": "fb8672cf231cecc70576aac0b7efcd64e8f737aa",
+    "YTUVI02_v1_brief.html": "275fc6ab0d3275d943d0feb3472fe6b8a3436920",
     "_rc.txt": "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
     "_stdout.txt": "4bdbb9a4d9e4866956c3f823b0c3de8529714265"
    },

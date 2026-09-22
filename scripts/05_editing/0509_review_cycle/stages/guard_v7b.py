@@ -78,7 +78,7 @@ def guard(num, orig, prop):
     if len(added) > max(8, 0.2 * len(wp)):
         warn.append('много новых слов (не выдумано ли?): ' + ', '.join(added[:30]))
     if 'do' not in prop or not strings({'do': prop.get('do')}):
-        hard.append('нет ✅ СДЕЛАТЬ')
+        hard.append('нет блока «Как надо»')
     for s in sp_list:
         s0 = s.strip()
         if len(TCR.findall(s0)) >= 2:

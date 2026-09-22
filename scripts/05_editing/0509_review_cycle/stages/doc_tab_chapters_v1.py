@@ -9,10 +9,17 @@
 
 Структура (канон 5.6 — ОДНА таблица):
   шапка: что это + три варианта заставки крупными картинками, каждый одной строкой «за что»
-  таблица: № | Кадр из ката | Глава и подглавы | ⏱ | Что не так
+         + раздел «ПОДГЛАВЫ» — панели перечислений (card.prog), по обзорному кадру на главу
+  таблица: № | Кадр из ката | Глава и подглавы | ⏱ | Что сейчас | Как надо
+
+Сюда же переехала проблема «заставки глав вразнобой» (ТЗ-48 снято 22.09.2026 по просьбе Романа:
+«Надо проблему с главами отдельно вынести в Главы · v2») — текст берётся из карточки:
+`ch_notes` (что с заставкой в кате), `ch_state` (что сейчас / как надо), `ch_extra` (похожие на
+заставку места, главами не являющиеся). Выбранная буква заставки — `ch_plate_variant`.
 
 Картинки — только из публичной папки кадров (shots_remote), как на вкладке ТЗ: кадры глав
-`ch_card_NN.jpg` (их кладёт ensure_shots) и демо вариантов `ch_demo_a|b|c.jpg`.
+`ch_card_NN.jpg` (их кладёт ensure_shots), демо вариантов `ch_demo_a|b|c.jpg` и обзорные
+панели подглав `prog_NN_0.jpg`.
 
 usage: doc_tab_chapters_v1.py [--tab TITLE] [--dry-run]
 """
@@ -70,23 +77,36 @@ DUR = int(P.duration_sec())
 shots = json.loads((M / 'shots_ids.json').read_text(encoding='utf-8')) if (M / 'shots_ids.json').exists() else {}
 STATE = P.get('ch_state', {})     # {'04': ['что сейчас', 'как надо']} — из карточки
 EXTRA = P.get('ch_extra', [])     # места, похожие на заставку, но не привязанные к главе
+NOTES = P.get('ch_notes', {})     # {'04': '⚠️ НЕТ НОМЕРА · 11:17 …'} — из карточки
+PROG = P.get('prog', {})          # {'08': {'title': …, 'items': [...]}} — перечисления внутри главы
+PICKED = str(P.get('ch_plate_variant', '')).strip().lower()   # выбранная Романом буква заставки
+NO_NUM = [no for no, t in sorted(NOTES.items()) if 'НЕТ НОМЕРА' in str(t)]
 
 rows = []
 for i, (sec, no) in enumerate(CHAP):
     end = CHAP[i + 1][0] if i + 1 < len(CHAP) else DUR
     subs = [f'▸ {tmm(s)} · {t}' for s, c, t in SUB if f'{c:02d}' == no]
+    pg = PROG.get(no) or {}
+    if not subs and pg:                       # подглавы этой главы — перечисление, а не титульные экраны
+        subs = [f'▸ «{pg.get("title", "")}» — панель перечисления:'] + \
+               [f'      {k} · {it}' for k, it in enumerate(pg.get('items') or [], 1)]
     body = f'{no}. {CH_NAME.get(no, "")}' + ('\n' + '\n'.join(subs) if subs else '\n▸ подглав в кате нет')
     st = STATE.get(no) or ['', '']
     rows.append({'no': no, 'img': CH_IMG.get(no, ''), 'body': body,
                  'tc': f'{tmm(sec)}–{tmm(end)}', 'now': st[0], 'do': st[1] if len(st) > 1 else ''})
 
+_no_num = (f'У глав {", ".join(NO_NUM)} номера на заставке нет, у остальных есть — два разных приёма в одном фильме. '
+           if NO_NUM else '')
 head = [(1, f'{P.CODE} · {TAB_TITLE} — все главы фильма и дизайн заставок', {'bold': True}),
-        (0, f'Кат {P.CUT_VERSION}, {tmm(DUR)}. Заставки глав в кате несогласованы: у семи есть номер, '
-            f'у двух нет, и оба приёма — светлый текст по светлому кадру.', {}),
+        (0, f'Кат {P.CUT_VERSION}, {tmm(DUR)}. Заставки глав в кате несогласованы. {_no_num}'
+            f'Оба приёма — светлый текст по светлому кадру, контраста не хватает. '
+            f'Здесь всё про главы в одном месте: что в кате сейчас, что надо, и как выглядит новая заставка.', {}),
         (0, '', {}),
-        (2, 'ВАРИАНТЫ ЗАСТАВКИ — выбери букву', {'bold': True}),
-        (0, 'Все три нарисованы поверх настоящего кадра этого фильма, глава 05. Скажи букву — '
-            'соберу все десять глав в этом стиле и поставлю на таймлайн.', {})]
+        (2, ('ВАРИАНТЫ ЗАСТАВКИ — выбран ' + PICKED.upper()) if PICKED else 'ВАРИАНТЫ ЗАСТАВКИ — выбери букву',
+         {'bold': True}),
+        (0, 'Все три нарисованы поверх настоящего кадра этого фильма, глава 05. '
+            + (f'Роман выбрал {PICKED.upper()} — все десять глав собраны в этом стиле и стоят на таймлайне.'
+               if PICKED else 'Скажи букву — соберу все десять глав в этом стиле и поставлю на таймлайн.'), {})]
 
 
 def find_tab(doc):
@@ -166,8 +186,10 @@ def main():
                 'range': {'tabId': tab_id, 'startIndex': cur, 'endIndex': cur + u16(t) - 1},
                 'textStyle': {'bold': True}, 'fields': 'bold'}})
         cur += u16(t)
-    for v, name, why in DEMOS:
-        line = f'{v.upper()} — {name}\n'
+    def block(title, why, img):
+        """жирный заголовок + строка «за что» + пустой абзац под картинку; → сдвиг cur"""
+        nonlocal cur
+        line = title + '\n'
         reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': line}})
         reqs.append({'updateTextStyle': {'range': {'tabId': tab_id, 'startIndex': cur, 'endIndex': cur + u16(line) - 1},
                                          'textStyle': {'bold': True}, 'fields': 'bold'}})
@@ -175,22 +197,50 @@ def main():
         w = why + '\n'
         reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': w}})
         cur += u16(w)
-        demo_at.append((v, cur))                       # картинка встанет своим абзацем
+        demo_at.append((img, cur))                     # картинка встанет своим абзацем
         reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': '\n'}})
         cur += 1
-    batch_update(DOC_ID, reqs)
-    print(f'шапка: {len(head)} абзацев + {len(DEMOS)} вариантов', flush=True)
 
-    for v, at in sorted(demo_at, key=lambda x: -x[1]):             # с конца — индексы не едут
-        did = shots.get(f'ch_demo_{v}.jpg')
+    for v, name, why in DEMOS:
+        mark = ' ✔ ВЫБРАН' if PICKED == v else ''
+        block(f'{v.upper()} — {name}{mark}', why, f'ch_demo_{v}.jpg')
+
+    # ── подглавы: панели перечислений внутри главы (Роман 22.09.2026) ──
+    if PROG:
+        for lvl, text, opts in [(2, 'ПОДГЛАВЫ — ПАНЕЛИ ПЕРЕЧИСЛЕНИЙ', {'bold': True}),
+                                (0, 'Там, где ведущая перечисляет по пунктам, зритель теряет счёт. Панель слева '
+                                    'держит весь список на экране и подсвечивает текущий пункт; справа — «ЧТО ДАЛЬШЕ» '
+                                    'или «k из n». Ниже — обзорный кадр каждой панели (пункт ещё ни один не '
+                                    'подсвечен); полный набор кадров и таймкоды — в ТЗ монтажёру.', {})]:
+            t = text + '\n'
+            reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': t}})
+            if lvl:
+                reqs.append({'updateParagraphStyle': {
+                    'range': {'tabId': tab_id, 'startIndex': cur, 'endIndex': cur + u16(t)},
+                    'paragraphStyle': {'namedStyleType': f'HEADING_{lvl}'}, 'fields': 'namedStyleType'}})
+            if opts.get('bold'):
+                reqs.append({'updateTextStyle': {
+                    'range': {'tabId': tab_id, 'startIndex': cur, 'endIndex': cur + u16(t) - 1},
+                    'textStyle': {'bold': True}, 'fields': 'bold'}})
+            cur += u16(t)
+        for no, pg in sorted(PROG.items()):
+            items = list(pg.get('items') or [])
+            block(f'ГЛАВА {no} · {CH_NAME.get(no, "")} — «{pg.get("title", "")}»',
+                  f'{len(items)} пунктов: ' + ' · '.join(items), f'prog_{no}_0.jpg')
+
+    batch_update(DOC_ID, reqs)
+    print(f'шапка: {len(head)} абзацев + {len(DEMOS)} вариантов + подглав {len(PROG)}', flush=True)
+
+    for name, at in sorted(demo_at, key=lambda x: -x[1]):           # с конца — индексы не едут
+        did = shots.get(name)
         if not did:
-            print(f'  !! нет id картинки ch_demo_{v}.jpg — пропуск', flush=True)
+            print(f'  !! нет id картинки {name} — пропуск', flush=True)
             continue
         batch_update(DOC_ID, [{'insertInlineImage': {
             'location': {'tabId': tab_id, 'index': at},
             'uri': f'https://drive.google.com/uc?export=download&id={did}',
             'objectSize': {'width': {'magnitude': 460, 'unit': 'PT'}}}}])
-    print('картинки вариантов вставлены', flush=True)
+    print(f'картинки шапки вставлены: {len(demo_at)}', flush=True)
 
     cur = tab_body(tab_id)[-1]['endIndex'] - 1
     batch_update(DOC_ID, [{'insertTable': {'location': {'tabId': tab_id, 'index': cur},

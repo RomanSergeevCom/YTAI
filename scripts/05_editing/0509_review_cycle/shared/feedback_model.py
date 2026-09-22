@@ -54,8 +54,11 @@ SCHEMA = 'feedback-v1'
 KEYS = ('now', 'do', 'list', 'where', 'src', 'tl')
 _LBL_KEY = {'now': 'core.lbl_now', 'do': 'core.lbl_do', 'list': 'core.lbl_list', 'where': 'core.lbl_where',
             'src': 'core.lbl_source', 'tl': 'core.lbl_timeline'}
+# прошлые круги собраны с прежними метками — их текст разбирается здесь же (core.lbl_do_legacy)
+_LBL_KEY_OLD = {'do': 'core.lbl_do_legacy'}
 # метка → ключ блока, ru и en; длинные первыми
-LABELS = sorted(((i18n.TL(lang, k), key) for key, k in _LBL_KEY.items() for lang in ('ru', 'en')),
+LABELS = sorted(((i18n.TL(lang, k), key)
+                 for d in (_LBL_KEY, _LBL_KEY_OLD) for key, k in d.items() for lang in ('ru', 'en')),
                 key=lambda x: -len(x[0]))
 LABEL_RU = {key: i18n.TL('ru', k) for key, k in _LBL_KEY.items()}
 
@@ -126,7 +129,7 @@ SOFT_TOKENS = [(re.compile(r'\s*(?:(?<![А-Яа-яЁё])(?:на|с|со|до|п�
 # предложение с таким следом выкидывается целиком: без него от фразы остаётся обрывок
 DROP_SENT = re.compile(r'\bEDL\b|пословн\w*\s+TC|Директива v\d|anchors_v\d|\bSpeaker \d|\bn/a\b|\bsrc[ _]|\bv\d_tc\b|\bend_tc\b|\banchor\b|'
                        r'subchapters|youtube_chapters|\b\w+\.json\b', re.I)
-LEAD_DUP = re.compile(r'^(?:[❌✅]\s*)+(?:Сделать:\s*(?:-\s*)?)?', re.I)
+LEAD_DUP = re.compile(r'^(?:[❌✅▶]\s*)+(?:Сделать:\s*(?:-\s*)?)?', re.I)
 BLUR_RE = re.compile(r'блюр|заблюр|кроп|перекадр|кадрирова|обезлич|размы', re.I)
 COND_RE = re.compile(r'\bесли\b|при отказе|в случае|откаж|не подтверд|не соглас|после ответа|не нуж|не требу', re.I)
 INF_RE = re.compile(r'^[«"(]?[А-ЯЁа-яё-]+(?:ть|ти|чь|ться|тись)\b')
@@ -229,7 +232,7 @@ def lossless(text) -> bool:
 def _sentences(s: str) -> list:
     """предложения; внутри «…» не режем"""
     out = []
-    for x in re.split(r'(?<=[.!?»)])\s+(?=[А-ЯЁA-Z«❌✅⚠])', s):
+    for x in re.split(r'(?<=[.!?»)])\s+(?=[А-ЯЁA-Z«❌✅▶⚠])', s):
         if out and out[-1].count('«') > out[-1].count('»'):
             out[-1] += ' ' + x
         else:
@@ -503,7 +506,7 @@ MAX_LINE = 240                          # контракт §5; строки м�
 BARE_TC_RE = re.compile(rf'^[≈~]?{TC}(?:\s*[–—-]\s*{TC})?\s*▸?\s*$')
 WHOLE_FILM_RE = re.compile(r'весь фильм|whole film', re.I)
 _ABBR = {'т', 'е', 'г', 'ул', 'см', 'руб', 'мин', 'сек', 'тыс', 'млн', 'стр', 'им', 'др', 'пр', 'гг', 'гл'}
-_SENT_END = re.compile(r'[.!?]["»”)]?\s+(?=[A-ZА-ЯЁ«“"\d❌✅📍⚠≈])')     # «(» не начало: скобка относится к фразе перед ней
+_SENT_END = re.compile(r'[.!?]["»”)]?\s+(?=[A-ZА-ЯЁ«“"\d❌✅▶📍⚠≈])')     # «(» не начало: скобка относится к фразе перед ней
 _CLAUSE_END = re.compile(r'(?:;|\s—|\s→|,)\s+')
 
 
