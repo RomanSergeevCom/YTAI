@@ -131,14 +131,42 @@ def gate(day, res, D, nolav=()):
     # — единственный честный способ его поставить. Провал — это «петличка была,
     # а совпадения нет», и только он. Иначе гейт кричит на исправную работу и
     # его перестают читать.
-    byclock = [c["clip_id"] for c in res.get("clips", [])
+    byclock = [c for c in res.get("clips", [])
                if not str(c.get("source", "")).startswith("speech")
                and c["clip_id"] not in junk
                and c["clip_id"] not in set(nolav)
                and by_file.get(c["clip_id"], {}).get("kind") == "lesson"]
-    if byclock:
-        bad.append(f"по часам при ЖИВОЙ петличке ({len(byclock)}): {byclock[:6]} — "
-                   f"транскрипт пуст или не совпал, это разбирают")
+
+    # ⚠️ ...но и «часы при живой петличке» — ещё не приговор. Дубль снят ДВУМЯ
+    # урочными камерами одновременно. Если на второй камере тот же дубль решён
+    # РЕЧЬЮ и после своей Δ встаёт туда же, положение клипа доказано независимо
+    # — тем самым механизмом, что `_pair_note` в day.json называет проверкой
+    # word-sync. Часы здесь не «поверили на слово»: соври они на минуты, никакой
+    # речевой пары в этой точке не оказалось бы. Замер 23.09: RYA-FX3-1263 (0
+    # рёбер, TX02 мёртв весь дубль) против пары RYA-ZVE1-1946 — 0,10 с, вшестеро
+    # туже собственного допуска камер (0,63-0,67 с).
+    PAIR_TOL = 0.5
+    still = []
+    for c in byclock:
+        mate = next(
+            (m for m in res.get("clips", [])
+             if m["cam"] != c["cam"]
+             and str(m.get("source", "")).startswith("speech")
+             and by_file.get(m["clip_id"], {}).get("kind") == "lesson"
+             and abs((m.get("duration") or 0) - (c.get("duration") or 0)) <= 0.2
+             and abs(m["wall_start"] - c["wall_start"]) <= PAIR_TOL),
+            None)
+        if mate:
+            note.append(
+                f"{c['clip_id']}: по часам, но подтверждён парой {mate['clip_id']} "
+                f"(решена речью) — расхождение {abs(mate['wall_start'] - c['wall_start']):.2f} с "
+                f"при допуске {PAIR_TOL:.1f}")
+        else:
+            still.append(c["clip_id"])
+
+    if still:
+        bad.append(f"по часам при ЖИВОЙ петличке и без парного подтверждения "
+                   f"({len(still)}): {still[:6]} — транскрипт пуст или не совпал, это разбирают")
     if nolav:
         note.append(f"по часам законно (петлички не было вовсе): {len(set(nolav))} клипов")
 

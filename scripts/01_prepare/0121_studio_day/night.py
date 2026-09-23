@@ -88,6 +88,11 @@ def main():
     L = D["logs"]
     state_f = D["work"] / "night.json"
     state = load_json(state_f) or {"steps": {}}
+    # ⚠️ `stopped_at` пишется при падении, но принадлежит ТОМУ прогону. Не сняв
+    # его на старте, утренний отчёт читает вчерашнюю остановку и рапортует
+    # «⛔ встали на sync» поверх ночи, прошедшей целиком. Один раз поверив
+    # такому отчёту, перестаёшь верить всем.
+    state.pop("stopped_at", None)
     started = datetime.now()
 
     plan = [
