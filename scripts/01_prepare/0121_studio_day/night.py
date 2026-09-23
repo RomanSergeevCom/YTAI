@@ -43,8 +43,8 @@ VENV_V = Path.home() / "YTAI/environment/.venv_vlm/bin/python3"
 PROXY = Path.home() / "YTAI/scripts/16_proxy/1601_build/proxy.py"
 BOARD = Path.home() / "YTAI/scripts/15_color/1502_lut_pick/lut_board.py"
 
-STEPS = ("asr_mic", "audio_cam", "asr_cam", "sync", "takemap", "screencast",
-         "layout", "board", "proxy", "verify")
+STEPS = ("asr_mic", "audio_cam", "asr_cam", "sync", "takemap", "transcript",
+         "screencast", "layout", "board", "proxy", "verify", "report")
 
 
 def sh(cmd, log_path, timeout=None):
@@ -101,6 +101,8 @@ def main():
          "синхрон дня и гейт из семи пунктов"),
         ("takemap",   [str(VENV_T), str(HERE / "takemap.py")],                None,
          "карта дублей: какой дубль какой урок"),
+        ("transcript", ["python3", str(HERE / "transcript.py")],              None,
+         "читаемый транскрипт: двое людей, проникание отсечено"),
         ("screencast", [str(VENV_V), str(HERE / "screencast.py"), "--vlm"],   7200,
          "скринкасты: OCR по экранам + смысловая подпись"),
         ("layout",    ["python3", str(HERE / "layout.py"), "--apply"],        None,
@@ -119,6 +121,8 @@ def main():
                        "--exclude", "Video,00_Screencasts", "--verify-only", "--gate-report",
                        "--report", str(P / "00_Setup/logs" / f"{day['code']}_proxy_verify.json")],
          None, "приёмка прокси, восемь пунктов на каждом клипе"),
+        ("report",    ["python3", str(HERE / "dayreport.py")],                None,
+         "страница дня: что снято, чем доказано, что осталось"),
     ]
     plan = plan[STEPS.index(a.start):]
 
