@@ -2,16 +2,24 @@
 # -*- coding: utf-8 -*-
 """Инфографика Review_v6 (skill: infographic; chrome-headless-shell; alpha = body transparent).
 
-Новое к v5:
-  A. term_<key>.png    — плашки-определения терминов (V3, прозрачные, правый борт)
-  B. map_<key>.png     — мини-карты локаций на реальной географии (Natural Earth 50m, PD)
-  C. sub_NN.png        — подглавы (V6, прозрачные, левый борт середина — верхняя полоса занята титрами ката)
-  D. prog_08_N / prog_09_N — прогресс перечислений «N из M» (V6, левый борт середина; заменяет подглаву)
-  E. *_t.png           — прозрачные версии тёмных полноэкранных драфтов (панель по центру)
-  F. fix_*.png         — нарисованные ИСПРАВЛЕНИЯ (валюта «$30,3 МЛН» и т.п.) — по OCR-bbox
-  G. ann_tzNN / tz_lt_NN для новых ТЗ-33+ — генерятся из pravki_v2.json + audit_v6.json
+Виды экранов (буква = блок; библиотека канала читает этот список — `stages/screens_library.py`):
+  A. term_<key> / termgrp_*  — плашки-определения терминов (V3, прозрачные, правый борт)
+  B. map_<key> / mapfull_*   — мини-карты локаций на реальной географии (Natural Earth 50m, PD)
+  C. sub_NN                  — плашка подглавы коробкой (СТАРЫЙ язык; канонный приём — блок M)
+  D. prog_<ch>_<k>           — панель перечислений, список накапливается (тема card.prog_variant)
+  E. *_t                     — прозрачные версии тёмных полноэкранных драфтов (панель по центру)
+  G. ann_tzNN / fix_tzNN / tz_lt_NN — стрелки, драфты исправлений и плашки ТЗ (pravki + audit_v6)
+  H. info_structure_map / info_videomap_chNN — карта выпуска и карта видео для зрителя
+  I. info_namemap_*          — карта имён: что сказано голосом → что стоит на экране
+  J. ch_ov_NN / ch_demo_a|b|c — заставка главы (вариант card.ch_plate_variant)
+  K. wasnow_tzNN             — карточка «было → надо» (поле ТЗ `wasnow`)
+  L. lower_tzNN              — плашка спикера (поле ТЗ `lower`)
+  M. subt_NN                 — титр подтемы: приём самого фильма (ивори сериф по кадру + черта)
+  N. claim_NN                — плашка-утверждение во весь кадр (карточка `claims`)
+  O. page_NN                 — ивори-страница, собственная страница фильма (карточка `pages`)
+Буква F занята исторически (драфты исправлений рисует G) — отдельного блока F нет.
 Все PNG 3840×2160 → {project}/00_Setup/05_Review/mockups/ (+src/*.html).
-usage: make_infographics_v6.py [A B C D E F G | all]
+usage: make_infographics_v6.py [A B C D E G H I J K L M N O | all]
 """
 import json, math, os, re, sys
 from pathlib import Path
@@ -36,6 +44,26 @@ MUT = P.profile('style.mut', '#CDC6B8')
 BG = P.profile('style.bg', '#101014')
 PANEL = P.profile('style.panel', 'rgba(10,10,14,.84)')
 FONT = P.profile('style.font_stack', "Georgia,'Times New Roman',serif")
+# ── канон экранов канала: один набор чисел на все блоки, а не литерал в каждом CSS ──
+# Замер по самому кату (YTUVI01 v2, screens_v6.json), принят Романом 22.09.2026:
+#  · левая колонка — ink собственного титра подтемы на 1:33 и 32:09 начинается на 0.035–0.036
+#    ширины кадра (134–138 px в 4K); колонка макетов — 148, чтобы буква не липла к краю;
+#  · черта под титром подтемы у фильма 285×5 на кадре 1920 = 570×10 в 4K — наши плашки берут
+#    ровно её, а не «вдвое больше» (прежний комментарий блока D сравнивал 4K с 1080);
+#  · плита — непрозрачная тёплая темнота: на полупрозрачной сквозь неё читались титры ката.
+MARGIN = int(P.profile('style.margin_px', 148))
+# Шов деления кадра: где кончается плита и начинается чистый кадр с ведущей. 1920 из 3840 —
+# ровно половина (Роман 22.09.2026: «может 1/2 экрана?»). У YTUVIE 55 %, но это их число:
+# у нас половина проверена своим замером — длинная строка перечисления влезает полным кеглем. ⚠️ Шов НЕ двигают ради того, чтобы попасть в композицию кадра
+# (Роман 22.09.2026: «вместо того, чтобы спикера подвинуть, экран подвинул?»): шов держит канон,
+# а в чистую половину ведущую приводит сдвиг самого кадра — см. `_shift_x` ниже.
+SPLIT = int(P.profile('style.split_x', 1920))
+# куда ставим лицо в чистой половине: середина между швом и правым краем
+FACE_TARGET = float(P.profile('style.face_target', 0.0)) or (SPLIT + (3840 - SPLIT) / 2) / 3840
+_rule = P.profile('style.rule') or [570, 10]
+RULE_W, RULE_H = int(_rule[0]), int(_rule[1])
+PLATE = P.profile('style.plate', '#141110')
+GRAPH = P.profile('style.graph', '#7A7365')   # приглушённый ПО кости: 3,93 : 1 (профильный MUT там 1,42 — слепой)
 
 BASE_CSS = f"""
 * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -71,6 +99,70 @@ def page(name, body, css='', draft=True):
     print('✓', name, flush=True)
 
 
+_FACE_DIRS = [Path('/System/Library/Fonts/Supplemental'), Path('/System/Library/Fonts'),
+              Path('/Library/Fonts'), Path.home() / 'Library/Fonts']
+_FACE_CACHE = {}
+
+
+def _face(font_stack, bold=True):
+    """Файл начертания по первому семейству стека: нужен, чтобы МЕРИТЬ строку, а не угадывать.
+
+    Georgia → «Georgia Bold.ttf»; Didot → Didot.ttc, где кириллица есть ТОЛЬКО в Bold (индекс 2:
+    у Regular и Italic её нет вовсе). Не нашли файл — возвращаем None, и кегль считается прикидкой."""
+    fam = re.split(r'[,\s]', str(font_stack).strip().strip("'\""))[0].strip("'\"")
+    if fam in _FACE_CACHE:
+        return _FACE_CACHE[fam]
+    hit = None
+    for d in _FACE_DIRS:
+        for nm in ([f'{fam} Bold.ttf', f'{fam}-Bold.ttf', f'{fam}.ttc', f'{fam}.ttf'] if bold
+                   else [f'{fam}.ttf', f'{fam}.ttc']):
+            p = d / nm
+            if p.exists():
+                hit = (p, 2 if (p.suffix == '.ttc' and bold) else 0)
+                break
+        if hit:
+            break
+    _FACE_CACHE[fam] = hit
+    return hit
+
+
+def _measure(text, font_stack):
+    """ширина строки в долях кегля (замер по реальному файлу шрифта) или None"""
+    face = _face(font_stack)
+    if not face:
+        return None
+    key = ('m', face)
+    try:
+        from PIL import ImageFont
+        if key not in _FACE_CACHE:
+            _FACE_CACHE[key] = ImageFont.truetype(str(face[0]), 100, index=face[1])
+        return _FACE_CACHE[key].getlength(text) / 100.0
+    except Exception:
+        return None
+
+
+def fit_fs(lines, col, cap, by='line', floor=140, ls=0.0, adv=0.66, font=None):
+    """Кегль, при котором текст ещё влезает в колонку `col` при потолке `cap`.
+
+    Ширина меряется настоящим файлом шрифта: прикидка «средняя прописная = 0,66 кегля» врёт —
+    «ПРОИСХОЖДЕНИЕ» на 380 px давало по прикидке 3260 px и влезало в 3400, а на деле обрезалось.
+    `ls` — трекинг в em, он тоже занимает место (на 13 знаках при .03em это ещё пол-буквы).
+    `by='line'` — не должна переноситься вся строка (плашка-утверждение: приём ровно в две строки);
+    `by='word'` — переносы разрешены, влезть обязано самое длинное СЛОВО (имя главы)."""
+    parts = []
+    for s in lines:
+        if not s:
+            continue
+        parts += str(s).split() if by == 'word' else [str(s)]
+    if not parts:
+        return cap
+    worst = 0.0
+    for p in parts:
+        w = _measure(p.upper(), font or FONT)
+        worst = max(worst, (w if w is not None else len(p) * adv) + len(p) * ls)
+    return max(floor, min(cap, int(col / worst))) if worst else cap
+
+
 def flatten_jpg(name, width=1920):
     """4K PNG с альфой → плоский jpg рядом: гугл-док вставляет картинку по ссылке и альфу не показывает.
     Раньше такие jpg делали руками, и после правки CSS во вкладке оставалась старая картинка."""
@@ -88,6 +180,110 @@ def flatten_jpg(name, width=1920):
     out = OUT / f'{name}.jpg'
     flat.save(out, quality=86)
     return out
+
+
+# ── общие помощники раскладок: кадр-подложка, сдвиг кадра под шторку, чистый кадр ──
+def _frame(sec):
+    """кадр ката под секунду (hires снят 1 fps: hNNNN = секунда NNNN−1); нет кадра → макет на альфе"""
+    if sec is None:
+        return None
+    f = W6 / 'hires' / f'h{int(sec) + 1:04d}.jpg'
+    return f if f.exists() else None
+
+
+def _shot_div(f, shift=0):
+    if not f:
+        return ''
+    tr = f'transform:translateX({int(shift)}px);' if shift else ''
+    return f'<div class="shot" style="{tr}background-image:url(\'file://{f}\')"></div>'
+
+
+_FACE = None
+
+
+def _shift_x(sec):
+    """На сколько сдвинуть кадр вправо, чтобы ведущая оказалась в чистой половине шторки.
+
+    Двигаем КАДР, а не шов. Пустая полоса появляется слева, и её целиком закрывает плита, —
+    поэтому сдвиг ограничен шириной плиты. Позиции лиц меряет `stages/face_pos.py` (YuNet);
+    файла нет — сдвига нет, и макет честно показывает кадр как есть."""
+    global _FACE
+    if _FACE is None:
+        f = W6 / 'face_pos.json'
+        try:
+            _FACE = json.load(open(f, encoding='utf-8')).get('secs', {})
+        except (OSError, ValueError):
+            _FACE = {}
+    if sec is None:
+        return 0
+    pos = _FACE.get(str(int(sec)))
+    if not pos:                       # говорящая голова за пару секунд не убегает — берём ближайший замер
+        near = sorted(((abs(int(k) - int(sec)), k) for k in _FACE), key=lambda x: x[0])
+        pos = _FACE[near[0][1]] if near and near[0][0] <= 8 else None
+    if not pos:
+        return 0
+    shift = (FACE_TARGET - float(pos['cx'])) * 3840
+    return max(0, min(SPLIT - MARGIN, int(shift)))
+
+
+_BUSY = None
+
+
+def _clean_frame(sec, span=20):
+    """Кадр-подложка под макет БЕЗ собственного текста фильма.
+
+    Макет, положенный на ту самую секунду, где приём уже стоит в кате, даёт двойной титр —
+    наш поверх Сониного, и читать нечего. Инвентарь экранов (`screens_v6.json`) знает,
+    какие секунды заняты текстом: берём ближайшую свободную в пределах ±span.
+    ⚠️ Ближайшая свободная часто оказывается перебивкой из другой сцены (у 29:47 это салон
+    через 8 с) — макет студийного приёма на чужом интерьере читается как ошибка. Поэтому
+    среди свободных предпочитаем ту, чей кадр похож по цвету на исходную секунду.
+    Нет инвентаря или всё занято — отдаём кадр самой секунды, как раньше."""
+    global _BUSY
+    if sec is None:
+        return None
+    if _BUSY is None:
+        f = W6 / 'screens_v6.json'
+        try:
+            _BUSY = [(int(s['t0']), int(s['t1'])) for s in json.load(open(f, encoding='utf-8'))]
+        except (OSError, ValueError, KeyError):
+            _BUSY = []
+    sec = int(sec)
+    if not _BUSY:
+        return _frame(sec)
+    free = []
+    for d in range(0, span + 1):
+        for cand in ((sec,) if not d else (sec - d, sec + d)):
+            if cand < 0 or any(a - 1 <= cand <= b + 1 for a, b in _BUSY):
+                continue
+            fr = _frame(cand)
+            if fr:
+                free.append(fr)
+    if not free:
+        return _frame(sec)
+    same = _same_scene(_frame(sec), free)
+    return same or free[0]
+
+
+def _mean_rgb(path):
+    try:
+        from PIL import Image
+        with Image.open(path) as im:
+            return im.convert('RGB').resize((8, 8), Image.BILINEAR).resize((1, 1), Image.BILINEAR).getpixel((0, 0))
+    except Exception:                                  # нет кадра/PIL — сцену не сверяем
+        return None
+
+
+def _same_scene(ref, cands, tol=34):
+    """первый кандидат, чей средний цвет близок к исходной секунде (грубый, но дешёвый признак сцены)"""
+    r = _mean_rgb(ref) if ref else None
+    if not r:
+        return None
+    for c in cands:
+        m = _mean_rgb(c)
+        if m and sum((a - b) ** 2 for a, b in zip(r, m)) ** 0.5 <= tol:
+            return c
+    return None
 
 
 # ═══════════════════════════ A. термины ═══════════════════════════
@@ -410,8 +606,13 @@ if want('B') and LANG == 'ru' and _USED_PLACES & set(BELT_PTS):
  {make_map('world', belt_pts, '', mw=2300, mh=1450, hl=hl_step, nolabel=belt_nolabel)}</div>""", FULL_CSS)
 
 # ═══════════════════════════ C. подглавы (V6) ═══════════════════════════
+# высота плашки подглавы в кадре. Канон у каналов разный: YTCH просил «маленькие плашки
+# слева-ПОСЕРЕДИНЕ» (ТЗ v4 ТЗ-01) — это 980 px из 2160; у остальных каналов плашка исторически
+# стоит в верхней трети. Поэтому значение из профиля канала, а умолчание — прежнее
+SUB_Y = int(P.profile('style.sub_plate_y', 640))
+
 SUB_CSS = f"""
-.sw {{ position:absolute; left:150px; top:640px; display:flex; gap:34px; align-items:stretch;
+.sw {{ position:absolute; left:150px; top:{SUB_Y}px; display:flex; gap:34px; align-items:stretch;
   background:{PANEL}; border-radius:24px; padding:30px 54px 34px 40px; max-width:1500px; }}
 .sbar {{ width:12px; border-radius:6px; flex:none; }}
 .snum {{ font-family:Helvetica,Arial,sans-serif; font-size:34px; letter-spacing:.24em; font-weight:bold; }}
@@ -438,22 +639,29 @@ if want('C'):
 # Что решили замером по самому кату, а не на вкус:
 #  · все пункты одного кегля = текущий искать глазами; размер пре-аттентивен, цвет на пёстром
 #    кадре нет. Накопительный список снимает вопрос: свежий пункт всегда последняя строка;
-#  · полоса накрывала собственный титр главы ката — страница начинается НИЖЕ него (y 204…260);
-#  · кегль 88 px: самая длинная строка «ФЛЮСОВОЕ ЗАЛЕЧИВАНИЕ» (1380 px) влезает в одну строку;
+#  · кегль пункта считается под колонку, а не берётся числом: при шве 1500 «ФЛЮСОВОЕ
+#    ЗАЛЕЧИВАНИЕ» (15,83 em) влезает в одну строку на 71 px; потолок прежний — 88;
 #  · тире короткое (en, 0.5 em) и висячий отступ ровно по его ширине — переносы по тексту.
 #    ⚠️ text-indent наследуется: без `text-indent:0` на inline-block тире уезжает влево на IND;
-#  · черта 570 × 10 — ровно вдвое больше собственной черты подтемы ката (285 × 5 на 1920).
+#  · черта — та же, что у собственного титра подтемы ката (285 × 5 на 1920 = 570 × 10 в 4K);
+#    числа канона общие, см. MARGIN / RULE_W / RULE_H наверху файла.
 #
 # Две темы (card `prog_variant`): `z` — тёмная (принята Романом), `h` — светлая, для примера.
 # ⚠️ Тёмная НЕпрозрачна: на 94 % сквозь неё просвечивали титры ката. Заодно на непрозрачной
 # темноте настоящий рубин канала даёт 3,2 : 1 и работает как черта/тире/цифра — на полупрозрачном
 # скриме он давал 2,08 и был непригоден.
-PROG_X, PROG_RM, PROG_BAND, PROG_TOP = 148, 148, 1780, 300
+# Роман 22.09.2026 по отметкам на странице видов: «здесь экран должен быть как B — ШТОРКА»
+# (обе темы). Панель перестала быть полосой поверх кадра и делит кадр нацело, как заставка B:
+# плита от верхнего края до нижнего, по шву черта канала, справа чистый кадр с ведущей.
+# Из-за этого панель накрыла собственный титр главы ката — значит, печатает его сама
+# (раньше не печатала ровно потому, что титр оставался виден над полосой).
+PROG_X, PROG_RM, PROG_BAND, PROG_TOP = MARGIN, MARGIN, SPLIT, 0
 PROG_COL = PROG_BAND - PROG_X - PROG_RM
-PROG_ITEM, PROG_DASH, PROG_GAP = 88, 44, 24
+PROG_ITEM_CAP, PROG_DASH, PROG_GAP = 88, 44, 24
 PROG_IND = PROG_DASH + PROG_GAP
-PROG_GRAPH = '#7A7365'              # пройденные ПО кости: 3,93 : 1 (профильный MUT там 1,42 — слепой)
-PROG_DARK = '#141110'
+PROG_ITEM = PROG_ITEM_CAP        # пересчитывается под самый длинный пункт фильма
+PROG_GRAPH = GRAPH                  # имена оставлены: на них завязаны темы панели ниже
+PROG_DARK = PLATE
 PROG_THEMES = {
     'z': dict(bg=PROG_DARK, hdr=MUT, rule=RED, cnum=RED, cden=MUT,
               new=IVORY, old=MUT, dnew=RED, dold=MUT, oldop='.45'),
@@ -463,9 +671,9 @@ PROG_THEMES = {
 PROG_VARIANT = str(P.get('prog_variant') or 'z').strip().lower()
 if PROG_VARIANT not in PROG_THEMES:                    # буква без темы = панель без цвета, лучше упасть
     raise SystemExit(f'блок D: неизвестный prog_variant «{PROG_VARIANT}», есть {sorted(PROG_THEMES)}')
-# нумерация Романа: содержательных глав восемь (01..08), хук и финал без номера.
-# Сама панель номер главы больше не печатает (в кадре он уже стоит титром ката), но карта
-# выпуска блока H по-прежнему считает подписи отсюда — константа общая, не переносить в блок D.
+# нумерация Романа: содержательных глав восемь (01..08), хук и финал без номера. Панель снова
+# печатает главу в своей шапке: с переходом на шторку она накрывает собственный титр ката.
+# Карта выпуска блока H считает подписи отсюда же — константа общая, не переносить в блок D.
 CH_NO_FINAL = P.get('ch_no_final', {})
 
 
@@ -474,6 +682,10 @@ def _prog_css(v):
     return f"""
 .pshot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
 .pgb {{ position:absolute; left:0; top:{PROG_TOP}px; bottom:0; width:{PROG_BAND}px; background:{t['bg']}; }}
+.pgs {{ position:absolute; left:{PROG_BAND}px; top:0; bottom:0; width:{RULE_H}px; background:{t['rule']}; }}
+.pgch {{ position:absolute; left:{PROG_X}px; top:194px; width:{PROG_COL}px;
+  font-family:Helvetica,Arial,sans-serif; font-weight:300; text-transform:uppercase;
+  font-size:52px; letter-spacing:.22em; color:{t['hdr']}; }}
 .pgt {{ position:absolute; left:{PROG_X}px; top:692px; width:{PROG_COL}px; display:flex;
   justify-content:space-between; align-items:baseline; }}
 .pgt .hd {{ font-family:Helvetica,Arial,sans-serif; font-weight:300; text-transform:uppercase;
@@ -481,7 +693,8 @@ def _prog_css(v):
 .pgt .cn {{ color:{t['cnum']}; letter-spacing:.02em; white-space:nowrap; }}
 .pgt .cn b {{ font-size:88px; }}
 .pgt .cn i {{ font-size:46px; font-style:normal; color:{t['cden']}; }}
-.pgr {{ position:absolute; left:{PROG_X}px; top:828px; width:570px; height:10px; background:{t['rule']}; }}
+.pgr {{ position:absolute; left:{PROG_X}px; top:828px; width:{RULE_W}px; height:{RULE_H}px;
+  background:{t['rule']}; }}
 .pgl {{ position:absolute; left:{PROG_X}px; top:922px; width:{PROG_COL}px; }}
 .pgl .r {{ font-size:{PROG_ITEM}px; line-height:1.14; letter-spacing:.02em; color:{t['old']};
   opacity:{t['oldop']}; margin-bottom:46px; padding-left:{PROG_IND}px; text-indent:-{PROG_IND}px; }}
@@ -507,11 +720,19 @@ def _prog_body(ch, k, variant=None):
                     f'<span class="d">&#8211;</span>{nm}{qq}</div>')
     cn = (f'<div class="cn"><b>{k}</b><i>&#8201;/&#8201;{n}</i></div>' if k else
           f'<div class="cn hd">{T("d.ig.prog_next")}</div>')
-    return (f'<div class="pgb"></div><div class="pgt"><div class="hd">{esc(title)}</div>{cn}</div>'
+    chn = f'{T("core.chapter")} {ch} · {CH_NAME[int(ch) - 1]}' if CH_NAME and int(ch) <= len(CH_NAME) else ''
+    return (f'<div class="pgb"></div><div class="pgs"></div>'
+            f'<div class="pgch">{esc(chn)}</div>'
+            f'<div class="pgt"><div class="hd">{esc(title)}</div>{cn}</div>'
             f'<div class="pgr"></div><div class="pgl">{"".join(rows)}</div>')
 
 
 if want('D'):
+    _all_items = [str(it).split(' · ')[0] for ch in PROG for it in PROG[ch][1]]
+    PROG_ITEM = fit_fs(_all_items, PROG_COL - PROG_IND, PROG_ITEM_CAP, floor=56, ls=0.02)
+    if PROG_ITEM < PROG_ITEM_CAP:
+        print(f'панель: кегль пункта {PROG_ITEM} px (колонка {PROG_COL - PROG_IND}, '
+              f'самый длинный пункт «{max(_all_items, key=len)}»)')
     for ch in PROG:
         for k in range(0, len(PROG[ch][1]) + 1):       # k=0 остаётся: на него завязан make_review_v6
             page(f'prog_{ch}_{k}', _prog_body(ch, k), _prog_css(PROG_VARIANT), draft=False)
@@ -519,8 +740,13 @@ if want('D'):
     _dch = next((c for c in PROG if len(PROG[c][1]) >= 4), next(iter(PROG), None))
     if _dch:
         _dsec = int(P.get('prog_demo_sec', 0)) or int(PROG_T.get(_dch, [0])[1] if len(PROG_T.get(_dch, [])) > 1 else 0)
-        _shot = W6 / 'hires' / f'h{_dsec + 1:04d}.jpg'
-        bg = (f'<div class="pshot" style="background-image:url(\'file://{_shot}\')"></div>'
+        # ⚠️ кадр демо — без собственного текста фильма: со сдвигом его хвост уезжает в чистую
+        # половину и читается как брак макета (поймано на 32:10, «…ТКИ» от титра главы).
+        _shot = _clean_frame(_dsec) or (W6 / 'hires' / f'h{_dsec + 1:04d}.jpg')
+        _dsec = (int(_shot.stem[1:]) - 1) if _shot.stem[:1] == 'h' and _shot.stem[1:].isdigit() else _dsec
+        _sh = _shift_x(_dsec)
+        _tr = f'transform:translateX({_sh}px);' if _sh else ''
+        bg = (f'<div class="pshot" style="{_tr}background-image:url(\'file://{_shot}\')"></div>'
               if _shot.exists() else '')
         for v in PROG_THEMES:
             page(f'prog_demo_{v}', bg + _prog_body(_dch, 2, v), _prog_css(v), draft=False)
@@ -1084,7 +1310,7 @@ if want('I'):
     _namecard('info_namemap_terms_2', T('d.ig.nm_terms2_title', a=half + 1, n=len(trows)), trows[half:],
               T('d.ig.nm_terms2_note'), T('d.ig.nm_terms_foot'))
 
-print('\nготово →', OUT)
+_DONE_AT_END = True                 # строка «готово» печатается в самом конце файла, после J…O
 
 
 # ═══════════ J. ЗАСТАВКИ ГЛАВ: плашка ch_ov_NN + три варианта дизайна ═══════════
@@ -1098,6 +1324,15 @@ print('\nготово →', OUT)
 CHOV_VARIANT = str(P.get('ch_plate_variant', 'a')).lower()
 # кадр под демо: секунды БЕЗ экранного текста (иначе макет ложится на старый титр)
 CHOV_DEMO_SECS = [int(x) for x in P.get('ch_demo_secs', [])] or [790]
+CHOV_SPLIT = SPLIT
+# ⚠️ Пояснения к стилям держим питон-комментарием, а не внутри CSS: всё, что лежит в строке
+# стиля, уезжает в разметку макета, и селфтест английского канала ловит это как утечку языка.
+#
+# Вариант B — шторка: кадр делится НАЦЕЛО, а не накрывается плашкой. Правило Романа 20.09.2026
+# (оно же в layouts_uvie._side_slide): «если делишь экран на две части — надо делить». Левая
+# часть — сплошная плита от края до края, правая остаётся чистым кадром, по шву черта канала.
+# Прежний вариант растушёвывал край градиентом, и глава закрывала кадр наполовину —
+# Роман 22.09.2026: «главы должны полностью закрывать слева».
 CHOV_CSS = f"""
 .pl {{ position:absolute; inset:0; overflow:hidden; }}
 .pl .shot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
@@ -1117,11 +1352,13 @@ CHOV_CSS = f"""
 .va .rule {{ width:460px; height:14px; }}
 .va .sub {{ font-size:120px; opacity:.88; }}
 
-/* B: side panel */
-.vb .panel {{ position:absolute; left:0; top:0; bottom:0; width:1900px;
-              background:linear-gradient(90deg, rgba(10,10,14,.97) 72%, rgba(10,10,14,0)); }}
-.vb .box {{ position:absolute; left:170px; top:0; bottom:0; width:1560px; display:flex;
-            flex-direction:column; justify-content:center; gap:30px; }}
+/* side split */
+.vb .panel {{ position:absolute; left:0; top:0; bottom:0; width:{CHOV_SPLIT}px;
+              background:{PLATE}; }}
+.vb .seam {{ position:absolute; left:{CHOV_SPLIT}px; top:0; bottom:0; width:{RULE_H}px;
+             background:{RED}; }}
+.vb .box {{ position:absolute; left:{MARGIN}px; top:0; bottom:0; width:{CHOV_SPLIT - 2 * MARGIN}px;
+            display:flex; flex-direction:column; justify-content:center; gap:30px; }}
 .vb .num {{ font-size:92px; color:#E8586A; }}
 .vb .nm {{ font-size:300px; }}
 .vb .rule {{ width:360px; height:13px; }}
@@ -1138,11 +1375,13 @@ CHOV_CSS = f"""
 """
 
 
-def _chov_body(variant, num, name, sub, shot):
-    """плашка главы: номер, имя, подглава; shot — кадр-подложка (для демо) или пусто (альфа)"""
+def _chov_body(variant, num, name, sub, shot, sec=None):
+    """плашка главы: номер, имя, подглава; shot — кадр-подложка (для демо) или пусто (альфа).
+    У шторки кадр сдвигается так, чтобы ведущая была в чистой половине, — двигаем кадр, не шов."""
     v = {'a': 'va', 'b': 'vb', 'c': 'vc'}[variant]
-    bg = f'<div class="shot" style="background-image:url(\'file://{shot}\')"></div>' if shot else ''
-    lay = {'a': '<div class="scrim"></div>', 'b': '<div class="panel"></div>',
+    bg = _shot_div(shot, _shift_x(sec) if variant == 'b' else 0)
+    lay = {'a': '<div class="scrim"></div>',
+           'b': '<div class="panel"></div><div class="seam"></div>',   # шов делит кадр, а не красит его
            'c': '<div class="band"></div>'}[variant]
     subl = f'<div class="sub">▸ {esc(sub)}</div>' if sub else ''
     return (f'<div class="pl {v}">{bg}{lay}<div class="box">'
@@ -1158,19 +1397,36 @@ def _first_sub(no):
     return ''
 
 
+# ⚠️ имя главы набирается одним кеглем на все главы только пока влезает самое длинное СЛОВО:
+# «ПРОИСХОЖДЕНИЕ РУБИНА» на 380 px шире колонки 3400 и обрезалось на «ПРОИСХОЖДЕН» (нашлось,
+# когда виды собрали в библиотеку). Кегль считается по главе, а не берётся из CSS.
+CHOV_NM = {'a': (3400, 380), 'b': (CHOV_SPLIT - 2 * MARGIN, 300), 'c': (3500, 290)}
+
+
+def _chov_css(variant, name):
+    col, cap = CHOV_NM.get(variant, (3400, 380))
+    fs = fit_fs([name], col, cap, by='word', floor=150, ls=0.03)
+    return CHOV_CSS + f'\n.v{variant} .nm {{ font-size:{fs}px; }}\n'
+
+
 if want('J'):
     for i, nm in enumerate(CH_NAME):                       # CH_NAME — список, индекс = глава − 1
-        page(f'ch_ov_{i + 1:02d}', _chov_body(CHOV_VARIANT, f'{i + 1:02d}', nm, '', ''), CHOV_CSS)
+        page(f'ch_ov_{i + 1:02d}', _chov_body(CHOV_VARIANT, f'{i + 1:02d}', nm, '', ''),
+             _chov_css(CHOV_VARIANT, nm))
     # три варианта на одном кадре — Роману на выбор (поверх настоящей заставки главы)
     di = 4 if len(CH_NAME) >= 5 else 0
     demo_no = f'{di + 1:02d}'
     shot = next((f for f in (W6 / 'hires').glob('h0*.jpg')
                  if f.name in {n: n for n in [f'h{t:04d}.jpg' for t in CHOV_DEMO_SECS]}), None) \
         or OUT / f'ch_card_{demo_no}.jpg'
+    # секунду демо берём из ИМЕНИ найденного кадра: hNNNN = секунда NNNN−1, а в ch_demo_secs
+    # исторически лежит номер кадра. Разбирать имя надёжнее, чем помнить, где тут +1.
+    _demo_sec = (int(shot.stem[1:]) - 1) if shot.stem[:1] == 'h' and shot.stem[1:].isdigit() else None
     if shot.exists():
         for v in ('a', 'b', 'c'):
-            page(f'ch_demo_{v}', _chov_body(v, demo_no, CH_NAME[di], _first_sub(di + 1), shot),
-                 CHOV_CSS, draft=False)
+            page(f'ch_demo_{v}', _chov_body(v, demo_no, CH_NAME[di], _first_sub(di + 1), shot,
+                                            sec=_demo_sec),
+                 _chov_css(v, CH_NAME[di]), draft=False)
             flatten_jpg(f'ch_demo_{v}')      # вкладка «Главы» вставляет плоский jpg, а не 4K с альфой
     else:
         print(f'  !! нет кадра {shot.name} — демо вариантов не собрал')
@@ -1234,12 +1490,12 @@ if want('K'):
 LOWER_CSS = f"""
 .lw {{ position:absolute; inset:0; overflow:hidden; }}
 .lw .shot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
-.lw .box {{ position:absolute; left:148px; bottom:210px; display:flex; align-items:stretch;
-  background:{PROG_DARK}; }}
+.lw .box {{ position:absolute; left:{MARGIN}px; bottom:210px; display:flex; align-items:stretch;
+  background:{PLATE}; }}
 .lw .ava {{ width:300px; flex:none; background-size:cover; background-position:center top; }}
 .lw .ava.empty {{ display:none; }}
 .lw .txt {{ padding:56px 96px 60px 72px; }}
-.lw .hr {{ width:470px; height:10px; background:{RED}; margin-bottom:30px; }}
+.lw .hr {{ width:{RULE_W}px; height:{RULE_H}px; background:{RED}; margin-bottom:30px; }}
 .lw .nm {{ font-size:132px; font-weight:bold; letter-spacing:.015em; color:{IVORY}; line-height:1.02; }}
 .lw .rl {{ font-family:Helvetica,Arial,sans-serif; font-weight:300; text-transform:uppercase;
   font-size:52px; letter-spacing:.22em; color:{MUT}; margin-top:26px; }}
@@ -1279,3 +1535,118 @@ if want('L'):
              LOWER_CSS, draft=False)
         _n += 1
     print(f'макетов лоуэров: {_n}')
+
+
+# ═══════════ M. ТИТР ПОДТЕМЫ: приём самого фильма, приведённый к канону ═══════════
+# Блок C рисует подглаву коробкой со скруглением — это язык интерфейса, не язык этого фильма.
+# У фильма приём СВОЙ и замеренный (screens_v6: 1:33 «НАЗАД В ПРОШЛОЕ», 32:09 «ЗАПОЛНЕНИЕ
+# ТРЕЩИН»): ивори сериф ПРЯМО ПО КАДРУ, без подложки, в левой колонке, нижняя треть, под ним
+# короткая рубиновая черта. Кегль по замеру ink: 0,049–0,054 высоты кадра = 106–117 px прописной,
+# то есть сериф ~132 px. Номер главы блок не печатает — он уже стоит собственным титром ката.
+SUBT_CSS = f"""
+.st {{ position:absolute; inset:0; overflow:hidden; }}
+.st .shot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
+.st .t {{ position:absolute; left:{MARGIN}px; top:1480px; max-width:2200px; }}
+.st .nm {{ font-size:132px; font-weight:bold; line-height:1.02; letter-spacing:.015em; color:{IVORY};
+  text-shadow:0 6px 44px rgba(0,0,0,.72); text-transform:uppercase; }}
+.st .hr {{ width:{RULE_W}px; height:{RULE_H}px; background:{RED}; margin-top:38px;
+  box-shadow:0 6px 34px rgba(0,0,0,.55); }}
+"""
+if want('M'):
+    _n = 0
+    for _i, (_sec, _ch, _label) in enumerate(SUB, 1):
+        _bg = _clean_frame(_sec)          # не sub_card_NN.jpg: там уже стоит собственный титр ката
+        page(f'subt_{_i:02d}',
+             f'<div class="st">{_shot_div(_bg)}<div class="t"><div class="nm">{esc(_label)}</div>'
+             f'<div class="hr"></div></div></div>', SUBT_CSS, draft=False)
+        _n += 1
+    print(f'титров подтем: {_n}')
+
+
+# ═══════════ N. ПЛАШКА-УТВЕРЖДЕНИЕ: одна мысль во весь кадр ═══════════
+# Сильный приём канала, замерен на 29:47 («90-95% РУБИНОВ / ПРОШЛИ ТЕРМООБРАБОТКУ») и 30:21
+# («ТЕРМООБРАБОТКА / НОРМА ДЛЯ ЦВЕТНЫХ КАМНЕЙ»): две строки огромного серифа прямо по кадру,
+# без подложки. ⚠️ Этот приём — единственный у фильма, который НЕ стоит в левой колонке:
+# обе строки центрированы (замер: 0,166…0,855 и 0,117…0,904 — середина 0,51 у обеих), прижаты
+# к верху кадра (y 0,05), кегль ink 0,133–0,160 высоты = 287–346 px прописной.
+# Первая строка рубином, вторая костью — так фильм отделяет предмет от утверждения.
+# Источник — карточка `claims: [[sec, "строка рубином", "строка костью"], …]`.
+CLAIM_COL = 3840 - 2 * MARGIN
+CLAIM_MAX = 400                     # верх замера (ink 346 px прописной ≈ 400 кегля у серифа)
+
+
+def _claim_css(fs):
+    return f"""
+.cl {{ position:absolute; inset:0; overflow:hidden; }}
+.cl .shot {{ position:absolute; inset:0; background-size:cover; background-position:center; }}
+.cl .t {{ position:absolute; left:{MARGIN}px; right:{MARGIN}px; top:96px; text-align:center; }}
+.cl .a, .cl .b {{ font-size:{fs}px; font-weight:bold; line-height:1.04; letter-spacing:.005em;
+  text-transform:uppercase; text-shadow:0 8px 60px rgba(0,0,0,.55); }}
+.cl .a {{ color:{RED}; }}
+.cl .b {{ color:{IVORY}; margin-top:10px; }}
+"""
+
+
+if want('N'):
+    _n = 0
+    for _j, _c in enumerate(P.get('claims', []) or [], 1):
+        _sec, _big, _small = (list(_c) + ['', ''])[:3]
+        _b = f'<div class="b">{esc(_small)}</div>' if _small else ''
+        page(f'claim_{_j:02d}',
+             f'<div class="cl">{_shot_div(_clean_frame(_sec))}<div class="t">'
+             f'<div class="a">{esc(_big)}</div>{_b}</div></div>',
+             _claim_css(fit_fs([_big, _small], CLAIM_COL, CLAIM_MAX, floor=160, ls=0.005)), draft=False)
+        _n += 1
+    print(f'плашек-утверждений: {_n}')
+
+
+# ═══════════ O. ИВОРИ-СТРАНИЦА: собственная полноэкранная страница фильма ═══════════
+# Двенадцать мест ката уходят целиком в слоновую кость. Замер 25:14–25:22: заголовок
+# «1892–1902 гг.» РУБИНОМ и ПО ЦЕНТРУ вверху (ink 0,264…0,760, кегль 0,189 высоты = 408 px
+# прописной), портрет вырезкой в середине, справа графитовая плашка с подписью костью
+# («ОГЮСТ ВЕРНЕЙЛЬ / французский химик / изобрел процесс…», ink 0,029–0,039 = 63–84 px).
+# Именно на этот приём опирается канон, но макета у нас не было — поэтому в трёх окнах
+# (25:14–25:22, 26:54–26:56, 33:42–33:46) страница и панель перечислений спорят за кадр.
+# Источник — карточка `pages: [[sec, "ЗАГОЛОВОК", ["ИМЯ", "строка", …], "фото.jpg"?], …]`.
+# Слот портрета: без картинки половина страницы пуста, и монтажёр читает это как «так и надо».
+PAGE_CSS = f"""
+.pg {{ position:absolute; inset:0; background:{IVORY}; }}
+.pg .h {{ position:absolute; left:{MARGIN}px; right:{MARGIN}px; top:150px; text-align:center;
+  font-size:400px; font-weight:bold; line-height:1.0; color:{RED}; letter-spacing:.01em; }}
+.pg .ph {{ position:absolute; left:50%; transform:translateX(-50%); top:660px; height:1300px; }}
+/* portrait slot */
+.pg .slot {{ position:absolute; left:50%; transform:translateX(-50%); top:660px; width:1100px;
+  height:1300px; border:6px dashed rgba(122,115,101,.55); display:flex; align-items:flex-end;
+  justify-content:center; padding-bottom:36px; }}
+.pg .slot span {{ font-family:Helvetica,Arial,sans-serif; font-weight:300; font-size:48px;
+  letter-spacing:.2em; text-transform:uppercase; color:{GRAPH}; }}
+.pg .r {{ position:absolute; right:{MARGIN}px; top:660px; width:1300px; background:{GRAPH};
+  padding:44px 56px 50px; }}
+.pg .r .n {{ font-size:84px; font-weight:bold; color:{IVORY}; line-height:1.1;
+  text-transform:uppercase; letter-spacing:.03em; }}
+.pg .r .d {{ font-family:Helvetica,Arial,sans-serif; font-weight:300; font-size:58px;
+  line-height:1.34; color:{IVORY}; margin-top:22px; }}
+"""
+if want('O'):
+    _n = 0
+    for _j, _pg in enumerate(P.get('pages', []) or [], 1):
+        _sec, _head, _rows, _ph = (list(_pg) + ['', [], ''])[:4]
+        _rows = list(_rows or [])
+        _side = ''
+        if _rows:
+            _side = (f'<div class="r"><div class="n">{esc(_rows[0])}</div>'
+                     + ''.join(f'<div class="d">{esc(r)}</div>' for r in _rows[1:]) + '</div>')
+        _pi = f'<div class="slot"><span>{esc(T("d.ig.page_slot"))}</span></div>'
+        if _ph:
+            _pp = Path(_ph) if Path(_ph).is_absolute() else (M.parent / _ph)
+            if _pp.exists():
+                _pi = f'<img class="ph" src="file://{_pp}">'
+            else:
+                print(f'  !! нет портрета {_pp} для page_{_j:02d} — оставляю слот')
+        page(f'page_{_j:02d}',
+             f'<div class="pg"><div class="h">{esc(_head)}</div>{_pi}{_side}</div>',
+             PAGE_CSS, draft=False)
+        _n += 1
+    print(f'ивори-страниц: {_n}')
+
+print('\nготово →', OUT)

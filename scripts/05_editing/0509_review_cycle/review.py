@@ -17,11 +17,11 @@
     review.py ticket  --project P                     # REVIEW_STATE.md для новой сессии
     review.py memex   --project P push|pull|start|status|pause|resume|stop
     review.py card    --project P check
-    review.py docs                                    # таблица стадий → README.md (+ KB 5.7) между маркерами
+    review.py docs                                    # таблица стадий → README.md (+ KB 6.2) между маркерами
 
 Режимы: cut_review (кат монтажёра → ревью + ТЗ) и montage_tz (исходники → монтажный лист).
 Хосты: Memex — «глаза» (download…probe, локальные модели), Mac — «руки» (route…phone_brief).
-Контракты — docs/contracts.md. Человеческий ранбук — KB 5.7 /kb/review-cycle/.
+Контракты — docs/contracts.md. Человеческий ранбук — KB 6.2 /kb/review-cycle/.
 """
 from __future__ import annotations
 
@@ -421,6 +421,17 @@ def v_frames(r: Review) -> bool:
     return _count(r.work / 'hires', 'h*.jpg') >= r.expect_frames() - int(r.card.get('frames_tolerance', 2)) > 0
 
 
+# --- static (где кадр не меняется) ------------------------------------------
+def st_static(r: Review):
+    """Места «кадр не меняется» по кадрам 1 fps → вход вердикта (Роман, YTCR04 v5: долгий проезд в машине)."""
+    rc, out = r.run_cmd([PY, STAGES_DIR / 'static_stretches.py'], 'static', 20)
+    return rc == 0, (out.strip().splitlines()[-1][:120] if out.strip() else 'static_stretches.json')
+
+
+def v_static(r: Review) -> bool:
+    return (r.work / 'static_stretches.json').exists() or _count(r.work / 'hires', 'h*.jpg') == 0
+
+
 # --- ocr / vlm / llm / probe / transcript ------------------------------------
 def st_ocr(r: Review):
     rc, out = r.run_cmd([PY, STAGES_DIR / 's2_ocr_hires.py'], 'ocr', 60)
@@ -618,7 +629,9 @@ def st_verdict(r: Review):
         # без ключа verdict в профиле (YTUVI/YTCH/YTEVO) — прежний литерал: его показывает страница продюсера
         return True, ('вердикт-агент не нужен (нет structure_rules в профиле)' if 'verdict' not in r.profile()
                       else 'вердикт-агент не нужен (нет structure_rules / verdict.enabled в профиле)')
-    return _cloud_compound(r, SHARED / 'verdict_call.py', 'verdict', 'verdict.json', ['--apply'])
+    # profile verdict.want_tobe — вторым агентом целевая структура и перестановки материала (YTCR: «не хватает структуры»)
+    call = ['--print-call'] + (['--want-tobe'] if r.verdict_cfg().get('want_tobe') else [])
+    return _cloud_compound(r, SHARED / 'verdict_call.py', 'verdict', 'verdict.json', ['--apply'], call)
 
 
 def v_verdict(r: Review) -> bool:
@@ -847,6 +860,71 @@ def v_sources(r: Review) -> bool:
     return True
 
 
+def st_sub(r: Review):
+    rc, out = r.run_cmd([PY, STAGES_DIR / 'sub_from_prev.py'], 'sub', 10)
+    n = len(r.card.get('sub') or [])
+    if not (r.card.get('prev_pravki') or ''):
+        return True, 'подглавы: в карточке нет prev_pravki — переносить нечего'
+    return rc in (0, 2), f'подглав перенесено: {n}' + (' · часть просит сверки глазами' if rc == 2 else '')
+
+
+def v_sub(r: Review) -> bool:
+    return bool(r.card.get('sub')) or not (r.card.get('prev_pravki') or '')
+
+
+def st_claims(r: Review):
+    rc, out = r.run_cmd([PY, STAGES_DIR / 'claims_pick.py'], 'claims', 10)
+    return rc == 0, f'крупных фраз: {len(r.card.get("claims") or [])}'
+
+
+def v_claims(r: Review) -> bool:
+    return (r.work / 'claims_pick.json').exists()
+
+
+def st_screens_plan(r: Review):
+    rc, out = r.run_cmd([PY, STAGES_DIR / 'screens_plan.py'], 'screens_plan', 10)
+    return rc in (0, 2), (out.strip().splitlines()[0][:120] if out.strip() else 'раскладка экранов')
+
+
+def v_screens_plan(r: Review) -> bool:
+    return (r.work / 'screens_plan.json').exists()
+
+
+def st_structure(r: Review):
+    rc, out = r.run_cmd([PY, STAGES_DIR / 'structure_text.py'], 'structure', 10)
+    return rc == 0, (out.strip().splitlines()[0][:120] if out.strip() else 'структура текстом')
+
+
+def v_structure(r: Review) -> bool:
+    return (r.work / 'structure.json').exists()
+
+
+def st_screens_page(r: Review):
+    rc, out = r.run_cmd([PY, SHARED / 'screens_page.py'], 'screens_page', 15)
+    return rc == 0, (out.strip().splitlines()[-1][:120] if out.strip() else 'витрина экранов')
+
+
+def v_screens_page(r: Review) -> bool:
+    return (r.review_dir / f'{r.code}_{r.cut}_screens.html').exists()
+
+
+def st_doc_chapters(r: Review):
+    if not r.card.get('doc_id'):
+        return True, 'вкладка «Главы»: в карточке нет doc_id — пропуск'
+    # кадры наружу — только вручную с Мака, ровно как у doc_feedback: в кадрах бывает человек,
+    # которого нельзя показывать по ссылке, и автономный прогон такое решение принимать не должен
+    temp = r.images == 'temp' and r.host == 'mac' and not r.autonomous
+    if r.images == 'temp' and not temp:
+        r.note('doc_chapters: --images temp отброшен — на Memex и в автономном режиме вкладка пишется без кадров')
+    argv = [PY, STAGES_DIR / 'doc_tab_chapters_v1.py', '--images', 'temp' if temp else 'none']
+    rc, out = r.run_cmd(argv, 'doc_chapters', 20)
+    return rc == 0, (out.strip().splitlines()[-1][:120] if out.strip() else 'вкладка «Главы» записана')
+
+
+def v_doc_chapters(r: Review) -> bool:
+    return True                                   # внешняя запись: гейт — глазами и PDF-снимком
+
+
 def st_render(r: Review):
     stages = str(r.card.get('render_stages', 'all')).split()
     rc, out = r.run_cmd([PY, STAGES_DIR / 'make_infographics_v6.py', *stages], 'render', 90)
@@ -938,6 +1016,36 @@ def v_sheet(r: Review) -> bool:
             or bool(r.S['surfaces'].get('sheet')))
 
 
+def st_carry(r: Review):
+    """Долг прошлого круга → строки вкладки ТЗ (shared/tz_carry.py, contracts.md §13).
+    Стоит ПЕРЕД doc_tz и ПОСЛЕ sheet: облако здесь не ждём (сверщик работает в хвосте цепочки),
+    поэтому жёсткую стадию doc_tz ничто не запирает."""
+    if not _fb_on(r):
+        return True, 'prev_pravki нет — переносить нечего'
+    if not (r.work / 'feedback.json').exists():
+        return True, 'модель сверки ещё не собрана — перенос пропущен (соберётся стадией feedback)'
+    rc, out = r.run_cmd([PY, SHARED / 'tz_carry.py', '--apply'], 'carry', 10)
+    if rc != 0:
+        return False, 'перенос не собрался — см. logs/carry.log'
+    head = next((ln for ln in out.splitlines() if ln.startswith('перенос:')), 'перенос собран')
+    return True, head
+
+
+def _carry_fresh(r: Review) -> bool:
+    """перенос считается свежим, пока он собран из ТОЙ ЖЕ сборки модели сверки."""
+    try:
+        c = json.loads((r.pravki / 'tz_carry.json').read_text(encoding='utf-8'))
+        fb = json.loads((r.work / 'feedback.json').read_text(encoding='utf-8'))
+    except Exception:                                              # noqa: BLE001
+        return False
+    return c.get('build_of') == fb.get('build_no')
+
+
+def v_carry(r: Review) -> bool:
+    return (not _fb_on(r) or not (r.work / 'feedback.json').exists()
+            or ((r.pravki / 'tz_carry.json').exists() and _carry_fresh(r)))
+
+
 def edits_guard(r: Review, surface: str):
     """Перед регенерацией вкладки — правки Романа должны быть сняты (review.py edits).
     Гейт действует только для той же вкладки (имя) и того же дока, что писались в прошлый раз."""
@@ -958,11 +1066,17 @@ def st_doc_tz(r: Review):
     if not _ext(r, 'doc_id'):
         return True, 'doc_id пуст — вкладка ТЗ пропущена'
     edits_guard(r, 'doc_tz')
-    rc0, _ = r.run_cmd([PY, STAGES_DIR / 'ensure_shots.py'], 'doc_tz_shots', 10)   # без id картинка молча не встанет
+    # кадры закрытого фильма (YTCH12: в кадре ребёнок) попадают во вкладку через временный доступ —
+    # те же четыре условия, что у вкладки обратной связи: карточка + флаг + Мак + человек рядом
+    temp = r.images == 'temp' and r.host == 'mac' and not r.autonomous
+    if r.images == 'temp' and not temp:
+        r.note('doc_tz: --images temp отброшен — на Memex и в автономном режиме вкладка пишется без кадров')
+    imgs = ['--images', 'temp'] if temp else []
+    rc0, _ = r.run_cmd([PY, STAGES_DIR / 'ensure_shots.py'] + imgs, 'doc_tz_shots', 10)  # без id картинка молча не встанет
     if rc0 != 0:
-        return False, 'в pravki есть картинки без файла и без id в shots_ids — см. logs/doc_tz_shots.log'
-    rc, out = r.run_cmd([PY, STAGES_DIR / 'doc_tab_tz_v4.py'], 'doc_tz', 40)
-    r.S['surfaces']['doc_tz'] = {'at': now(), 'rc': rc, 'tab': r.tab_title(),
+        return False, 'в pravki есть картинки без файла и без id в реестре кадров — см. logs/doc_tz_shots.log'
+    rc, out = r.run_cmd([PY, STAGES_DIR / 'doc_tab_tz_v4.py'] + imgs, 'doc_tz', 40)
+    r.S['surfaces']['doc_tz'] = {'at': now(), 'rc': rc, 'tab': r.tab_title(), 'images': 'temp' if temp else 'none',
                                  'doc': os.environ.get('YTAI_DOC_ID') or r.card.get('doc_id')}
     return rc == 0, f'вкладка «{r.tab_title()}»'
 
@@ -1202,9 +1316,13 @@ def v_true(r: Review) -> bool:
 
 
 # name → (host, work, gate, kind)   kind: HARD | SOFT
+# стадии, которые ПИШУТ во внешний документ: их снимает --no-doc (и по ним же считается хвост цепочки)
+NO_DOC_STAGES = ('doc_tz', 'doc_nav', 'verify', 'doc_qc', 'doc_feedback', 'doc_chapters')
+
 STAGES_CUT = [
     ('download',      'memex', st_download,      v_download,      'HARD'),
     ('frames',        'memex', st_frames,        v_frames,        'HARD'),
+    ('static',        'mac',   st_static,        v_static,        'SOFT'),
     ('ocr',           'memex', st_ocr,           v_ocr,           'HARD'),
     ('transcript',    'memex', st_transcript,    v_transcript,    'HARD'),
     ('vlm',           'memex', st_vlm,           v_vlm,           'HARD'),
@@ -1218,6 +1336,9 @@ STAGES_CUT = [
     ('chapters',      'mac',   st_chapters,      v_chapters,      'SOFT'),
     ('risk',         'mac',   st_risk,          v_risk,          'SOFT'),
     ('acts',          'mac',   st_acts,          v_acts,          'SOFT'),
+    # структура фильма: подглавы и крупные фразы — ДО format_tz и render, они их читают
+    ('sub',           'mac',   st_sub,           v_sub,           'SOFT'),
+    ('claims',        'mac',   st_claims,        v_claims,        'SOFT'),
     ('verdict',       'mac',   st_verdict,       v_verdict,       'SOFT'),
     ('terms',         'mac',   st_terms,         v_terms,         'HARD'),
     ('format_tz',     'mac',   st_format_tz,     v_format_tz,     'HARD'),
@@ -1229,6 +1350,8 @@ STAGES_CUT = [
     ('previews',      'mac',   st_previews,      v_previews,      'SOFT'),
     ('drive',         'mac',   st_drive,         v_drive,         'SOFT'),
     ('sheet',         'mac',   st_sheet,         v_sheet,         'SOFT'),
+    # перенос долга прошлого ТЗ — строго ПЕРЕД вкладкой: облако здесь не ждём, жёсткий doc_tz не запирается
+    ('carry',         'mac',   st_carry,         v_carry,         'SOFT'),
     ('doc_tz',        'mac',   st_doc_tz,        v_doc_tz,        'HARD'),
     ('doc_nav',       'mac',   st_doc_nav,       v_doc_nav,       'SOFT'),
     ('verify',        'mac',   st_verify,        v_verify,        'HARD'),
@@ -1236,6 +1359,11 @@ STAGES_CUT = [
     ('phone_brief',   'mac',   st_phone_brief,   v_phone_brief,   'SOFT'),
     ('producer_page', 'mac',   st_producer_page, v_producer_page, 'SOFT'),
     # сверка с прошлым ТЗ — строго ПОСЛЕ producer_page: ожидание облака не должно запирать основную цепочку
+    # экраны и структура текстом — ПЕРЕД обратной связью: её шапка берёт короткий текст структуры
+    ('screens_plan',  'mac',   st_screens_plan,  v_screens_plan,  'SOFT'),
+    ('structure',     'mac',   st_structure,     v_structure,     'SOFT'),
+    ('screens_page',  'mac',   st_screens_page,  v_screens_page,  'SOFT'),
+    ('doc_chapters',  'mac',   st_doc_chapters,  v_doc_chapters,  'SOFT'),
     ('feedback',      'mac',   st_feedback,      v_feedback,      'SOFT'),
     ('feedback_page', 'mac',   st_feedback_page, v_feedback_page, 'SOFT'),
     ('doc_feedback',  'mac',   st_doc_feedback,  v_doc_feedback,  'SOFT'),
@@ -1259,6 +1387,7 @@ STAGES_MONTAGE = [
 STAGE_DESC = {
     'download': ('rclone из cut_drive напрямую', 'кат на диске'),
     'frames': ('ffmpeg 1 fps 1080p', 'кадров ≥ длительность − допуск'),
+    'static': ('static_stretches: где кадр не меняется (PIL, 0 токенов)', 'static_stretches.json'),
     'ocr': ('s2_ocr_hires (Apple Vision, bbox)', 'селфчек ocr + якоря'),
     'transcript': ('wordrole_transcribe --plain (.venv_transcribe)', 'words.json'),
     'vlm': ('s3_vlm Qwen2.5-VL-7B', 'селфчек vlm'),
@@ -1287,12 +1416,27 @@ STAGE_DESC = {
     'previews': ('s7 + s12 --render + preview_qc_local', 'qc 0 high'),
     'drive': ('s9_materials_drive + s12 --upload/--apply + ensure_shots', 'файлы с комментами, все картинки pravki в shots_ids'),
     'sheet': ('tz_sheet', 'лист обновлён'),
-    'doc_tz': ('ensure_shots → doc_tab_tz_v4, 6 колонок с «Говорит» (гейт: review.py edits)', 'вкладка записана'),
+    'carry': ('shared/tz_carry.py: несделанное из прошлого ТЗ → строки вкладки (номера своего круга)',
+              'tz_carry.json собран из текущей модели сверки'),
+    'doc_tz': ('ensure_shots → doc_tab_tz_v4, 9 колонок с «Говорит»; кадры закрытого фильма — '
+               'только run --images temp, с Мака (гейт: review.py edits)', 'вкладка записана'),
     'doc_nav': ('doc_tab_review_v1 (навигатор)', 'вкладка записана'),
     'verify': ('doc_tab_tz_v4_verify', 'ALL PASS'),
     'doc_qc': ('doc_pdf_qc (pdftotext/pdfimages/PIL)', '0 high'),
     'phone_brief': ('phone_brief → Telegram', 'файл ≤1 МБ отправлен'),
     'producer_page': ('producer_page / review_page', 'HTML'),
+    'sub': ('sub_from_prev: подглавы прошлого круга → card.sub на ось этого ката (проекция + речь + пауза)',
+            'card.sub заполнен (или в карточке нет prev_pravki)'),
+    'claims': ('claims_pick: крупные фразы фильма → card.claims (дословно из ката, без чувствительных тем)',
+               'claims_pick.json'),
+    'screens_plan': ('screens_plan: каждому экрану — таймкод, длительность и макет',
+                     'screens_plan.json, все экраны внутри длины ката'),
+    'structure': ('structure_text: структура фильма человеческим текстом (шапка сверки + вкладка «Главы»)',
+                  'structure.json, гейт текста пройден'),
+    'screens_page': ('screens_page: витрина экранов одним самодостаточным HTML',
+                     '{CODE}_{cut}_screens.html, ноль внешних адресов'),
+    'doc_chapters': ('doc_tab_chapters_v1: вкладка «Главы» — структура текстом, все главы и подглавы, варианты заставки',
+                     'вкладка записана (кадры — временным доступом)'),
     'feedback': ('feedback_model → 1 облачный агент-сверщик (feedback_call) → вливание; только при card.prev_pravki',
                  'feedback.json, ответ сверщика влит'),
     'feedback_page': ('feedback_page: HTML «Обратная связь по кату» продюсеру (в Telegram — отдельной командой)',
@@ -1537,7 +1681,7 @@ def cmd_run(r: Review, a) -> int:
     if a.no_drive:
         sel = [s for s in sel if s != 'drive']
     if a.no_doc:
-        sel = [s for s in sel if s not in ('doc_tz', 'doc_nav', 'verify', 'doc_qc', 'doc_feedback')]
+        sel = [s for s in sel if s not in NO_DOC_STAGES]
     if r.pidf.exists() and not r.dry:
         try:
             os.kill(int(r.pidf.read_text()), 0)
@@ -1603,7 +1747,9 @@ def cmd_run(r: Review, a) -> int:
             write_ticket(r)
     if a.host == 'memex' and rc != 5:                     # rc 5 = не дождались очереди, нагрузку не давали
         r.tg(f'🧊 <b>Memex</b>: локальный разбор <b>{r.code}</b> закончен (rc={rc}) — нагрузка снята.')
-    last = [n for n in names if not (a.no_doc and n == 'doc_feedback')][-1]      # --no-doc: хвост цепочки — без вкладки сверки
+    # --no-doc: хвост цепочки считаем по тому же набору, что и выбрасываем, иначе автономный прогон
+    # ждёт стадию, которую сам же и выкинул, и 🏁 не приходит
+    last = [n for n in names if not (a.no_doc and n in NO_DOC_STAGES)][-1]
     if autonomous and not r.dry and rc == 0 and sel and sel[-1] == last:
         (r.ctl / 'AUTONOMOUS').unlink(missing_ok=True)
         r.tg(f'🏁 <b>{r.code}</b>: автономный разбор на Memex закончен целиком — ТЗ, таймлайн ревью и бриф готовы. '
@@ -1633,14 +1779,16 @@ def print_status(r: Review):
     lines.append(f'→ следующая стадия: {nxt or "всё готово"}')
     if r.S.get('edits', {}).get('at'):
         lines.append(f'правки Романа сняты: {r.S["edits"]["at"]}')
-    ledger = r.work / 'feedback_grants.json'
-    if ledger.exists():
+    for ledger in (r.work / 'feedback_grants.json', r.work / 'tz_grants.json',
+                   r.work / 'chapters_grants.json'):                             # у каждой вкладки свой журнал
+        if not ledger.exists():
+            continue
         try:
             n_open = len(json.loads(ledger.read_text(encoding='utf-8')).get('open') or [])
         except Exception:
             n_open = '? (журнал не читается)'
         if n_open:
-            lines.append(f'⚠️ незакрытые временные доступы к кадрам: {n_open} — выполни '
+            lines.append(f'⚠️ незакрытые временные доступы к кадрам ({ledger.name}): {n_open} — выполни '
                          f'python3 {SHARED / "doc_images.py"} --revoke-ledger {ledger}')
     print('\n'.join(lines))
 
@@ -1719,8 +1867,10 @@ def md_table_html(md: str) -> str:
         if not rows:
             continue
         cells = [[c.strip() for c in r.strip('|').split('|')] for r in rows if not re.match(r'^\|[-| ]+\|$', r)]
-        out.append('<table class="stages"><thead><tr>' + ''.join(f'<th>{c}</th>' for c in cells[0]) + '</tr></thead><tbody>' +
-                   ''.join('<tr>' + ''.join(f'<td>{c}</td>' for c in row) + '</tr>' for row in cells[1:]) + '</tbody></table>')
+        # .tbl — скроллер: без него длинный токен в «инструменте» выдавливает таблицу за карточку
+        # и даёт горизонтальный скролл всей странице вместе со sticky-шапкой (проверка на 375 px).
+        out.append('<div class="tbl"><table class="stages"><thead><tr>' + ''.join(f'<th>{c}</th>' for c in cells[0]) + '</tr></thead><tbody>' +
+                   ''.join('<tr>' + ''.join(f'<td>{c}</td>' for c in row) + '</tr>' for row in cells[1:]) + '</tbody></table></div>')
     return '\n'.join(out)
 
 
@@ -1773,6 +1923,10 @@ def cmd_cloud(r: Review, a) -> int:
         argv = [PY, CLOUD_DIR / 'collect.py'] + (['--run', a.run] if a.run else []) + (['--session', a.session] if a.session else [])
         rc = sub(argv, env)
         if rc == 0:
+            # тот же легаси-файл, что пишет стадия cloud: s10_format_tz / review_page / doc_tab_review_v1 читают
+            # audit_findings_v6.json. Без этого ручной collect + `run --from apply` (в обход стадии cloud) роняет
+            # format_tz на пустом месте — 22.09.2026, YTCR04 v5.
+            sub([PY, CLOUD_DIR / 'collect.py', '--emit-legacy'], env)
             r.st('cloud')['status'] = 'todo'
             r.save()
             print('все пакеты собраны → review.py resume продолжит с apply')
@@ -1949,6 +2103,7 @@ def cmd_selftest(a) -> int:
     fb_env = {k: v for k, v in os.environ.items() if not k.startswith('YTAI_') and k != 'TZ_TAB'}
     for mod in ('shared/feedback_model.py', 'shared/tz_diff.py', 'shared/feedback_view.py', 'shared/feedback_page.py',
                 'shared/feedback_call.py', 'shared/doc_table.py', 'shared/tz_blocks.py', 'shared/doc_images.py',
+                'shared/tz_carry.py',
                 'stages/doc_tab_feedback_v1.py', 'stages/doc_tab_feedback_v1_verify.py'):
         try:
             rc = subprocess.run([PY, ROOT / mod, '--selftest'], capture_output=True, text=True, env=fb_env, timeout=900)
