@@ -197,7 +197,12 @@ def main():
         pr = proj.project(sec_old)
         base = pr.get('sec_new')
         if base is None:
-            report.append((sec_old, cap, None, 'none', '—', '', 'проекция не легла'))
+            # ⚠️ запись ТОЙ ЖЕ формы, что и удачная: ниже отчёт читается как словари, и кортеж
+            # здесь ронял всю стадию TypeError'ом — терялся перенос всех 17 подглав, а не одной.
+            # `sec_new=None` — штатный ответ проектора для секунды вне сверенной речи (тизер, финал)
+            report.append({'caption': cap, 'sec_old': sec_old, 'sec': None, 'ch': '—', 'how': 'none',
+                           'score': None, 'err': 0.0, 'note': 'проекция не легла — секунда вне сверенной речи',
+                           'sure': False})
             bad += 1
             continue
         err = float(pr.get('err') or 0.0)

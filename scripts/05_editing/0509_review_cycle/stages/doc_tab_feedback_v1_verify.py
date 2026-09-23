@@ -216,14 +216,16 @@ def _rgb_of(ts):
 
 
 def verify(fb, tab, *, lang='ru', have=None, tz_tab=None, visuals=None, say=None, batches=None, widths=None,
-           img_widths=None, pre=()):
+           img_widths=None, pre=(), structure=()):
     """→ Report. fb — модель; tab — вкладка из get_doc (или final_doc дампа); visuals / say — индекс визуалов и речь,
     по которым собиралась вкладка; batches — пачки запросов дампа (для живого дока None: диапазоны и цвета стилей тогда
     не проверяются); widths — ширины колонок; img_widths — ширины картинок."""
     rep = Report()
     for o, m in pre:
         rep.check('дамп и модель', [(o, m)])
-    exp_rows, exp_head = B.build_rows(fb, lang, have, tz_tab, visuals, say)
+    # ⚠️ структуру шапки обязан знать и проверяющий: сборщик кладёт в шапку блок «структура фильма
+    # текстом» (struct_head/struct_item), и эталон без него расходится с вкладки на первом же абзаце
+    exp_rows, exp_head = B.build_rows(fb, lang, have, tz_tab, visuals, say, structure)
     hdr = B.hdr(lang)
     view = doc_view(tab)
     origin = Origin(fb)
@@ -502,7 +504,8 @@ def from_dump(fb, dump):
     tab = find_tab(dump['final_doc'], dump.get('tab_title'))
     have = set(dump.get('frames') or []) if dump.get('images') != 'none' else None
     return verify(fb, tab, lang=dump.get('lang') or 'ru', have=have, tz_tab=dump.get('tz_tab'), visuals=dump.get('visuals'),
-                  say=dump.get('say'), batches=batches, widths=widths or None, img_widths=img_w, pre=pre)
+                  say=dump.get('say'), batches=batches, widths=widths or None, img_widths=img_w, pre=pre,
+                  structure=dump.get('structure') or ())
 
 
 def have_from_doc(view, fb, lang='ru', tz_tab=None, visuals=None, say=None):
@@ -554,7 +557,7 @@ def from_live(fb, frames_dir=None):
     # этом не спрячется: проверка картинок сверяет их число с числом подписей.
     have = have_from_doc(view, fb, lang, tz_tab, visuals, say)
     rep = verify(fb, tab, lang=lang, have=have or None, tz_tab=tz_tab, visuals=visuals, say=say, batches=None,
-                 widths=widths, img_widths=img_w)
+                 widths=widths, img_widths=img_w, structure=V.load_structure(Bt.W6))
     late = sorted(B.frames_on_disk(fb, base, visuals) - have) if view['imgs'] else []   # вкладка без картинок — так и задумано
     if late:
         rep.warn('визуал на диске есть, а во вкладке у пункта его нет (пересобери вкладку с картинками)', late)

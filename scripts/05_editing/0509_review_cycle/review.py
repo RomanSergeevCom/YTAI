@@ -1275,7 +1275,12 @@ def st_doc_feedback(r: Review):
     temp = r.images == 'temp' and r.host == 'mac' and not r.autonomous      # кадры наружу — только вручную с Мака
     if r.images == 'temp' and not temp:
         r.note('doc_feedback: --images temp отброшен — на Memex и в автономном режиме вкладка пишется без кадров')
-    argv = [PY, STAGES_DIR / 'doc_tab_feedback_v1.py'] + (['--images', 'temp'] if temp else [])
+    # Вкладка обратной связи ЦЕЛИКОМ принадлежит коду (правки Романа снимаются только с вкладки ТЗ),
+    # поэтому на втором и следующих кругах её надо перезаписывать: без --force write_tab отказывается
+    # трогать непустую вкладку, и стадия навсегда застревала бы на «перезаписать только с force».
+    # Заморозку (frozen_tabs) это не снимает — вкладки прошлых кругов по-прежнему неприкосновенны.
+    argv = ([PY, STAGES_DIR / 'doc_tab_feedback_v1.py', '--force']
+            + (['--images', 'temp'] if temp else []))
     rc, out = r.run_cmd(argv, 'doc_feedback', 60)
     if r.dry:
         r.run_cmd([PY, STAGES_DIR / 'doc_tab_feedback_v1_verify.py'], 'doc_feedback_verify', 20)

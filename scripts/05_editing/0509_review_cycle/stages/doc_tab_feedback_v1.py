@@ -555,6 +555,9 @@ def dump(fb, path, *, title=None, lang='ru', have_frames=None, tz_tab=None, visu
                    'visuals': {k: visuals[k] for k in sorted(visuals)} if visuals else None,
                    'say': {k: say[k] for k in sorted(say)} if say else None,
                    'fb_sha': fb_sha(fb), 'fb': {k: fb.get(k) for k in ('code', 'cut_version', 'built_at', 'build_no')},
+                   # структура шапки — в дамп: без неё офлайн-проверка соберёт эталон без блока
+                   # «структура фильма текстом» и разойдётся с вкладкой на первом же абзаце
+                   'structure': list(structure),
                    'final_doc': fd.get_doc(DUMP_DOC)})
     return rows, head
 
