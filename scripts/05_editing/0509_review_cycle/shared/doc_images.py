@@ -705,9 +705,14 @@ def insert_with_temp_grant(doc_id, img_reqs, ids, ledger_path, batch=10, insert_
 
 # ───────────────────────── ревизор ─────────────────────────
 
-def audit(folder_id, ledger_path=None, limit=None):
+def audit(folder_id, ledger_path=None, limit=None, live=()):
     """Только чтение. → список проблем (пусто = чисто):
-    открыта сама папка · у файла остался доступ по ссылке · картинка отдаётся без входа · непустой журнал."""
+    открыта сама папка · у файла остался доступ по ссылке · картинка отдаётся без входа · непустой журнал.
+
+    live — id файлов, доступ к которым открыт ПРЯМО СЕЙЧАС и по делу (идёт вставка). Без этого
+    ревизор, запущенный параллельно с записью вкладки, кричит «остался доступ по ссылке» на файлы
+    текущего окна — и отличить такую тревогу от настоящей утечки нельзя. Журнал знает, что открыто,
+    поэтому открытые по журналу файлы помечаются отдельно и в проблемы не идут."""
     problems, folder_open = [], False
     try:
         bad = _anyone(_permissions(folder_id))
@@ -736,17 +741,22 @@ def audit(folder_id, ledger_path=None, limit=None):
         if pending:
             problems.append(f'журнал временных доступов не пуст: {len(pending)} записей — '
                             f'запустите doc_images.py --revoke-ledger {ledger_path}')
+    now_open = []
     seen = {f['id'] for f in files}
     files += [{'id': e['fid'], 'name': e.get('name') or e['fid']} for e in pending
               if e.get('fid') and e['fid'] not in seen]
     for f in files:                                                # у общего диска права в списке файлов не приходят
         try:
             bad = _anyone(_permissions(f['id']))
-            if bad:
+            if bad and f['id'] in live:
+                now_open.append(f['name'])           # открыт по журналу: идёт вставка, закроется сам
+            elif bad:
                 tag = ' (унаследован от папки)' if all(_is_inherited(p) for p in bad) else ''
                 problems.append(f'у файла {f["name"]} остался доступ по ссылке{tag}')
         except Exception as e:                                     # noqa: BLE001
             problems.append(f'права файла {f["name"]} не проверены: {str(e)[:120]}')
+        if f['id'] in live:
+            continue                                  # файл нарочно открыт сейчас — проверять «отдаётся ли» бессмысленно
         for label, tpl in (('основному', URI_MAIN), ('запасному', URI_SPARE)):
             ok, info = _anon(tpl.format(id=f['id']))
             if ok:
@@ -754,7 +764,8 @@ def audit(folder_id, ledger_path=None, limit=None):
             elif ok is None:
                 problems.append(f'файл {f["name"]}: проверка без входа по {label} адресу не удалась ({info})')
     print(f'  ревизор: папка {"ОТКРЫТА" if folder_open else "закрыта"}, проверено файлов {len(files)} из {total}'
-          f'{f" (вложенных папок {subfolders} — не проверяются)" if subfolders else ""}, проблем {len(problems)}', flush=True)
+          f'{f" (вложенных папок {subfolders} — не проверяются)" if subfolders else ""}, проблем {len(problems)}'
+          + (f' · открыто прямо сейчас по журналу: {len(now_open)}' if now_open else ''), flush=True)
     return problems
 
 
@@ -1457,7 +1468,14 @@ def main(argv=None):
             print(f'  ! остался открыт: {f}')
         return 1 if fl else 0
     if a.audit:
-        problems = audit(a.audit, a.ledger or _default_ledger(), limit=a.limit or None)
+        led = a.ledger or _default_ledger()
+        # что открыто ПРЯМО СЕЙЧАС и по делу — из журнала: ревизор, запущенный во время записи
+        # вкладки, иначе объявит утечкой файлы текущего окна вставки
+        try:
+            live = {e.get('fid') for e in (ledger_pending(led) or []) if e.get('fid')}
+        except Exception:                                          # noqa: BLE001
+            live = set()
+        problems = audit(a.audit, led, limit=a.limit or None, live=live)
         for p in problems[:30]:
             print(f'  ! {p}')
         if len(problems) > 30:
