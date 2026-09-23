@@ -314,18 +314,44 @@ class TestGammaCacheIO:
         _plan.save_gamma_cache(fake_project, "YTEVO99", clips)
         assert _plan.load_gamma_cache(fake_project, "YTEVO99") == clips
 
-    def test_saved_file_lives_in_ingest_and_names_itself(self, fake_project):
-        """CLR-04: файл лежит в 00_Setup/01_Ingest и описывает сам себя.
+    def test_saved_file_lives_in_lut_home_and_names_itself(self, fake_project):
+        """CLR-04: файл лежит в доме лутов, в `_build`, и описывает сам себя.
 
         Через месяц по голому словарю гамм не восстановить, откуда он взялся:
-        поэтому в файле обязаны быть schema, project и пояснение.
+        поэтому в файле обязаны быть schema, project и пояснение. А место —
+        `01_Source/00_LUT/_build`: у лутов один дом, и «как выбирали» хранится
+        рядом с «чем красим», но этажом ниже, чтобы не мешалось на глазах.
         """
         p = _plan.save_gamma_cache(fake_project, "YTEVO99", {})
-        assert p == fake_project / "00_Setup" / "01_Ingest" / "YTEVO99_gamma_cache.json"
+        assert p == (fake_project / "01_Source" / "00_LUT" / "_build"
+                     / "YTEVO99_gamma_cache.json")
         doc = json.loads(p.read_text(encoding="utf-8"))
         assert doc["schema"] == "gamma-cache-v1"
         assert doc["project"] == "YTEVO99"
         assert doc["_note"]
+
+    def test_old_address_is_still_read_but_never_written(self, fake_project):
+        """CLR-04b: проект, собранный ДО переезда, продолжает собираться.
+
+        ⚠️ Кэш гамм заведён ровно затем, чтобы пережить размонтированную карту.
+        Потерять его на переезде — отменить его смысл именно в тот день, когда
+        он нужен. Поэтому чтение знает оба адреса, а запись — только новый:
+        файл в старом месте остаётся нетронутым, как и любая наша копия.
+        """
+        old = _plan.legacy_build_dir(fake_project) / "YTEVO99_gamma_cache.json"
+        old.parent.mkdir(parents=True, exist_ok=True)
+        old.write_text(json.dumps({"clips": {"01_A/x.MP4": {"gamma": "S-Log3"}}}),
+                       encoding="utf-8")
+        assert _plan.load_gamma_cache(fake_project, "YTEVO99") == {
+            "01_A/x.MP4": {"gamma": "S-Log3"}}
+
+        new = _plan.save_gamma_cache(fake_project, "YTEVO99",
+                                     {"02_B/y.MP4": {"gamma": "D-Log2"}})
+        assert new == _plan.lut_build_dir(fake_project) / "YTEVO99_gamma_cache.json"
+        assert old.exists(), "старый файл не удаляем никогда"
+        # слияние произошло через старый адрес — записи прошлого дня не потеряны
+        got = _plan.load_gamma_cache(fake_project, "YTEVO99")
+        assert set(got) == {"01_A/x.MP4", "02_B/y.MP4"}
 
 
 class TestGammaCacheStale:

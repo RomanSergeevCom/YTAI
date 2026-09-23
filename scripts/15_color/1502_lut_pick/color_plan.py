@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
 color_plan.py — арифметика цвета без картинок: экспозиция, ключи клипов,
-профиль канала, файл выбора.
+профиль канала, файл выбора, адреса на диске.
+
+Здесь же живёт ЕДИНСТВЕННОЕ определение дома лутов (lut_home / lut_build_dir /
+build_file): модуль на stdlib, и его импортируют и витрина, и раскладка, — значит
+путь считается один раз и в одном месте, а не собирается руками в каждом скрипте.
 
 Только стандартная библиотека. Ни ffmpeg, ни Vision, ни numpy/PIL: модуль обязан
 считать при размонтированной карте и на машине без медиатеки — иначе «посчитать
@@ -102,6 +106,59 @@ def stops_to_target(luma: float, target: float) -> float:
     return max(-EXPOSURE_MAX, min(EXPOSURE_MAX, math.log2(target / luma)))
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Дом лутов проекта — ОДИН на всё, что касается цвета
+# ─────────────────────────────────────────────────────────────────────────────
+# Решение Романа: у лутов один адрес, и монтажёр обязан найти его не спрашивая.
+# Поэтому рабочая тройка лежит ПЛОСКО на верхнем уровне 00_LUT — открыл папку и
+# сразу видишь три файла, которые кладут на таймлайн. Всё, по чему выбирали
+# (витрина, кадры, JSON-ы этапа), уезжает на этаж ниже, в `_build/`: это не
+# мусор, его нужно уметь перечитать через полгода, но глаза монтажёру оно
+# засоряет. Раньше эти файлы жили в 00_Setup/01_Ingest — то есть выбор цвета
+# хранился в папке про ингест, и до самого проекта вообще не доезжал.
+
+LUT_HOME_PARTS = ("01_Source", "00_LUT")
+LUT_BUILD_DIRNAME = "_build"
+#: где эти файлы лежали до переезда — читаем оттуда, пишем туда НИКОГДА
+LEGACY_BUILD_PARTS = ("00_Setup", "01_Ingest")
+
+
+def lut_home(project: Path) -> Path:
+    """`{проект}/01_Source/00_LUT` — рабочие кубы, плоско."""
+    return Path(project).joinpath(*LUT_HOME_PARTS)
+
+
+def lut_build_dir(project: Path) -> Path:
+    """`{проект}/01_Source/00_LUT/_build` — как выбирали: доска, кадры, JSON-ы."""
+    return lut_home(project) / LUT_BUILD_DIRNAME
+
+
+def legacy_build_dir(project: Path) -> Path:
+    """Старый адрес этапа цвета. ⚠️ Здесь же и дальше живёт легаси
+    `{CODE}_lut_plan.json`: его читает UXP-панель, и он никуда не переезжает."""
+    return Path(project).joinpath(*LEGACY_BUILD_PARTS)
+
+
+def build_file(project: Path, name: str, log=None) -> Path:
+    """Путь к файлу этапа для ЧТЕНИЯ: новый дом, иначе старый.
+
+    Уже собранные проекты не должны сломаться от переезда, поэтому чтение знает
+    оба адреса. Найденное в старом месте — не молчаливая подмена, а строка в
+    логе: иначе непонятно, почему свежий прогон опирается на данные, которых в
+    новом доме нет. Когда файла нет нигде, возвращаем НОВЫЙ путь — сообщение
+    «нет такого файла» обязано показывать туда, где его ждут сегодня.
+    """
+    new = lut_build_dir(project) / name
+    if new.exists():
+        return new
+    old = legacy_build_dir(project) / name
+    if old.exists():
+        if log:
+            log(f"  ⚠️ {name}: в новом доме нет, читаю старый адрес {old.parent}")
+        return old
+    return new
+
+
 def profile_path(project: Path, code: str) -> Path:
     ch = re.match(r"^(YT[A-Z]{2,4})", code)
     return (Path.home() / "YTAI" / "YTs" / (ch.group(1) if ch else code)
@@ -177,9 +234,12 @@ def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict) -> dict:
     backup(prof_p)
     save_json_atomic(prof_p, prof)
 
-    out_p = (project / "00_Setup" / "01_Ingest" / f"{code}_color_choice.json")
-    board = project / "00_Setup" / "01_Ingest" / f"{code}_lut_board.html"
-    doc = load_json_safe(out_p) or {}
+    out_p = lut_build_dir(project) / f"{code}_color_choice.json"
+    board = lut_build_dir(project) / f"{code}_lut_board.html"
+    # ⚠️ Пишем всегда в новый дом, а нумерацию версии продолжаем от того файла,
+    # который РЕАЛЬНО есть: на проекте, собранном до переезда, выбор лежит в
+    # старом месте, и начать с единицы значило бы соврать про историю правок.
+    doc = load_json_safe(build_file(project, f"{code}_color_choice.json", log=print)) or {}
     # Файл описывает САМ СЕБЯ: что за этап, чем закрыт, где артефакты и что
     # дальше. Иначе через месяц по одному словарю экспозиций не восстановить,
     # откуда он взялся и можно ли на него опираться.
@@ -474,11 +534,15 @@ def resolve_look(profile: dict):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def gamma_cache_path(project: Path, code: str) -> Path:
-    return project / "00_Setup" / "01_Ingest" / f"{code}_gamma_cache.json"
+    """Куда кэш ПИШЕТСЯ. Читать — через build_file: см. load_gamma_cache."""
+    return lut_build_dir(project) / f"{code}_gamma_cache.json"
 
 
 def load_gamma_cache(project: Path, code: str) -> dict:
-    d = load_json_safe(gamma_cache_path(project, code)) or {}
+    # ⚠️ Читаем с оглядкой на старый адрес: кэш заведён ровно затем, чтобы
+    # пережить размонтированную карту, и потерять его на переезде — значит
+    # отменить его смысл именно в тот день, когда он нужен.
+    d = load_json_safe(build_file(project, f"{code}_gamma_cache.json", log=print)) or {}
     return d.get("clips") or {}
 
 

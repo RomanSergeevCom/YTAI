@@ -2,9 +2,14 @@
 """Раскладка цвета по клипам: выбор человека → план, который кладут на таймлайн.
 
 Собирает `{CODE}_color_plan.json` из двух источников:
-  • `{проект}/00_Setup/01_Ingest/{CODE}_color_choice.json` — выбор по ЭТОМУ дню
-    (экспозиция по клипам, подписанная человеком);
+  • `{проект}/01_Source/00_LUT/_build/{CODE}_color_choice.json` — выбор по ЭТОМУ
+    дню (экспозиция по клипам, подписанная человеком);
   • `YTs/{КАНАЛ}/color_profile.json` — ДНК канала (проявка по гамме, look).
+
+⚠️ У лутов ОДИН дом: `{проект}/01_Source/00_LUT/`. Рабочие кубы там лежат плоско,
+всё, по чему выбирали, — в `_build/`. Файлы, собранные до переезда, читаются из
+старого адреса `00_Setup/01_Ingest/` (об этом говорится в логе), но пишутся уже
+только в новый.
 
 ⚠️ ТОЛЬКО stdlib. Ни ffmpeg, ни Vision, ни numpy. План обязан собираться, когда
 карта с оригиналами размонтирована, — а это НОРМАЛЬНОЕ состояние: на YTEVO03 все
@@ -49,6 +54,25 @@ SCHEMA = "color-plan-v1"
 ADOBE_LUTS = Path.home() / "Library" / "Application Support" / "Adobe" / "Common" / "LUTs"
 CREATIVE_DIR = ADOBE_LUTS / "Creative" / "YTAI"   # сюда — покрасочные (Lumetri → Creative → Look)
 INPUT_DIR = ADOBE_LUTS / "Input" / "YTAI"         # сюда — проявочные (Basic Correction → Input LUT)
+
+#: правила имён лутов (LUT_CANON, canon_luts) живут в комплекте прокси — одна копия на всё
+KIT_PY = HERE.parent.parent / "16_proxy" / "1601_build" / "kit.py"
+
+
+def _kit():
+    """Загрузить kit.py ПО ПУТИ, а не через sys.path.
+
+    Канон имён лутов уже написан один раз в 16_proxy/1601_build/kit.py, и второй
+    копии быть не должно: разъехавшиеся правила переименования — это два
+    инструмента, которые по-разному зовут один и тот же куб. Но тащить чужой
+    слой в sys.path ради одной функции значит однажды затенить чей-то модуль
+    совпадающим именем, поэтому грузим файлом.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("ytai_proxy_kit", KIT_PY)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def die(msg, code=2):
@@ -110,11 +134,16 @@ def gamma_for(key, clip, cam, cache, seeded):
 
 
 def build(project: Path, code: str) -> dict:
-    ing = project / "00_Setup" / "01_Ingest"
-    choice = PL.load_json_safe(ing / f"{code}_color_choice.json")
+    # Выбор ищем в новом доме, с откатом на старый адрес: проекты, собранные до
+    # переезда, обязаны продолжать собираться.
+    choice_p = PL.build_file(project, f"{code}_color_choice.json", log=print)
+    choice = PL.load_json_safe(choice_p)
     if not choice:
         die(f"нет файла выбора {code}_color_choice.json — сначала витрина "
-            f"(1502_lut_pick/lut_board.py)")
+            f"(1502_lut_pick/lut_board.py).\n  ждали здесь: {choice_p}")
+    # ⚠️ Легаси-план — ЕДИНСТВЕННОЕ, что осталось в 00_Setup/01_Ingest: его читает
+    # UXP-панель, и переезд сломал бы её молча.
+    ing = PL.legacy_build_dir(project)
     profile = PL.load_profile(project, code)
     if not profile.get("develop"):
         die(f"в профиле канала нет ни одной проявки: {PL.profile_path(project, code)}")
@@ -268,7 +297,7 @@ def build(project: Path, code: str) -> dict:
                           "живой программе: пока exposure_verified_against_premiere "
                           "равно false, утверждать перенос один в один нельзя.",
         "sources": {
-            "choice": str(ing / f"{code}_color_choice.json"),
+            "choice": str(choice_p),
             "choice_saved": choice.get("saved"),
             "choice_doc_version": choice.get("doc_version"),
             "profile": str(PL.profile_path(project, code)),
@@ -281,13 +310,16 @@ def build(project: Path, code: str) -> dict:
         "install": {
             "_why": "Откуда панель берёт кубы, чтобы Premiere их увидел. ⚠️ Общая "
                     "папка Adobe читается ПРИ СТАРТЕ Premiere — копировать нужно "
-                    "до запуска, панель изнутри программы уже опоздала.",
+                    "до запуска, панель изнутри программы уже опоздала. "
+                    "project_dir — дом лутов внутри проекта: только эта копия "
+                    "уезжает к монтажёру, папки Adobe остаются на этой машине.",
             # ⚠️ Папки называются Creative / Input / Output — «Technical» у Adobe НЕТ.
             # Сверено с диском: рядом уже лежат Input/peresvet.cube и Input/nedosvet.cube
             # прошлого поколения. Ошибиться здесь значит выписать план, указывающий
             # в несуществующую папку, и обнаружить это только в Premiere.
             "creative_dir": str(CREATIVE_DIR),
             "input_dir": str(INPUT_DIR),
+            "project_dir": str(PL.lut_home(project)),
             "files": files,
         },
         "plan": plan,
@@ -342,33 +374,82 @@ def install_cubes(doc: dict, apply: bool) -> int:
     ровно тот класс ошибки, на котором слой уже обжёгся (`eastman` и `eastmanrm`
     схлопывались обрезкой id, и кадр молча показывал не тот куб, что подписан).
     """
-    import hashlib
-    import shutil
     bad = 0
     for f in doc["install"]["files"]:
-        src = Path(f["store_path"])
         dst = Path(f["dir"] == "creative_dir" and CREATIVE_DIR or INPUT_DIR) / f["install_name"]
-        if not src.exists():
-            print(f"  ✗ нет в store: {f['install_name']}")
-            bad += 1
-            continue
-        if dst.exists():
-            have = hashlib.sha256(dst.read_bytes()).hexdigest()
-            if have == f["sha256"]:
-                print(f"  = на месте   {f['install_name']}")
-                continue
-            print(f"  ≠ РАЗОШЁЛСЯ  {f['install_name']} — то же имя, другое содержимое")
-        if not apply:
-            print(f"  + поставил БЫ {f['install_name']} → {dst.parent}")
-            continue
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
-        got = hashlib.sha256(dst.read_bytes()).hexdigest()
-        if got != f["sha256"]:
-            print(f"  ✗ копия не сошлась по sha256: {f['install_name']}")
-            bad += 1
-        else:
-            print(f"  + поставил   {f['install_name']} → {dst.parent}")
+        bad += _place_cube(Path(f["store_path"]), dst, f["sha256"], f["install_name"], apply)
+    return bad
+
+
+def _place_cube(src: Path, dst: Path, sha: str, name: str, apply: bool) -> int:
+    """Положить один куб по адресу и сверить sha256. Возвращает 1, если беда.
+
+    Сверка обязательна по обе стороны копии: одинаковое имя при разном
+    содержимом — ровно тот класс ошибки, на котором слой уже обжёгся
+    (`eastman` и `eastmanrm` схлопывались обрезкой id, и кадр молча показывал
+    не тот куб, что подписан).
+    """
+    import hashlib
+    import shutil
+    if not src.exists():
+        print(f"  ✗ нет в store: {name}")
+        return 1
+    if dst.exists():
+        if hashlib.sha256(dst.read_bytes()).hexdigest() == sha:
+            print(f"  = на месте   {name}")
+            return 0
+        print(f"  ≠ РАЗОШЁЛСЯ  {name} — то же имя, другое содержимое")
+    if not apply:
+        print(f"  + поставил БЫ {name} → {dst.parent}")
+        return 0
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+    if hashlib.sha256(dst.read_bytes()).hexdigest() != sha:
+        print(f"  ✗ копия не сошлась по sha256: {name}")
+        return 1
+    print(f"  + поставил   {name} → {dst.parent}")
+    return 0
+
+
+def install_into_project(doc: dict, project: Path, apply: bool) -> int:
+    """Положить выбранные кубы В САМ ПРОЕКТ — `01_Source/00_LUT/`, плоско.
+
+    Это и была главная дыра: выбор цвета доезжал только до папок Adobe на МОЁМ
+    маке, а монтажёру вместе с проектом уходила тройка из шаблона — старый цвет
+    под видом нового, и ни одного сообщения об этом. Проект уезжает, ~/Library
+    не уезжает, поэтому куб обязан лежать в проекте.
+
+    Плоско, на верхнем уровне 00_LUT: монтажёр открывает одну папку и видит то,
+    чем красят. Имена — те же канонические `YTAI_{id}.cube`, что и в папках
+    Adobe: имя выводится из id и потому вечное, а совпадение имён по обе стороны
+    позволяет глазами сверить, что в проекте лежит ровно то, что в Premiere.
+    """
+    lut_dir = PL.lut_home(project)
+    # ⚠️ Восемь проектов на дисках держат луты в `01_Source/LUT/` без префикса.
+    # Молча завести рядом второй дом — значит развести монтажёра на две папки;
+    # переезд делается отдельно, здесь достаточно сказать вслух.
+    stray = project / "01_Source" / "LUT"
+    # ⚠️ Условие БЕЗ оглядки на то, есть ли уже 00_LUT. Раньше стояло
+    # `and not lut_dir.is_dir()` — и предупреждение замолкало ровно тогда, когда
+    # две папки становились реальностью: первый --install заводил 00_LUT, а со
+    # второго прогона про оставшийся LUT/ никто уже не говорил.
+    if stray.is_dir():
+        print(f"  ⚠️ рядом лежит старая папка без префикса: {stray}\n"
+              f"     кубы кладу в {lut_dir} — папки надо свести в одну:\n"
+              f"     python3 ~/YTAI/scripts/15_color/lut_home.py --project "
+              f"'{project}' --apply")
+
+    bad = 0
+    for f in doc["install"]["files"]:
+        bad += _place_cube(Path(f["store_path"]), lut_dir / f["install_name"],
+                           f["sha256"], f["install_name"], apply)
+    # Заодно приводим к канону то, что уже лежало в папке: `bright/normal/dark`
+    # из шаблона — те же кубы под старыми именами. Правила переименования берём
+    # из комплекта прокси, чтобы не было двух разных мнений об одном имени.
+    try:
+        _kit().canon_luts(str(lut_dir), apply=apply, log=print)
+    except (OSError, ImportError, AttributeError) as e:
+        print(f"  ⚠️ канон имён не проверен ({KIT_PY.name}: {e}) — кубы положены как есть")
     return bad
 
 
@@ -382,7 +463,8 @@ def main():
     ap.add_argument("--allow-refused", action="store_true",
                     help="записать план, даже если часть клипов отказная")
     ap.add_argument("--install", action="store_true",
-                    help="разложить кубы плана по папкам Adobe (до запуска Premiere)")
+                    help="разложить кубы плана: папки Adobe (до запуска Premiere) "
+                         "И дом лутов проекта 01_Source/00_LUT")
     a = ap.parse_args()
 
     project = Path(a.project).expanduser()
@@ -410,6 +492,11 @@ def main():
     if a.install:
         print("\n  РАСКЛАДКА КУБОВ В ПАПКИ ADOBE")
         bad = install_cubes(doc, a.apply)
+        # ⚠️ Второй адрес обязателен и не дублирует первый: в папки Adobe кубы
+        # кладутся, чтобы их увидел Premiere ЗДЕСЬ, в проект — чтобы они уехали
+        # с проектом к монтажёру. Пропустить второй шаг = отдать чужой цвет.
+        print(f"\n  РАСКЛАДКА КУБОВ В ПРОЕКТ → {PL.lut_home(project)}")
+        bad += install_into_project(doc, project, a.apply)
         if not a.apply:
             print("  (сухой прогон — ничего не скопировано; повтори с --apply)")
         elif bad:
@@ -418,7 +505,7 @@ def main():
             print("  ⚠️ если Premiere был открыт — перезапусти его: список лутов "
                   "читается при СТАРТЕ программы")
 
-    out = project / "00_Setup" / "01_Ingest" / f"{code}_color_plan.json"
+    out = PL.lut_build_dir(project) / f"{code}_color_plan.json"
     gamma_rec = doc.pop("_gamma_records", {})
     if a.apply:
         # ⚠️ Кэш гамм пишем ВСЕГДА при --apply. Пока он не лёг на диск, единственный
@@ -429,9 +516,13 @@ def main():
             live = sum(1 for r in gamma_rec.values() if r["source"] in ("sidecar_m01xml", "dji_tag"))
             print(f"  кэш гамм: {len(gamma_rec)} записей "
                   f"({live} живых замеров, {len(gamma_rec)-live} из прошлого плана) → {gp.name}")
-        if out.exists():
-            PL.backup(out)
-            prev = PL.load_json_safe(out) or {}
+        # Нумерацию версии продолжаем от того плана, который РЕАЛЬНО есть: на
+        # проекте, собранном до переезда, он лежит по старому адресу, и начать
+        # с единицы значило бы соврать про историю правок.
+        prev_p = PL.build_file(project, f"{code}_color_plan.json", log=print)
+        if prev_p.exists():
+            PL.backup(prev_p)
+            prev = PL.load_json_safe(prev_p) or {}
             doc["doc_version"] = int(prev.get("doc_version") or 0) + 1
         PL.save_json_atomic(out, doc)
         print(f"\n  → {out}  (v{doc['doc_version']})\n")

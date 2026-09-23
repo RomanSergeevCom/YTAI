@@ -22,7 +22,9 @@ Usage:
       --frames-from ~/Desktop/YTEVO03_01_Source_Proxy --jobs 4
 
 Читает библиотеку из 15_color/1501_lut_library/manifest.json. Ничего в проекте
-не меняет, кроме своей папки кадров и своей страницы.
+не меняет, кроме своей папки кадров и своей страницы, а лежат они в доме лутов:
+`{проект}/01_Source/00_LUT/_build/`. Наверху 00_LUT — только рабочие кубы, чтобы
+монтажёр открыл папку и увидел три файла, а не доску с тысячей кадров.
 """
 
 from __future__ import annotations
@@ -208,7 +210,9 @@ def load_recorded_gammas(project: Path, code: str) -> dict:
     Запись в плане — тот же самый замер с карты, просто сделанный раньше
     (21.09.2026), а не догадка по имени камеры.
     """
-    plan = project / "00_Setup" / "01_Ingest" / f"{code}_lut_plan.json"
+    # ⚠️ НЕ переезжает вместе с остальным этапом цвета: этот файл читает ещё и
+    # UXP-панель (0500_uxp/index.js), для неё он лежит в 00_Setup/01_Ingest.
+    plan = PL.legacy_build_dir(project) / f"{code}_lut_plan.json"
     try:
         doc = json.loads(plan.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
@@ -765,7 +769,11 @@ def main(argv=None) -> int:
     if not S.MANIFEST.exists():
         die("библиотека пуста — сначала `lut_lib.py --import --apply`")
 
-    out_dir = project / "00_Setup" / "01_Ingest"
+    # Доска и её кадры — это «как выбирали», а не «чем красим»: место им в
+    # _build рядом с рабочими кубами, а не в папке про ингест. На YTEVO03 это
+    # 524 КБ HTML плюс 1200 JPEG (53 МБ) — ровно то, что не должно попадаться
+    # монтажёру на глаза, когда он ищет три куба.
+    out_dir = PL.lut_build_dir(project)
     files_dirname = f"{code}_lut_board_files"
     files_dir = out_dir / files_dirname
     if args.refresh and files_dir.exists():
@@ -1046,7 +1054,8 @@ def main(argv=None) -> int:
 
     # ⚠️ Если Роман уже выбирал по этому дню — предлагается ЕГО выбор, а не мой.
     # Иначе каждая пересборка витрины откатывала бы его работу к рекомендации.
-    saved = PL.load_json_safe(out_dir / f"{code}_color_choice.json") or {}
+    saved = PL.load_json_safe(
+        PL.build_file(project, f"{code}_color_choice.json", log=print)) or {}
     by_id = {l["id"]: l for l in luts}
     if saved.get("look") and saved["look"] in by_id:
         rec_look = by_id[saved["look"]]
