@@ -127,20 +127,31 @@ def _api(method, url, body=None, raw=None, ctype='application/json', timeout=60,
     return st, out
 
 
-def _anon(url, timeout=30):
+def _anon(url, timeout=30, tries=3):
     """Запрос БЕЗ входа: отдаётся ли именно КАРТИНКА. Тело не читаем — хватает заголовка.
-    → (True|False|None, пояснение); None = проверить не удалось (сеть)."""
+    → (True|False|None, пояснение); None = проверить не удалось (сеть).
+
+    ⚠️ Повтор обязателен. Drive рвёт соединение на случайном файле из двух сотен
+    (`RemoteDisconnected`), и без повтора ревизор объявлял проблему на каждом прогоне — причём
+    каждый раз на РАЗНОМ файле. Стадия из-за этого вставала на ровном месте («кадры могут быть
+    открыты, разберись до любых следующих шагов»), хотя папка подтверждена закрытой, а в журнале
+    доступов ноль открытых. Ответ сервера (403/404 — закрыто) повтора не требует."""
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Cache-Control': 'no-cache'})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            ct = r.headers.get('Content-Type', '') or ''
-            return ct.lower().startswith('image/'), f'{r.status} {ct}'
-    except urllib.error.HTTPError as e:
-        if e.code in (401, 403, 404):
-            return False, f'HTTP {e.code}'
-        return None, f'HTTP {e.code}'                              # 429/5xx: нас не пустили проверить — это не «закрыто»
-    except Exception as e:                                         # noqa: BLE001
-        return None, f'{type(e).__name__}'
+    why = ''
+    for k in range(tries):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                ct = r.headers.get('Content-Type', '') or ''
+                return ct.lower().startswith('image/'), f'{r.status} {ct}'
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403, 404):
+                return False, f'HTTP {e.code}'
+            why = f'HTTP {e.code}'                                 # 429/5xx: нас не пустили проверить — это не «закрыто»
+        except Exception as e:                                     # noqa: BLE001
+            why = type(e).__name__
+        if k < tries - 1:
+            time.sleep(1.5 * (k + 1))
+    return None, f'{why} (попыток {tries})'
 
 
 def _err(js):
