@@ -50,3 +50,6 @@ config/
 Bots/*/inventory_photos/
 # Bots data — generated prompt-packs (per-project, not for source repo)
 Bots/*/_prompts/
+
+# этап прокси: рабочее состояние прогонов
+scripts/16_proxy/*/state/
