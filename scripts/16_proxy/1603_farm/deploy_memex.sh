@@ -95,11 +95,25 @@ rsh "cat > ~/Library/LaunchAgents/$PLIST_LABEL.plist <<'PL'
     <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
   <key>ProgramArguments</key><array>
-    <string>/opt/homebrew/bin/caffeinate</string><string>-ims</string>
+    <!-- ⚠️ caffeinate это СИСТЕМНЫЙ бинарь в /usr/bin, а не homebrew. Путь
+         /opt/homebrew/bin/caffeinate не существует, и launchd на нём молча
+         отдаёт EX_CONFIG (78) и уводит агент в penalty box: в логах прогона
+         при этом ПУСТО, потому что программа так и не запустилась. -->
+    <string>/usr/bin/caffeinate</string><string>-ims</string>
     <string>/opt/homebrew/bin/python3</string><string>-u</string>
     <string>$HOME/$REMOTE_STAGE/1603_farm/farm.py</string>
     <string>run</string><string>--unit</string><string>YTEVO03</string>
-    <string>--jobs</string><string>1</string>
+    <!-- ⚠️ Два кодировщика, а не один, и это НЕ противоречит правилу «jobs почти
+         не помогает». То правило про аппаратный блок hevc_videotoolbox — он
+         действительно один. Но на съёмочном материале FX3 узкое место другое:
+         исходник h264 High 4:2:2 10 бит, а такой профиль Apple аппаратно НЕ
+         декодирует (проверено 23.09.2026: -hwaccel videotoolbox отвечает
+         «Error submitting packet to decoder» и при этом молча отдаёт 75 кадров
+         вместо 84 — гейт такое ловит, но полагаться на это нельзя). Значит
+         декод программный и упирается в ядра, а они на M4 есть. -->
+    <string>--jobs</string><string>2</string>
+    <string>--fetchers</string><string>6</string>
+    <string>--prefetch</string><string>6</string>
   </array>
   <key>WorkingDirectory</key><string>$HOME/$REMOTE_STAGE/1603_farm</string>
   <!-- Ночью: очередь долговечна, так что незаконченное подхватится следующим запуском -->
@@ -110,9 +124,12 @@ rsh "cat > ~/Library/LaunchAgents/$PLIST_LABEL.plist <<'PL'
        с кодом 0. KeepAlive крутил бы её по кругу и жёг Drive-квоту на снимках. -->
   <key>StandardOutPath</key><string>$HOME/Library/Logs/ytai/proxy_farm/launchd.out</string>
   <key>StandardErrorPath</key><string>$HOME/Library/Logs/ytai/proxy_farm/launchd.err</string>
-  <key>ProcessType</key><string>Background</string>
+  <!-- ⚠️ НЕ Background и НЕ nice. Замер 23.09.2026: с ProcessType Background
+       и Nice 5 процесс шёл с PRI 4, и прогон выдавал 5 МБ/с по исходнику —
+       26 часов на 479 ГБ. Эта работа и есть то, ради чего машина стоит;
+       душить её приоритетом нечем. Standard — обычный приоритет. -->
+  <key>ProcessType</key><string>Standard</string>
   <key>LowPriorityIO</key><false/>
-  <key>Nice</key><integer>5</integer>
 </dict></plist>
 PL
 cat > ~/Library/LaunchAgents/$PLIST_LABEL-watch.plist <<'PL'

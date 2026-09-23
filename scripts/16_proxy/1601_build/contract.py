@@ -368,10 +368,7 @@ def probe(path, count_frames=True, check_audio=True, timeout=1800):
         rf = _run(["ffprobe", "-v", "error", "-select_streams", "v:0",
                    "-count_packets", "-show_entries", "stream=nb_read_packets",
                    "-of", "csv=p=0", path], timeout=timeout)
-        try:
-            frames = int((rf.stdout or "0").strip().split(",")[0])
-        except (ValueError, IndexError):
-            frames = -1
+        frames = parse_frame_count(rf.stdout)
 
     vbits = 0
     for cand in (vs.get("bit_rate"), fmt.get("bit_rate")):
@@ -426,6 +423,29 @@ def target_pix(spec, chroma="420"):
     if spec.bit_depth >= 10:
         return ("main42210", "p210le") if chroma == "422" else ("main10", "p010le")
     return ("main", "yuv420p")
+
+
+def parse_frame_count(text):
+    """Число кадров из вывода `ffprobe -count_packets`. -1 — прочитать не вышло.
+
+    ⚠️ Берём ПЕРВОЕ число, а не весь вывод целиком. ffprobe 9.0 завёл раздел
+    `stream_groups`, и по файлу, где такой раздел есть (наш прокси: hevc плюс
+    дорожка `tmcd`), печатает значение ДВАЖДЫ через пустую строку: «84\\n\\n84».
+    Прежний разбор ждал одно число, получал ValueError и тихо ставил -1 — то
+    есть «кадры не считали». Гейт читает это как несовпадение и заворачивает
+    КАЖДЫЙ клип, хотя кадров у обоих ровно поровну.
+
+    Поймано 23.09.2026 на Мемексе (ffprobe 9.0.1): девять клипов подряд
+    «не сошлось: frames». На маке ffprobe 8.1.1, раздела нет, и локально это
+    не всплывало вовсе — ровно тот класс беды, который ловится только на
+    второй машине.
+    """
+    for chunk in (text or "").replace(",", "\n").split():
+        try:
+            return int(chunk)
+        except ValueError:
+            continue
+    return -1
 
 
 def is_spanner(path):

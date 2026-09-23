@@ -85,6 +85,15 @@ def main():
         check("к провалившемуся возвращаемся после непробованных",
               nxt and nxt["rel"] == "c.MP4", str(nxt and nxt["rel"]))
 
+        # ── убитый прогон не оставляет клипы висеть на три часа ─────────────
+        st.claim("wX"); st.claim("wY")
+        n_lease = st.counts()["lease"]
+        freed = st.release_all_leases()
+        check("лизы убитого прогона снимаются на старте",
+              freed == n_lease and st.counts()["lease"] == 0, f"снято {freed} из {n_lease}")
+        check("снятие лиз не тратит попытки",
+              all(c["attempts"] <= st.max_attempts for c in st.clips.values()))
+
         # ── release не тратит попытку ───────────────────────────────────────
         before = st.clips["c.MP4"]["attempts"]
         st.release("c.MP4")
@@ -209,6 +218,18 @@ def main():
               P.map_to_drive("/Volumes/SD-V90-RYA-2/x.MP4", mirrors) is None)
 
         # ── контракт: то, ради чего всё ──────────────────────────────────────
+        # ⚠️ Мина переносимости: ffprobe 9.0 печатает число кадров ДВАЖДЫ
+        # (stream_groups + streams). Прежний разбор давал -1, и гейт заворачивал
+        # каждый клип. Ловится только на второй машине — значит, ловим здесь.
+        check("кадры: одно число (ffprobe 8)", K.parse_frame_count("84") == 84)
+        check("кадры: ДВА числа через пустую строку (ffprobe 9)",
+              K.parse_frame_count("84\n\n84") == 84,
+              str(K.parse_frame_count("84\n\n84")))
+        check("кадры: с запятой на конце", K.parse_frame_count("804,") == 804)
+        check("кадры: пусто → -1, а не ноль", K.parse_frame_count("") == -1)
+        check("кадры: мусор → -1", K.parse_frame_count("N/A") == -1)
+        check("кадры: перевод строки и пробелы", K.parse_frame_count(" 1800 \n") == 1800)
+
         check("спаннер опознаётся по имени", K.is_spanner("RYA-FX3-1071__S10.MP4"))
         check("обычный клип не спаннер", not K.is_spanner("RYA-FX3-1212.MP4"))
         check("WAV-срез рекордера не видео-спаннер",
