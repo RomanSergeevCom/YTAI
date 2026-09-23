@@ -115,7 +115,15 @@ class World:
         self.manifest_path = manifest_path
         self.profile_path = profile_path
         self._mp = monkeypatch
+        # ⚠️ Два разных адреса, и путать их нельзя. `ingest` — старая папка, где
+        # из этапа цвета остался только легаси `{CODE}_lut_plan.json` для
+        # UXP-панели. Всё своё этап пишет в дом лутов, в `_build`.
         self.ingest = project / "00_Setup" / "01_Ingest"
+        # ⚠️ НЕ self.build — рядом живёт метод build(), собирающий план.
+        # Атрибут с тем же именем перекрывал его, и 18 тестов падали
+        # на 'PosixPath' object is not callable.
+        self.build_dir = color_plan.lut_build_dir(project)
+        self.lut_home = color_plan.lut_home(project)
         self.tags: dict[str, str] = {}        # basename → что «ffprobe» скажет про тег DJI
         self.exposure: dict[str, float] = {}  # слаг → стопы витрины
         self.corrected: dict[str, float] = {}
@@ -123,15 +131,15 @@ class World:
     # ── пути результатов ──
     @property
     def plan_path(self) -> Path:
-        return self.ingest / f"{CODE}_color_plan.json"
+        return self.build_dir / f"{CODE}_color_plan.json"
 
     @property
     def cache_path(self) -> Path:
-        return self.ingest / f"{CODE}_gamma_cache.json"
+        return self.build_dir / f"{CODE}_gamma_cache.json"
 
     @property
     def choice_path(self) -> Path:
-        return self.ingest / f"{CODE}_color_choice.json"
+        return self.build_dir / f"{CODE}_color_choice.json"
 
     # ── наполнение мира ──
     def add_clip(self, scene, cam, name, sidecar_gamma=None, dji_tag=None, stops=0.0):
@@ -329,9 +337,9 @@ class TestDryRun:
         перезаписывает план, «посмотреть» становится «применить», а утверждённый
         Романом файл уезжает молча.
         """
-        before = sorted(p.name for p in world.ingest.iterdir())
+        before = sorted(p.name for p in world.build_dir.iterdir())
         world.run()                                  # без --apply
-        after = sorted(p.name for p in world.ingest.iterdir())
+        after = sorted(p.name for p in world.build_dir.iterdir())
         assert after == before
         assert not world.plan_path.exists()
         assert not world.cache_path.exists(), "кэш гамм тоже не должен появляться"
