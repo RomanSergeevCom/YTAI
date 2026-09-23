@@ -691,6 +691,28 @@ def insert_with_temp_grant(doc_id, img_reqs, ids, ledger_path, batch=10, insert_
                     break
             finished = True
         finally:                                                   # итог — в журнал и при сбое/сигнале (доступы уже закрыты)
+            # ⚠️ Отзыв мог не пройти из-за сети — а это значит, что кадр ОСТАЛСЯ открыт по ссылке.
+            # Раньше такой случай только записывался в журнал и в код возврата: в автономном прогоне
+            # доступ жил до прихода человека с --revoke-ledger. Проверено живьём 23.09.2026 на
+            # YTCH12: четыре кадра остались открытыми на шесть минут, повторный отзыв закрыл все
+            # четыре с первой попытки — то есть сбой был чисто сетевой и лечится повтором.
+            if res['revoke_failed']:
+                for k in range(3):
+                    time.sleep(2 * (k + 1))
+                    try:
+                        _closed, stuck = revoke_from_ledger(ledger_path)
+                    except Exception as e:                             # noqa: BLE001
+                        print(f'  повторный отзыв не удался: {type(e).__name__}', flush=True)
+                        break
+                    if _closed:
+                        print(f'  повторный отзыв: закрыто {len(_closed)}', flush=True)
+                    if not stuck:
+                        res['revoke_failed'] = []
+                        break
+                    led = _ledger_load(ledger_path)
+                if res['revoke_failed']:
+                    print(f'  ⚠️ НЕ ЗАКРЫТО доступов: {len(res["revoke_failed"])} — закрыть немедленно: '
+                          f'python3 shared/doc_images.py --revoke-ledger {ledger_path}', flush=True)
             led['result'] = {'finished_at': _stamp(), 'complete': finished, 'inserted': res['inserted'],
                              'failed': len(res['failed']), 'revoke_failed': len(res['revoke_failed']),
                              'max_window_sec': res['max_window_sec']}
