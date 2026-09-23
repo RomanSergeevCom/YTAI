@@ -127,8 +127,23 @@ def build(project: Path, code: str) -> dict:
     legacy = PL.load_json_safe(ing / f"{code}_lut_plan.json")
     clips = collect_clips(project)
     if legacy:
-        by_base = {k.split("/")[-1]: k for k, _, _, _ in
-                   ((c[0], None, None, None) for c in clips)}
+        # ⚠️ Карта строится ОТ КАНОНИЧЕСКИХ ключей и проверяется на коллизии здесь,
+        # а не внутри посева: страж внутри смотрел на values(), а вызывающий
+        # схлопывал их в ключи ЕЩЁ ДО вызова — и последняя сцена побеждала молча.
+        # Воспроизводилось: клип DJI получал гамму Sony, отказа не было.
+        # scene_clips ловит дубли только ВНУТРИ сцены, между сценами — не ловит.
+        by_base = {}
+        collided = {}
+        for key, _scene, _clip, _cam in clips:
+            base = key.split("/")[-1]
+            if base in by_base:
+                collided.setdefault(base, [by_base[base]]).append(key)
+            by_base[base] = key
+        if collided:
+            lines = "; ".join(f"{b}: {' и '.join(v)}" for b, v in sorted(collided.items())[:5])
+            die(f"одно имя файла встречается в разных сценах — гамма из старого плана "
+                f"легла бы на клип ЧУЖОЙ сцены, то есть чужая проявка без единого "
+                f"сообщения:\n  {lines}", 5)
         seeded = PL.seed_gamma_cache_from_lut_plan(legacy, by_base)
 
     exposure = choice.get("exposure") or {}
@@ -194,7 +209,12 @@ def build(project: Path, code: str) -> dict:
             return None
         ok, why = S.verify_cube(e)
         if not ok:
+            # ⚠️ Блок НЕ отдаём. Иначе при --allow-refused план записывался с
+            # адресом куба, который не сошёлся по sha256, и панель дальше
+            # пользовалась непроверенным файлом. Куб — единственное, что нельзя
+            # «разложить частично»: это не клип, это математика всего канала.
             refused[f"__lut__{lut_id}"] = f"{lut_id}: {why}"
+            return None
         return {"slot": slot, "file": e.get("file"), "sha256": e.get("sha256"),
                 "store_path": str(S.store_path(e)), "install_name": install_name(lut_id),
                 "gamma": (e.get("input") or {}).get("gamma")}
@@ -206,6 +226,8 @@ def build(project: Path, code: str) -> dict:
             b["clips"] = n
             develops[lut_id] = b
     look_block = cube_block(look, "creative_look") if look else None
+    if look and look_block is None:
+        refused.setdefault(f"__lut__{look}", f"{look}: куб покраски не прошёл сверку")
 
     files = []
     for lut_id, b in develops.items():

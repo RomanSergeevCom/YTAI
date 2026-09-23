@@ -126,8 +126,20 @@ def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict) -> dict:
     Профиль пишется по ГАММЕ, а не по камере: завтра в парке появится третья
     тушка на S-Log3, и она должна получить ту же проявку без правок.
     """
+    check_feedback(fb, code)
+
     prof_p = profile_path(project, code)
-    prof = load_json_safe(prof_p) or {}
+    prev_prof = load_json_safe(prof_p)
+    if prof_p.exists() and prev_prof is None:
+        # ⚠️ Файл ЕСТЬ, но не читается. Профиль лежит под git, и маркеры конфликта
+        # от merge/rebase/stash pop делают его нечитаемым. Пойти дальше значило бы
+        # собрать профиль заново из пустого места и снести проявки, look и
+        # выученную цель СРАЗУ ПО ВСЕМ проектам канала — восстановить неоткуда.
+        raise ProfileUnreadable(
+            f"профиль канала не читается: {prof_p}\n"
+            f"  похоже на маркеры конфликта git или обрыв записи.\n"
+            f"  почини файл руками — перезаписать его сейчас значит потерять ДНК канала")
+    prof = prev_prof or {}
     ch = re.match(r"^(YT[A-Z]{2,4})", code)
     prof.setdefault("schema", "color-profile-v1")
     prof["channel"] = ch.group(1) if ch else code
@@ -160,6 +172,9 @@ def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict) -> dict:
             "learned_from": code,
         }
     prof["updated"] = time.strftime("%Y-%m-%d")
+    # ⚠️ Копия ДНК канала обязательна: это единственный файл, который общий на все
+    # проекты канала, и восстановить его из проекта нельзя.
+    backup(prof_p)
     save_json_atomic(prof_p, prof)
 
     out_p = (project / "00_Setup" / "01_Ingest" / f"{code}_color_choice.json")
@@ -198,6 +213,7 @@ def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict) -> dict:
         "saved": now_iso(),
         "doc_version": int(doc.get("doc_version") or 0) + 1,
     })
+    backup(out_p)
     save_json_atomic(out_p, doc)
     return {"profile": prof_p, "choice": out_p,
             "corrected": len(fb.get("corrected") or {}),
@@ -212,11 +228,23 @@ def load_json_safe(path):
 
 
 def save_json_atomic(path: Path, obj):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1), encoding="utf-8")
+    """Запись через временный файл и os.replace — читатель видит либо старое, либо новое.
+
+    ⚠️ Имя временного файла ОБЯЗАНО быть уникальным. Общий `.tmp` на всех писателей
+    давал гонку: первый успевал сделать replace, второй падал необработанным
+    FileNotFoundError на уже переименованном файле. Битого JSON при этом не
+    получалось ни разу, но прогон обрывался на полпути — а save_choice пишет два
+    файла подряд, и обрыв между ними оставлял половину сохранения.
+    """
     import os as _os
-    _os.replace(tmp, path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(f"{path.suffix}.{_os.getpid()}.tmp")
+    try:
+        tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1), encoding="utf-8")
+        _os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)      # не оставляем мусор рядом с данными
+        raise
 
 
 def now_iso():
@@ -254,6 +282,39 @@ def _count(it):
     for x in it:
         d[x] = d.get(x, 0) + 1
     return d
+
+
+class ProfileUnreadable(Exception):
+    """Профиль канала есть, но не читается. Перезаписывать нельзя."""
+
+
+class BadFeedback(Exception):
+    """Payload не тот, что ждёт витрина. Сохранять нельзя."""
+
+
+def check_feedback(fb: dict, code: str) -> None:
+    """Проверить payload ДО записи. Отказ вместо частичного сохранения.
+
+    ⚠️ Раньше `doc.update(...)` клал в документ то, что пришло, не глядя. Payload
+    старого формата (`{type: 'lut_feedback', choices, notes}` — ровно так выгружал
+    архивный подборщик) не несёт ни develop, ни look, ни exposure, поэтому все эти
+    поля становились None, а doc_version при этом рос. День занулялся молча и
+    выглядел сохранённым.
+    """
+    if not isinstance(fb, dict):
+        raise BadFeedback("payload не словарь")
+    t = fb.get("type")
+    if t != "lut_board":
+        raise BadFeedback(
+            f"чужой payload: type={t!r}, ожидался 'lut_board'. Похоже на выгрузку "
+            f"старой витрины — она не несёт ни проявки, ни look, ни экспозиции")
+    proj = fb.get("project")
+    if proj and str(proj) != str(code):
+        raise BadFeedback(
+            f"payload от другого проекта: {proj!r}, а сохраняем в {code!r}")
+    if not (fb.get("exposure") or fb.get("develop") or fb.get("look")):
+        raise BadFeedback("в payload нет ни экспозиции, ни проявки, ни look — "
+                          "сохранять нечего")
 
 
 class SlugCollision(Exception):
@@ -446,8 +507,23 @@ def gamma_cache_stale(rec: dict, clip: Path) -> bool:
     return abs(mtime - rec["mtime"]) > 1.0
 
 
-def save_gamma_cache(project: Path, code: str, clips: dict) -> Path:
+def save_gamma_cache(project: Path, code: str, clips: dict, merge: bool = True) -> Path:
+    """Записать кэш гамм. По умолчанию СЛИВАЕТ с тем, что уже лежит.
+
+    ⚠️ Раньше словарь клался как есть, и запись целиком заменяла прошлую: стоило
+    переименовать сцену — и замер по её клипам пропадал навсегда, потому что копии
+    тоже не делалось. Кэш существует ровно затем, чтобы пережить недоступность
+    карты; терять из него записи — отменять его смысл.
+    Слияние отдаёт приоритет НОВОМУ замеру, старые ключи сохраняются.
+    """
     p = gamma_cache_path(project, code)
+    if merge:
+        prev = load_gamma_cache(project, code)
+        if prev:
+            backup(p)
+            merged = dict(prev)
+            merged.update(clips)          # новый замер важнее старой записи
+            clips = merged
     save_json_atomic(p, {
         "schema": "gamma-cache-v1",
         "_note": "Замер гаммы по каждому клипу. Пишется, когда оригинал ДОСТУПЕН; "

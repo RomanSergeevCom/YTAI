@@ -641,3 +641,54 @@ class TestAdobeFolders:
         n = color_apply.install_name("sony__slog3_sgamut3cine__rec709__neutral__legacy")
         assert n == "YTAI_sony__slog3_sgamut3cine__rec709__neutral__legacy.cube"
         assert n.startswith("YTAI_") and n.endswith(".cube")
+
+
+class TestCollisionGuardAtRealCaller:
+    """Страж коллизий basename — там, где он действительно срабатывает."""
+
+    def test_same_basename_in_two_scenes_stops_the_run(self, tmp_path, monkeypatch, capsys):
+        """CLR-19: одно имя файла в двух сценах — прогон встаёт.
+
+        ⚠️ Первая версия стража стояла ВНУТРИ посева и смотрела на values()
+        словаря, который вызывающий схлопывал в ключи ещё до вызова: последняя
+        сцена побеждала молча. Воспроизводилось — клип DJI получал гамму Sony,
+        отказа не было. scene_clips ловит дубли только ВНУТРИ сцены.
+        """
+        src = tmp_path / "YTEVO99_D" / "01_Source"
+        for scene in ("01_Morning", "03_Office"):
+            d = src / scene / "CAM-A_FX3"
+            d.mkdir(parents=True)
+            (d / "RYA-DUP-1.MP4").write_bytes(b"\x00" * 32)
+        ing = tmp_path / "YTEVO99_D" / "00_Setup" / "01_Ingest"
+        ing.mkdir(parents=True)
+        (ing / "YTEVO99_lut_plan.json").write_text(
+            json.dumps({"clips": {"01_Morning/RYA-DUP-1.MP4": {"gamma": "S-Log3", "cam": "CAM-A_FX3"}}}),
+            encoding="utf-8")
+        (ing / "YTEVO99_color_choice.json").write_text(
+            json.dumps({"exposure": {}, "stage": {"done": True, "decided_by": "roman"}}),
+            encoding="utf-8")
+        monkeypatch.setattr(color_apply.PL, "profile_path",
+                            lambda p, c: tmp_path / "prof.json")
+        (tmp_path / "prof.json").write_text(json.dumps({
+            "channel": "YTEVO", "develop": {"S-Log3": {"lut": "x"}}}), encoding="utf-8")
+        with pytest.raises(SystemExit) as e:
+            color_apply.build(tmp_path / "YTEVO99_D", "YTEVO99")
+        assert e.value.code != 0
+        err = capsys.readouterr().err
+        assert "разных сценах" in err and "RYA-DUP-1.MP4" in err
+
+    def test_cube_failing_sha_never_reaches_the_plan(self, small_manifest, tmp_path, monkeypatch):
+        """CLR-20: куб, не сошедшийся по sha256, не попадает в install.
+
+        ⚠️ cube_block отдавал блок даже при провале сверки, и с --allow-refused
+        план записывался с адресом непроверенного куба, которым дальше
+        пользуется панель. Куб нельзя «разложить частично»: это не клип, это
+        математика всего канала.
+        """
+        store = tmp_path / "store" / "develop"
+        store.mkdir(parents=True)
+        entry = [l for l in small_manifest["luts"] if l["stage"] == "develop"][0]
+        (tmp_path / "store" / entry["file"]).write_bytes(b"not the real cube")
+        monkeypatch.setattr(color_apply.S, "STORE", tmp_path / "store")
+        ok, why = color_apply.S.verify_cube(entry)
+        assert ok is False and "sha" in why.lower()

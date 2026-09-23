@@ -655,7 +655,11 @@ function refresh(){{
 }}
 document.addEventListener('click', function(e){{
   var c = e.target.closest('.cell.pick'); if(!c) return;
-  if(c.dataset.expo !== undefined){{ CH.expo[c.dataset.clip]=parseFloat(c.dataset.expo); refresh(); return; }}
+  /* ⚠️ persist() ОБЯЗАН быть и здесь. Эта ветка делала return раньше него, и клики
+     по экспозиции жили только в памяти вкладки: 162 клика — 3 записи в localStorage,
+     а после перезагрузки страница писала «восстановлен выбор» и возвращала всё к
+     машинному. Правки дня молча исчезали, причём с обнадёживающей надписью. */
+  if(c.dataset.expo !== undefined){{ CH.expo[c.dataset.clip]=parseFloat(c.dataset.expo); refresh(); persist(); return; }}
   var id=c.dataset.lut, cam=c.dataset.cam;
   if(cam) CH.develop[cam]=id; else CH.look=id;
   refresh(); persist();

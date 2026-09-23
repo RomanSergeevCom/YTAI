@@ -611,3 +611,72 @@ class TestFoundBugsStayFixed:
         assert _plan.stop_tag(-1.0) == "expm10"
         with pytest.raises(ValueError):
             _plan.stop_tag(0.15)
+
+
+class TestAuditFindingsFixed:
+    """Сторожа на находки состязательного аудита 23.09. Каждая была воспроизведена."""
+
+    def test_foreign_payload_is_refused_not_nulled(self, tmp_path):
+        """CLR-15: payload старого формата отвергается, а не зануляет день.
+
+        ⚠️ `doc.update(...)` клал пришедшее не глядя, и выгрузка архивного
+        подборщика (`{type:'lut_feedback', choices, notes}` — ровно так он и
+        писал) превращала exposure/develop/look/machine в None, поднимая при этом
+        doc_version. День занулялся молча и выглядел сохранённым.
+        """
+        with pytest.raises(_plan.BadFeedback):
+            _plan.check_feedback({"type": "lut_feedback", "choices": {}, "notes": {}}, "YTEVO03")
+        with pytest.raises(_plan.BadFeedback):
+            _plan.check_feedback({"type": "lut_board", "project": "YTCH13",
+                                  "exposure": {"a": 0}}, "YTEVO03")
+        with pytest.raises(_plan.BadFeedback):
+            _plan.check_feedback({"type": "lut_board", "project": "YTEVO03"}, "YTEVO03")
+        _plan.check_feedback({"type": "lut_board", "project": "YTEVO03",
+                              "exposure": {"a": 0.5}}, "YTEVO03")
+
+    def test_unreadable_profile_stops_instead_of_wiping(self, tmp_path, monkeypatch):
+        """CLR-16: нечитаемый профиль канала — отказ, а не пересборка с нуля.
+
+        ⚠️ Профиль лежит ПОД GIT: маркеры конфликта делают его нечитаемым.
+        `load_json_safe` возвращал None, код шёл дальше с {} и сносил проявки,
+        look и выученную цель СРАЗУ ПО ВСЕМ проектам канала. Восстановить неоткуда.
+        """
+        prof = tmp_path / "color_profile.json"
+        prof.write_text("<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> other", encoding="utf-8")
+        monkeypatch.setattr(_plan, "profile_path", lambda p, c: prof)
+        prj = tmp_path / "YTEVO99_X"
+        (prj / "00_Setup" / "01_Ingest").mkdir(parents=True)
+        with pytest.raises(_plan.ProfileUnreadable):
+            _plan.save_choice(prj, "YTEVO99", {"type": "lut_board", "project": "YTEVO99",
+                                               "look": "look__x"}, {})
+        assert "<<<<<<<" in prof.read_text(encoding="utf-8"), "профиль всё-таки переписали"
+
+    def test_gamma_cache_merges_and_keeps_old_records(self, tmp_path):
+        """CLR-17: запись кэша СЛИВАЕТСЯ, старые ключи не пропадают.
+
+        ⚠️ Словарь клался как есть: переименовали сцену — замер по её клипам
+        исчез навсегда, копии тоже не делалось. Кэш существует затем, чтобы
+        пережить недоступность карты; терять записи — отменять его смысл.
+        """
+        prj = tmp_path / "YTEVO99_X"
+        (prj / "00_Setup" / "01_Ingest").mkdir(parents=True)
+        _plan.save_gamma_cache(prj, "YTEVO99", {"01_A/x.MP4": {"gamma": "S-Log3"}})
+        _plan.save_gamma_cache(prj, "YTEVO99", {"02_B/y.MP4": {"gamma": "D-Log2"}})
+        got = _plan.load_gamma_cache(prj, "YTEVO99")
+        assert set(got) == {"01_A/x.MP4", "02_B/y.MP4"}, "слияния не произошло"
+        assert got["01_A/x.MP4"]["gamma"] == "S-Log3"
+
+    def test_atomic_write_uses_unique_tmp_name(self, tmp_path):
+        """CLR-18: имя временного файла уникально на процесс.
+
+        ⚠️ Общий `.tmp` давал гонку: первый писатель делал replace, второй падал
+        необработанным FileNotFoundError на уже переименованном файле. Битого
+        JSON не получалось, но save_choice пишет ДВА файла подряд, и обрыв между
+        ними оставлял половину сохранения.
+        """
+        import os
+        p = tmp_path / "x.json"
+        _plan.save_json_atomic(p, {"a": 1})
+        assert json.loads(p.read_text(encoding="utf-8")) == {"a": 1}
+        assert not list(tmp_path.glob("*.tmp")), "временный файл остался рядом с данными"
+        assert str(os.getpid()) in f"{p.suffix}.{os.getpid()}.tmp"
