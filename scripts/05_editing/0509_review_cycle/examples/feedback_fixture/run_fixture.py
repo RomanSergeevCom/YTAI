@@ -204,8 +204,12 @@ def orchestrator(tmp, canned):
     R = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(R)
     names = [s[0] for s in R.STAGES_CUT]
+    # Три стадии сверки — последние в цепочке и после producer_page. Между ними и producer_page
+    # могут стоять другие стадии (экраны, структура, вкладка «Главы»): важно, что ожидание облака
+    # у сверщика не запирает то, что идёт после. Порядок именно этих трёх и их мягкость — жёсткие.
     row('review.py: три стадии сверки стоят в конце цепочки, после producer_page',
-        names[-4:] == ['producer_page', 'feedback', 'feedback_page', 'doc_feedback']
+        names[-3:] == ['feedback', 'feedback_page', 'doc_feedback']
+        and names.index('producer_page') < names.index('feedback')
         and all(n in R.STAGE_DESC for n in names[-3:]) and all(s[4] == 'SOFT' and s[1] == 'mac' for s in R.STAGES_CUT[-3:]), names[-4:])
     row('review.py: сверщику в автономном режиме — один облачный раунд, остальным стадиям по-прежнему 4',
         R.AUTO_CLOUD_ROUNDS_BY_STAGE == {'feedback': 1} and R.AUTO_CLOUD_ROUNDS == 4)

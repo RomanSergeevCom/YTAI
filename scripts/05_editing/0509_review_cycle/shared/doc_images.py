@@ -749,6 +749,44 @@ def audit(folder_id, ledger_path=None, limit=None):
 
 # ───────────────────────── режим ─────────────────────────
 
+def detect_host(review_dir=None, env=None, hostname=None):
+    """'mac' | 'memex' | 'unknown'. review.py хост дочерним стадиям не передаёт, поэтому признаки свои:
+    YTAI_HOST (если волна 3 начнёт его выставлять), имя машины, данные фильма под ~/YTAI_work (так они лежат
+    только на Memex и в golden-прогонах). Любое сомнение — не 'mac', а значит без картинок.
+    Живёт здесь, а не во вкладке: тем же признаком пользуются обе вкладки с кадрами (ТЗ и обратная связь)."""
+    env = os.environ if env is None else env
+    declared = str(env.get('YTAI_HOST') or '').strip().lower()
+    if declared and declared != 'mac':
+        return 'memex' if declared == 'memex' else 'unknown'
+    try:
+        name = (hostname if hostname is not None else socket.gethostname()).lower()
+    except Exception:                                       # noqa: BLE001
+        return 'unknown'
+    if 'memex' in name:
+        return 'memex'
+    if review_dir is not None:
+        try:
+            if Path(review_dir).resolve().is_relative_to((Path.home() / 'YTAI_work').resolve()):
+                return 'memex'
+        except Exception:                                   # noqa: BLE001
+            return 'unknown'
+    return 'mac' if sys.platform == 'darwin' else 'unknown'
+
+
+def detect_autonomous(ctl_dir=None, env=None):
+    """автономный прогон: флаг-файл AUTONOMOUS в ~/.cache/<project>/ (его ставит review.py run --autonomous и
+    держит сторож Memex) либо YTAI_AUTONOMOUS=1. Не смогли проверить — считаем автономным."""
+    env = os.environ if env is None else env
+    if str(env.get('YTAI_AUTONOMOUS') or '').strip().lower() in ('1', 'true', 'yes'):
+        return True
+    if ctl_dir is None:
+        return False
+    try:
+        return (Path(ctl_dir) / 'AUTONOMOUS').exists()
+    except Exception:                                       # noqa: BLE001
+        return True
+
+
 def resolve_mode(card_mode, shots_remote, cli_images, host, autonomous):
     """→ 'none' | 'public_folder' | 'temp_grant' (контракт §1).
     temp_grant сам собой не включается никогда: нужна строка в карточке И флаг --images temp И Мак И человек рядом."""
@@ -762,6 +800,53 @@ def resolve_mode(card_mode, shots_remote, cli_images, host, autonomous):
     if mode == 'public_folder':
         return 'public_folder' if shots_remote else 'none'
     return 'none'
+
+
+def prepare_files(paths, out_dir, width=1000, quality=80):
+    """Готовые картинки с диска (макеты, кадры глав) → JPEG шириной ≤ width в out_dir. → [{name, path}].
+
+    Второй вход рядом с `prepare()`: тот берёт кадры из строк feedback.json, а вкладке «Главы» нужны
+    просто файлы по именам. Имя в папке — имя исходника с расширением .jpg: по нему потом ищется id.
+    Нечитаемый или отсутствующий файл не роняет запись вкладки — он попадает в LAST_SKIPPED."""
+    global LAST_SKIPPED
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    done, skipped = [], []
+    for src in paths or []:
+        src = Path(src)
+        name = src.stem + '.jpg'
+        if not src.is_file():
+            skipped.append({'row_key': src.name, 'why': f'нет файла: {src}'})
+            continue
+        try:
+            data = _jpeg_bytes(src, width, quality)
+        except Exception as e:                                     # noqa: BLE001
+            skipped.append({'row_key': src.name, 'why': f'не читается ({type(e).__name__})'})
+            continue
+        dst = out_dir / name
+        if not (dst.exists() and dst.read_bytes() == data):        # те же байты → тот же md5 → повторной заливки нет
+            dst.write_bytes(data)
+        done.append({'name': name, 'path': str(dst)})
+    LAST_SKIPPED = skipped
+    _write_json_atomic(out_dir / '_skipped.json', skipped)
+    return done
+
+
+def pick_private_mode(card_mode, shots_remote, cli_images, host, autonomous, log=print, what='вкладка'):
+    """режим картинок вкладки, у которой ПУБЛИЧНОЙ папки кадров быть не должно: 'none' | 'temp_grant'.
+
+    Такие вкладки есть у фильмов, где в кадре человек, которого нельзя показывать по ссылке
+    (YTCH12 — ребёнок). Для них `public_folder` — не «чуть хуже», а запрет: постоянно открытая
+    папка раздаёт кадры всем. Поэтому здесь он превращается в «без картинок», и вслух."""
+    mode = resolve_mode(card_mode, shots_remote, cli_images, host, autonomous)
+    if mode == 'public_folder':
+        log(f'⚠️ images_mode=public_folder: {what} собирается БЕЗ картинок — открытая папка кадров '
+            f'для неё не используется')
+        return 'none'
+    if cli_images == 'temp' and mode != 'temp_grant':
+        log(f'⚠️ --images temp не сработал: в карточке images_mode={card_mode or "—"}, машина: {host}, '
+            f'автономный прогон: {"да" if autonomous else "нет"} — {what} соберётся без картинок')
+    return mode if mode == 'temp_grant' else 'none'
 
 
 # ───────────────────────── самотест (офлайн) ─────────────────────────

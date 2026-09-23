@@ -205,6 +205,20 @@ def frame_floor(sec):
     return fr, round(fr / fps, 3)
 
 
+def snap_after_pause(cw, t, lo, hi_sec, pause=0.3, window=3.0):
+    """→ индекс первого слова после паузы ≥ pause, ближайшего к t (±window), индекс > lo, начало ≤ hi_sec.
+    Нет слова после паузы — первое слово от t; нет и такого — первое в окне; пусто — None.
+    Единственная реализация снапа в стадии: ею пользуются и главы (build), и подглавы (sub_from_prev)."""
+    i0 = lo + 1 if lo is not None else 0
+    j = bisect.bisect_left([w['s'] for w in cw], t - window)
+    cands = [i for i in range(max(i0, j), len(cw)) if cw[i]['s'] <= min(hi_sec, t + window)]
+    good = [i for i in cands if i == 0 or cw[i]['s'] - cw[i - 1]['e'] >= pause]
+    if good:
+        return min(good, key=lambda i: (abs(cw[i]['s'] - t), i))
+    after = [i for i in cands if cw[i]['s'] >= t - 1e-6]
+    return after[0] if after else (cands[0] if cands else None)
+
+
 def build(cw, bw, al_base, markers, segs, a):
     warnings, inversions = [], []
     mapping = map_words(cw, bw, al_base.get('cut_map') or [], a.min_span_words)
@@ -228,15 +242,7 @@ def build(cw, bw, al_base, markers, segs, a):
         return assigned[k] if k >= 0 else None
 
     def snap(t, lo, hi_sec):
-        """первое слово после паузы ≥ pause, ближайшее к t (±window), индекс > lo, начало ≤ hi_sec"""
-        i0 = lo + 1 if lo is not None else 0
-        j = bisect.bisect_left([w['s'] for w in cw], t - a.window)
-        cands = [i for i in range(max(i0, j), len(cw)) if cw[i]['s'] <= min(hi_sec, t + a.window)]
-        good = [i for i in cands if pause_before(i)]
-        if good:
-            return min(good, key=lambda i: (abs(cw[i]['s'] - t), i))
-        after = [i for i in cands if cw[i]['s'] >= t - 1e-6]
-        return after[0] if after else (cands[0] if cands else None)
+        return snap_after_pause(cw, t, lo, hi_sec, a.pause, a.window)
 
     # ── 3. первый прогон главы, монотонно по маркерам ──
     by_ch = {}

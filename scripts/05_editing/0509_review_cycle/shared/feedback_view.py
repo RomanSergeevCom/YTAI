@@ -180,9 +180,36 @@ def blocker_items(fb):
     return out
 
 
-def head(fb, surface='doc', tz_tab=None, frames_note=False):
+def load_structure(work_dir):
+    """→ короткий текст структуры фильма (`stages/structure_text.py`) или [] — если его не собирали.
+
+    Нет файла — шапка выглядит ровно как раньше, поэтому на фильмах без структуры ничего
+    не меняется и эталон не едет."""
+    p = Path(work_dir) / 'structure.json'
+    if not p.exists():
+        return []
+    try:
+        return [str(x) for x in (json.loads(p.read_text(encoding='utf-8')).get('short') or [])]
+    except (ValueError, OSError):
+        return []
+
+
+def load_structure_full(work_dir):
+    """→ полный текст структуры (`full`) — для вкладки «Главы»; [] , если структуру не собирали"""
+    p = Path(work_dir) / 'structure.json'
+    if not p.exists():
+        return []
+    try:
+        return [str(x) for x in (json.loads(p.read_text(encoding='utf-8')).get('full') or [])]
+    except (ValueError, OSError):
+        return []
+
+
+def head(fb, surface='doc', tz_tab=None, frames_note=False, structure=()):
     """первый экран. surface: 'doc' | 'html' (разница — одно слово в предупреждении: «вкладка» / «страница»).
-    tz_tab — имя вкладки ТЗ (по умолчанию шаблон c2.tz_tab_template); frames_note — строка «кадры — в HTML-файле»."""
+    tz_tab — имя вкладки ТЗ (по умолчанию шаблон c2.tz_tab_template); frames_note — строка «кадры — в HTML-файле».
+    structure — строки `load_structure()`: встают ПОСЛЕ итога и ДО «держит выпуск», как просил Роман
+    («опиши структуру текстом в начале документа»); последними в шапке остаются строки «как читать»."""
     ver, prev = str(fb.get('cut_version') or ''), str(fb.get('prev_cut_version') or '')
     c = counts(fb)
     tz_tab = tz_tab or i18n.T('c2.tz_tab_template', ver=ver)
@@ -197,6 +224,9 @@ def head(fb, surface='doc', tz_tab=None, frames_note=False):
         L.append(('tally', i18n.T('fb.tally_line', **{k: c[k] for k in ('total', 'closed', 'open', 'fund', 'unknown', 'new')})))
     else:
         L.append(('tally', i18n.T('fb.tally_new_only', new=c['new'])))
+    if structure:
+        L.append(('struct_head', str(structure[0])))
+        L += [('struct_item', str(x)) for x in structure[1:]]
     items = blocker_items(fb)
     L.append(('list_head', i18n.T('fb.hold_edit' if items else 'fb.hold_edit_none')))
     L += [('list_item', it['text']) for it in items]

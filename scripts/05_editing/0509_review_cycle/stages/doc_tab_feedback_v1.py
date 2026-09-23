@@ -13,7 +13,7 @@
 Запись в док — shared/doc_table.py (ОДНА таблица, стили явными спанами, картинки в двух колонках), заливка
 кадров — shared/doc_images.py (временный доступ к файлу с гарантированным отзывом).
 
-    build_rows(fb, lang='ru', have_frames=None, tz_tab=None, visuals=None, say=None) -> (rows, head)
+    build_rows(fb, lang='ru', have_frames=None, tz_tab=None, visuals=None, say=None, structure=()) -> (rows, head)
         ЧИСТАЯ: без карточки, сети и файлов.
         visuals     — rows индекса визуалов: {'{part}:{n}': {'err': {...}, 'fix': {...}}} (§9) или None;
         have_frames — множество '{part}:{n}/{err|fix}' визуалов, чей файл реально есть (проверка диска —
@@ -305,7 +305,7 @@ def _sec_row(text, fill, meta, sub=None):
     return {'kind': 'sec', 'cells': cells, 'head_col': C_VERDICT, 'spans': spans, 'fill': fill, 'imgs': [], 'meta': meta}
 
 
-def build_rows(fb, lang='ru', have_frames=None, tz_tab=None, visuals=None, say=None):
+def build_rows(fb, lang='ru', have_frames=None, tz_tab=None, visuals=None, say=None, structure=()):
     """модель → (rows, head) для doc_table.write_tab. Чистая функция: ни карточки, ни сети, ни файлов.
 
     rows — одна таблица: строка-секция «[НАЗВАНИЕ · n]» → полные строки (new/block/open/blur/closed) либо ОДНА
@@ -331,7 +331,8 @@ def build_rows(fb, lang='ru', have_frames=None, tz_tab=None, visuals=None, say=N
             else:
                 rows.append(_list_row(bucket, items, fb, lang))
         n_img = sum(len(r['imgs']) for r in rows)
-        head = [(k, _one(t)) for k, t in V.head(fb, surface='doc', tz_tab=tz_tab, frames_note=not n_img)]
+        head = [(k, _one(t)) for k, t in V.head(fb, surface='doc', tz_tab=tz_tab, frames_note=not n_img,
+                                                structure=structure)]
         head += [('how', _one(i18n.T('fb.how_verdict'))), ('how', _one(i18n.T('fb.how_screens')))]
         return rows, head
     finally:
@@ -453,56 +454,25 @@ def fb_sha(fb):
     return hashlib.sha256(json.dumps(strip(fb), ensure_ascii=False, sort_keys=True).encode('utf-8')).hexdigest()[:16]
 
 
+# Признак машины и автономности переехал в shared/doc_images.py — им пользуются ОБЕ вкладки с кадрами
+# (ТЗ и обратная связь). Здесь остаются тонкие обёртки: импорт только внутри вызова — самопроверка
+# требует, чтобы при импорте модуля doc_images в sys.modules не появлялся.
 def detect_host(review_dir=None, env=None, hostname=None):
-    """'mac' | 'memex' | 'unknown'. review.py хост дочерним стадиям не передаёт, поэтому признаки свои:
-    YTAI_HOST (если волна 3 начнёт его выставлять), имя машины, данные фильма под ~/YTAI_work (так они лежат
-    только на Memex и в golden-прогонах). Любое сомнение — не 'mac', а значит без картинок."""
-    env = os.environ if env is None else env
-    declared = str(env.get('YTAI_HOST') or '').strip().lower()
-    if declared and declared != 'mac':
-        return 'memex' if declared == 'memex' else 'unknown'
-    try:
-        name = (hostname if hostname is not None else socket.gethostname()).lower()
-    except Exception:                                       # noqa: BLE001
-        return 'unknown'
-    if 'memex' in name:
-        return 'memex'
-    if review_dir is not None:
-        try:
-            if Path(review_dir).resolve().is_relative_to((Path.home() / 'YTAI_work').resolve()):
-                return 'memex'
-        except Exception:                                   # noqa: BLE001
-            return 'unknown'
-    return 'mac' if sys.platform == 'darwin' else 'unknown'
+    import doc_images as DI                                 # noqa: PLC0415
+    return DI.detect_host(review_dir, env, hostname)
 
 
 def detect_autonomous(ctl_dir=None, env=None):
-    """автономный прогон: флаг-файл AUTONOMOUS в ~/.cache/<project>/ (его ставит review.py run --autonomous и
-    держит сторож Memex) либо YTAI_AUTONOMOUS=1. Не смогли проверить — считаем автономным."""
-    env = os.environ if env is None else env
-    if str(env.get('YTAI_AUTONOMOUS') or '').strip().lower() in ('1', 'true', 'yes'):
-        return True
-    if ctl_dir is None:
-        return False
-    try:
-        return (Path(ctl_dir) / 'AUTONOMOUS').exists()
-    except Exception:                                       # noqa: BLE001
-        return True
+    import doc_images as DI                                 # noqa: PLC0415
+    return DI.detect_autonomous(ctl_dir, env)
 
 
 def pick_mode(card_mode, shots_remote, cli_images, host, autonomous, log=print):
     """режим картинок ЭТОЙ вкладки: 'none' | 'temp_grant'. Постоянно открытую папку (public_folder) здесь не
-    используем: в кадрах ребёнок — такая строка в карточке для этой вкладки означает «без картинок»."""
+    используем: в кадрах ребёнок — такая строка в карточке для этой вкладки означает «без картинок».
+    Сама развилка общая — `doc_images.pick_private_mode` (ею же живёт вкладка «Главы»)."""
     import doc_images as DI
-    mode = DI.resolve_mode(card_mode, shots_remote, cli_images, host, autonomous)
-    if mode == 'public_folder':
-        log('⚠️ images_mode=public_folder: для вкладки «Обратная связь» открытая папка кадров не используется — '
-            'вкладка соберётся без картинок (кадры — в HTML-файле)')
-        return 'none'
-    if cli_images == 'temp' and mode != 'temp_grant':
-        log(f'⚠️ --images temp не сработал: в карточке images_mode={card_mode or "—"}, машина: {host}, '
-            f'автономный прогон: {"да" if autonomous else "нет"} — вкладка соберётся без картинок')
-    return mode if mode == 'temp_grant' else 'none'
+    return DI.pick_private_mode(card_mode, shots_remote, cli_images, host, autonomous, log, what='вкладка «Обратная связь»')
 
 
 def guard_test_pair(env=None):
@@ -542,14 +512,8 @@ def _pairs(v):
 # (468 pt полезных) шесть колонок с двумя картинками не помещаются: в браузере Docs таблица вылезает за поля,
 # а PDF-экспорт и печать режут шестую колонку (проверено 22.09.2026 на тестовом доке). Формат задаётся только
 # своей вкладке (tabId) — остальные вкладки дока не трогаются.
-PAGE = {'pageSize': {'width': {'magnitude': 792, 'unit': 'PT'}, 'height': {'magnitude': 612, 'unit': 'PT'}},
-        'marginLeft': {'magnitude': 36, 'unit': 'PT'}, 'marginRight': {'magnitude': 36, 'unit': 'PT'},
-        'marginTop': {'magnitude': 36, 'unit': 'PT'}, 'marginBottom': {'magnitude': 36, 'unit': 'PT'}}
-
-
-def page_request(tab_id):
-    return {'updateDocumentStyle': {'tabId': tab_id, 'documentStyle': PAGE,
-                                    'fields': 'pageSize,marginLeft,marginRight,marginTop,marginBottom'}}
+PAGE = DT.PAGE_LANDSCAPE                 # формат страницы общий — shared/doc_table
+page_request = DT.landscape_request
 
 
 def write(doc_id, title, rows, head, lang='ru', *, frozen=(), force=False, insert_images=None,
@@ -569,13 +533,13 @@ def _img_request(tab_id, q, uri=None):
 
 
 def dump(fb, path, *, title=None, lang='ru', have_frames=None, tz_tab=None, visuals=None, say=None, frozen=(),
-         force=False, log=print):
+         force=False, log=print, structure=()):
     """вкладка на офлайн-двойнике Docs → файл дампа. Ни Docs, ни Drive не вызываются; картинки — fake://<имя>.
     В дампе: пачки запросов, итоговый текст, итоговый документ (final_doc), индекс визуалов и речь (по ним
     проверка пересобирает строки) и отпечаток модели — без дат и путей."""
     from fake_docs import FakeDocs
     title = title or i18n.TL(lang, 'fb.tab_template', ver=fb.get('cut_version', ''))
-    rows, head = build_rows(fb, lang, have_frames, tz_tab, visuals, say)
+    rows, head = build_rows(fb, lang, have_frames, tz_tab, visuals, say, structure)
     fd = FakeDocs()
 
     def put(tab_id, img_reqs):
@@ -650,6 +614,10 @@ def main(argv=None):
     visuals = load_visuals(index_path(a.fb, B.W6 if B else None))
     say = compute_say(fb) if P else {}                      # речь читается по карточке; без неё колонка пустая
 
+    # структура фильма текстом — в шапку вкладки (stages/structure_text.py). Нет файла → шапка прежняя,
+    # поэтому на фильмах без структуры ни дамп, ни эталон не меняются
+    struct = V.load_structure(B.W6) if B else ()
+
     # ── офлайн-дамп ──
     if a.dump_requests:
         real_doc = str(P.get('doc_id', '') or '') if P else ''
@@ -657,7 +625,8 @@ def main(argv=None):
             raise SystemExit(f'вкладка «{title}» в этом доке заморожена: в ней ручные правки. force заморозку не снимает.')
         have = frames_on_disk(fb, base, visuals) if a.images == 'temp' else None
         rows, _head = dump(fb, a.dump_requests, title=title, lang=lang, have_frames=have, tz_tab=tz_tab, visuals=visuals,
-                           say=say, frozen={(DUMP_DOC, t) for d, t in frozen if d == real_doc}, force=a.force)
+                           say=say, frozen={(DUMP_DOC, t) for d, t in frozen if d == real_doc}, force=a.force,
+                           structure=struct)
         print(f'вкладка «{title}»: {stats(rows)}', flush=True)
         return 0
 
@@ -688,7 +657,7 @@ def main(argv=None):
                     rc = 1
                 else:
                     print(f'журнал временных доступов: закрыто записей прошлого прогона — {len(_closed)}', flush=True)
-            rows, head = build_rows(fb, lang, None, tz_tab, visuals, say)
+            rows, head = build_rows(fb, lang, None, tz_tab, visuals, say, struct)
             try:
                 tab_id = write(doc_id, title, rows, head, lang, frozen=frozen, force=a.force)
             except Exception:                                # noqa: BLE001
@@ -708,7 +677,7 @@ def main(argv=None):
                 files = prepare_visuals(fb, visuals, B.W6 / 'feedback_doc_frames', base_dir=base)
                 ids = DI.upload_all(folder, files, B.M / 'feedback_frames_ids.json') if files else {}
                 have = {f['row_key'] + '/' + f['kind'] for f in files if f['name'] in ids}
-                rows, head = build_rows(fb, lang, have, tz_tab, visuals, say)
+                rows, head = build_rows(fb, lang, have, tz_tab, visuals, say, struct)
 
                 def put(tab_id, img_reqs):
                     return DI.insert_with_temp_grant(doc_id, [_img_request(tab_id, q) for q in img_reqs], ids, ledger)

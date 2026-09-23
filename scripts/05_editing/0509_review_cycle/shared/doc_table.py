@@ -52,7 +52,11 @@ RED = {'red': 0.80, 'green': 0.05, 'blue': 0.05}
 GREEN = {'red': 0.07, 'green': 0.50, 'blue': 0.16}
 GREY = {'red': 0.45, 'green': 0.45, 'blue': 0.45}
 ORANGE = {'red': 0.85, 'green': 0.45, 'blue': 0.0}          # «ждёт фонда», «блюр — делает монтажёр»: ни красный, ни зелёный
-HEAD_KINDS = ('h1', 'meta', 'warn', 'tally', 'list_head', 'list_item', 'how')
+# struct_head/struct_item — блок «структура фильма текстом» в шапке. Отдельные виды, а не
+# list_head/list_item: те на HTML-поверхности подписываются ссылками на блокеры по порядку,
+# и лишние list_item сдвинули бы якоря (shared/feedback_page._head_html)
+HEAD_KINDS = ('h1', 'meta', 'warn', 'tally', 'list_head', 'list_item', 'how',
+              'struct_head', 'struct_item')
 ROW_KINDS = ('sec', 'item', 'list')
 STYLE_KEYS = ('label', 'title', 'was', 'now', 'warn', 'cap', 'muted', 'sec', 'link')
 RESET_FIELDS = 'bold,italic,strikethrough,underline,fontSize,foregroundColor,backgroundColor'
@@ -433,6 +437,20 @@ def _prepare(head, hdr, rows, widths, col_img):
 
 
 # ═══════════════════ запись ═══════════════════
+# альбомная Letter с полями 36 pt: полезно 720 pt. На портретной странице полезных 468 pt, и широкая
+# таблица вылезает за поля — в браузере это видно, а PDF-экспорт и печать режут последнюю колонку
+# (проверено 22.09.2026). Формат задаётся ТОЛЬКО своей вкладке (tabId), соседние не трогаются.
+PAGE_LANDSCAPE = {'pageSize': {'width': {'magnitude': 792, 'unit': 'PT'}, 'height': {'magnitude': 612, 'unit': 'PT'}},
+                  'marginLeft': {'magnitude': 36, 'unit': 'PT'}, 'marginRight': {'magnitude': 36, 'unit': 'PT'},
+                  'marginTop': {'magnitude': 36, 'unit': 'PT'}, 'marginBottom': {'magnitude': 36, 'unit': 'PT'}}
+
+
+def landscape_request(tab_id):
+    """запрос batchUpdate «эта вкладка — альбомная». Годится и для write_tab(after=[...]), и напрямую."""
+    return {'updateDocumentStyle': {'tabId': tab_id, 'documentStyle': PAGE_LANDSCAPE,
+                                    'fields': 'pageSize,marginLeft,marginRight,marginTop,marginBottom'}}
+
+
 def write_tab(doc_id, title, head, hdr, rows, widths, *, col_img=3, img_w=250, font=9, frozen=(), force=False,
               insert_images=None, get_doc=None, batch=None, log=print, after=()):
     """вкладка title дока doc_id ← шапка head + ОДНА таблица (hdr + rows). → tab_id
@@ -513,7 +531,7 @@ def write_tab(doc_id, title, head, hdr, rows, widths, *, col_img=3, img_w=250, f
                      'paragraphStyle': {'namedStyleType': 'HEADING_1' if kind == 'h1' else 'NORMAL_TEXT'},
                      'fields': 'namedStyleType'}}]
         if text and kind != 'h1':                           # явно: иначе абзац наследует жирность предыдущего
-            ts = {'bold': kind in ('warn', 'list_head')}
+            ts = {'bold': kind in ('warn', 'list_head', 'struct_head')}
             if kind == 'meta':
                 ts['foregroundColor'] = {'color': {'rgbColor': GREY}}
             reqs.append({'updateTextStyle': {'range': {'tabId': tab_id, 'startIndex': cur, 'endIndex': cur + n - 1},
@@ -790,7 +808,7 @@ def selftest():
         text = _cut(atoms, a, b)
         if b <= head_end:                                   # шапка над таблицей
             kind = next(k for k, t in head if t == text)
-            assert s['textStyle'].get('bold') == (kind in ('warn', 'list_head')), (kind, s)
+            assert s['textStyle'].get('bold') == (kind in ('warn', 'list_head', 'struct_head')), (kind, s)
             assert i < ri_reset
             n_head_styles += 1
             continue

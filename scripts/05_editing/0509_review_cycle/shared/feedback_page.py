@@ -66,6 +66,9 @@ a{color:inherit}
 .warnbox{background:var(--warn);border:1px solid var(--warnline);border-radius:10px;padding:8px 12px;margin:10px 0;font-weight:700;font-size:14px}
 .tally{font:700 17px/1.4 inherit;margin:14px 0 10px}
 .lh{font-weight:800;margin:14px 0 4px}
+ul.struct{margin:4px 0 12px;padding:0 0 0 2px;list-style:none;columns:2;column-gap:26px}
+ul.struct li{break-inside:avoid;padding:2px 0;border-bottom:1px solid var(--line)}
+@media(max-width:820px){ul.struct{columns:1}}
 ol.hold{margin:4px 0 8px;padding:0;list-style:none}
 ol.hold li{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--acc);border-radius:10px;margin:5px 0}
 ol.hold a{display:block;padding:8px 12px;text-decoration:none}
@@ -269,14 +272,17 @@ def by_chapter(rows, chapters, ch_name):
 
 
 # ── страница ─────────────────────────────────────────────────────────────────
-def _head_html(fb, tz_tab):
+def _head_html(fb, tz_tab, structure=()):
     items = V.blocker_items(fb)
     h, i, how = [], 0, []
-    in_list = False
-    for kind, text in V.head(fb, surface='html', tz_tab=tz_tab):
+    in_list = in_struct = False
+    for kind, text in V.head(fb, surface='html', tz_tab=tz_tab, structure=structure):
         if kind != 'list_item' and in_list:
             h.append('</ol>')
             in_list = False
+        if kind != 'struct_item' and in_struct:
+            h.append('</ul>')
+            in_struct = False
         if kind == 'h1':
             h.append(f'<h1>{E(text)}</h1>')
         elif kind == 'meta':
@@ -294,22 +300,30 @@ def _head_html(fb, tz_tab):
             it = items[i] if i < len(items) else {}
             i += 1
             h.append(f'<li><a href="#{anchor_id(it.get("part"), it.get("n"))}">{tc_line(text)}</a></li>')
+        elif kind == 'struct_head':
+            h.append(f'<div class="lh">{E(text)}</div><ul class="struct">')
+            in_struct = True
+        elif kind == 'struct_item':
+            h.append(f'<li>{tc_line(text)}</li>')
         elif kind == 'how':
             how.append(text)
     if in_list:
         h.append('</ol>')
+    if in_struct:
+        h.append('</ul>')
     if how:
         h.append(f'<div class="box"><b>{E(how[0])}</b><ul>' + ''.join(f'<li>{E(x)}</li>' for x in how[1:]) + '</ul></div>')
     return ''.join(h)
 
 
-def build(fb, root=None, chapters=None, ch_name=None, width=STEPS[0][0], quality=STEPS[0][1], tz_tab=None):
+def build(fb, root=None, chapters=None, ch_name=None, width=STEPS[0][0], quality=STEPS[0][1], tz_tab=None,
+          structure=()):
     """→ (html, stats). root — папка 05_Review (от неё пути кадров); None → страница без кадров.
     chapters / ch_name — главы карточки для подзаголовков «Осталось»."""
     fr = Frames(root, width, quality)
     ver, prev = fb.get('cut_version', ''), fb.get('prev_cut_version', '')
     secs = V.sections(fb)
-    body = [_head_html(fb, tz_tab)]
+    body = [_head_html(fb, tz_tab, structure)]
     summary = V.clean_summary(fb)                             # строки со словами движка не печатаем (они видны в lint)
     if summary:
         body.append(f'<div class="box"><b>{E(i18n.T("fb.verdict_head"))}</b><ul>'
@@ -508,7 +522,8 @@ def main():
 
     try:
         page, st = build_in_budget(fb, a.max_kb, root=root, chapters=card.get('chapters'), ch_name=card.get('ch_name'),
-                                   tz_tab=card.get('tab_title') or None)
+                                   tz_tab=card.get('tab_title') or None,
+                                   structure=V.load_structure(fb_path.parent))
     except TooBig as e:
         print(f'ОТКАЗ: {e}', file=sys.stderr)
         return 2
