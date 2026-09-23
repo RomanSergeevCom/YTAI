@@ -70,6 +70,22 @@ def die(msg, code=2):
     sys.exit(code)
 
 
+def tg(msg):
+    """Веха в Telegram. Никогда не роняет стадию — ночью некому чинить.
+
+    Скопировано из 0120_day_ingest/common_day.py (см. шапку модуля).
+    """
+    try:
+        tok_p = os.path.expanduser("~/.config/rscore-tg/rya.token")
+        tok = open(tok_p).read().strip() if os.path.exists(tok_p) else ""
+        subprocess.run([os.path.expanduser("~/bin/tg.py"), "text", "rya",
+                        "155880671", msg, "--parse", "html"],
+                       env=dict(os.environ, TG_BOT_TOKEN=tok),
+                       capture_output=True, timeout=30)
+    except Exception:                                          # noqa: BLE001
+        pass
+
+
 # ─────────────────────────────────────────────────────── запись json ──
 
 def save_json(path: Path, obj):
