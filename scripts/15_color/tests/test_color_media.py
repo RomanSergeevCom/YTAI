@@ -202,6 +202,32 @@ class TestCamOf:
         clip.write_bytes(b"\x00")
         assert color_media.cam_of(clip, src) == ""
 
+    def test_course_tree_finds_camera_below_theme_and_lesson(self, tmp_path):
+        """CLR-01-D: раскладка YTUVIE — {блок}/{тема}/{урок}/{камера}/файл.
+
+        ⚠️ Оплаченная ошибка ждала здесь: `parts[1]` вернул бы ИМЯ ТЕМЫ
+        (`1.1_Karta_tseha`), и это не упало бы — профиль канала тихо завёл бы
+        «камеру» с таким именем, проявки у неё не нашлось бы, и раскладка
+        отказала бы на всём съёмочном дне. Камера опознаётся по префиксу `CAM-`,
+        а не по глубине.
+        """
+        src = tmp_path / "01_Source"
+        deep = (src / "01_Ustanovochnaya" / "1.1_Karta_tseha"
+                / "1.1.1_Zachem_nuzhen_kontent_zavod" / "CAM-B_ZVE1")
+        deep.mkdir(parents=True)
+        clip = deep / "RYA-ZVE1-1945.MP4"
+        clip.write_bytes(b"\x00")
+        assert color_media.cam_of(clip, src) == "CAM-B_ZVE1"
+
+    def test_camera_wins_over_intermediate_folder_name(self, tmp_path):
+        """CLR-01-D: между сценой и камерой может стоять что угодно — берём камеру."""
+        src = tmp_path / "01_Source"
+        deep = src / "99_BTS" / "den_1" / "CAM-C_Pocket"
+        deep.mkdir(parents=True)
+        clip = deep / "DJI_0001_D.MP4"
+        clip.write_bytes(b"\x00")
+        assert color_media.cam_of(clip, src) == "CAM-C_Pocket"
+
 
 class TestFrameSrc:
     def test_proxy_mirror_hit(self, fake_project, tmp_path):

@@ -677,6 +677,37 @@ class TestAuditFindingsFixed:
                                                "look": "look__x"}, {})
         assert "<<<<<<<" in prof.read_text(encoding="utf-8"), "профиль всё-таки переписали"
 
+    def test_empty_cam_gamma_writes_profile_without_develop(self, tmp_path, monkeypatch):
+        """CLR-19: пустая карта «камера → гамма» рождает профиль БЕЗ проявок.
+
+        ⚠️ Это и есть ловушка холодного канала, из-за которой заведён гейт в
+        `lut_board.py --feedback`. Гамму там собирали только из легаси-плана
+        `00_Setup/01_Ingest/{CODE}_lut_plan.json`; на канале, который снимается
+        впервые, файла нет, карта выходит пустой — и `save_choice` пропускает
+        ВСЕ камеры, потому что `if not gamma: continue`. Профиль при этом
+        записывается, печатается «ВЫБОР СОХРАНЁН», а выбор проявки потерян.
+        Падает это позже и в другом месте: color_apply «в профиле канала нет
+        ни одной проявки».
+
+        Тест фиксирует само поведение save_choice (оно корректно: без гаммы
+        писать проявку некуда) и тем самым объясняет, почему звать её с пустой
+        картой нельзя. Ловит это вызывающий код — здесь сторож на молчаливость.
+        """
+        prof = tmp_path / "color_profile.json"
+        monkeypatch.setattr(_plan, "profile_path", lambda p, c: prof)
+        prj = tmp_path / "YTUVIE01_X"
+        (prj / "00_Setup" / "01_Ingest").mkdir(parents=True)
+        _plan.save_choice(prj, "YTUVIE01",
+                          {"type": "lut_board", "project": "YTUVIE01",
+                           "develop": {"CAM-A_FX3": "sony__slog3_sgamut3cine__rec709__neutral"},
+                           "look": "look__newstar"},
+                          {})                       # ← гамма не определилась ни у кого
+        born = json.loads(prof.read_text(encoding="utf-8"))
+        assert not born.get("develop"), (
+            "профиль родился с проявкой — значит поведение изменилось и гейт "
+            "в lut_board --feedback надо пересмотреть")
+        assert born.get("look"), "look потерялся — это уже другой дефект"
+
     def test_gamma_cache_merges_and_keeps_old_records(self, tmp_path):
         """CLR-17: запись кэша СЛИВАЕТСЯ, старые ключи не пропадают.
 

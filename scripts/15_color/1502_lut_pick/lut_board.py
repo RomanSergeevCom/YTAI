@@ -749,13 +749,24 @@ def main(argv=None) -> int:
             die(f"выбор не разобрался как JSON: {e}")
         src = project / "01_Source"
         rec = load_recorded_gammas(project, code)
+        # ⚠️ Гамму здесь берём ТЕМ ЖЕ порядком источников, что и рендер витрины
+        # (M.detect_gamma: живой сайдкар → живой тег DJI → прошлый замер).
+        # Раньше тут читался только `rec`, то есть легаси-план
+        # 00_Setup/01_Ingest/{CODE}_lut_plan.json. На канале, который снимается
+        # впервые, этого файла нет, `cam_gamma` выходил пустым — и `save_choice`
+        # молча пропускал ВСЕ камеры (`if not gamma: continue`). Профиль канала
+        # рождался без единой проявки, при этом печаталось «ВЫБОР СОХРАНЁН»,
+        # а падало это только потом и в другом месте: color_apply «в профиле
+        # канала нет ни одной проявки». Выбор Романа при этом терялся наполовину.
         cam_gamma = {}
         for cam, items in all_clips_by_cam(src).items():
-            g = [M.normalize_gamma((rec.get(c.name) or (None,))[0])
-                 for _, c in items if rec.get(c.name)]
-            g = [x for x in g if x]
+            g = [x for x, _ in (M.detect_gamma(c, cam, rec) for _, c in items) if x]
             if g:
                 cam_gamma[cam] = max(set(g), key=g.count)
+        if not cam_gamma:
+            die("ни у одной камеры не определилась гамма — проявку записать не из чего. "
+                "Проверь, что оригиналы на месте (сайдкары M01.XML рядом с клипами) "
+                "и карта примонтирована.")
         res = PL.save_choice(project, code, fb, cam_gamma)
         print(f"\nВЫБОР СОХРАНЁН")
         print(f"  профиль канала: {res['profile']}")
