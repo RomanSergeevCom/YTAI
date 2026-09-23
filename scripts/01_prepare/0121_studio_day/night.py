@@ -43,8 +43,8 @@ VENV_V = Path.home() / "YTAI/environment/.venv_vlm/bin/python3"
 PROXY = Path.home() / "YTAI/scripts/16_proxy/1601_build/proxy.py"
 BOARD = Path.home() / "YTAI/scripts/15_color/1502_lut_pick/lut_board.py"
 
-STEPS = ("asr_mic", "audio_cam", "asr_cam", "sync", "takemap", "layout",
-         "board", "proxy", "verify")
+STEPS = ("asr_mic", "audio_cam", "asr_cam", "sync", "takemap", "screencast",
+         "layout", "board", "proxy", "verify")
 
 
 def sh(cmd, log_path, timeout=None):
@@ -101,6 +101,8 @@ def main():
          "синхрон дня и гейт из семи пунктов"),
         ("takemap",   [str(VENV_T), str(HERE / "takemap.py")],                None,
          "карта дублей: какой дубль какой урок"),
+        ("screencast", [str(VENV_V), str(HERE / "screencast.py"), "--vlm"],   7200,
+         "скринкасты: OCR по экранам + смысловая подпись"),
         ("layout",    ["python3", str(HERE / "layout.py"), "--apply"],        None,
          "раскладка 01_Source деревом курса"),
         ("board",     [str(VENV_V), str(BOARD), "--project", str(P), "--jobs", "6",
@@ -109,12 +111,12 @@ def main():
          "витрина лутов — к утру ждёт трёх кликов"),
         ("proxy",     ["python3", str(PROXY), "--src", str(P / "01_Source"),
                        "--dst", str(P / "01_Source_Proxy"), "--bitrate", "auto",
-                       "--exclude", "Video", "--jobs", "2",
+                       "--exclude", "Video,00_Screencasts", "--jobs", "2",
                        "--report", str(P / "00_Setup/logs" / f"{day['code']}_proxy_report.json")],
          None, "прокси по контракту"),
         ("verify",    ["python3", str(PROXY), "--src", str(P / "01_Source"),
                        "--dst", str(P / "01_Source_Proxy"), "--bitrate", "auto",
-                       "--exclude", "Video", "--verify-only", "--gate-report",
+                       "--exclude", "Video,00_Screencasts", "--verify-only", "--gate-report",
                        "--report", str(P / "00_Setup/logs" / f"{day['code']}_proxy_verify.json")],
          None, "приёмка прокси, восемь пунктов на каждом клипе"),
     ]

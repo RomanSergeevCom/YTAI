@@ -138,6 +138,33 @@ def main():
         for s in sidecars(p):
             plan.append((s, (src_root / rel).with_name(s.name)))
 
+    # ── скринкасты: тот же путь урока, но ВНЕ нумерованных сцен
+    #
+    # ⚠️ Почему не внутрь урока рядом с камерами. `content_scenes()` берёт всё,
+    # что начинается с цифр, а `scene_clips()` рекурсивна — скринкаст попал бы
+    # в витрину лутов. Гаммы у записи экрана нет (сайдкара нет, тега DJI нет),
+    # `detect_gamma` вернул бы None, `resolve_develop` — отказ, а отказ в
+    # `color_apply` ОБЩИЙ НА ПРОЕКТ: план не записался бы вовсе, и цвет встал бы
+    # на всём съёмочном дне из-за файлов, которым красить нечего.
+    # Префикс `00_` — ровно та служебная полка, которую слой цвета отбрасывает
+    # намеренно. Дерево урока внутри сохраняем: монтажёру нужно именно оно.
+    sc = load_json(D["work"] / "screencasts.json") or {}
+    sc_plan = []
+    for it in (sc.get("items") or []):
+        les_id = it.get("lesson")
+        if not les_id:
+            rel = Path("00_Screencasts") / "_nerazobrannoe" / it["file"]
+        else:
+            bid = int(str(les_id).split(".")[0])
+            tid = ".".join(str(les_id).split(".")[:2])
+            b, t = blocks.get(bid, {}), themes.get(tid, {})
+            rel = (Path("00_Screencasts")
+                   / f"{bid:02d}_{latin(b.get('title'))}"
+                   / f"{tid}_{latin(t.get('title') or t.get('part'))}"
+                   / f"{les_id}_{latin(it.get('title'))}"
+                   / it["file"])
+        sc_plan.append((Path(it["path"]), src_root / rel))
+
     # ── петлички: РЕАЛЬНЫЕ копии, они дневные и должны пережить извлечение карты
     dji = day["project"] / "99_Pipeline/DJI_Audio"
     mic_plan = [(Path(m["path"]), dji / m["file"]) for m in idx["mics"]]
@@ -145,9 +172,10 @@ def main():
 
     print(f"\n  клипы: урок {counts['урок']} · неразобрано {counts['неразобрано']} · "
           f"BTS {counts['BTS']} · обрывки {counts['обрывки']}")
-    print(f"  всего ссылок (с сайдкарами): {len(plan)}")
+    print(f"  скринкасты: {len(sc_plan)} (вне нумерованных сцен — цвету их красить нечем)")
+    print(f"  всего ссылок (с сайдкарами): {len(plan) + len(sc_plan)}")
     print(f"  петлички: {len(mic_plan)} файлов, {mic_bytes/1e9:.2f} ГБ реальной копией")
-    tree = sorted({str(d.relative_to(src_root).parent) for _, d in plan})
+    tree = sorted({str(d.relative_to(src_root).parent) for _, d in plan + sc_plan})
     print(f"\n  дерево ({len(tree)} папок):")
     for t in tree[:40]:
         print(f"    {t}")
@@ -158,7 +186,7 @@ def main():
         print("\n  (сухой прогон — ничего не создано; повтори с --apply)")
         return 0
 
-    for s, d in plan:
+    for s, d in plan + sc_plan:
         link(s, d, True)
     dji.mkdir(parents=True, exist_ok=True)
     copied = 0
@@ -171,7 +199,8 @@ def main():
 
     save_json(D["work"] / "layout.json",
               {"schema": "ytai-studio-day-layout-v1", "code": day["code"],
-               "counts": counts, "links": [[str(s), str(d)] for s, d in plan],
+               "counts": {**counts, "скринкасты": len(sc_plan)},
+               "links": [[str(s), str(d)] for s, d in plan + sc_plan],
                "mics_copied_to": str(dji)})
     print(f"\n  готово: {src_root}")
     return 0
