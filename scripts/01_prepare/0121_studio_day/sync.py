@@ -78,48 +78,69 @@ def stage(day, D):
     return root
 
 
-def gate(day, res, D):
-    """Семь пунктов приёмки. Каждый — из оплаченной ошибки, а не из осторожности."""
+def gate(day, res, D, nolav=()):
+    """Семь пунктов приёмки. Каждый — из оплаченной ошибки, а не из осторожности.
+
+    ⚠️ `clips` и `chunks` в результате — СПИСКИ, а не словари. Первая редакция
+    читала их как словари и падала AttributeError уже ПОСЛЕ успешного синхрона:
+    сам прогон сошёлся, а гейт не смог его проверить. Проверка, которая ломается
+    на форме данных, хуже отсутствующей — она выглядит как провал синхрона.
+    """
     bad, note = [], []
     idx = load_json(D["work"] / "index.json")
-    by_file = {c["file"]: c for c in idx["clips"]}
-    junk = {Path(j).name for j in (day.get("junk_clips") or [])}
+    by_file = {Path(c["path"]).stem: c for c in idx["clips"]}
+    junk = {Path(j).stem for j in (day.get("junk_clips") or [])}
 
     # 2. независимая проверка: разность Δ камер обязана дать замеренный сдвиг
-    deltas = {k: v for k, v in (res.get("cam_delta") or res.get("deltas") or {}).items()}
+    cams = res.get("cameras") or {}
     want = day.get("cam_pair_offset_sec")
-    if want is not None and {"CAM-A_FX3", "CAM-B_ZVE1"} <= set(deltas):
-        got = deltas["CAM-A_FX3"] - deltas["CAM-B_ZVE1"]
-        note.append(f"Δ(FX3) − Δ(ZV-E1) = {got:+.2f} с, замерено {want:+.1f} с")
+    if want is not None and {"CAM-A_FX3", "CAM-B_ZVE1"} <= set(cams):
+        got = cams["CAM-A_FX3"]["delta_sec"] - cams["CAM-B_ZVE1"]["delta_sec"]
+        note.append(f"Δ(FX3) − Δ(ZV-E1) = {got:+.2f} с, замерено по сайдкарам "
+                    f"{want:+.1f} с, расхождение {abs(got - want):.2f} с")
         if abs(got - want) > 1.0:
-            bad.append(f"разность Δ камер {got:+.2f} с против замеренных {want:+.1f} с "
-                       f"— решение не воспроизводит то, что видно в сайдкарах")
+            bad.append(f"разность Δ камер {got:+.2f} с против замеренных {want:+.1f} — "
+                       f"решение не воспроизводит то, что видно в сайдкарах")
     else:
-        note.append("⚠ разность Δ камер не проверена: в результате нет обеих камер")
+        note.append("⚠ разность Δ камер не проверена: в решении нет обеих камер")
+
+    # 4. остатки
+    for cam, v in cams.items():
+        note.append(f"{cam}: Δ={v['delta_sec']:+.1f} с · клипов {v['n_clips']} · "
+                    f"по речи {v['n_speech']} · макс|остаток| {v['resid_max_abs']:.2f} с")
+        if v["resid_max_abs"] > 1.5:
+            bad.append(f"{cam}: макс|остаток| {v['resid_max_abs']:.2f} с больше 1,5")
 
     # 3. стыки автосплита воспроизводят дельту по имени
-    T = res.get("chunk_T") or res.get("T") or {}
+    T = {c["chunk_id"]: c for c in res.get("chunks", [])}
     for a, b in day.get("split_joins") or []:
         ka = next((k for k in T if k.startswith(a)), None)
         kb = next((k for k in T if k.startswith(b)), None)
         if not (ka and kb):
             bad.append(f"стык {a} → {b}: куска нет в решении")
             continue
-        d = T[kb] - T[ka]
+        d = T[kb]["wall_start"] - T[ka]["wall_start"]
         if abs(d - 1800.2) > 0.6:
-            bad.append(f"стык {a} → {b}: {d:.1f} с вместо 1800,2 "
-                       f"({'синхрон развалился' if abs(d-1800.2) > 10 else 'вне допуска ±0,6 с'}")
+            how = "синхрон развалился" if abs(d - 1800.2) > 10 else "вне допуска ±0,6 с"
+            bad.append(f"стык {a} → {b}: {d:.1f} с вместо 1800,2 ({how})")
 
-    # 5-6. каждый урочный клип поставлен ПО РЕЧИ
-    placed = res.get("clips") or {}
-    byclock = [k for k, v in placed.items()
-               if v.get("source") != "speech"
-               and Path(k).name not in junk
-               and by_file.get(Path(k).name, {}).get("kind") == "lesson"]
+    # 5-6. каждый урочный клип поставлен ПО РЕЧИ — но только там, где речь БЫЛА
+    #
+    # ⚠️ Первая редакция считала провалом любой «clock». Это неверно: если ни
+    # одна петличка не покрывала дубль, речевого ребра взяться НЕОТКУДА, и часы
+    # — единственный честный способ его поставить. Провал — это «петличка была,
+    # а совпадения нет», и только он. Иначе гейт кричит на исправную работу и
+    # его перестают читать.
+    byclock = [c["clip_id"] for c in res.get("clips", [])
+               if not str(c.get("source", "")).startswith("speech")
+               and c["clip_id"] not in junk
+               and c["clip_id"] not in set(nolav)
+               and by_file.get(c["clip_id"], {}).get("kind") == "lesson"]
     if byclock:
-        bad.append(f"по часам, а не по речи ({len(byclock)}): {byclock[:6]} — "
-                   f"на студийном дне с двумя петличками это значит, что "
-                   f"транскрипт пуст или не совпал")
+        bad.append(f"по часам при ЖИВОЙ петличке ({len(byclock)}): {byclock[:6]} — "
+                   f"транскрипт пуст или не совпал, это разбирают")
+    if nolav:
+        note.append(f"по часам законно (петлички не было вовсе): {len(set(nolav))} клипов")
 
     return bad, note
 
@@ -132,26 +153,29 @@ def coverage(day, res, D):
     Дыру объявляет только решение.
     """
     idx = load_json(D["work"] / "index.json")
-    T = res.get("chunk_T") or res.get("T") or {}
-    durs = {m["file"]: m["dur"] for m in idx["mics"]}
+    tx_of = {m["file"]: m.get("tx") for m in idx["mics"]}
     iv = []
-    for k, t0 in T.items():
-        f = next((n for n in durs if n.startswith(Path(k).stem) or Path(k).name == n), None)
-        if f:
-            iv.append((t0, t0 + durs[f], Path(f).name[:4]))
-    out = []
-    for c in idx["clips"]:
-        if c.get("kind") != "lesson" or c.get("junk"):
+    for c in res.get("chunks", []):
+        w0, dur = c.get("wall_start"), c.get("duration") or 0
+        if w0 is None or dur <= 0:
             continue
-        p = (res.get("clips") or {}).get(c["file"]) or {}
-        w0 = p.get("wall_start")
+        tx = next((v for k, v in tx_of.items() if k.startswith(c["chunk_id"])), None)
+        if tx:
+            iv.append((w0, w0 + dur, tx))
+    by_file = {Path(c["path"]).stem: c for c in idx["clips"]}
+    out = []
+    for c in res.get("clips", []):
+        meta = by_file.get(c["clip_id"], {})
+        if meta.get("kind") != "lesson" or meta.get("junk"):
+            continue
+        w0 = c.get("wall_start")
         if w0 is None:
             continue
-        w1 = w0 + (c["dur"] or 0)
-        for tx in ("TX01", "TX02"):
+        w1 = w0 + (c.get("duration") or 0)
+        for tx in sorted({t for _, _, t in iv}):
             got = sum(max(0.0, min(w1, b) - max(w0, a)) for a, b, t in iv if t == tx)
             if got < (w1 - w0) - 1.0:
-                out.append({"clip": c["file"], "tx": tx,
+                out.append({"clip": c["clip_id"], "tx": tx,
                             "missing_sec": round((w1 - w0) - got, 1)})
     return out
 
@@ -183,8 +207,17 @@ def main():
     if not res:
         die("wordsync не оставил результата")
 
-    bad, note = gate(day, res, D)
     gaps = coverage(day, res, D)
+    # клип, который НИ ОДНА петличка не покрыла ни на секунду
+    full = {}
+    for c in res.get("clips", []):
+        full.setdefault(c["clip_id"], 0)
+    lost = {}
+    for g in gaps:
+        lost.setdefault(g["clip"], set()).add(g["tx"])
+    txs = {g["tx"] for g in gaps}
+    nolav = [k for k, v in lost.items() if txs and v >= txs]
+    bad, note = gate(day, res, D, nolav)
 
     print("\n──────── гейт синхрона")
     for n in note:

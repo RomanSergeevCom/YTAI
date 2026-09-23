@@ -193,7 +193,7 @@ def main():
     bad = []
     for key, got in (("lesson_clips", len(lesson)), ("bts_clips", len(bts)),
                      ("junk_clips", len(jn)), ("mic_chunks_total", len(mics)),
-                     ("mic_chunks_with_speech", len(alive))):
+                     ("mic_chunks_alive", len(alive))):
         if key in exp and exp[key] != got:
             bad.append(f"{key}: ждали {exp[key]}, нашли {got}")
     nogamma = [c["file"] for c in clips if c["ok"] and not c.get("gamma")]

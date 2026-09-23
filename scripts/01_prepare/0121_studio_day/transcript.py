@@ -75,6 +75,34 @@ def level_at(env, hop, t0, t1):
     return (sum(part) / len(part)) if part else -120.0
 
 
+def own_threshold(levels):
+    """Граница «хозяин дорожки / чужой через зал» — ИЗ САМИХ ДАННЫХ, двумя средними.
+
+    ⚠️ Распределение уровней на дорожке двугорбое, и это не теория: замер 24.09
+    дал у продюсера 362 сегмента около −57 дБ (эксперт через зал) и ~120 около
+    −40 дБ (он сам), у эксперта — 607 около −33 дБ (свой голос) и хвост вниз.
+    Разница между «своим» и «чужим» — двадцать децибел, её видно невооружённо.
+
+    Порог нельзя зашивать константой: он зависит от того, как сидели и насколько
+    подняли усиление. Поэтому ищем его одномерными двумя средними и берём
+    середину между кластерами.
+    """
+    v = sorted(levels)
+    if len(v) < 20:
+        return None
+    lo, hi = v[len(v) // 10], v[-len(v) // 10]
+    for _ in range(40):
+        a = [x for x in v if abs(x - lo) <= abs(x - hi)]
+        b = [x for x in v if abs(x - lo) > abs(x - hi)]
+        if not a or not b:
+            return None
+        lo2, hi2 = sum(a) / len(a), sum(b) / len(b)
+        if abs(lo2 - lo) < 0.01 and abs(hi2 - hi) < 0.01:
+            break
+        lo, hi = lo2, hi2
+    return None if hi - lo < 6.0 else (lo + hi) / 2
+
+
 def hhmmss(sec):
     s = int(sec)
     return f"{s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}"
@@ -130,9 +158,79 @@ def main():
     segs.sort(key=lambda s: s["wall0"])
     log(f"сегментов обеих дорожек: {len(segs)}", day=day)
 
+    # ── ДОБОР С КАМЕРЫ там, где петлички не было вовсе
+    #
+    # ⚠️ Без этого транскрипт молча теряет куски дня. Замер 24.09: у эксперта
+    # рекордер стоял 51 минуту (дубли 1958 и 1959 целиком, часть 1957) — это
+    # 31 минута материала. Петличек там нет, но звук есть на камерах, и он
+    # расшифрован: камерная дорожка и так гонится ради якорей синхрона.
+    # Качество хуже (зал, не петличка), поэтому источник у каждой реплики
+    # проставлен явно — в тексте это видно, а не скрыто.
+    cam_w = {c["clip_id"]: c for c in res.get("clips", [])
+             if c.get("wall_start") is not None}
+    covered = []
+    for akey, m in env.items():
+        covered.append((m["w0"], m["w0"] + len(m["env"]) * m["hop"]))
+    def has_lav(a, b):
+        return any(min(b, y) - max(a, x) > (b - a) * 0.5 for x, y in covered)
+
+    cam_pref = {"CAM-A_FX3": 0, "CAM-B_ZVE1": 1, "CAM-C_Pocket": 9}
+    added, holes = 0, []
+    seen_span = []
+    for p2 in sorted(D["words"].glob("*.words.json")):
+        doc = load_json(p2) or {}
+        if doc.get("kind") != "cam" or not doc.get("speech"):
+            continue
+        cid = p2.name[:-len(".words.json")]
+        c = cam_w.get(cid)
+        if not c:
+            continue
+        w0c = c["wall_start"]
+        if has_lav(w0c, w0c + (c.get("duration") or 0)):
+            continue                      # петличка есть — камеру не берём
+        key = round(w0c, 1)
+        if any(abs(key - k) < 2.0 and pr <= cam_pref.get(c["cam"], 5)
+               for k, pr in seen_span):
+            continue                      # вторая камера того же дубля
+        seen_span.append((key, cam_pref.get(c["cam"], 5)))
+        holes.append((cid, c["cam"], round((c.get("duration") or 0) / 60, 1)))
+        for sg in doc.get("segments", []):
+            segs.append({"akey": cid, "tx": None, "cam": c["cam"],
+                         "t0": sg["s"], "t1": sg["e"],
+                         "wall0": w0c + sg["s"], "wall1": w0c + sg["e"],
+                         "text": sg.get("text", "").strip(),
+                         "words": sg.get("words", []), "from_cam": True})
+            added += 1
+    segs.sort(key=lambda s: s["wall0"])
+    if holes:
+        log(f"добор с камеры: {len(holes)} дублей без петлички, "
+            f"{sum(h[2] for h in holes):.1f} мин, сегментов {added}", day=day)
+        for cid, cam, mn in holes:
+            log(f"    {cid:<22} {cam:<14} {mn:>5.1f} мин", day=day)
+
+    # ── пороги «свой / чужой» по каждой дорожке, до отсечки
+    lv = {}
+    for sg in segs:
+        if sg.get("from_cam"):
+            continue
+        mine = env[sg["akey"]]
+        sg["db_own"] = round(level_at(mine["env"], mine["hop"], sg["t0"], sg["t1"]), 1)
+        lv.setdefault(sg["tx"], []).append(sg["db_own"])
+    thr = {tx: own_threshold(v) for tx, v in lv.items()}
+    other_tx = {t: next((x for x in lv if x != t), None) for t in lv}
+    for tx, t in thr.items():
+        log(f"порог «свой/чужой» {tx}: "
+            + (f"{t:.1f} дБ" if t is not None else "не разделилось, уровнем не судим"),
+            day=day)
+
     # ── отсечка проникания: реплика остаётся той дорожке, где она громче
-    kept, dropped = [], 0
+    kept, dropped, moved = [], 0, 0
     for s in segs:
+        if s.get("from_cam"):
+            s["db_own"] = s["db_other"] = None
+            s["bleed"] = False
+            kept.append(s)
+            continue
         mine = env[s["akey"]]
         own = level_at(mine["env"], mine["hop"], s["t0"], s["t1"])
         other = None
@@ -145,20 +243,36 @@ def main():
             v = level_at(m["env"], m["hop"], max(0, lo), hi)
             other = v if other is None else max(other, v)
         s["db_own"], s["db_other"] = round(own, 1), (round(other, 1) if other is not None else None)
-        if other is not None and other > own + BLEED_DB:
-            dropped += 1
-            s["bleed"] = True
-            continue
+        if other is not None:
+            # обе дорожки живы — сравнение сильнее любого порога
+            if other > own + BLEED_DB:
+                dropped += 1
+                s["bleed"] = True
+                continue
+        else:
+            # ⚠️ Жива ОДНА дорожка. Сравнивать не с чем, а приписать реплику
+            # хозяину дорожки нельзя: у эксперта рекордер стоял 51 минуту, и
+            # все 25 минут его речи пришли бы продюсеру, потому что слышал их
+            # ЕГО микрофон. Людей двое, поэтому тихая реплика на единственной
+            # живой дорожке — это ДРУГОЙ человек, и говорим об этом явно.
+            t = thr.get(s["tx"])
+            if t is not None and own < t:
+                s["speaker_tx"] = other_tx.get(s["tx"])
+                s["by_level"] = True
+                moved += 1
         s["bleed"] = False
         kept.append(s)
     log(f"проникание отсечено: {dropped} сегментов из {len(segs)} "
-        f"(порог {BLEED_DB:.0f} дБ)", day=day)
+        f"(порог {BLEED_DB:.0f} дБ) · переприписано по уровню: {moved}", day=day)
 
     # ── читаемый текст
     t0 = min(s["wall0"] for s in kept)
     lines, cur = [], None
     for s in kept:
-        who = people.get(s["tx"], {}).get("name", s["tx"] or "?")
+        tx_eff = s.get("speaker_tx") or s["tx"]
+        who = (people.get(tx_eff, {}).get("name", tx_eff or "?")
+               if not s.get("from_cam")
+               else f"с камеры {s.get('cam', '')}".strip())
         rel = s["wall0"] - t0
         if cur and cur["who"] == who and rel - cur["end"] < 12:
             cur["text"] += " " + s["text"]
@@ -182,12 +296,21 @@ def main():
     ftxt = outdir / f"{day['code']}_day1_transcript.txt"
     ftxt.write_text(txt, encoding="utf-8")
 
-    doc = {"schema": "ytai-day-transcript-v1", "code": day["code"], "day": day["day"],
+    doc = {"schema": "ytai-day-transcript-v2", "code": day["code"], "day": day["day"],
            "people": people, "t0_wall": t0,
            "bleed_threshold_db": BLEED_DB, "segments_dropped_as_bleed": dropped,
+           # ⚠️ Основания решений хранятся ВМЕСТЕ с результатом: порог, найденный
+           # в данных, и число реплик, переписанных с хозяина дорожки на другого
+           # человека. Без этого транскрипт нечем проверить — он выглядит просто
+           # как чей-то уверенный список реплик.
+           "own_threshold_db": thr, "reattributed_by_level": moved,
+           "from_camera_takes": holes,
            "n_segments": len(kept), "n_words": sum(len(s["words"]) for s in kept),
-           "segments": [{k: s[k] for k in
-                         ("tx", "wall0", "wall1", "text", "db_own", "db_other", "words")}
+           "segments": [{**{k: s.get(k) for k in
+                            ("tx", "wall0", "wall1", "text", "db_own", "db_other", "words")},
+                         "speaker_tx": s.get("speaker_tx") or s.get("tx"),
+                         "by_level": bool(s.get("by_level")),
+                         "source": ("камера " + s["cam"]) if s.get("from_cam") else "петличка"}
                         for s in kept]}
     fjson = save_json(outdir / f"{day['code']}_day1_transcript.json", doc)
 

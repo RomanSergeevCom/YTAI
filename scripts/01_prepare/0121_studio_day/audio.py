@@ -70,10 +70,18 @@ def extract(src, dst, pan, gain):
     return dst, None
 
 
-def do_mic(rec, day, D, force):
+def do_mic(rec, day, D, force, prev=None):
     dst = D["wav16"] / (akey(rec) + ".wav")
     if dst.exists() and not force:
-        return {"akey": akey(rec), "kind": "mic", "wav": str(dst), "skipped": True}
+        # ⚠️ Пропуск обязан вернуть ПОЛНУЮ запись, а не заглушку: усиление и
+        # дорожка нужны транскрипту, чтобы вычесть нормировку и сравнить
+        # уровни. Заглушка-«skipped» молча лишала его этих полей.
+        if prev:
+            return {**prev, "skipped": True}
+        return {"akey": akey(rec), "kind": "mic", "tx": rec.get("tx"),
+                "src": rec["path"], "src_rms_db": rec.get("rms_db"),
+                "gain_db": gain_for(rec.get("rms_db"), day),
+                "wav": str(dst), "skipped": True}
     gain = gain_for(rec.get("rms_db"), day)
     wav, err = extract(Path(rec["path"]), dst, "pan=mono|c0=c0", gain)
     out = {"akey": akey(rec), "kind": "mic", "tx": rec.get("tx"),
@@ -85,10 +93,13 @@ def do_mic(rec, day, D, force):
     return out
 
 
-def do_cam(rec, day, D, force):
+def do_cam(rec, day, D, force, prev=None):
     dst = D["wav16"] / (akey(rec) + ".wav")
     if dst.exists() and not force:
-        return {"akey": akey(rec), "kind": "cam", "wav": str(dst), "skipped": True}
+        if prev:
+            return {**prev, "skipped": True}
+        return {"akey": akey(rec), "kind": "cam", "cam": rec.get("cam"),
+                "src": rec["path"], "wav": str(dst), "skipped": True}
     src = Path(rec["path"])
     nch = (rec.get("audio") or [{}])[0].get("ch") or 1
     live = live_channels(src, nch) if nch > 1 else [0]
@@ -131,9 +142,15 @@ def main():
         jobs += [("cam", c) for c in idx["clips"] if c.get("ok")]
     log(f"рабочий звук: {len(jobs)} файлов, потоков {JOBS}", day=day)
 
+    # ⚠️ СЛИЯНИЕ, а не перезапись. `--only cam` писал файл целиком и затирал
+    # записи петличек: транскрипт потом не находил ни одной дорожки и честно
+    # отказывался работать. Два писателя одного JSON — уже оплаченная ошибка.
+    было = {r["akey"]: r for r in
+            (load_json(D["work"] / "audio.json") or {}).get("items", [])}
     res = []
     with ThreadPoolExecutor(max_workers=JOBS) as ex:
-        futs = [ex.submit(do_mic if k == "mic" else do_cam, r, day, D, a.force)
+        futs = [ex.submit(do_mic if k == "mic" else do_cam, r, day, D, a.force,
+                          было.get(akey(r)))
                 for k, r in jobs]
         for i, f in enumerate(futs, 1):
             r = f.result()
@@ -144,8 +161,11 @@ def main():
                     f"{('gain %+.1f дБ → %.1f' % (r.get('gain_db') or 0, r.get('rms_db') or 0)) if r.get('wav') else ''}",
                     day=day)
 
+    было.update({r["akey"]: r for r in res})
     save_json(D["work"] / "audio.json", {"schema": "ytai-studio-day-audio-v1",
-                                         "code": day["code"], "items": res})
+                                         "code": day["code"],
+                                         "items": sorted(было.values(),
+                                                         key=lambda r: (r["kind"], r["akey"]))})
 
     # ── гейты, оба дешёвые и оба ловили настоящие потери
     mics = [r for r in res if r["kind"] == "mic" and r.get("wav")]

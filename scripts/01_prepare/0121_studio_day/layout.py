@@ -61,6 +61,70 @@ def latin(s, limit=44):
     return s[:limit].rstrip("_") or "bez_nazvaniya"
 
 
+def resolve_src(p: Path, day):
+    """Откуда брать файл: с зеркала, если оно уже полное, иначе с карты.
+
+    ⚠️ Полнота проверяется ТОЧНЫМ РАЗМЕРОМ В БАЙТАХ, а не наличием файла.
+    Копия дерева карты идёт часами, и на полпути файл уже существует, но
+    дописан наполовину. Симлинк на такой файл выглядит рабочим и ломается
+    молча — в Premiere это будет обрыв в середине дубля, а не отсутствующий
+    клип. Правило то же, что в подготовке карт: имя И точный размер.
+    """
+    for m in (day.get("mirrors") or []):
+        root = Path(m["root"]).expanduser()
+        if not root.is_dir():
+            continue
+        try:
+            rel = p.relative_to(Path(m.get("of") or day["card"]))
+        except ValueError:
+            continue
+        cand = root / rel
+        try:
+            if cand.stat().st_size == p.stat().st_size:
+                return cand, m.get("name") or root.name
+        except OSError:
+            continue
+    return p, "карта"
+
+
+def wait_mirror(day, minutes):
+    """Дождаться, пока зеркало догонит карту по имени И точному размеру.
+
+    ⚠️ Раскладываться на полускопированное дерево нельзя: файл уже существует,
+    но дописан наполовину, симлинк на него выглядит рабочим и рвётся молча —
+    в Premiere это обрыв в середине дубля, а не отсутствующий клип.
+    Ждём ограниченно; не дождались — раскладываем с карты и говорим об этом.
+    """
+    import time
+    m = (day.get("mirrors") or [None])[0]
+    if not m:
+        return
+    root, of = Path(m["root"]), Path(m.get("of") or day["card"])
+    deadline = time.time() + minutes * 60
+    while True:
+        miss = part = 0
+        for dp, _, fn in os.walk(of):
+            for f in fn:
+                if f.startswith("."):
+                    continue
+                src = Path(dp) / f
+                dst = root / src.relative_to(of)
+                try:
+                    if dst.stat().st_size != src.stat().st_size:
+                        part += 1
+                except OSError:
+                    miss += 1
+        if miss == 0 and part == 0:
+            print(f"  зеркало {m['name']}: полное, раскладываем с него")
+            return
+        if time.time() > deadline:
+            print(f"  ⚠ зеркало {m['name']} не догнало за {minutes} мин "
+                  f"(нет {miss}, недописано {part}) — берём что готово, остальное с карты")
+            return
+        print(f"  жду зеркало {m['name']}: нет {miss}, недописано {part}", flush=True)
+        time.sleep(60)
+
+
 def link(src: Path, dst: Path, apply: bool):
     if not apply:
         return
@@ -88,10 +152,14 @@ def main():
     ap = argparse.ArgumentParser(description="раскладка 01_Source деревом курса")
     ap.add_argument("--day", default=None)
     ap.add_argument("--apply", action="store_true", help="сделать (без флага — только рассказать)")
+    ap.add_argument("--wait-mirror", type=int, default=0, metavar="МИН",
+                    help="ждать, пока копия на зеркале догонит карту (0 — не ждать)")
     a = ap.parse_args()
     day = load_day(a.day)
     D = dirs(day)
 
+    if a.wait_mirror:
+        wait_mirror(day, a.wait_mirror)
     idx = load_json(D["work"] / "index.json") or die("нет index.json")
     tm = load_json(day["project"] / "00_Setup/01_Ingest" / f"{day['code']}_day1_takemap.json")
     if not tm:
@@ -109,7 +177,7 @@ def main():
             for cam, stem in t["clips"].items():
                 lesson_of[stem] = les
 
-    plan, counts = [], {"урок": 0, "неразобрано": 0, "BTS": 0, "обрывки": 0}
+    plan, counts, srcs = [], {"урок": 0, "неразобрано": 0, "BTS": 0, "обрывки": 0}, {}
     for c in idx["clips"]:
         if not c.get("ok"):
             continue
@@ -134,9 +202,11 @@ def main():
         else:
             rel = Path("09_Nerazobrannoe") / c["cam"] / p.name
             counts["неразобрано"] += 1
-        plan.append((p, src_root / rel))
-        for s in sidecars(p):
-            plan.append((s, (src_root / rel).with_name(s.name)))
+        real, where = resolve_src(p, day)
+        srcs[where] = srcs.get(where, 0) + 1
+        plan.append((real, src_root / rel))
+        for sc_ in sidecars(p):
+            plan.append((resolve_src(sc_, day)[0], (src_root / rel).with_name(sc_.name)))
 
     # ── скринкасты: тот же путь урока, но ВНЕ нумерованных сцен
     #
@@ -163,15 +233,16 @@ def main():
                    / f"{tid}_{latin(t.get('title') or t.get('part'))}"
                    / f"{les_id}_{latin(it.get('title'))}"
                    / it["file"])
-        sc_plan.append((Path(it["path"]), src_root / rel))
+        sc_plan.append((resolve_src(Path(it["path"]), day)[0], src_root / rel))
 
     # ── петлички: РЕАЛЬНЫЕ копии, они дневные и должны пережить извлечение карты
     dji = day["project"] / "99_Pipeline/DJI_Audio"
-    mic_plan = [(Path(m["path"]), dji / m["file"]) for m in idx["mics"]]
+    mic_plan = [(resolve_src(Path(m["path"]), day)[0], dji / m["file"]) for m in idx["mics"]]
     mic_bytes = sum(Path(m["path"]).stat().st_size for m in idx["mics"])
 
     print(f"\n  клипы: урок {counts['урок']} · неразобрано {counts['неразобрано']} · "
           f"BTS {counts['BTS']} · обрывки {counts['обрывки']}")
+    print("  источник: " + " · ".join(f"{k} {v}" for k, v in sorted(srcs.items())))
     print(f"  скринкасты: {len(sc_plan)} (вне нумерованных сцен — цвету их красить нечем)")
     print(f"  всего ссылок (с сайдкарами): {len(plan) + len(sc_plan)}")
     print(f"  петлички: {len(mic_plan)} файлов, {mic_bytes/1e9:.2f} ГБ реальной копией")

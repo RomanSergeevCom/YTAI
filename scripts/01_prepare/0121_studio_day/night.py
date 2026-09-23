@@ -105,7 +105,7 @@ def main():
          "читаемый транскрипт: двое людей, проникание отсечено"),
         ("screencast", [str(VENV_V), str(HERE / "screencast.py"), "--vlm"],   7200,
          "скринкасты: OCR по экранам + смысловая подпись"),
-        ("layout",    ["python3", str(HERE / "layout.py"), "--apply"],        None,
+        ("layout",    ["python3", str(HERE / "layout.py"), "--apply", "--wait-mirror", "90"], None,
          "раскладка 01_Source деревом курса"),
         ("board",     [str(VENV_V), str(BOARD), "--project", str(P), "--jobs", "6",
                        "--develop-rows", "3", "--samples", "4",
