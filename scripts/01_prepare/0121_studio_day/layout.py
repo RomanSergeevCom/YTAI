@@ -148,6 +148,45 @@ def sidecars(path: Path):
     return out
 
 
+SCENES = re.compile(r"^\d\d_")
+# ⚠️ `00_LUT` под `^\d\d_` подходит, но раскладке не принадлежит: там ЖИВЫЕ
+# кубы и витрина, а не ссылки. Чистилке туда нельзя даже заглядывать.
+NOT_SCENES = {"00_LUT"}
+
+
+def prune(src_root: Path, apply: bool):
+    """Снять ПРЕЖНИЕ ссылки раскладки перед новой.
+
+    ⚠️ Раскладка не перекладывает — она добавляет. Стоит дублю сменить урок
+    (уточнилась карта), и клип оказывается сразу в ДВУХ уроках: новая ссылка
+    появилась, старая осталась. Сцена с двумя одинаковыми именами роняет
+    витрину (`color_media.DuplicateClip`), а если бы не роняла — монтажёр
+    получил бы один дубль в двух уроках и не заметил.
+
+    Снимаем ТОЛЬКО символические ссылки и ТОЛЬКО внутри сцен, которые кладёт
+    сама раскладка. Настоящие файлы (кубы `00_LUT`, `Transcription`, `Audio`)
+    не трогаются: `unlink` вызывается лишь там, где `is_symlink()`.
+    """
+    if not src_root.exists():
+        return
+    n = 0
+    scenes = [s for s in sorted(src_root.iterdir())
+              if s.is_dir() and not s.is_symlink()
+              and SCENES.match(s.name) and s.name not in NOT_SCENES]
+    for scene in scenes:                                  # 1) ссылки
+        for p in scene.rglob("*"):
+            if p.is_symlink():
+                if apply:
+                    p.unlink()
+                n += 1
+    if apply:                                             # 2) опустевшее — снизу вверх
+        for scene in scenes:
+            for p in sorted(scene.rglob("*"), key=lambda x: len(x.parts), reverse=True):
+                if p.is_dir() and not p.is_symlink() and not any(p.iterdir()):
+                    p.rmdir()
+    log(f"снято прежних ссылок: {n}" + ("" if apply else " (сухой прогон)"))
+
+
 def main():
     ap = argparse.ArgumentParser(description="раскладка 01_Source деревом курса")
     ap.add_argument("--day", default=None)
@@ -160,6 +199,7 @@ def main():
 
     if a.wait_mirror:
         wait_mirror(day, a.wait_mirror)
+    prune(day["project"] / "01_Source", a.apply)
     idx = load_json(D["work"] / "index.json") or die("нет index.json")
     tm = load_json(day["project"] / "00_Setup/01_Ingest" / f"{day['code']}_day1_takemap.json")
     if not tm:

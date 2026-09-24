@@ -289,6 +289,120 @@ def slice_words(tl, a, b):
     return [(t, s) for t, s in tl if a <= s < b]
 
 
+def screen_windows(D, out_takes):
+    """S5b · уроки из окон записи экрана — собственная нумерация эксперта.
+
+    Эксперт пишет экран САМ, и имя файла («1.3.4») — прямая привязка к уроку,
+    сильнее любого сопоставления по словам: `day.json` так её и называет.
+    Дубль, у которого умерла петличка, речевого ребра не даёт НИКОГДА — и
+    словами его не опознать в принципе. Окно записи экрана опознаёт.
+
+    ⚠️ Но мак эксперта и рекордер живут в РАЗНЫХ часовых поясах: на дне 23.09
+    расхождение ровно −60 мин. Пересекать окна со шкалой синхрона напрямую
+    нельзя — это была бы та самая вера часам, из-за которой и заведён
+    word-sync. Поэтому смещение сперва ЗАМЕРЯЕТСЯ по дублям, доказанным
+    дословными совпадениями, и применяется, только если сошлось на ВСЕХ
+    якорях. Не сошлось — не применяем вовсе и говорим об этом.
+
+    Ошибки часовых поясов квантованы часом, поэтому и ищем по сетке часов:
+    так смещение не подгоняется под шум.
+
+    Доказанное дословно НЕ переписываем — там окно лишь подтверждает или
+    спорит, и спор виден в отчёте.
+    """
+    note = []
+    sc = load_json(D["work"] / "screencasts.json")
+    items = (sc or {}).get("items") or []
+    if not items:
+        return ["Окон записи экрана нет (screencasts.json пуст или не собран) — "
+                "привязка по нумерации эксперта не делалась"]
+
+    wins, titles = [], {}
+    for s in items:
+        p = Path(s.get("path") or "")
+        if not (s.get("lesson") and s.get("dur") and p.exists()):
+            continue
+        end = p.stat().st_mtime           # mtime = КОНЕЦ записи экрана
+        wins.append((end - s["dur"], end, s["lesson"]))
+        titles.setdefault(s["lesson"], s.get("title"))
+    if not wins:
+        return ["Файлы скринкастов недоступны — окна не построены"]
+    wins.sort()
+
+    def hit(t, off):
+        """Урок, чьё окно дубль накрывает дольше всего."""
+        a, b = t["wall_start"] + off, t["wall_start"] + off + t["duration"]
+        best = None
+        for wa, wb, lid in wins:
+            ov = min(b, wb) - max(a, wa)
+            if ov > 0 and (best is None or ov > best[0]):
+                best = (ov, lid, wa - (t["wall_start"] + off))
+        return best
+
+    anchors = [t for t in out_takes
+               if (t.get("lesson") or {}).get("verbatim_hits")
+               and any(w[2] == t["lesson"]["id"] for w in wins)]
+    if len(anchors) < 2:
+        return [f"Якорей с дословными совпадениями {len(anchors)} — меньше двух, "
+                f"смещение часов замерить не на чем; окна не применялись"]
+
+    best = None
+    for h in range(-6, 7):
+        off = h * 3600.0
+        ok = sum(1 for t in anchors
+                 if (r := hit(t, off)) and r[1] == t["lesson"]["id"])
+        if best is None or ok > best[0]:
+            best = (ok, off)
+    ok, off = best
+    if ok < len(anchors):
+        return [f"Смещение часов не сошлось: лучшая сетка ставит на место "
+                f"{ok} якорей из {len(anchors)}. Окна НЕ применялись — "
+                f"раскладывать по неподтверждённым часам нельзя"]
+
+    note.append(f"Часы мака эксперта против шкалы синхрона: {off/3600:+.0f} ч "
+                f"(замерено по {len(anchors)} дублям с дословными совпадениями, "
+                f"сошлось на всех). Разные часовые пояса, не дрейф.")
+
+    agree = argue = new = 0
+    for t in out_takes:
+        if t["junk"] or "lesson" not in t["kind"]:
+            continue
+        r = hit(t, off)
+        if not r:
+            continue
+        _, lid, lead = r
+        L = t.get("lesson")
+        if L and L.get("verbatim_hits"):
+            L["screen_window"] = {"id": lid, "agrees": lid == L["id"],
+                                  "lead_sec": round(lead, 1)}
+            if lid == L["id"]:
+                agree += 1
+            else:
+                argue += 1
+                note.append(f"⚠ дубль {t['take']}: дословно опознан как {L['id']}, "
+                            f"а окно записи экрана говорит {lid} — разбирают глазами")
+            continue
+        was = L["id"] if L else None
+        t["lesson"] = {
+            "id": lid,
+            "title": (L or {}).get("title") if was == lid else titles.get(lid),
+            "est_min": (L or {}).get("est_min"), "shoot_min": (L or {}).get("shoot_min"),
+            "from": "окно записи экрана (нумерация эксперта) + замеренное смещение часов",
+            "score": (L or {}).get("score", 0.0),
+            "agrees_with_alone": (t.get("alone") or {}).get("id") == lid,
+            "alone_said": (t.get("alone") or {}).get("id"),
+            "verbatim_hits": [],
+            "screen_window": {"id": lid, "agrees": None, "lead_sec": round(lead, 1)},
+            "was_before": was,
+        }
+        t["status"] = "proven" if t["lesson"]["agrees_with_alone"] else "probable"
+        new += 1
+
+    note.append(f"Окна записи экрана: подтвердили {agree} дублей, поспорили с {argue}, "
+                f"опознали {new} там, где слов не хватило.")
+    return note
+
+
 def main():
     ap = argparse.ArgumentParser(description="карта дублей (0121_studio_day)")
     ap.add_argument("--day", default=None)
@@ -410,6 +524,9 @@ def main():
     elif not planned:
         warn.append("В карточках нет уроков с этой датой съёмки — выравнивание "
                     "последовательности невозможно, остаётся только поодиночный счёт")
+
+    # ── окна записи экрана: последнее слово там, где слов не было
+    warn.extend(screen_windows(D, out_takes))
 
     # ── честные оговорки, а не список «дефектов»
     warn.append("Эксперт рассказывает сам, без суфлёра: совпадение считается по редким "
