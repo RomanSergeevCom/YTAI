@@ -265,10 +265,34 @@ def parse_slate(words):
             "has_cue": bool(SLATE_CUE.search(text))}
 
 
-def mic_timeline(D, res):
-    """Слова петличек на ОБЩЕЙ шкале: решённый wall куска + смещение слова."""
-    chunks = {c["chunk_id"]: c for c in res.get("chunks", [])}
+def mic_timeline(D, res, day):
+    """Слова на общей шкале — ИЗ ТРАНСКРИПТА, а не из сырых дорожек.
+
+    ⚠️ Первая редакция читала сырую дорожку TX01 и получала НОЛЬ слов на дублях
+    1958-1961: у эксперта там стоял рекордер, и его речь пришла через микрофон
+    продюсера. Транскрипт это уже разобрал — он приписывает реплику по УРОВНЮ,
+    а не по дорожке, и добирает с камеры там, где петлички не было вовсе.
+    Читать сырьё после этого значит выбрасывать 25 минут содержания и опознавать
+    четыре урока одним лишь порядком, без единого слова в доказательство.
+
+    Запасной путь на сырьё остаётся: транскрипт может быть ещё не собран.
+    """
+    tr = load_json(day["project"] / "01_Source/Transcription"
+                   / f"{day['code']}_day1_transcript.json")
     out = defaultdict(list)
+    if tr and tr.get("segments"):
+        for sg in tr["segments"]:
+            tx = sg.get("speaker_tx") or sg.get("tx") or "TX?"
+            w0 = sg["wall0"]
+            for w in (sg.get("words") or []):
+                t = norm_token(w.get("w", ""))
+                if t:
+                    out[tx].append((t, w0 + (float(w.get("s", 0)) - (sg.get("words") or [{}])[0].get("s", 0))))
+        for v in out.values():
+            v.sort(key=lambda x: x[1])
+        return out
+
+    chunks = {c["chunk_id"]: c for c in res.get("chunks", [])}
     for p in sorted(D["words"].glob("*.words.json")):
         doc = load_json(p) or {}
         if doc.get("kind") != "mic":
@@ -425,7 +449,7 @@ def main():
     log(f"карточек {len(cards)} (на этот день {len(shot_today)}) · "
         f"словарь редких слов {len(idf)} · суфлёрных секций {len(sections)}", day=day)
 
-    tl = mic_timeline(D, res)
+    tl = mic_timeline(D, res, day)
     log("петличная шкала: " + (", ".join(f"{k} {len(v)} слов" for k, v in sorted(tl.items()))
                                or "ПУСТО"), day=day)
 
