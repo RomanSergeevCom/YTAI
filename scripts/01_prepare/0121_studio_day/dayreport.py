@@ -110,8 +110,11 @@ def main():
     if not prof.exists():
         todo.append("Цвет: профиль канала ещё не рождён — нужен выбор в витрине "
                     "(проявка, покраска, экспозиция)")
+    # ⚠️ `get("lesson", {})` здесь НЕ работает: у неопознанного дубля ключ есть,
+    # но пустой, и значение по умолчанию не подставляется. Страница дня падала
+    # ровно там, где в ней и был смысл, — когда опознались не все дубли.
     unplanned = [i for i in lesson_ids
-                 if i not in {t.get("lesson", {}).get("id") for t in takes}]
+                 if i not in {(t.get("lesson") or {}).get("id") for t in takes}]
     if todo:
         b.append('<div class=dark><p class=eyebrow>ЖДЁТ РЕШЕНИЯ</p><ul class=d>'
                  + "".join(f"<li>{E(x)}</li>" for x in todo) + "</ul></div>")
@@ -185,7 +188,11 @@ def main():
         b.append("<h2>Транскрипт</h2>")
         who = {}
         for s in tr.get("segments", []):
-            k = day["people"].get(s["tx"], {}).get("name", s["tx"])
+            # ⚠️ У реплики, снятой с камеры, петлички нет и `tx` пуст — имени
+            # взяться неоткуда. Называем источник, а не роняем страницу: такие
+            # реплики на этом дне есть всегда (530 слов у 23.09).
+            tx = s.get("tx")
+            k = (day["people"].get(tx) or {}).get("name") or (tx or "с камеры")
             who[k] = who.get(k, 0) + len(s.get("words") or [])
         b.append("<ul class=d>" + "".join(
             f"<li>{E(k)} — {v} слов</li>" for k, v in sorted(who.items(), key=lambda x: -x[1]))
