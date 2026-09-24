@@ -2109,7 +2109,10 @@ def cmd_selftest(a) -> int:
     for mod in ('shared/feedback_model.py', 'shared/tz_diff.py', 'shared/feedback_view.py', 'shared/feedback_page.py',
                 'shared/feedback_call.py', 'shared/doc_table.py', 'shared/tz_blocks.py', 'shared/doc_images.py',
                 'shared/tz_carry.py',
-                'stages/doc_tab_feedback_v1.py', 'stages/doc_tab_feedback_v1_verify.py'):
+                'stages/doc_tab_feedback_v1.py', 'stages/doc_tab_feedback_v1_verify.py',
+                # карта выпуска и предложения экранов (вне конвейера, запускаются руками):
+                # ловят переименование видов в bdd_plates.py и схлопывание веток .xmind
+                'stages/screens_spots.py', 'stages/screens_proposal.py', 'stages/structure_xmind.py'):
         try:
             rc = subprocess.run([PY, ROOT / mod, '--selftest'], capture_output=True, text=True, env=fb_env, timeout=900)
             ok(f'feedback: {mod} --selftest', rc.returncode == 0 and 'SELFTEST OK' in rc.stdout, (rc.stdout + rc.stderr).strip()[-200:])

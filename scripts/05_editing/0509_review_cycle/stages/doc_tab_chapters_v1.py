@@ -133,6 +133,45 @@ def fin(no):
 SUB_IMG = P.get('sub_img', {})                           # ключ = порядковый номер подглавы в `sub`
 NO_SCREEN = set(int(x) for x in P.get('sub_no_screen', []))
 
+
+def _proposals(work_dir):
+    """предложения экранов (`stages/screens_proposal.py`) → колонка «Как надо».
+
+    Нет файла — колонка как была, поэтому другие фильмы и эталон эта правка не двигает
+    (тот же приём, что у `feedback_view.load_structure_full`). В карточку предложения не
+    пишутся: `sub_no_screen` и `sub_img` — порядковые номера, новая подглава сдвинула бы их все."""
+    f = Path(work_dir) / 'screens_proposal.json'
+    if not f.is_file():
+        return []
+    try:
+        return json.loads(f.read_text(encoding='utf-8')).get('items') or []
+    except (OSError, ValueError):
+        print('⚠️ screens_proposal.json не читается — колонка «Как надо» останется как была', flush=True)
+        return []
+
+
+PROP_CH, PROP_SUB = {}, {}
+for _it in _proposals(W6):
+    # ключ подглавы — её ПОРЯДКОВЫЙ номер (`sub_07`), та же нумерация, что у sub_no_screen и sub_img;
+    # по секундам склеивать нельзя: у двух подглав одной главы секунды разные, а номер один на всех
+    if str(_it.get('role')) == 'plate_for_sub' and _it.get('spot'):
+        PROP_SUB.setdefault(str(_it['spot']), []).append(_it)
+    else:
+        PROP_CH.setdefault(str(_it.get('ch')), []).append(_it)
+
+
+def prop_lines(items):
+    """→ строки для ячейки «Как надо»: что сделать и, если надо, что подтверждает фонд"""
+    out = []
+    for it in items or []:
+        txt = str(it.get('how_it_should_be') or '').strip()
+        if txt:
+            out.append(f'▶ {txt}')
+        if it.get('fund_confirm') and str(it.get('fund_note') or '').strip():
+            out.append(f'⚠️ {str(it["fund_note"]).strip()}')
+    return out
+
+
 rows = []
 for i, (sec, no) in enumerate(CHAP):
     end = CHAP[i + 1][0] if i + 1 < len(CHAP) else DUR
@@ -147,6 +186,9 @@ for i, (sec, no) in enumerate(CHAP):
         want_no = (T('chp.want_no', n=fin(no)) if fin(no) != '—' else T('chp.want_no_drop'))
         st[0] = (st[0] + '\n' if st[0] else '') + cut_no
         st[1] = (st[1] + '\n' if len(st) > 1 and st[1] else '') + want_no
+    # предложения экранов дополняют пустую ячейку; написанный руками ch_state всегда главнее
+    if not (len(st) > 1 and st[1]) and PROP_CH.get(no):
+        st = [st[0], '\n'.join(prop_lines(PROP_CH[no]))]
     rows.append({'no': fin(no), 'img': CH_IMG.get(no, ''), 'body': body, 'ch': True,
                  'tc': f'{tmm(sec)}–{tmm(end)}', 'now': st[0], 'do': st[1] if len(st) > 1 else ''})
 
@@ -158,6 +200,9 @@ for i, (sec, no) in enumerate(CHAP):
         # ⚠️ NO_SCREEN — порядковые номера подглав в `sub` (1..N), а не секунды: сравнивать надо с j
         now = T('chp.sub_no_title') if j in NO_SCREEN else T('chp.sub_has_title')
         do = T('chp.sub_by_panel') if pan else ''
+        _p = prop_lines(PROP_SUB.get(f'sub_{j:02d}'))
+        if _p:
+            do = (do + '\n' if do else '') + '\n'.join(_p)
         rows.append({'no': '', 'img': SUB_IMG.get(f'{j:02d}', ''), 'body': f'▸ {t}', 'ch': False,
                      'tc': f'{tmm(s)}–{tmm(s_end)}', 'now': now, 'do': do})
     if not mine:
@@ -190,11 +235,38 @@ for _i, _ln in enumerate(V.load_structure_full(W6)):
 if STRUCT:
     STRUCT.append((0, '', {}))
 
+MAP_PNG = 'info_structure_map.png'
+
+
+def map_fresh():
+    """→ (ставить ли картинку карты, почему нет).
+
+    Картинка карты собирается блоком H `make_infographics_v6.py` из карточки. Если она старше
+    карточки или текста структуры, во вкладке окажется 4K-лист, который противоречит таблице
+    прямо под ним (замер 24.09.2026: карта была на двое суток старше 17 подглав). Молча вставлять
+    такую нельзя — лучше без картинки и с внятной строкой, чем со вчерашней структурой."""
+    img = local_shot(MAP_PNG)
+    if not img:
+        return False, f'{MAP_PNG} нет в mockups — собрать: make_infographics_v6.py H'
+    srcs = [getattr(P, 'CARD_PATH', None), W6 / 'structure.json']
+    newest = max((Path(s).stat().st_mtime for s in srcs if s and Path(s).is_file()), default=0.0)
+    if img.stat().st_mtime < newest:
+        return False, 'карта старше карточки или структуры — пересобрать: make_infographics_v6.py H'
+    return True, ''
+
+
+MAP_OK, MAP_WHY = map_fresh()
+if MAP_WHY:
+    print(f'⚠️ карта в шапку не пойдёт: {MAP_WHY}', flush=True)
+# картинку вставляем только там, где кадры вообще разрешены: без temp_grant якорный абзац
+# остался бы пустой строкой посреди шапки на каждом автоматическом прогоне
+MAP_BLOCK = [(0, '', {'img': MAP_PNG, 'img_w': 620})] if (MAP_OK and a.images == 'temp') else []
+
 head = [(1, T('chp.head_title', code=P.CODE, tab=TAB_TITLE), {'bold': True}),
         (0, T('chp.lead', ver=P.CUT_VERSION, dur=tmm(DUR)) + _no_num
             + T('chp.lead2') + T('chp.lead3'), {}),
         (0, '', {}),
-        ] + STRUCT + [
+        ] + STRUCT + MAP_BLOCK + [
         (2, T('chp.map_h', ch=n_ch, sub=n_sub), {'bold': True}),
         (0, T('chp.map_note', ch=n_ch, last=f'{n_ch:02d}'), {}),
         (0, T('chp.map_link') + 'mockups/info_structure_map.png (4K, в папке проекта)', {}),
@@ -327,8 +399,12 @@ def main():
     if a.dry_run:
         for r in rows:
             print(f"  {r['no']} {r['tc']:>14}  {r['body'].splitlines()[0]}")
+        for r in rows:
+            if r['do']:
+                print(f'   Как надо · {r["body"][:38]:<38} {r["do"].splitlines()[0][:90]}')
         print(f'сухой прогон: строк {len(rows)}, картинок {sum(1 for r in rows if r["img"])}, '
-              f'абзацев шапки {len(head)} — док не тронут')
+              f'абзацев шапки {len(head)}, «Как надо» заполнено у {sum(1 for r in rows if r["do"])} — '
+              f'док не тронут')
         return 0
     doc = get_doc(DOC_ID)
     tab_id = find_tab(doc)
@@ -348,9 +424,13 @@ def main():
 
     # шапка + три варианта (текст; картинки вставим следом, с конца)
     cur = tab_body(tab_id)[-1]['endIndex'] - 1
-    reqs, demo_at = [], []
+    reqs, demo_at, head_img = [], [], []
     for lvl, text, opts in head:
         t = text + '\n'
+        # якорь берём ДО вставки абзаца, как это делает block(): картинка встаёт в начало
+        # СВОЕГО абзаца. Взять cur позже — значит положить карту под всю таблицу
+        if opts.get('img'):
+            head_img.append((opts['img'], cur, int(opts.get('img_w', 620))))
         reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': t}})
         if lvl:
             reqs.append({'updateParagraphStyle': {
@@ -420,7 +500,7 @@ def main():
 
     # картинки НЕ вставляем по ходу: под временным доступом файл открыт считанные секунды, поэтому
     # все вставки — одной пачкой в самом конце, когда весь текст вкладки уже записан
-    want = [(name, at, 460) for name, at in demo_at]
+    want = [(name, at, 460) for name, at in demo_at] + head_img
 
     cur = tab_body(tab_id)[-1]['endIndex'] - 1
     batch_update(DOC_ID, [{'insertTable': {'location': {'tabId': tab_id, 'index': cur},
