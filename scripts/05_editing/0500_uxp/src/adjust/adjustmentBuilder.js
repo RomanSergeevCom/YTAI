@@ -1053,7 +1053,7 @@ async function buildLutDonorSequence(project, opts, logger) {
     const seqs = (await project.getSequences()) || [];
     for (const s of seqs) {
       let n = '';
-      try { n = String(await s.getName()); } catch (e) { try { n = String(s.name || ''); } catch (e2) {} }
+      try { n = String(await s.getName()); } catch (e) { try { n = String(s.name || ''); } catch (e2) { /* last resort; n stays '' and simply never matches */ } }
       if (n === donorSeqName) { seq = s; break; }
     }
     let created = false;
@@ -1233,7 +1233,7 @@ async function ensureLutDonorSequence(project, opts, logger) {
     const seqs = (await project.getSequences()) || [];
     for (const s of seqs) {
       let n = '';
-      try { n = String(await s.getName()); } catch (e) { try { n = String(s.name || ''); } catch (e2) {} }
+      try { n = String(await s.getName()); } catch (e) { try { n = String(s.name || ''); } catch (e2) { /* last resort; n stays '' and simply never matches */ } }
       if (n === donorSeqName) return s;
     }
     return null;
@@ -1341,7 +1341,7 @@ async function probeDonorClone(project, opts, logger) {
     const seqs = (await project.getSequences()) || [];
     for (const s of seqs) {
       let n = '';
-      try { n = String(await s.getName()); } catch (e) { try { n = String(s.name || ''); } catch (e2) {} }
+      try { n = String(await s.getName()); } catch (e) { try { n = String(s.name || ''); } catch (e2) { /* last resort; n stays '' and simply never matches */ } }
       if (n === name) return s;
     }
     return null;
@@ -1379,7 +1379,7 @@ async function probeDonorClone(project, opts, logger) {
       return { ok: false, reason: 'no-donor-sequence' };
     }
     let tname = '';
-    try { tname = String(await target.getName()); } catch (e) { try { tname = String(target.name || ''); } catch (e2) {} }
+    try { tname = String(await target.getName()); } catch (e) { try { tname = String(target.name || ''); } catch (e2) { /* identity check target===donorSeq still guards */ } }
     if (target === donorSeq || tname === donorSeqName) return { ok: false, reason: 'donor-is-active' };
 
     step = 'collect donor clips';

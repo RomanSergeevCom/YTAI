@@ -19,7 +19,7 @@ try {
 // At runtime in UXP, we resolve via pluginFolder; in tests, use relative path
 let DEFAULT_LUTS_SOURCE;
 try {
-  const uxpForPath = require('uxp');
+  require('uxp'); // probe: throws under Node → fallback below
   // Will be resolved at runtime when copyLutsToCreativeFolder is called
   DEFAULT_LUTS_SOURCE = null; // Set dynamically from plugin folder
 } catch (e) {

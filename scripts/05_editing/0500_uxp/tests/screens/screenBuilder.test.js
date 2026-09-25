@@ -9,7 +9,6 @@ const {
   generateCaptionsSrt,
   formatSrtTimecode,
   sortSegments,
-  OVERLAY_DURATION
 } = require('../../src/screens/screenBuilder');
 
 // Reset mock call recorder before each test

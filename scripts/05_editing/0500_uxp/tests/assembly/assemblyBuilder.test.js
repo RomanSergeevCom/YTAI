@@ -1,6 +1,5 @@
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const ppro = require('../mocks/premierepro');
 const { sortSegments } = require('../../src/assembly/assemblyBuilder');
 
 // --- sortSegments (pure function, no Premiere API needed) ---

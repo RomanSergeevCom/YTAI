@@ -2,7 +2,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { parseBrief, parseTimecode, formatTimecode, buildBlocks, fixAdjacentColors } = require('../../src/assembly/briefParser');
+const { parseBrief, parseTimecode, formatTimecode, fixAdjacentColors } = require('../../src/assembly/briefParser');
 const { MARKER_COLOR_INDEX } = require('../../src/shared/constants');
 
 const FIXTURE_PATH = path.join(__dirname, '..', 'fixtures', 'sample_brief.json');

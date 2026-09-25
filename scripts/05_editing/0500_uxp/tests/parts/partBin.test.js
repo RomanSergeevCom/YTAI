@@ -25,8 +25,8 @@ function inRoot(project, name) {
 async function trackItems(track) {
   if (!track) return [];
   let items = null;
-  try { items = track.getTrackItems(1, false); } catch (e) {}
-  if (!items) { try { items = track.getTrackItems(); } catch (e) {} }
+  try { items = track.getTrackItems(1, false); } catch (e) { /* stub */ }
+  if (!items) { try { items = track.getTrackItems(); } catch (e) { /* stub */ } }
   return items || [];
 }
 

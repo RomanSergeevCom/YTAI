@@ -240,7 +240,7 @@ async function ensureVersionsDir(setupDir, logger) {
   if (!uxpfs) throw new Error('ensureVersionsDir requires UXP filesystem API');
 
   var folder = await uxpfs.getEntryWithUrl('file://' + setupDir);
-  var versionsFolder = await ensureSubfolder(folder, 'pre-edit_versions', logger);
+  await ensureSubfolder(folder, 'pre-edit_versions', logger);
   return setupDir + '/pre-edit_versions';
 }
 

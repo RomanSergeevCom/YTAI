@@ -34,13 +34,6 @@ function categorize(path, name) {
   return 'Other';
 }
 
-function usedInStr(usedIn) {
-  if (!usedIn || !usedIn.length) return '';
-  return usedIn.map(function (u) {
-    return esc(u.seq) + (u.count > 1 ? ' ×' + u.count : '');
-  }).join(', ');
-}
-
 function usedCount(usedIn) {
   if (!usedIn || !usedIn.length) return 0;
   return usedIn.reduce(function (s, u) { return s + (u.count || 0); }, 0);

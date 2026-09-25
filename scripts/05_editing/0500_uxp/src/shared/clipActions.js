@@ -216,18 +216,18 @@ async function cleanExistingSequence(project, seqName, logger, extraBin) {
 
     // The real Sequence behind a scanned item (guid match, else Sequence.cast) — null if unknown.
     function sequenceForItem(item) {
-      var g = ''; try { g = item.guid ? String(item.guid) : ''; } catch (e) { }
+      var g = ''; try { g = item.guid ? String(item.guid) : ''; } catch (e) { /* guid readback is optional; Sequence.cast below */ }
       if (g && realSeqGuids[g]) return realSeqGuids[g];
-      var casted = null; try { casted = ppro.Sequence.cast(item); } catch (e) { }
+      var casted = null; try { casted = ppro.Sequence.cast(item); } catch (e) { /* cast is a probe; a throw means not a sequence */ }
       return casted || null;
     }
 
     // confirmed: guid match or Sequence.cast. nameOnly: weakest signal — enough
     // to archive (rename/move, reversible) but never to delete.
     function classifyItem(item) {
-      var g = ''; try { g = item.guid ? String(item.guid) : ''; } catch (e) { }
+      var g = ''; try { g = item.guid ? String(item.guid) : ''; } catch (e) { /* guid readback is optional; Sequence.cast below */ }
       if (g && realSeqGuids[g]) return 'confirmed';
-      var casted = null; try { casted = ppro.Sequence.cast(item); } catch (e) { }
+      var casted = null; try { casted = ppro.Sequence.cast(item); } catch (e) { /* probe; a throw degrades to nameOnly, never to delete */ }
       if (casted) return 'confirmed';
       if (realSeqNames[item.name]) return 'nameOnly';
       return 'no';

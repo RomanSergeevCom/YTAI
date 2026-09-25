@@ -250,9 +250,9 @@ function fixAdjacentColors(blocks) {
     var rightIdx = (i + 1 < blocks.length) ? MARKER_COLOR_INDEX[blocks[i + 1].color] : -1;
 
     var newColor = null;
-    for (var c = 0; c < BLOCK_VALID_COLORS.length; c++) {
-      var candidate = BLOCK_VALID_COLORS[c];
-      var candidateIdx = MARKER_COLOR_INDEX[candidate];
+    for (c = 0; c < BLOCK_VALID_COLORS.length; c++) {
+      candidate = BLOCK_VALID_COLORS[c];
+      candidateIdx = MARKER_COLOR_INDEX[candidate];
       if (candidateIdx !== undefined && candidateIdx !== prevIdx && candidateIdx !== rightIdx) {
         newColor = candidate;
         break;

@@ -7,7 +7,6 @@ const {
   parseTimecode,
   truncate,
   MAX_TITLE,
-  MAX_SUBTITLE,
   MAX_BODY,
   MAX_MARKER_COMMENT
 } = require('../../src/screens/screenParser');

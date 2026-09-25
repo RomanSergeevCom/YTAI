@@ -55,14 +55,14 @@ const { buildDeletedSceneSequence, getDeletedSceneCategory } = require('./src/de
 
 // --- Module imports: REVIEW (new — external editor review) ---
 const { parseReviewBrief } = require('./src/review/reviewBriefParser');
-const { buildReviewSequence: buildNewReviewSequence, buildReviewDeletedScene, importEditedVideo } = require('./src/review/reviewAssembler');
+const { buildReviewDeletedScene } = require('./src/review/reviewAssembler');
 
 // --- Module imports: SCREENS ---
 const { parseScreens } = require('./src/screens/screenParser');
 const { buildScreenCues, SCREEN_CUES_BIN_NAME, generateTranscriptSrt, generateCaptionsSrt, buildSegmentPositionMap, getScreenTimelinePosition } = require('./src/screens/screenBuilder');
 
 // --- Module imports: ARCHIVER ---
-const { versionTimestamp, ensureSubfolder, archiveFiles, saveVersion, saveState, loadState, loadLatestVersion, ensureVersionsDir } = require('./src/shared/archiver');
+const { versionTimestamp, ensureSubfolder, archiveFiles, saveVersion, saveState, loadState, ensureVersionsDir } = require('./src/shared/archiver');
 
 // --- Utility: extract short project code (YTCG49) from full name ---
 function extractProjectCode(name) {
@@ -117,7 +117,7 @@ let reviewState = { data: null, filePath: null, building: false, editedVideoPath
 // «Version 2.4.0». По такому набору невозможно ответить на главный вопрос
 // живой отладки — перезагрузил человек панель или смотрит на старый код.
 // Поднимать при КАЖДОЙ правке index.js / index.html / src/.
-var PANEL_VERSION = '2.20.2';
+var PANEL_VERSION = '2.21.0';
 
 function $(id) { return document.querySelector('#' + id); }
 
@@ -128,35 +128,6 @@ function on(id, handler) {
   return !!el;
 }
 
-function appendToPanel(panelId, entry, level, message) {
-  const panel = $(panelId);
-  if (!panel) return;
-
-  // Detect special log patterns for enhanced styling
-  var msg = message || entry;
-  var cls;
-  if (msg.indexOf('=== ') === 0 && msg.indexOf('BUILD START') !== -1) {
-    cls = 'log-header-line';
-  } else if (msg.indexOf('=== ') === 0 && msg.indexOf('BUILD COMPLETE') !== -1) {
-    cls = 'log-header-line';
-  } else if (msg.indexOf('=== ') === 0 && msg.indexOf('COMPLETE') !== -1) {
-    cls = 'log-header-line';
-  } else if (msg.indexOf('=== Step ') === 0 || msg.indexOf('=== Post-build') === 0) {
-    cls = 'log-step';
-  } else if (msg.indexOf('Timing:') === 0) {
-    cls = 'log-timing';
-  } else if (msg.indexOf('Result:') === 0 || msg.indexOf('Summary:') === 0 || msg.indexOf('Assembly:') === 0 || msg.indexOf('Deleted Scene:') === 0) {
-    cls = 'log-result';
-  } else {
-    cls = level === 'ERROR' ? 'log-error'
-      : level === 'WARN' ? 'log-warn'
-      : level === 'DEBUG' ? 'log-debug'
-      : 'log-info';
-  }
-
-  panel.innerHTML += '<span class="' + cls + '">' + escapeHtml(entry) + '</span>\n';
-  panel.scrollTop = panel.scrollHeight;
-}
 
 // Logs write to 99_Pipeline/logs/ only — no in-panel display
 
@@ -265,12 +236,12 @@ async function copyLastError() {
   lines = lines.concat(errs.length ? errs : ['(no errors captured this session)']);
   var report = lines.join('\n');
   var copied = false;
-  try { require('uxp').clipboard.copyText(report); copied = true; } catch (eC1) { }
+  try { require('uxp').clipboard.copyText(report); copied = true; } catch (eC1) { /* fallback below handles it (navigator.clipboard) */ }
   if (!copied) {
-    try { await navigator.clipboard.setContent({ 'text/plain': report }); copied = true; } catch (eC2) { }
+    try { await navigator.clipboard.setContent({ 'text/plain': report }); copied = true; } catch (eC2) { /* fallback below handles it (writeText) */ }
   }
   if (!copied) {
-    try { await navigator.clipboard.writeText(report); copied = true; } catch (eC3) { }
+    try { await navigator.clipboard.writeText(report); copied = true; } catch (eC3) { ingestLogger.debug('clipboard writeText: ' + (eC3 && eC3.message)); }
   }
   setProjectStatus(copied ? ('Error report copied (' + errs.length + ' entries) — paste to Claude')
     : 'Clipboard unavailable — see Debug log', copied ? 'ready' : 'error');
@@ -447,17 +418,6 @@ async function copyMarkersPrompt() {
   try { await navigator.clipboard.writeText(prompt); } catch (err) { /* ignore */ }
 }
 
-async function copyLogPath(pipeline) {
-  try {
-    var el = $(pipeline + '-log-path');
-    var path = el ? el.textContent : '';
-    if (!path) {
-      var pluginFolder = await uxpfs.getPluginFolder();
-      path = pluginFolder.nativePath + 'logs';
-    }
-    await navigator.clipboard.writeText(path);
-  } catch (err) { /* ignore clipboard errors */ }
-}
 
 
 // ══════════════════════════════════════════════════════════════════
@@ -743,7 +703,7 @@ async function autoDetectFiles(folderPath, projectName) {
         videoFiles.sort(function(a, b) { return b.name.localeCompare(a.name); });
         latestVideo = videoFiles[0];
       }
-    } catch (e) { }
+    } catch (e) { reviewLogger.debug('03_Exports scan: ' + (e && e.message)); }
 
     // Find latest transcript + SRT files in Review/ and Transcription/
     var latestTranscript = null;
@@ -765,7 +725,7 @@ async function autoDetectFiles(folderPath, projectName) {
         if (reName.endsWith('_captions.srt') && !captionsSrt) captionsSrt = revEntries[ri];
         if (reName.endsWith('_transcript.srt') && !reName.includes('review_transcript') && !transcriptSrt) transcriptSrt = revEntries[ri];
       }
-    } catch (e) { }
+    } catch (e) { reviewLogger.debug('05_Review scan: ' + (e && e.message)); }
     // Also check Transcription/captions/ and Transcription/transcripts/
     if (!captionsSrt || !transcriptSrt) {
       try {
@@ -1000,7 +960,6 @@ const syncSpread = require('./src/ingest/syncSpread');
 const sequenceFactoryMod = require('./src/ingest/placement/sequenceFactory');
 const sequencePresetMod = require('./src/ingest/placement/sequencePreset');
 const syncSelectionMod = require('./src/ingest/placement/syncSelection');
-const clipPlacerMod = require('./src/ingest/placement/clipPlacer');
 const { SEQUENCE_DEFAULTS } = require('./src/shared/mediaSettings');
 
 /**
@@ -1284,9 +1243,9 @@ async function copyCheckSyncRequest() {
   const projectRoot = (ingestState.filePath || '').replace(/\/00_Setup\/.*$/, '');
   const payload = 'check all syncs\n' + projectRoot;
   let copied = false;
-  try { require('uxp').clipboard.copyText(payload); copied = true; } catch (e) { }
+  try { require('uxp').clipboard.copyText(payload); copied = true; } catch (e) { /* fallback below handles it (navigator.clipboard) */ }
   if (!copied) {
-    try { await navigator.clipboard.setContent({ 'text/plain': payload }); copied = true; } catch (e) { }
+    try { await navigator.clipboard.setContent({ 'text/plain': payload }); copied = true; } catch (e) { /* warn at line 1291 reports failure with the payload */ }
   }
   if (!copied) ingestLogger.warn('Буфер недоступен, скопируй вручную:\n' + payload);
   return copied;
@@ -1693,9 +1652,9 @@ async function listProjectSequences(project, logger) {
   var seenGuid = {};
   var seenName = {};
   function add(s) {
-    var n = ''; try { n = s.name || (s.getName && s.getName()) || ''; } catch (e) { }
+    var n = ''; try { n = s.name || (s.getName && s.getName()) || ''; } catch (e) { if (logger) logger.debug('seq name read threw: ' + (e && e.message)); }
     if (!n) return;
-    var g = ''; try { g = s.guid ? String(s.guid) : ''; } catch (e) { }
+    var g = ''; try { g = s.guid ? String(s.guid) : ''; } catch (e) { /* guid optional; name dedupe below handles it */ }
     if (g) { if (seenGuid[g]) return; seenGuid[g] = true; }
     else if (seenName[n]) return;
     seenName[n] = true;
@@ -1710,7 +1669,7 @@ async function listProjectSequences(project, logger) {
     // supplement exists exactly for builds where getSequences under-reports.
     var rootItems = await rootAndSourceTimelineItems(project);
     for (var i = 0; i < rootItems.length; i++) {
-      var casted = null; try { casted = ppro.Sequence.cast(rootItems[i]); } catch (e) { }
+      var casted = null; try { casted = ppro.Sequence.cast(rootItems[i]); } catch (e) { /* non-sequence root items throw here; supplement pass only */ }
       if (casted) add(casted);
     }
   } catch (e) { if (logger) logger.debug('Root sequence scan failed: ' + e.message); }
@@ -1763,7 +1722,7 @@ async function onHideSourceTimelines(setStatus) {
   var btnIds = ['btn-hide-source-timelines', 'btn-doctor-hide-source-timelines'];
   function setBtns(disabled) {
     btnIds.forEach(function (id) {
-      try { if (disabled) $(id).setAttribute('disabled', 'true'); else $(id).removeAttribute('disabled'); } catch (e) { }
+      try { if (disabled) $(id).setAttribute('disabled', 'true'); else $(id).removeAttribute('disabled'); } catch (e) { /* cosmetic; button may be absent on this tab */ }
     });
   }
   if (hideSourceTimelinesBusy) return;
@@ -1858,10 +1817,10 @@ async function cleanBeforeBuild(project, ingest) {
                 ca.addAction(folder.createRemoveItemAction(child));
               }, 'Remove ' + child.name);
             });
-          } catch (e) { }
+          } catch (e) { ingestLogger.debug('Cannot remove ' + child.name + ': ' + (e && e.message)); }
         }
       }
-    } catch (e) { }
+    } catch (e) { ingestLogger.debug('Clean: skip root item ' + (item && item.name) + ': ' + (e && e.message)); }
   }
   ingestLogger.info('Clean complete');
 }
@@ -1903,7 +1862,7 @@ async function cleanScenesBeforeBuild(project, ingest, scenes) {
           ingestLogger.info('Removed bin: ' + child.name);
         } catch (e) { ingestLogger.debug('Cannot remove bin ' + child.name + ': ' + e.message); }
       }
-    } catch (e) { }
+    } catch (e) { ingestLogger.debug('Clean: skip root item ' + (item && item.name) + ': ' + (e && e.message)); }
   }
   ingestLogger.info('Clean complete (selective)');
 }
@@ -2091,7 +2050,7 @@ async function buildIngest() {
     setIngestProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Activating sequence...');
     if (result.sequence) {
       await project.setActiveSequence(result.sequence);
-      try { await project.openSequence(result.sequence.guid || result.sequence); } catch (e) { }
+      try { await project.openSequence(result.sequence.guid || result.sequence); } catch (e) { ingestLogger.debug('openSequence (non-fatal): ' + (e && e.message)); }
     }
     stepTimings.push('activate ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
@@ -2120,14 +2079,14 @@ async function buildIngest() {
 
     // Refresh scene list badges (newly built scenes → "built ✓", unticked)
     if (isMultiScene) {
-      try { await renderIngestSceneList(ingestFull); } catch (e) { }
+      try { await renderIngestSceneList(ingestFull); } catch (e) { ingestLogger.debug('Scene list refresh: ' + (e && e.message)); }
     }
 
   } catch (err) {
     ingestLogger.error('INGEST BUILD FAILED: ' + err.message);
     if (err.stack) ingestLogger.debug(err.stack);
     setIngestStatus('Build failed: ' + err.message, 'error');
-    try { await saveIngestLogs(await ppro.Project.getActiveProject()); } catch (e) { }
+    try { await saveIngestLogs(await ppro.Project.getActiveProject()); } catch (e) { /* best-effort inside the error path */ }
   }
 
   ingestState.building = false;
@@ -2224,7 +2183,7 @@ async function verifyIngest() {
   try {
     const allSeqList = await project.getSequences();
     for (const s of (allSeqList || [])) {
-      let sn = ''; try { sn = s.name || (s.getName && s.getName()) || ''; } catch (e) { }
+      let sn = ''; try { sn = s.name || (s.getName && s.getName()) || ''; } catch (e) { /* nameless handles fall through to cast below */ }
       if (sn && !projectSequences[sn]) projectSequences[sn] = s;
     }
   } catch (e) { /* fall back to cast below */ }
@@ -2368,7 +2327,6 @@ async function syncAudio() {
     return;
   }
 
-  var tickOffset = ppro.TickTime.createWithSeconds(Math.abs(offsetSec));
 
   for (var si = 0; si < sequences.length; si++) {
     var seqInfo = sequences[si];
@@ -2437,13 +2395,13 @@ async function syncAudio() {
   panel.style.display = 'block';
 
   // Save project
-  try { await project.save(); } catch (e) { }
+  try { await project.save(); } catch (e) { ingestLogger.debug('save: ' + (e && e.message)); }
   ingestLogger.info('=== SYNC AUDIO COMPLETE: ' + totalMoved + ' moved, ' + totalSkipped + ' skipped ===');
 }
 
 async function saveIngestLogs(project) {
   try {
-    if (project) { try { await project.save(); ingestLogger.info('Project saved'); } catch (e) { } }
+    if (project) { try { await project.save(); ingestLogger.info('Project saved'); } catch (e) { ingestLogger.debug('save: ' + (e && e.message)); } }
 
     const sourceFolder = ingestState.data && ingestState.data.source_folder;
     const projectName = ingestState.data && ingestState.data.project_name;
@@ -2708,6 +2666,7 @@ var ADJUST_REASON_TEXT = {
   'place-failed': 'Placement failed — see log',
 };
 
+// eslint-disable-next-line no-unused-vars -- gen-1 donor UI, кнопки сняты 25.09; ждёт кнопку поколения 2
 async function runAdjustOverSelection(opts) {
   var adjustLogger = new Logger('adjust');
   setAdjustStatus('Adding adjustment layer...', 'working');
@@ -2924,13 +2883,14 @@ async function runColorFromPlan(allSequences) {
     }
   } catch (e) {
     // статус короткий, лог подробный: без стека такую ошибку не найти
-    try { log.error('color: упало — ' + (e && e.message ? e.message : e)); } catch (e2) {}
-    try { if (e && e.stack) log.debug(e.stack); } catch (e2) {}
-    try { await saveAdjustLog(folder, log); } catch (e2) {}
+    try { log.error('color: упало — ' + (e && e.message ? e.message : e)); } catch (e2) { /* logging must not mask the status line below */ }
+    try { if (e && e.stack) log.debug(e.stack); } catch (e2) { /* logging must not mask the status line below */ }
+    try { await saveAdjustLog(folder, log); } catch (e2) { /* best-effort inside the error path */ }
     setAdjustStatus('Color failed: ' + (e && e.message ? e.message : e), 'error');
   }
 }
 
+// eslint-disable-next-line no-unused-vars -- gen-1 donor UI, кнопки сняты 25.09; ждёт кнопку поколения 2
 async function runAdjustPerClipFromPlan(allSequences) {
   var adjustLogger = new Logger('adjust');
   setAdjustStatus('AL per clip: reading lut_plan...', 'working');
@@ -2976,7 +2936,7 @@ async function runAdjustPerClipFromPlan(allSequences) {
     for (var si = 0; si < sequences.length; si++) {
       var seq = sequences[si];
       var seqName = '';
-      try { seqName = String(await seq.getName()); } catch (e) { try { seqName = String(seq.name || ''); } catch (e2) {} }
+      try { seqName = String(await seq.getName()); } catch (e) { try { seqName = String(seq.name || ''); } catch (e2) { /* fallback chain; empty name is skipped safely */ } }
       // The LUT-donor template sequence is tooling, not content — never layer it.
       if (seqName === LUT_DONOR_SEQUENCE) continue;
       setAdjustStatus('AL per clip: ' + (si + 1) + '/' + sequences.length + ' ' + seqName, 'working');
@@ -3026,6 +2986,7 @@ async function runAdjustPerClipFromPlan(allSequences) {
  * open): sequence + 3 named AL clips + Lumetri, Look set automatically when
  * the API allows. Whatever the API could not set is listed for hand-picking.
  */
+// eslint-disable-next-line no-unused-vars -- gen-1 donor UI, кнопки сняты 25.09; ждёт кнопку поколения 2
 async function runAdjustBuildDonor() {
   var adjustLogger = new Logger('adjust');
   setAdjustStatus('Building ' + LUT_DONOR_SEQUENCE + '...', 'working');
@@ -3075,6 +3036,7 @@ async function runAdjustBuildDonor() {
  * the active sequence (fresh track above content). Answers «does
  * createCloneTrackItemAction work across sequences?» — see HANDOFF_adjust_lut.
  */
+// eslint-disable-next-line no-unused-vars -- gen-1 donor UI, кнопки сняты 25.09; ждёт кнопку поколения 2
 async function runAdjustProbeClone() {
   var adjustLogger = new Logger('adjust');
   setAdjustStatus('Probe: cloning donor AL...', 'working');
@@ -3131,7 +3093,7 @@ async function loadPart(auto) {
           var pBest = pCands[0], pBestT = 0;
           for (var pb = 0; pb < pCands.length; pb++) {
             var pT = 0;
-            try { var pMeta = await pCands[pb].getMetadata(); pT = pMeta && pMeta.dateModified ? new Date(pMeta.dateModified).getTime() : 0; } catch (eMt) { }
+            try { var pMeta = await pCands[pb].getMetadata(); pT = pMeta && pMeta.dateModified ? new Date(pMeta.dateModified).getTime() : 0; } catch (eMt) { /* dateModified optional; name order breaks the tie */ }
             if (pT > pBestT || (pT === pBestT && pCands[pb].name.localeCompare(pBest.name) > 0)) { pBest = pCands[pb]; pBestT = pT; }
           }
           file = pBest;
@@ -3235,7 +3197,7 @@ async function buildParts(explicitBundle, ui) {
     const project = await ppro.Project.getActiveProject();
     if (!project) throw new Error('No active Premiere Pro project');
     assemblyLogger.info('=== PART BUILD START: ' + (firstPart.name || '?') + ' (partsBuilder v' + PARTS_BUILDER_VERSION + ') ===');
-    try { await project.save(); } catch (e) { }
+    try { await project.save(); } catch (e) { assemblyLogger.debug('pre-build save: ' + (e && e.message)); }
     // clipMap WITHOUT throwing on missing — partsBuilder skips clips not in project.
     var sourceBin = await findSourceBin(project);
     if (!sourceBin) {
@@ -3285,7 +3247,7 @@ async function buildParts(explicitBundle, ui) {
       } catch (ePImp) {
         assemblyLogger.warn('batch import failed (' + ePImp.message + ') — one-by-one');
         for (var pj = 0; pj < pPaths.length; pj++) {
-          try { if (pBinCast) await project.importFiles([pPaths[pj]], true, pBinCast, false); else await project.importFiles([pPaths[pj]]); } catch (e2) { }
+          try { if (pBinCast) await project.importFiles([pPaths[pj]], true, pBinCast, false); else await project.importFiles([pPaths[pj]]); } catch (e2) { assemblyLogger.debug('import ' + pPaths[pj] + ': ' + (e2 && e2.message)); }
         }
       }
       var pGot = 0;
@@ -3306,7 +3268,7 @@ async function buildParts(explicitBundle, ui) {
       if (bundleList.length > 1) status('Building ' + (bx + 1) + '/' + bundleList.length + ': ' + (bundleList[bx].part.sequence_name || '?'), 'waiting');
       result = await buildPartSequence(project, clipMap, bundleList[bx].part, bundleList[bx].segments, assemblyLogger, assemblyState.projectSettings);
       builtNames.push(result.seqName + ' (' + result.placed + ')');
-      try { await project.save(); } catch (e) { }
+      try { await project.save(); } catch (e) { assemblyLogger.debug('save after part: ' + (e && e.message)); }
     }
     if (!result) {
       status('Nothing to build — all parts empty', 'warning');
@@ -3364,7 +3326,7 @@ async function selRefresh() {
       try {
         var enMeta = await en.getMetadata();
         if (enMeta && enMeta.dateModified) row.mtime = new Date(enMeta.dateModified).getTime();
-      } catch (eMt) { }
+      } catch (eMt) { /* mtime only orders/labels the list; non-fatal */ }
       try {
         var d = JSON.parse(await en.read());
         if (d.schema !== 'ytai-part-v1' || !d.part || !Array.isArray(d.segments)) throw new Error('not ytai-part-v1');
@@ -4056,7 +4018,7 @@ async function refreshAssemblyScenes() {
     var peBest = peCands[0], peBestT = 0;
     for (var pc = 0; pc < peCands.length; pc++) {
       var pcT = 0;
-      try { var pcM = await peCands[pc].getMetadata(); pcT = pcM && pcM.dateModified ? new Date(pcM.dateModified).getTime() : 0; } catch (e) { }
+      try { var pcM = await peCands[pc].getMetadata(); pcT = pcM && pcM.dateModified ? new Date(pcM.dateModified).getTime() : 0; } catch (e) { assemblyLogger.debug('PE00 mtime unreadable for ' + peCands[pc].name + ': ' + (e && e.message)); }
       if (pcT > peBestT) { peBest = peCands[pc]; peBestT = pcT; }
     }
     asmScenesState.peEntry = peBest;
@@ -4532,7 +4494,7 @@ async function buildAssembly() {
     step++;
     stepStart = Date.now();
     setAssemblyProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Saving backup...');
-    try { await project.save(); assemblyLogger.info('Project saved'); } catch (e) { }
+    try { await project.save(); assemblyLogger.info('Project saved'); } catch (e) { assemblyLogger.warn('Backup save before build failed: ' + (e && e.message)); }
     stepTimings.push('save ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 2: Scan project for clips
@@ -4577,9 +4539,9 @@ async function buildAssembly() {
     setAssemblyProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Validating...');
     if (result.sequence) {
       await project.setActiveSequence(result.sequence);
-      try { await project.openSequence(result.sequence.guid || result.sequence); } catch (e) { }
+      try { await project.openSequence(result.sequence.guid || result.sequence); } catch (e) { assemblyLogger.debug('openSequence failed (non-fatal): ' + (e && e.message)); }
     }
-    try { await project.save(); } catch (e) { }
+    try { await project.save(); } catch (e) { assemblyLogger.warn('Post-build project save failed: ' + (e && e.message)); }
 
     // Post-build validation (green/yellow/red checklist)
     if (result.sequence) {
@@ -4689,7 +4651,7 @@ async function buildAssembly() {
     assemblyLogger.error('ASSEMBLY BUILD FAILED: ' + err.message);
     if (err.stack) assemblyLogger.debug(err.stack);
     setAssemblyStatus('Build failed: ' + err.message, 'error');
-    try { await saveAssemblyLogs(await ppro.Project.getActiveProject(), clipMap, result); } catch (e) { }
+    try { await saveAssemblyLogs(await ppro.Project.getActiveProject(), clipMap, result); } catch (e) { assemblyLogger.debug('saveAssemblyLogs after failure: ' + (e && e.message)); }
   }
 
   assemblyState.building = false;
@@ -4728,7 +4690,6 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
     srtDir + '/' + srtFileName,
     briefDir + '/' + srtFileName,  // legacy: next to brief
   ];
-  const srtPath = srtCandidates[0];
 
   logger.info('=== Import ' + label + ' (' + typeLabel + ') ===');
 
@@ -4914,126 +4875,6 @@ async function importSrtDirect(project, srtPath, projectCode, suffix, label, log
   }
 }
 
-/**
- * Import all SRT files (transcripts + captions) for every timeline stage.
- *
- * Scans Transcription/transcripts/ and Transcription/captions/ for SRT files,
- * then imports each into the 02_Transcripts bin. Also checks 00_Setup/ for legacy SRTs.
- *
- * Can be run standalone (button) — does not require Build Ingest/Assembly.
- */
-async function importAllSrts() {
-  const project = await ppro.Project.getActiveProject();
-  if (!project) { setIngestStatus('No active project', 'error'); return; }
-  if (!projectState.folderPath) { setIngestStatus('Select project folder first', 'error'); return; }
-
-  ingestLogger.info('=== Import All SRTs ===');
-  setIngestStatus('Importing SRTs...', 'waiting');
-
-  var sourceDir = projectState.folderPath + '/01_Source';
-  var imported = 0;
-  var skipped = 0;
-
-  // Find 02_Transcripts bin (create if missing)
-  let transcriptsBin = null;
-  try {
-    const rootItem = await project.getRootItem();
-    const allItems = await rootItem.getItems();
-    for (const item of allItems) {
-      if (item.name === BIN_NAMES.TRANSCRIPTS) {
-        transcriptsBin = ppro.FolderItem.cast(item);
-        break;
-      }
-    }
-    if (!transcriptsBin) {
-      ingestLogger.info('Creating ' + BIN_NAMES.TRANSCRIPTS + ' bin');
-      const action = ppro.FolderItem.createAddItemAction(BIN_NAMES.TRANSCRIPTS);
-      await project.applyActions([action]);
-      const updatedItems = await rootItem.getItems();
-      for (const item of updatedItems) {
-        if (item.name === BIN_NAMES.TRANSCRIPTS) {
-          transcriptsBin = ppro.FolderItem.cast(item);
-          break;
-        }
-      }
-    }
-  } catch (e) {
-    ingestLogger.warn('Cannot find/create 02_Transcripts bin: ' + e.message);
-  }
-
-  // Collect SRT search dirs (flat list + per-scene Video subdirs)
-  var searchDirs = [
-    sourceDir + '/Transcription/transcripts',
-    sourceDir + '/Transcription/captions',
-    projectState.folderPath + '/00_Setup',
-    sourceDir,
-  ];
-
-  // Also scan Video/{scene}/ directories for per-scene SRTs
-  try {
-    var videoDirEntry = await uxpfs.getEntryWithUrl('file://' + sourceDir + '/Video');
-    if (videoDirEntry) {
-      var sceneDirs = await videoDirEntry.getEntries();
-      for (var si = 0; si < sceneDirs.length; si++) {
-        if (sceneDirs[si].isFolder) {
-          searchDirs.push(sourceDir + '/Video/' + sceneDirs[si].name);
-        }
-      }
-    }
-  } catch (e) {
-    ingestLogger.debug('No Video/ dir or cannot list scenes: ' + e.message);
-  }
-
-  // Track already-imported filenames to avoid duplicates
-  var importedNames = {};
-
-  // Get existing items in 02_Transcripts to skip re-imports
-  if (transcriptsBin) {
-    try {
-      var existingItems = await transcriptsBin.getItems();
-      for (var ei = 0; ei < existingItems.length; ei++) {
-        importedNames[existingItems[ei].name] = true;
-      }
-    } catch (e) { /* empty bin */ }
-  }
-
-  for (var di = 0; di < searchDirs.length; di++) {
-    try {
-      var dirEntry = await uxpfs.getEntryWithUrl('file://' + searchDirs[di]);
-      if (!dirEntry) continue;
-      var entries = await dirEntry.getEntries();
-      for (var fi = 0; fi < entries.length; fi++) {
-        var entry = entries[fi];
-        if (!entry.name || !entry.name.endsWith('.srt')) continue;
-        if (importedNames[entry.name]) {
-          ingestLogger.debug('Skip (already in bin): ' + entry.name);
-          skipped++;
-          continue;
-        }
-        try {
-          var nativePath = searchDirs[di] + '/' + entry.name;
-          await project.importFiles([nativePath], true, transcriptsBin || null, false);
-          importedNames[entry.name] = true;
-          imported++;
-          ingestLogger.info('Imported: ' + entry.name);
-        } catch (importErr) {
-          ingestLogger.warn('Failed to import ' + entry.name + ': ' + importErr.message);
-        }
-      }
-    } catch (dirErr) {
-      ingestLogger.debug('Dir not found: ' + searchDirs[di]);
-    }
-  }
-
-  if (imported > 0) {
-    setIngestStatus(imported + ' SRT(s) imported' + (skipped > 0 ? ' (' + skipped + ' already in bin)' : ''), 'ready');
-  } else if (skipped > 0) {
-    setIngestStatus('All ' + skipped + ' SRT(s) already in 02_Transcripts', 'ready');
-  } else {
-    setIngestStatus('No SRT files found in project', 'error');
-  }
-  ingestLogger.info('=== Import SRTs complete: ' + imported + ' imported, ' + skipped + ' skipped ===');
-}
 
 /**
  * Export markers from active sequence as JSON.
@@ -5090,7 +4931,7 @@ async function exportMarkers() {
         }
         assemblyLogger.debug('Marker[0] methods: [' + m0methods.join(', ') + ']');
         var m0comment = m0.comments || '';
-        if (!m0comment && m0.getComments) try { m0comment = m0.getComments(); } catch(e) {}
+        if (!m0comment && m0.getComments) try { m0comment = m0.getComments(); } catch(e) { /* introspection only; getComments optional on this build */ }
         if (!m0comment) m0comment = m0.comment || '';
         assemblyLogger.debug('Marker[0] name=' + m0.name + ' type=' + m0.type + ' comments="' + m0comment + '"' +
           ' | .comments=' + JSON.stringify(m0.comments) + ' .comment=' + JSON.stringify(m0.comment) +
@@ -5101,8 +4942,8 @@ async function exportMarkers() {
         var rm = rawMarkers[mi];
         // Get start time — try getStart() then startTime property
         var startTime = null;
-        try { startTime = rm.getStart(); } catch (e) {}
-        if (!startTime) try { startTime = rm.startTime; } catch (e) {}
+        try { startTime = rm.getStart(); } catch (e) { /* fallback to .startTime below handles it */ }
+        if (!startTime) try { startTime = rm.startTime; } catch (e) { assemblyLogger.debug('Marker ' + mi + ' start unreadable: ' + (e && e.message)); }
         var posSec = startTime ? Math.round(startTime.seconds * 100) / 100 : 0;
 
         var entry = {
@@ -5112,8 +4953,8 @@ async function exportMarkers() {
 
         // Get duration — try getDuration() then duration property
         var dur = null;
-        try { dur = rm.getDuration(); } catch (e) {}
-        if (!dur) try { dur = rm.duration; } catch (e) {}
+        try { dur = rm.getDuration(); } catch (e) { /* fallback to .duration below handles it */ }
+        if (!dur) try { dur = rm.duration; } catch (e) { assemblyLogger.debug('Marker ' + mi + ' duration unreadable: ' + (e && e.message)); }
         if (dur && dur.seconds > 0) {
           entry.duration_sec = Math.round(dur.seconds * 100) / 100;
           entry.is_chapter = true;
@@ -5121,7 +4962,7 @@ async function exportMarkers() {
 
         // Get comments — try property, then getComments(), then comment (singular)
         var commentText = rm.comments || '';
-        if (!commentText) try { commentText = rm.getComments ? rm.getComments() : ''; } catch (e) {}
+        if (!commentText) try { commentText = rm.getComments ? rm.getComments() : ''; } catch (e) { /* fallback to .comment below handles it */ }
         if (!commentText) commentText = rm.comment || '';
         if (commentText) entry.comment = commentText;
         if (rm.type) entry.type = rm.type;
@@ -5178,8 +5019,8 @@ async function exportMarkers() {
     try {
       var v1Track = await seq.getVideoTrack(0);
       var trackItems = null;
-      try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) {}
-      if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) {}
+      try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) { /* signature varies by build; fallback below handles it */ }
+      if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) { assemblyLogger.warn('Could not read V1 TrackItems (getTrackItems): ' + (ex && ex.message)); }
       if (trackItems && trackItems.length > 0) {
         for (var ti = 0; ti < trackItems.length; ti++) {
           var item = trackItems[ti];
@@ -5233,7 +5074,7 @@ async function exportMarkers() {
             sgStart = parseInt(sp[0]) * 60 + parseFloat(sp[1] || 0);
             var ep = (sg.end || '0:0').split(':');
             sgEnd = parseInt(ep[0]) * 60 + parseFloat(ep[1] || 0);
-          } catch (pe) {}
+          } catch (pe) { /* malformed tc stays 0/0 so the segment never matches; non-fatal */ }
           // Check overlap
           if (sgStart < clip.tc_out_sec && sgEnd > clip.tc_in_sec) {
             texts.push(sg.text || '');
@@ -5368,7 +5209,7 @@ async function exportMarkers() {
     // Generate brief segments from timeline clips
     var briefSegments = [];
     for (var bsi3 = 0; bsi3 < timelineClips.length; bsi3++) {
-      var tc = timelineClips[bsi3];
+      tc = timelineClips[bsi3];
       // Find block for this clip
       var clipBlock = 1;
       var clipBlockName = '';
@@ -5507,7 +5348,6 @@ async function debugExport() {
     var seq = await project.getActiveSequence();
     if (!seq) throw new Error('No active sequence');
     var seqName = seq.name;
-    var seqSettings = seq.getSettings ? seq.getSettings() : {};
     var fps = assemblyState.projectSettings ? (assemblyState.projectSettings.fps || 29.97) : 29.97;
 
     assemblyLogger.info('Sequence: ' + seqName + ', fps=' + fps);
@@ -5515,8 +5355,8 @@ async function debugExport() {
     // Read V1 clips
     var v1Track = await seq.getVideoTrack(0);
     var trackItems = null;
-    try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) {}
-    if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) {}
+    try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) { /* signature varies by build; fallback below handles it */ }
+    if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) { assemblyLogger.debug('getTrackItems failed on V1: ' + (ex && ex.message)); }
 
     var clips = [];
     if (trackItems) {
@@ -5722,266 +5562,6 @@ async function debugExport() {
   $('btn-debug-export').removeAttribute('disabled');
 }
 
-/**
- * Audio Debug — export JSON with full track info for each marker issue.
- * User marks problems with Premiere markers (comment starts with "/"),
- * button reads V1/A1/A2/A3 tracks and writes detailed JSON for Claude to analyze.
- */
-async function audioDebug() {
-  var project = await ppro.Project.getActiveProject();
-  if (!project) { setIngestStatus('No active project', 'error'); return; }
-  if (!projectState.folderPath) { setIngestStatus('Select project folder first', 'error'); return; }
-
-  ingestLogger.info('=== Audio Debug ===');
-  setIngestStatus('Audio Debug...', 'waiting');
-  $('btn-audio-debug').setAttribute('disabled', 'true');
-
-  function secToMSS(s) {
-    if (s == null || s < 0) return '0:00.000';
-    var m = Math.floor(s / 60);
-    var sec = s % 60;
-    return m + ':' + (sec < 10 ? '0' : '') + sec.toFixed(3);
-  }
-
-  function parseTxMic(filename) {
-    var txm = filename.match(/_TX(\d+)/);
-    var micm = filename.match(/_(MIC\d+)/);
-    return { tx: txm ? 'TX' + txm[1] : null, mic: micm ? micm[1] : null };
-  }
-
-  async function readTrackItems(seq, trackType, trackIndex) {
-    var items = [];
-    try {
-      var track = trackType === 'video'
-        ? await seq.getVideoTrack(trackIndex)
-        : await seq.getAudioTrack(trackIndex);
-      if (!track) return items;
-      var tis = null;
-      try { tis = track.getTrackItems(1, false); } catch (ex) {}
-      if (!tis) try { tis = track.getTrackItems(); } catch (ex) {}
-      if (!tis) return items;
-      for (var i = 0; i < tis.length; i++) {
-        var ti = tis[i];
-        var pi = await ti.getProjectItem();
-        var name = pi ? pi.name : '';
-        var path = '';
-        try { path = pi ? pi.getMediaPath() : ''; } catch (e) {}
-        items.push({
-          filename: name,
-          path: path || '',
-          timeline_start_sec: Math.round(tickSec(await ti.getStartTime()) * 1000) / 1000,
-          source_in_sec: Math.round(tickSec(await ti.getInPoint()) * 1000) / 1000,
-          source_out_sec: Math.round(tickSec(await ti.getOutPoint()) * 1000) / 1000,
-          duration_sec: Math.round(tickSec(await ti.getDuration()) * 1000) / 1000
-        });
-      }
-    } catch (e) {
-      ingestLogger.warn('Track ' + trackType + '[' + trackIndex + ']: ' + e.message);
-    }
-    return items;
-  }
-
-  function findClipAtPos(trackItems, posSec) {
-    for (var i = 0; i < trackItems.length; i++) {
-      var c = trackItems[i];
-      var end = c.timeline_start_sec + c.duration_sec;
-      if (posSec >= c.timeline_start_sec && posSec < end) return c;
-    }
-    return null;
-  }
-
-  try {
-    var seq = await project.getActiveSequence();
-    if (!seq) throw new Error('No active sequence — open a timeline first');
-    var seqName = seq.name;
-    // fps from the REAL sequence timebase. The old code read the never-populated
-    // projectState.projectSettings and always fell back to 29.97 — YTCH13's
-    // audio_map claimed 29.97 on a 25p project (found 16.08.2026).
-    var fps = 25;
-    try {
-      var tbTicks = await seq.getTimebase(); // ticks per frame, e.g. "10160640000" @25p
-      if (tbTicks) fps = Math.round((254016000000 / Number(tbTicks)) * 1000) / 1000; // 25 / 29.97 / 23.976
-    } catch (eTb) {
-      ingestLogger.warn('getTimebase failed (' + eTb.message + ') — fps fallback 25');
-    }
-    ingestLogger.info('Sequence: ' + seqName + ', fps=' + fps);
-
-    // Read markers
-    var markersOwner = await ppro.Markers.getMarkers(seq);
-    var rawMarkers = markersOwner ? markersOwner.getMarkers() : [];
-    var issueMarkers = [];
-    if (rawMarkers && rawMarkers.length > 0) {
-      for (var mi = 0; mi < rawMarkers.length; mi++) {
-        var rm = rawMarkers[mi];
-        var commentText = rm.comments || '';
-        if (!commentText) try { commentText = rm.getComments ? rm.getComments() : ''; } catch (e) {}
-        if (!commentText) commentText = rm.comment || '';
-        if (commentText && commentText.startsWith('/')) {
-          var startTime = null;
-          try { startTime = rm.getStart(); } catch (e) {}
-          if (!startTime) try { startTime = rm.startTime; } catch (e) {}
-          var posSec = startTime ? Math.round(startTime.seconds * 1000) / 1000 : 0;
-          issueMarkers.push({ position_sec: posSec, comment: commentText.substring(1).trim() });
-        }
-      }
-    }
-    issueMarkers.sort(function(a, b) { return a.position_sec - b.position_sec; });
-    ingestLogger.info('Issue markers (/ prefix): ' + issueMarkers.length);
-
-    // Read all tracks
-    ingestLogger.info('Reading tracks...');
-    var v1Items = await readTrackItems(seq, 'video', 0);
-    var a1Items = await readTrackItems(seq, 'audio', 0);
-    var a2Items = await readTrackItems(seq, 'audio', 1);
-    var a3Items = await readTrackItems(seq, 'audio', 2);
-    ingestLogger.info('V1=' + v1Items.length + ' A1=' + a1Items.length +
-      ' A2=' + a2Items.length + ' A3=' + a3Items.length);
-
-    // Build issues
-    var issues = [];
-    for (var ii = 0; ii < issueMarkers.length; ii++) {
-      var im = issueMarkers[ii];
-      var v = findClipAtPos(v1Items, im.position_sec);
-      var a1 = findClipAtPos(a1Items, im.position_sec);
-      var a2 = findClipAtPos(a2Items, im.position_sec);
-      var a3 = findClipAtPos(a3Items, im.position_sec);
-
-      var issue = {
-        marker_tc: secToMSS(im.position_sec),
-        marker_sec: im.position_sec,
-        comment: im.comment,
-        video: null,
-        audio_A1: null,
-        audio_A2: null,
-        audio_A3: null
-      };
-
-      if (v) {
-        var offsetInClip = im.position_sec - v.timeline_start_sec;
-        issue.video = {
-          filename: v.filename,
-          path: v.path,
-          timeline_start_tc: secToMSS(v.timeline_start_sec),
-          timeline_start_sec: v.timeline_start_sec,
-          source_in_tc: secToMSS(v.source_in_sec),
-          source_in_sec: v.source_in_sec,
-          source_out_tc: secToMSS(v.source_out_sec),
-          source_out_sec: v.source_out_sec,
-          duration_sec: v.duration_sec,
-          marker_offset_in_clip_tc: secToMSS(offsetInClip),
-          marker_offset_in_clip_sec: Math.round(offsetInClip * 1000) / 1000
-        };
-      }
-      if (a1) {
-        issue.audio_A1 = {
-          filename: a1.filename,
-          timeline_start_sec: a1.timeline_start_sec,
-          source_in_sec: a1.source_in_sec,
-          source_out_sec: a1.source_out_sec
-        };
-      }
-      function buildAudioInfo(clip) {
-        if (!clip) return null;
-        var txm = parseTxMic(clip.filename);
-        return {
-          filename: clip.filename,
-          path: clip.path,
-          tx: txm.tx,
-          mic: txm.mic,
-          timeline_start_tc: secToMSS(clip.timeline_start_sec),
-          timeline_start_sec: clip.timeline_start_sec,
-          source_in_tc: secToMSS(clip.source_in_sec),
-          source_in_sec: clip.source_in_sec,
-          source_out_tc: secToMSS(clip.source_out_sec),
-          source_out_sec: clip.source_out_sec,
-          duration_sec: clip.duration_sec
-        };
-      }
-      issue.audio_A2 = buildAudioInfo(a2);
-      issue.audio_A3 = buildAudioInfo(a3);
-      issues.push(issue);
-    }
-
-    // Build all_clips
-    var allClips = [];
-    for (var ci = 0; ci < v1Items.length; ci++) {
-      var vc = v1Items[ci];
-      if (vc.duration_sec < 0.05) continue; // skip ghost clips
-      var matchA1 = findClipAtPos(a1Items, vc.timeline_start_sec + 0.01);
-      var matchA2 = findClipAtPos(a2Items, vc.timeline_start_sec + 0.01);
-      var matchA3 = findClipAtPos(a3Items, vc.timeline_start_sec + 0.01);
-      var prevEnd = ci > 0 ? (v1Items[ci - 1].timeline_start_sec + v1Items[ci - 1].duration_sec) : 0;
-      var txm2 = matchA2 ? parseTxMic(matchA2.filename) : {};
-      var txm3 = matchA3 ? parseTxMic(matchA3.filename) : {};
-      allClips.push({
-        index: ci,
-        video: vc.filename,
-        video_path: vc.path,
-        timeline_start_tc: secToMSS(vc.timeline_start_sec),
-        timeline_start_sec: vc.timeline_start_sec,
-        source_in_sec: vc.source_in_sec,
-        source_out_sec: vc.source_out_sec,
-        duration_sec: vc.duration_sec,
-        audio_A1: matchA1 ? matchA1.filename : null,
-        audio_A2: matchA2 ? matchA2.filename : null,
-        audio_A2_path: matchA2 ? matchA2.path : null,
-        audio_A2_tx: txm2.tx || null,
-        audio_A2_mic: txm2.mic || null,
-        audio_A2_source_in_sec: matchA2 ? matchA2.source_in_sec : null,
-        audio_A2_source_out_sec: matchA2 ? matchA2.source_out_sec : null,
-        audio_A3: matchA3 ? matchA3.filename : null,
-        audio_A3_path: matchA3 ? matchA3.path : null,
-        audio_A3_tx: txm3.tx || null,
-        audio_A3_mic: txm3.mic || null,
-        audio_A3_source_in_sec: matchA3 ? matchA3.source_in_sec : null,
-        audio_A3_source_out_sec: matchA3 ? matchA3.source_out_sec : null,
-        gap_before_sec: Math.round(Math.max(0, vc.timeline_start_sec - prevEnd) * 1000) / 1000,
-        has_issue: issues.some(function(iss) { return iss.video && iss.video.filename === vc.filename; })
-      });
-    }
-
-    var output = {
-      version: '1.0',
-      type: 'audio_debug',
-      sequence: seqName,
-      exported_at: new Date().toISOString(),
-      fps: fps,
-      project_folder: projectState.folderPath,
-      issues: issues,
-      all_clips: allClips
-    };
-
-    // Write to 00_Setup/02_Assembly/
-    var assemblyDir = projectState.folderPath + '/00_Setup/02_Assembly';
-    var assemblyEntry;
-    try {
-      assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
-    } catch (e) {
-      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup');
-      assemblyEntry = await ensureSubfolder(setupEntry, '02_Assembly', ingestLogger);
-    }
-    var outFileName = seqName.replace(/[^a-zA-Z0-9_-]/g, '_') + '_audio_debug.json';
-    var outFile = await assemblyEntry.createFile(outFileName, { overwrite: true });
-    await outFile.write(JSON.stringify(output, null, 2), { format: require('uxp').storage.formats.utf8 });
-
-    var fullPath = assemblyDir + '/' + outFileName;
-    try { await navigator.clipboard.writeText(fullPath); } catch (e) {}
-    ingestLogger.info('Path copied: ' + fullPath);
-
-    var summary = issues.length > 0
-      ? issues.length + ' issue(s) from ' + seqName + ' → ' + outFileName
-      : 'No / markers found. ' + allClips.length + ' clips mapped → ' + outFileName;
-    ingestLogger.info('Audio Debug: ' + summary);
-    setIngestStatus('Audio Debug: ' + summary + ' (path copied)', issues.length > 0 ? 'warning' : 'ready');
-
-  } catch (err) {
-    ingestLogger.error('Audio Debug failed: ' + err.message);
-    if (err.stack) ingestLogger.debug(err.stack);
-    setIngestStatus('Audio Debug failed: ' + err.message, 'error');
-  }
-
-  $('btn-audio-debug').removeAttribute('disabled');
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Chapter markers → ACTIVE sequence (no rebuild)
@@ -6229,7 +5809,7 @@ async function readNotes(dEntry) {
   for (var i = 0; i < entries.length; i++) {
     var nm = entries[i].name;
     if (entries[i].isFile && /^(note_\d+|RS_\d+)\.json$/.test(nm)) {
-      try { out.push(JSON.parse(await entries[i].read())); } catch (e) { }
+      try { out.push(JSON.parse(await entries[i].read())); } catch (e) { assemblyLogger.debug('Review note ' + nm + ' unreadable: ' + (e && e.message)); }
     }
   }
   out.sort(function (a, b) { return (a.ts || '').localeCompare(b.ts || ''); });
@@ -6245,7 +5825,7 @@ async function notesSheetBase(dEntry) {
         return (await entries[i].read()).trim();
       }
     }
-  } catch (e) { }
+  } catch (e) { /* sheet_link.txt is optional; no link is fine */ }
   return null;
 }
 
@@ -6255,13 +5835,13 @@ async function copyToClipboard(text) {
       await navigator.clipboard.setContent({ 'text/plain': text });
       return true;
     }
-  } catch (e) { }
+  } catch (e) { /* fallback to writeText below handles it */ }
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(text);
       return true;
     }
-  } catch (e) { }
+  } catch (e) { assemblyLogger.warn('Clipboard unavailable: ' + (e && e.message)); }
   return false;
 }
 
@@ -6392,7 +5972,7 @@ async function copyTzAtPlayhead() {
       var segsIm = (part.segments || []).filter(function (s) { return s.item_marker; });
       if (!segsIm.length) continue;
       var mod = 0;
-      try { var md = await en.getMetadata(); mod = md && md.dateModified ? new Date(md.dateModified).getTime() : 0; } catch (eM) { }
+      try { var md = await en.getMetadata(); mod = md && md.dateModified ? new Date(md.dateModified).getTime() : 0; } catch (eM) { assemblyLogger.debug('getMetadata ' + en.name + ': ' + (eM && eM.message)); }
       var sn = String((part.part || {}).sequence_name || '');
       if (sn && seqBase.indexOf(sn) === 0 && mod > bestMod) { best = part; bestMod = mod; }
       if (mod > fbMod) { fallback = part; fbMod = mod; }
@@ -6649,15 +6229,15 @@ async function exportAudioMap() {
         : await seq.getAudioTrack(trackIndex);
       if (!track) return items;
       var tis = null;
-      try { tis = track.getTrackItems(1, false); } catch (ex) {}
-      if (!tis) try { tis = track.getTrackItems(); } catch (ex) {}
+      try { tis = track.getTrackItems(1, false); } catch (ex) { /* signature differs per build; fallback below handles it */ }
+      if (!tis) try { tis = track.getTrackItems(); } catch (ex) { ingestLogger.debug('getTrackItems ' + trackType + '[' + trackIndex + ']: ' + (ex && ex.message)); }
       if (!tis) return items;
       for (var i = 0; i < tis.length; i++) {
         var ti = tis[i];
         var pi = await ti.getProjectItem();
         var name = pi ? pi.name : '';
         var path = '';
-        try { path = pi ? pi.getMediaPath() : ''; } catch (e) {}
+        try { path = pi ? pi.getMediaPath() : ''; } catch (e) { /* synthetic items have no media path; scene falls back */ }
         // Keep the raw TickTimes: ticks are the ground truth (sub-frame
         // diagnostics are impossible from 0.04-quantized seconds alone).
         var st = await ti.getStartTime(), ip = await ti.getInPoint(),
@@ -6861,7 +6441,7 @@ async function exportAudioMap() {
     await outFile.write(JSON.stringify(output, null, 2), { format: require('uxp').storage.formats.utf8 });
 
     var fullPath = ingestDir + '/' + outFileName;
-    try { await navigator.clipboard.writeText(fullPath); } catch (e) {}
+    try { await navigator.clipboard.writeText(fullPath); } catch (e) { ingestLogger.debug('clipboard: ' + (e && e.message)); }
     ingestLogger.info('Path copied: ' + fullPath);
 
     var sceneNames = Object.keys(scenes);
@@ -6886,98 +6466,6 @@ async function exportAudioMap() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Align A2/A3 — snap DJI audio clips to match V1 video start positions
 // For each V1 clip, finds matching A2/A3 clip and moves it to align.
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function alignA2A3() {
-  var project = await ppro.Project.getActiveProject();
-  if (!project) { setIngestStatus('No active project', 'error'); return; }
-
-  ingestLogger.info('=== Align A2/A3 ===');
-  setIngestStatus('Aligning DJI tracks...', 'waiting');
-  $('btn-align-a2a3').setAttribute('disabled', 'true');
-
-  try {
-    var seq = await project.getActiveSequence();
-    if (!seq) throw new Error('No active sequence');
-
-    // Read V1 track items (with raw TrackItem references for matching)
-    var v1Track = await seq.getVideoTrack(0);
-    var a2Track = await seq.getAudioTrack(1);
-    var a3Track = await seq.getAudioTrack(2);
-    if (!v1Track) throw new Error('No V1 track');
-
-    var v1Tis = null;
-    try { v1Tis = v1Track.getTrackItems(1, false); } catch (ex) {}
-    if (!v1Tis) try { v1Tis = v1Track.getTrackItems(); } catch (ex) {}
-    if (!v1Tis || v1Tis.length === 0) throw new Error('No clips on V1');
-
-    var aligned = 0;
-    var skipped = 0;
-    var already = 0;
-
-    for (var vi = 0; vi < v1Tis.length; vi++) {
-      var vTi = v1Tis[vi];
-      var vStart = await vTi.getStartTime();
-      var vStartSec = tickSec(vStart);
-      var vDur = tickSec(await vTi.getDuration());
-      var vMid = vStartSec + vDur * 0.5;
-
-      // For each audio track (A2, A3)
-      var tracks = [a2Track, a3Track];
-      var trackNames = ['A2', 'A3'];
-
-      for (var ti = 0; ti < tracks.length; ti++) {
-        var aTrack = tracks[ti];
-        if (!aTrack) continue;
-        var aTis = null;
-        try { aTis = aTrack.getTrackItems(1, false); } catch (ex) {}
-        if (!aTis) try { aTis = aTrack.getTrackItems(); } catch (ex) {}
-        if (!aTis) continue;
-
-        // Find audio clip at video midpoint
-        for (var ai = 0; ai < aTis.length; ai++) {
-          var aTi = aTis[ai];
-          var aStart = await aTi.getStartTime();
-          var aStartSec = tickSec(aStart);
-          var aDur = tickSec(await aTi.getDuration());
-          var aEnd = aStartSec + aDur;
-
-          if (aStartSec <= vMid && vMid < aEnd) {
-            // Found matching audio clip — check offset
-            var diff = vStartSec - aStartSec;
-            if (Math.abs(diff) < 0.0005) {
-              already++;
-            } else {
-              // Move audio clip to match video start
-              try {
-                await aTi.setStartTime(vStart);
-                aligned++;
-                var pi = await vTi.getProjectItem();
-                var clipName = pi ? pi.name : 'clip ' + vi;
-                ingestLogger.info(trackNames[ti] + ' ' + clipName + ': shifted ' +
-                  (diff * 1000).toFixed(1) + 'ms');
-              } catch (moveErr) {
-                ingestLogger.warn(trackNames[ti] + ' clip ' + vi + ': move failed: ' + moveErr.message);
-                skipped++;
-              }
-            }
-            break;
-          }
-        }
-      }
-    }
-
-    var msg = aligned + ' aligned, ' + already + ' already OK, ' + skipped + ' skipped';
-    ingestLogger.info('Align A2/A3: ' + msg);
-    setIngestStatus('Align A2/A3: ' + msg, aligned > 0 ? 'ready' : 'ready');
-
-  } catch (err) {
-    ingestLogger.error('Align A2/A3 failed: ' + err.message);
-    setIngestStatus('Align A2/A3 failed: ' + err.message, 'error');
-  }
-
-  $('btn-align-a2a3').removeAttribute('disabled');
-}
 
 /**
  * Apply audio channel fill effect to ALL audio clips on A1 of the active sequence.
@@ -7002,8 +6490,8 @@ async function applyAudioFill(effectName) {
     if (!a1Track) throw new Error('No audio track A1');
 
     var trackItems = null;
-    try { trackItems = a1Track.getTrackItems(1, false); } catch (ex) {}
-    if (!trackItems) try { trackItems = a1Track.getTrackItems(); } catch (ex) {}
+    try { trackItems = a1Track.getTrackItems(1, false); } catch (ex) { /* signature differs per build; fallback below handles it */ }
+    if (!trackItems) try { trackItems = a1Track.getTrackItems(); } catch (ex) { assemblyLogger.debug('A1 getTrackItems: ' + (ex && ex.message)); }
 
     if (!trackItems || trackItems.length === 0) {
       throw new Error('No audio clips on A1');
@@ -7070,8 +6558,8 @@ async function applyVoiceEnhance() {
     if (!a1Track) throw new Error('No audio track A1');
 
     var trackItems = null;
-    try { trackItems = a1Track.getTrackItems(1, false); } catch (ex) {}
-    if (!trackItems) try { trackItems = a1Track.getTrackItems(); } catch (ex) {}
+    try { trackItems = a1Track.getTrackItems(1, false); } catch (ex) { /* signature differs per build; fallback below handles it */ }
+    if (!trackItems) try { trackItems = a1Track.getTrackItems(); } catch (ex) { assemblyLogger.debug('A1 getTrackItems: ' + (ex && ex.message)); }
     if (!trackItems || trackItems.length === 0) throw new Error('No audio clips on A1');
 
     assemblyLogger.info('A1 clips: ' + trackItems.length + ', effects: ' + VOICE_EFFECTS.length);
@@ -7131,8 +6619,8 @@ async function removeAudioEffects() {
     if (!a1Track) throw new Error('No audio track A1');
 
     var trackItems = null;
-    try { trackItems = a1Track.getTrackItems(1, false); } catch (ex) {}
-    if (!trackItems) try { trackItems = a1Track.getTrackItems(); } catch (ex) {}
+    try { trackItems = a1Track.getTrackItems(1, false); } catch (ex) { /* signature differs per build; fallback below handles it */ }
+    if (!trackItems) try { trackItems = a1Track.getTrackItems(); } catch (ex) { assemblyLogger.debug('A1 getTrackItems: ' + (ex && ex.message)); }
     if (!trackItems || trackItems.length === 0) throw new Error('No audio clips on A1');
 
     var totalRemoved = 0;
@@ -7331,7 +6819,7 @@ function generateExportReviewHtml(output, version, seqName) {
     var clipEnd = c.timeline_start_sec + c.duration_sec;
     var clipNotes = [];
     var clipSlash = [];
-    for (var pos in commentsByPos) {
+    for (pos in commentsByPos) {
       var p = parseFloat(pos);
       if (p >= c.timeline_start_sec && p < clipEnd) {
         var mks = commentsByPos[pos];
@@ -7374,87 +6862,6 @@ function generateExportReviewHtml(output, version, seqName) {
   return html;
 }
 
-/**
- * Apply color labels to ProjectItems via clipMap (bin items).
- *
- * KEY INSIGHT (Adobe UXP limitation):
- *   Changing a ProjectItem's color label does NOT retroactively update
- *   existing TrackItems on the timeline. Only NEW TrackItems placed after
- *   the color change inherit the updated label. (Feature request DVAPR-4217788)
- *
- * Therefore, colors MUST be applied BEFORE creating the sequence (Step 2.5
- * in buildAssembly), so that createSequenceFromMedia / insertClip creates
- * clips that already have the correct colors.
- *
- * Does NOT rename clips — file names remain as-is.
- * NOTE: Color is per-ProjectItem (source). Same source = same color everywhere.
- */
-async function applyAssemblyColors(project, clipMap, segments, logger) {
-  const { LABEL_COLOR_INDEX } = require('./src/shared/constants');
-  if (!logger) logger = assemblyLogger;
-
-  if (!clipMap || Object.keys(clipMap).length === 0) {
-    logger.warn('No clipMap for Apply Colors');
-    return 0;
-  }
-
-  // Log real Premiere color constants (diagnostic)
-  try {
-    if (ppro.Constants && ppro.Constants.ProjectItemColorLabel) {
-      const labels = ppro.Constants.ProjectItemColorLabel;
-      const entries = Object.entries(labels).map(function (e) { return e[0] + '=' + e[1]; }).join(', ');
-      logger.debug('ProjectItemColorLabel: {' + entries + '}');
-    }
-  } catch (e) { /* ignore */ }
-
-  let applied = 0;
-  const uniqueSources = {};
-
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i];
-    const colorIdx = LABEL_COLOR_INDEX[seg.color];
-
-    if (colorIdx === undefined) {
-      logger.debug('  ' + seg.id + ': no color defined, skipping');
-      continue;
-    }
-
-    // Find ProjectItem in clipMap (bin items)
-    const rawItem = clipMap[seg.sourceFile] || clipMap[seg.sourceFile.replace(/\.[^.]+$/, '')];
-    if (!rawItem) {
-      logger.debug('  ' + seg.id + ': clip not found in bin for ' + seg.sourceFile);
-      continue;
-    }
-
-    uniqueSources[seg.sourceFile] = { segId: seg.id, color: seg.color, idx: colorIdx };
-
-    try {
-      // Apply color via action pattern (same as assemblyBuilder.js)
-      project.lockedAccess(function () {
-        project.executeTransaction(function (ca) {
-          ca.addAction(rawItem.createSetColorLabelAction(colorIdx));
-        }, 'Color: ' + seg.id);
-      });
-      applied++;
-
-      // DIAGNOSTIC: Read color back to verify it was actually set
-      let readBack = '?';
-      try {
-        readBack = await rawItem.getColorLabelIndex();
-      } catch (readErr) {
-        readBack = 'err:' + readErr.message;
-      }
-
-      logger.debug('  ' + seg.id + ': color=' + seg.color + '(' + colorIdx + ') readBack=' + readBack + ' src=' + seg.sourceFile);
-    } catch (ex) {
-      logger.warn('  Color failed ' + seg.id + ': ' + ex.message);
-    }
-  }
-
-  const uniqueCount = Object.keys(uniqueSources).length;
-  logger.info('Colors applied to ' + applied + ' clips (' + uniqueCount + ' unique sources)');
-  return applied;
-}
 
 /**
  * Create Chapter markers at block boundaries (with duration) + per segment (point markers).
@@ -7472,7 +6879,7 @@ async function applyAssemblyColors(project, clipMap, segments, logger) {
  *   (confirmed via API discovery log 2026-03-09)
  */
 async function createAssemblyMarkers(project, result) {
-  const { MARKER_TYPE_CHAPTER, MARKER_COLOR_INDEX, TICKS_PER_SECOND } = require('./src/shared/constants');
+  const { MARKER_TYPE_CHAPTER, MARKER_COLOR_INDEX } = require('./src/shared/constants');
   const seq = result.sequence;
   const segs = result.segments;
   const TIME_ZERO = ppro.TickTime.createWithSeconds(0);
@@ -7735,7 +7142,7 @@ async function validateAssemblyBuild(sequence, result, markerInfo) {
 
 async function saveAssemblyLogs(project, clipMap, result) {
   try {
-    if (project) { try { await project.save(); assemblyLogger.info('Project saved'); } catch (e) { } }
+    if (project) { try { await project.save(); assemblyLogger.info('Project saved'); } catch (e) { assemblyLogger.debug('save: ' + (e && e.message)); } }
 
     // Build extras for debug snapshot
     const extras = {
@@ -8029,8 +7436,8 @@ async function getClipDurationsFromIngest(project, projectName, logger) {
   try {
     var v0 = await sequence.getVideoTrack(0);
     var items = null;
-    try { items = v0.getTrackItems(1, false); } catch (ex) { }
-    if (!items) try { items = v0.getTrackItems(); } catch (ex) { }
+    try { items = v0.getTrackItems(1, false); } catch (ex) { /* signature differs per build; fallback below handles it */ }
+    if (!items) try { items = v0.getTrackItems(); } catch (ex) { logger.debug('Ingest V1 getTrackItems: ' + (ex && ex.message)); }
     if (!items) items = [];
 
     for (var i = 0; i < items.length; i++) {
@@ -8105,7 +7512,7 @@ async function buildDeletedScene() {
     step++;
     stepStart = Date.now();
     setDeletedSceneProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Saving backup...');
-    try { await project.save(); deletedSceneLogger.info('Project saved'); } catch (e) { }
+    try { await project.save(); deletedSceneLogger.info('Project saved'); } catch (e) { deletedSceneLogger.warn('Backup save failed: ' + (e && e.message)); }
     stepTimings.push('save ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 2: Scan project for clips + get clip durations
@@ -8176,9 +7583,9 @@ async function buildDeletedScene() {
     setDeletedSceneProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Validating...');
     if (result.sequence) {
       await project.setActiveSequence(result.sequence);
-      try { await project.openSequence(result.sequence.guid || result.sequence); } catch (e) { }
+      try { await project.openSequence(result.sequence.guid || result.sequence); } catch (e) { /* opening the tab is cosmetic; active seq already set */ }
     }
-    try { await project.save(); } catch (e) { }
+    try { await project.save(); } catch (e) { deletedSceneLogger.debug('save: ' + (e && e.message)); }
 
     if (result.sequence) {
       await validateDeletedSceneBuild(result.sequence, result, markerInfo);
@@ -8381,13 +7788,13 @@ async function generateScreenPngs() {
     try {
       var tmpClean = await uxpfs.getEntryWithUrl('file:///tmp/ytai_screen_cues_brief.txt');
       await tmpClean.delete();
-    } catch (e) { }
+    } catch (e) { /* temp-file cleanup is best-effort */ }
     // Fallback: copy command to clipboard
     var pyCmd = 'python3 "' + scriptPath + '" --brief "' + briefPath + '"';
     try {
       await navigator.clipboard.writeText(pyCmd);
       screensLogger.info('Fallback: Python command copied to clipboard');
-    } catch (e) { }
+    } catch (e) { screensLogger.warn('Clipboard fallback failed: ' + (e && e.message)); }
     setScreensStatus('shell.openPath failed — command copied to clipboard. Run in Terminal.', 'error');
     $('btn-generate-pngs').removeAttribute('disabled');
     return;
@@ -8499,7 +7906,7 @@ async function organizeBins(project, projectCode, logger) {
         }, 'Create 99_Archive bin');
       });
       allItems = await rootItem.getItems();
-      for (var i = 0; i < allItems.length; i++) {
+      for (i = 0; i < allItems.length; i++) {
         if (allItems[i].name === '99_Archive') {
           archiveBin = ppro.FolderItem.cast(allItems[i]);
           break;
@@ -8757,7 +8164,7 @@ async function buildScreenCuesPipeline() {
     // Create or find 01_ScreenCues bin for PNG imports
     var screenCuesBin = null;
     try {
-      var rootItem = await project.getRootItem();
+      rootItem = await project.getRootItem();
       var allItems = await rootItem.getItems();
       for (var bi = 0; bi < allItems.length; bi++) {
         if (allItems[bi].name === SCREEN_CUES_BIN_NAME) {
@@ -8774,7 +8181,7 @@ async function buildScreenCuesPipeline() {
         });
         // Re-fetch to get created bin
         allItems = await rootItem.getItems();
-        for (var bi = 0; bi < allItems.length; bi++) {
+        for (bi = 0; bi < allItems.length; bi++) {
           if (allItems[bi].name === SCREEN_CUES_BIN_NAME) {
             screenCuesBin = ppro.FolderItem.cast(allItems[bi]);
             break;
@@ -8830,7 +8237,7 @@ async function buildScreenCuesPipeline() {
     var screensProjectCode = assemblyState.projectCode || assemblyState.projectName;
 
     if (assemblyState.filePath) {
-      var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
+      briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
       var screensProjectRoot = briefDir.replace(/[/\\]00_Setup$/, '');
       try {
         // Ensure Transcription subdirs exist
@@ -8880,7 +8287,7 @@ async function buildScreenCuesPipeline() {
     if (screenResult.sequence) {
       await project.setActiveSequence(screenResult.sequence);
     }
-    try { await project.save(); } catch (e) { }
+    try { await project.save(); } catch (e) { screensLogger.debug('save: ' + (e && e.message)); }
 
     stepTimings.push('srt-import ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
@@ -8898,7 +8305,7 @@ async function buildScreenCuesPipeline() {
       // Copy Python command to clipboard for convenience
       if (assemblyState.filePath) {
         var pngCmd = 'python generate_screen_cues_png.py --brief ' + assemblyState.filePath;
-        try { await navigator.clipboard.writeText(pngCmd); screensLogger.info('PNG command copied to clipboard'); } catch (e) { }
+        try { await navigator.clipboard.writeText(pngCmd); screensLogger.info('PNG command copied to clipboard'); } catch (e) { /* clipboard copy is a convenience only */ }
       }
     }
 
@@ -8910,7 +8317,7 @@ async function buildScreenCuesPipeline() {
     // --- Post-build: Versioning, archive, bin organization (non-fatal) ---
     try {
       if (assemblyState.filePath) {
-        var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
+        briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
         var versionsDir = await ensureVersionsDir(briefDir, screensLogger);
 
         // Save brief_out version (export data snapshot)
@@ -8955,7 +8362,7 @@ async function buildScreenCuesPipeline() {
     screensLogger.error('SCREEN CUES BUILD FAILED: ' + err.message);
     if (err.stack) screensLogger.debug(err.stack);
     setScreensStatus('Build failed: ' + err.message, 'error');
-    try { await saveScreensLogs(await ppro.Project.getActiveProject(), null); } catch (e) { }
+    try { await saveScreensLogs(await ppro.Project.getActiveProject(), null); } catch (e) { /* failure path; debug bundle save is best-effort */ }
   }
 }
 
@@ -8964,7 +8371,7 @@ async function buildScreenCuesPipeline() {
  */
 async function saveScreensLogs(project, screenResult) {
   try {
-    if (project) { try { await project.save(); screensLogger.info('Project saved'); } catch (e) { } }
+    if (project) { try { await project.save(); screensLogger.info('Project saved'); } catch (e) { screensLogger.debug('save: ' + (e && e.message)); } }
 
     var extras = {
       screensCount: assemblyState.screens ? assemblyState.screens.length : 0,
@@ -9112,7 +8519,7 @@ async function createScreenCuesMarkers(project, screenResult) {
       try {
         var m0 = allMarkers[0];
         var mMethods = [];
-        for (var k of Object.getOwnPropertyNames(Object.getPrototypeOf(m0))) {
+        for (k of Object.getOwnPropertyNames(Object.getPrototypeOf(m0))) {
           if (typeof m0[k] === 'function') mMethods.push(k);
         }
         screensLogger.debug('Marker methods: [' + mMethods.join(', ') + ']');
@@ -9224,8 +8631,8 @@ async function exportPreEditDoc() {
     var timelineClips = [];
     var v1Track = await seq.getVideoTrack(0);
     var trackItems = null;
-    try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) {}
-    if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) {}
+    try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) { /* signature differs per build; fallback below handles it */ }
+    if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) { /* last probe; throw below reports the empty track */ }
     if (!trackItems || trackItems.length === 0) throw new Error('No clips on V1 track');
 
     for (var ti = 0; ti < trackItems.length; ti++) {
@@ -9258,13 +8665,13 @@ async function exportPreEditDoc() {
       for (var mi = 0; mi < rawMarkers.length; mi++) {
         var rm = rawMarkers[mi];
         var startTime = null;
-        try { startTime = rm.getStart(); } catch (e) {}
-        if (!startTime) try { startTime = rm.startTime; } catch (e) {}
+        try { startTime = rm.getStart(); } catch (e) { /* optional API on this build; fallback below handles it */ }
+        if (!startTime) try { startTime = rm.startTime; } catch (e) { screensLogger.debug('marker start unreadable: ' + (e && e.message)); }
         var posSec = startTime ? Math.round(startTime.seconds * 100) / 100 : 0;
 
         var dur = null;
-        try { dur = rm.getDuration(); } catch (e) {}
-        if (!dur) try { dur = rm.duration; } catch (e) {}
+        try { dur = rm.getDuration(); } catch (e) { /* optional API on this build; fallback below handles it */ }
+        if (!dur) try { dur = rm.duration; } catch (e) { screensLogger.debug('marker duration unreadable: ' + (e && e.message)); }
 
         if (dur && dur.seconds > 0) {
           // Chapter marker
@@ -9276,7 +8683,7 @@ async function exportPreEditDoc() {
         } else {
           // Point marker — collect editor notes
           var commentText = rm.comments || '';
-          if (!commentText) try { commentText = rm.getComments ? rm.getComments() : ''; } catch (e) {}
+          if (!commentText) try { commentText = rm.getComments ? rm.getComments() : ''; } catch (e) { /* optional API on this build; rm.comment fallback below */ }
           if (!commentText) commentText = rm.comment || '';
           if (commentText) {
             if (!editorNotes[posSec]) editorNotes[posSec] = [];
@@ -9328,7 +8735,7 @@ async function exportPreEditDoc() {
           sgStart = parseInt(sp[0]) * 60 + parseFloat(sp[1] || 0);
           var ep = (sg.end || '0:0').split(':');
           sgEnd = parseInt(ep[0]) * 60 + parseFloat(ep[1] || 0);
-        } catch (pe) {}
+        } catch (pe) { screensLogger.debug('segment time parse: ' + (pe && pe.message)); }
         if (sgStart < clip.tc_out_sec && sgEnd > clip.tc_in_sec) {
           texts.push(sg.text || '');
           if (!speakerName && sg.speaker) speakerName = sg.speaker;
@@ -9735,12 +9142,12 @@ async function copyPreEditPrompt() {
           for (var mi = 0; mi < rawMarkers.length; mi++) {
             var rm = rawMarkers[mi];
             var comment = rm.comments || '';
-            if (!comment) try { comment = rm.getComments ? rm.getComments() : ''; } catch (e) {}
+            if (!comment) try { comment = rm.getComments ? rm.getComments() : ''; } catch (e) { /* optional API on this build; rm.comment fallback below */ }
             if (!comment) comment = rm.comment || '';
             if (comment && comment.startsWith('/')) {
               var startTime = null;
-              try { startTime = rm.getStart(); } catch (e) {}
-              if (!startTime) try { startTime = rm.startTime; } catch (e) {}
+              try { startTime = rm.getStart(); } catch (e) { /* optional API on this build; fallback below handles it */ }
+              if (!startTime) try { startTime = rm.startTime; } catch (e) { screensLogger.debug('marker start unreadable: ' + (e && e.message)); }
               var posSec = startTime ? Math.round(startTime.seconds * 100) / 100 : 0;
               markerComments.push({ position_sec: posSec, comment: comment });
             }
@@ -10364,7 +9771,6 @@ async function validateScreensBuild(sequence, screenResult, markerInfo) {
   function warn(text) { lines.push('<div class="val-line"><span style="color:var(--warning)">●</span> ' + escapeHtml(text) + '</div>'); }
 
   // V1 clip count check (Assembly copy)
-  var expectedV1 = screenResult.assemblySegments ? screenResult.assemblySegments.length : 0;
   try {
     var v1 = await sequence.getVideoTrack(0);
     var items;
@@ -10518,11 +9924,11 @@ async function processReview() {
     try {
       var oldDone = await uxpfs.getEntryWithUrl('file:///tmp/ytai_review.done');
       await oldDone.delete();
-    } catch (e) { }
+    } catch (e) { /* stale marker is usually absent; cleanup is best-effort */ }
     try {
       var oldErr = await uxpfs.getEntryWithUrl('file:///tmp/ytai_review.error');
       await oldErr.delete();
-    } catch (e) { }
+    } catch (e) { /* stale marker is usually absent; cleanup is best-effort */ }
 
     // Step 4: Launch run_review.command
     var pluginFolder = await uxpfs.getPluginFolder();
@@ -10537,7 +9943,7 @@ async function processReview() {
       reviewLogger.error('shell.openPath failed: ' + shellErr.message);
       // Fallback: copy command to clipboard
       var pyCmd = 'cd "' + pluginDir + '/../0508_review" && ./run_review.command';
-      try { await navigator.clipboard.writeText(pyCmd); } catch (e) { }
+      try { await navigator.clipboard.writeText(pyCmd); } catch (e) { reviewLogger.warn('clipboard fallback failed: ' + (e && e.message)); }
       setReviewStatus('Launch failed — command copied to clipboard', 'error');
       $('btn-process-review').removeAttribute('disabled');
       return;
@@ -10563,7 +9969,7 @@ async function processReview() {
           errored = true;
           break;
         }
-      } catch (e) { }
+      } catch (e) { /* absent until the pipeline writes it; polled again */ }
 
       // Check for done
       try {
@@ -10572,7 +9978,7 @@ async function processReview() {
           found = true;
           break;
         }
-      } catch (e) { }
+      } catch (e) { /* absent until the pipeline writes it; polled again */ }
 
       var elapsed = (attempt + 1) * 5;
       setReviewProgress(10 + (elapsed / 900 * 70), 'Processing... (' + elapsed + 's)');
@@ -10828,7 +10234,7 @@ async function buildReviewOverlay() {
         } catch (eImp) {
           reviewLogger.warn('batch import failed (' + eImp.message + ') — one-by-one');
           for (var pj = 0; pj < paths.length; pj++) {
-            try { if (binCast) await project.importFiles([paths[pj]], true, binCast, false); else await project.importFiles([paths[pj]]); } catch (e2) {}
+            try { if (binCast) await project.importFiles([paths[pj]], true, binCast, false); else await project.importFiles([paths[pj]]); } catch (e2) { reviewLogger.debug('import ' + paths[pj] + ': ' + (e2 && e2.message)); }
           }
         }
         var got = 0;
@@ -10840,10 +10246,10 @@ async function buildReviewOverlay() {
       }
     } catch (e) { reviewLogger.warn('auto-import inserts failed: ' + e.message); }
 
-    try { await project.save(); } catch (e) {}
+    try { await project.save(); } catch (e) { reviewLogger.debug('save: ' + (e && e.message)); }
     setReviewProgress(30, 'Building ' + part.sequence_name + '...');
     const result = await buildPartSequence(project, clipMap, part, segments, reviewLogger, assemblyState.projectSettings);
-    try { await project.save(); } catch (e) {}
+    try { await project.save(); } catch (e) { reviewLogger.debug('save: ' + (e && e.message)); }
 
     var msg = 'Review-overlay: ' + result.seqName + ' — рендер V1 + ' + result.placed + ' вставок V2/V3' +
       (result.skipped ? ' (' + result.skipped + ' пропущено — не в бине)' : '');
@@ -10855,7 +10261,7 @@ async function buildReviewOverlay() {
         '<div class="val-line">База: ' + escapeHtml(renderName) + ' → V1/A1 (редактируемо: режь/меняй местами)</div>' +
         '<div class="val-line">Вставок: ' + result.placed + (result.skipped ? ' (+' + result.skipped + ' не в бине)' : '') + ' на V2/V3 + маркеры</div>' +
         '<div class="val-line">Аниматору: подставить свой таймлайн на V1 ИЛИ перенести слой V2/V3 к себе</div>';
-    } catch (e) {}
+    } catch (e) { /* cosmetic panel; status line already shown */ }
     hideReviewProgress();
     reviewLogger.info('=== REVIEW-OVERLAY DONE: ' + result.seqName + ' (' + result.placed + ' placed, ' + result.skipped + ' skipped) ===');
   } catch (err) {
@@ -10964,7 +10370,7 @@ async function buildReviewV3() {
         if (binCast) await project.importFiles(paths, true, binCast, false); else await project.importFiles(paths);
       } catch (eImp) {
         reviewLogger.warn('batch import failed (' + eImp.message + ') — one-by-one');
-        for (var pj = 0; pj < paths.length; pj++) { try { if (binCast) await project.importFiles([paths[pj]], true, binCast, false); else await project.importFiles([paths[pj]]); } catch (e2) {} }
+        for (var pj = 0; pj < paths.length; pj++) { try { if (binCast) await project.importFiles([paths[pj]], true, binCast, false); else await project.importFiles([paths[pj]]); } catch (e2) { reviewLogger.debug('import ' + paths[pj] + ': ' + (e2 && e2.message)); } }
       }
       var got = 0;
       for (var ri = 0; ri < missing.length; ri++) {
@@ -10982,10 +10388,10 @@ async function buildReviewV3() {
       base_clip: renderName, base_clip_path: renderPath,
       markers: false,                            // NO markers (Roman: clutter; montage HTML is the ref)
     };
-    try { await project.save(); } catch (e) {}
+    try { await project.save(); } catch (e) { reviewLogger.debug('save: ' + (e && e.message)); }
     setReviewProgress(40, 'Building ' + part.sequence_name + ' (V1 cut + overlays)...');
     const result = await buildPartSequence(project, clipMap, part, overlays, reviewLogger, assemblyState.projectSettings);
-    try { await project.save(); } catch (e) {}
+    try { await project.save(); } catch (e) { reviewLogger.debug('save: ' + (e && e.message)); }
 
     // 4) No DeletedScene, NO markers — V1 is the full render; V2/V3 = visualization overlays.
     var msg = 'Review v3: ' + result.seqName + ' — full render V1 + ' +
@@ -10999,7 +10405,7 @@ async function buildReviewV3() {
         '<div class="val-line">V2/V3: ' + result.placed + (result.skipped ? ' (+' + result.skipped + ' not in bin)' : '') + ' visualization overlays (no markers)</div>' +
         '<div class="val-line">Reference: YTCR01_v9_review_v3_montage.html</div>' +
         '<div class="val-line">IMPORTANT: Relink media in Premiere after import.</div>';
-    } catch (e) {}
+    } catch (e) { /* cosmetic panel; status line already shown */ }
     hideReviewProgress();
     reviewLogger.info('=== REVIEW v3 DONE: ' + result.seqName + ' (full V1, ' + result.placed + ' overlays, no markers) ===');
   } catch (err) {
@@ -11027,7 +10433,7 @@ async function exportSequenceJson() {
     var seq = await project.getActiveSequence();
     if (!seq) throw new Error('No active sequence — open the review sequence in the timeline first');
     var fps = 25;
-    try { var tb = await seq.getTimebase(); fps = tb ? Math.round(254016000000 / Number(tb)) : 25; } catch (e) {}
+    try { var tb = await seq.getTimebase(); fps = tb ? Math.round(254016000000 / Number(tb)) : 25; } catch (e) { /* dumpSequence re-reads timebase; 25 is only a seed */ }
 
     // Full per-track / per-clip dump (reuses the proven dumpSequence extractor).
     var data = await dumpSequence(seq, fps, {});
@@ -11038,27 +10444,27 @@ async function exportSequenceJson() {
     data.markers = [];
     try {
       var mk = null;
-      try { if (ppro.Markers && ppro.Markers.getMarkers) mk = await ppro.Markers.getMarkers(seq); } catch (e) {}
-      if (!mk) { try { if (typeof seq.getMarkers === 'function') mk = await seq.getMarkers(); } catch (e) {} }
+      try { if (ppro.Markers && ppro.Markers.getMarkers) mk = await ppro.Markers.getMarkers(seq); } catch (e) { /* optional API on this build; next probe handles it */ }
+      if (!mk) { try { if (typeof seq.getMarkers === 'function') mk = await seq.getMarkers(); } catch (e) { reviewLogger.debug('seq.getMarkers: ' + (e && e.message)); } }
       var list = null;
-      if (mk) { try { list = (typeof mk.getMarkers === 'function') ? await mk.getMarkers() : (Array.isArray(mk) ? mk : null); } catch (e) {} }
+      if (mk) { try { list = (typeof mk.getMarkers === 'function') ? await mk.getMarkers() : (Array.isArray(mk) ? mk : null); } catch (e) { reviewLogger.debug('markers list: ' + (e && e.message)); } }
       if (list && list.length) {
         for (var mi = 0; mi < list.length; mi++) {
           var m = list[mi];
           try {
             var st = m.start && (m.start.seconds != null ? m.start.seconds : (typeof m.start.ticks !== 'undefined' ? Number(m.start.ticks) / 254016000000 : undefined));
             if (st === undefined && typeof m.getStart === 'function') {
-              try { var gs = await m.getStart(); st = gs && (gs.seconds != null ? gs.seconds : Number(gs.ticks) / 254016000000); } catch (e) {}
+              try { var gs = await m.getStart(); st = gs && (gs.seconds != null ? gs.seconds : Number(gs.ticks) / 254016000000); } catch (e) { /* optional API on this build; start_sec stays unset */ }
             }
             var mRec = { name: m.name || '', comment: (m.comments != null ? m.comments : (m.comment || '')), start_sec: st };
             // Маркер-диапазон «вырезать/сократить»: длительность, цвет (MARKER_COLOR_INDEX: Red=1, White=5…), тип.
-            try { if (typeof m.getDuration === 'function') { var md = await m.getDuration(); mRec.duration_sec = md && (md.seconds != null ? md.seconds : Number(md.ticks) / 254016000000); } } catch (e) {}
-            try { if (typeof m.getColorIndex === 'function') mRec.color_index = await m.getColorIndex(); } catch (e) {}
-            try { if (typeof m.getType === 'function') mRec.type = await m.getType(); } catch (e) {}
-            try { if (!mRec.name && typeof m.getName === 'function') mRec.name = await m.getName(); } catch (e) {}
-            try { if (!mRec.comment && typeof m.getComments === 'function') mRec.comment = await m.getComments(); } catch (e) {}
+            try { if (typeof m.getDuration === 'function') { var md = await m.getDuration(); mRec.duration_sec = md && (md.seconds != null ? md.seconds : Number(md.ticks) / 254016000000); } } catch (e) { reviewLogger.debug('marker ' + mi + ' duration: ' + (e && e.message)); }
+            try { if (typeof m.getColorIndex === 'function') mRec.color_index = await m.getColorIndex(); } catch (e) { reviewLogger.debug('marker ' + mi + ' color: ' + (e && e.message)); }
+            try { if (typeof m.getType === 'function') mRec.type = await m.getType(); } catch (e) { /* marker type is informational; optional API */ }
+            try { if (!mRec.name && typeof m.getName === 'function') mRec.name = await m.getName(); } catch (e) { /* fallback when .name property is empty; non-fatal */ }
+            try { if (!mRec.comment && typeof m.getComments === 'function') mRec.comment = await m.getComments(); } catch (e) { reviewLogger.debug('marker ' + mi + ' comments: ' + (e && e.message)); }
             data.markers.push(mRec);
-          } catch (e) {}
+          } catch (e) { reviewLogger.debug('marker ' + mi + ' skipped: ' + (e && e.message)); }
         }
       }
     } catch (e) { reviewLogger.debug('markers read: ' + e.message); }
@@ -11089,7 +10495,7 @@ async function exportSequenceJson() {
       vp.innerHTML = '<div class="val-line"><b>Exported for Claude</b>' + (copied ? ' · 📋 ссылка скопирована' : '') + '</div>' +
         '<div class="val-line">' + escapeHtml(outPath) + '</div>' +
         '<div class="val-line">' + nclips + ' clips · ' + data.markers.length + ' markers · tracks ' + escapeHtml(Object.keys(data.tracks).join(', ')) + '</div>';
-    } catch (e) {}
+    } catch (e) { /* cosmetic panel; export already written and logged */ }
   } catch (err) {
     setReviewStatus('Export error: ' + err.message, 'error');
     reviewLogger.error('Export sequence failed: ' + err.message);
@@ -11147,7 +10553,7 @@ async function buildReview() {
 
     // Step 1: Save project
     setReviewProgress(10, 'Saving backup...');
-    try { await project.save(); reviewLogger.info('Project saved'); } catch (e) { }
+    try { await project.save(); reviewLogger.info('Project saved'); } catch (e) { reviewLogger.debug('backup save: ' + (e && e.message)); }
 
     // Step 2: Import edited video
     setReviewProgress(20, 'Importing edited video...');
@@ -11251,7 +10657,7 @@ async function buildReview() {
     } else {
       reviewLogger.info('Sequence already exists: ' + reviewSeqName);
       // Make it active so the caption/insert steps below target THIS sequence.
-      try { await project.setActiveSequence(existingSeq); } catch (e) { }
+      try { await project.setActiveSequence(existingSeq); } catch (e) { reviewLogger.warn('setActiveSequence failed, inserts may hit wrong timeline: ' + (e && e.message)); }
     }
 
     // Step 4: Import captions & transcript SRT (direct paths from pipeline)
@@ -11321,8 +10727,8 @@ async function buildReview() {
           try {
             var checkTrack = await activeSeq.getVideoTrack(0);
             var checkItems = null;
-            try { checkItems = checkTrack.getTrackItems(1, false); } catch (ex) {}
-            if (!checkItems) try { checkItems = checkTrack.getTrackItems(); } catch (ex) {}
+            try { checkItems = checkTrack.getTrackItems(1, false); } catch (ex) { /* fallback below handles it */ }
+            if (!checkItems) try { checkItems = checkTrack.getTrackItems(); } catch (ex) { reviewLogger.debug('V1 getTrackItems fallback failed: ' + (ex && ex.message)); }
             if (checkItems && checkItems.length > 1) {
               reviewLogger.warn('V1 already has ' + checkItems.length + ' clips — skipping insertions to avoid duplicates. Delete sequence and rebuild if needed.');
               skipInserts = true;
@@ -11364,7 +10770,7 @@ async function buildReview() {
                   try {
                     var subF = ppro.FolderItem.cast(scanItem);
                     if (subF) scanQueue.push(subF);
-                  } catch (e) {}
+                  } catch (e) { /* cast throws on non-folder items; leaf handled above */ }
                 }
               }
               reviewLogger.info('ClipMap: ' + Object.keys(revClipMap).length + ' items from 00_Source');
@@ -11387,7 +10793,7 @@ async function buildReview() {
           // to avoid offset shifts affecting earlier insertions.
           // For same insert_at_tc: REVERSE array order so createInsertProjectItemAction
           // (which pushes content right) produces the intended sequence.
-          var recOrigOrder = recommended.map(function(r, i) { r._origIdx = i; return r; });
+          recommended.forEach(function(r, i) { r._origIdx = i; });
           recommended.sort(function(a, b) {
             var diff = parseTcSec(b.insert_at_tc) - parseTcSec(a.insert_at_tc);
             if (diff !== 0) return diff;
@@ -11424,7 +10830,7 @@ async function buildReview() {
                   ca.addAction(rawItem.createSetColorLabelAction(GREEN_IDX));
                 }, 'Color: ' + ins.insertion_id);
               });
-            } catch (colErr2) {}
+            } catch (colErr2) { /* label colour is cosmetic; insert proceeds */ }
 
             var castClip2 = ppro.ClipProjectItem.cast(rawItem);
             var clipForTrim2 = castClip2 || rawItem;
@@ -11466,7 +10872,7 @@ async function buildReview() {
                   ca.addAction(clipForTrim2.createClearInOutPointsAction());
                 }, 'Clear: ' + ins.insertion_id);
               });
-            } catch (clrErr) {}
+            } catch (clrErr) { /* best-effort cleanup; next insert sets its own in/out */ }
 
             if (insOk) {
               insertionCount++;
@@ -11543,7 +10949,7 @@ async function buildReview() {
 
     // Step 5: Save project
     setReviewProgress(95, 'Saving...');
-    try { await project.save(); } catch (e) { }
+    try { await project.save(); } catch (e) { reviewLogger.warn('Final project save failed: ' + (e && e.message)); }
 
     var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     setReviewProgress(100, 'Complete!');
@@ -11594,13 +11000,13 @@ async function exportReviewMarkers() {
       for (var mi = 0; mi < rawMarkers.length; mi++) {
         var m = rawMarkers[mi];
         var mStart = null;
-        try { mStart = m.getStart ? m.getStart() : m.startTime; } catch (e) {}
+        try { mStart = m.getStart ? m.getStart() : m.startTime; } catch (e) { reviewLogger.debug('marker ' + mi + ' start: ' + (e && e.message)); }
         var mDur = null;
-        try { mDur = m.getDuration ? m.getDuration() : m.duration; } catch (e) {}
+        try { mDur = m.getDuration ? m.getDuration() : m.duration; } catch (e) { reviewLogger.debug('marker ' + mi + ' duration: ' + (e && e.message)); }
         var mComment = '';
-        try { mComment = m.comments || (m.getComments ? m.getComments() : '') || m.comment || ''; } catch (e) {}
+        try { mComment = m.comments || (m.getComments ? m.getComments() : '') || m.comment || ''; } catch (e) { reviewLogger.debug('marker ' + mi + ' comment: ' + (e && e.message)); }
         var mName = '';
-        try { mName = m.name || (m.getName ? m.getName() : '') || ''; } catch (e) {}
+        try { mName = m.name || (m.getName ? m.getName() : '') || ''; } catch (e) { reviewLogger.debug('marker ' + mi + ' name: ' + (e && e.message)); }
         var posSec = mStart ? (typeof mStart === 'object' ? tickSec(mStart) : parseFloat(mStart)) : 0;
         var durSec = mDur ? (typeof mDur === 'object' ? tickSec(mDur) : parseFloat(mDur)) : 0;
         markers.push({
@@ -11619,8 +11025,8 @@ async function exportReviewMarkers() {
     try {
       var v1Track = await seq.getVideoTrack(0);
       var trackItems = null;
-      try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) {}
-      if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) {}
+      try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) { /* fallback below handles it */ }
+      if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) { reviewLogger.debug('V1 getTrackItems fallback failed: ' + (ex && ex.message)); }
       if (trackItems && trackItems.length > 0) {
         for (var ti = 0; ti < trackItems.length; ti++) {
           var item = trackItems[ti];
@@ -11681,7 +11087,6 @@ async function exportReviewMarkers() {
 
     // Separate / markers (editor comments) from others
     var editMarkers = markers.filter(function(m) { return (m.comment || '').indexOf('/') === 0; });
-    var otherMarkers = markers.filter(function(m) { return (m.comment || '').indexOf('/') !== 0; });
 
     // Build output
     function fmtMMSS(sec) {
@@ -11828,7 +11233,7 @@ function tickToFormats(tt, fps) {
   var sec = tickSec(tt);
   if (sec < 0) return null;
   var tickStr = '';
-  try { tickStr = String(tt.ticks || ''); } catch (e) {}
+  try { tickStr = String(tt.ticks || ''); } catch (e) { /* ticks string is informational; sec already computed */ }
   // Build HH:MM:SS:FF timecode
   var f = fps || 25;
   var totalFrames = Math.round(sec * f);
@@ -11849,8 +11254,8 @@ function tickToFormats(tt, fps) {
 async function dumpTrackClips(track, trackLabel, fps, ingestByName) {
   var clips = [];
   var trackItems = null;
-  try { trackItems = track.getTrackItems(1, false); } catch (e) {}
-  if (!trackItems) try { trackItems = track.getTrackItems(); } catch (e) {}
+  try { trackItems = track.getTrackItems(1, false); } catch (e) { /* fallback below handles it */ }
+  if (!trackItems) try { trackItems = track.getTrackItems(); } catch (e) { /* no logger in shared helper; caller sees empty track */ }
   if (!trackItems) return clips;
 
   for (var i = 0; i < trackItems.length; i++) {
@@ -11863,7 +11268,7 @@ async function dumpTrackClips(track, trackLabel, fps, ingestByName) {
       entry.media_path = '';
       if (pi) {
         try { entry.media_path = await pi.getMediaFilePath(); } catch (e) {
-          try { entry.media_path = pi.getMediaPath(); } catch (e2) {}
+          try { entry.media_path = pi.getMediaPath(); } catch (e2) { /* blank media_path is visible in the dump itself */ }
         }
       }
     } catch (e) { entry.source = ''; entry.media_path = ''; }
@@ -11909,7 +11314,7 @@ async function dumpTrackClips(track, trackLabel, fps, ingestByName) {
     } catch (e) { entry.error = e.message; }
     // Clip → Enable снят = Роман пометил кусок «вырезать» (тёмный клип на таймлайне).
     // VideoClipTrackItem/AudioClipTrackItem.isDisabled() — API с 25.0; старые сборки просто без поля.
-    try { if (typeof item.isDisabled === 'function') entry.disabled = !!(await item.isDisabled()); } catch (e) { }
+    try { if (typeof item.isDisabled === 'function') entry.disabled = !!(await item.isDisabled()); } catch (e) { /* optional API on this build (25.0+); field omitted */ }
     clips.push(entry);
   }
   return clips;
@@ -11946,7 +11351,7 @@ async function dumpSequence(seq, fps, ingestByName) {
     var frameSize = await seq.getFrameSize();
     data.width = frameSize.width || frameSize.right || 0;
     data.height = frameSize.height || frameSize.bottom || 0;
-  } catch (e) {}
+  } catch (e) { /* dump field is best-effort; no logger in shared helper */ }
   try {
     var tb = await seq.getTimebase();
     data.fps = tb ? Math.round(254016000000 / Number(tb)) : fps;
@@ -12032,9 +11437,9 @@ async function dumpBinTree(item, depth) {
       }
     } else {
       // Leaf item — get media path
-      try { node.media_path = item.getMediaPath(); } catch (e) {}
+      try { node.media_path = item.getMediaPath(); } catch (e) { /* non-media leaves (sequences) have no path */ }
     }
-  } catch (e) {}
+  } catch (e) { ingestLogger.debug('dumpBinTree: "' + (item && item.name) + '" returned without children/media_path: ' + (e && e.message)); }
   return node;
 }
 
@@ -12052,11 +11457,6 @@ function setDoctorProgress(percent, text) {
   $('doctor-progress-fill').style.width = percent + '%';
   if (text != null) $('doctor-progress-text').textContent = text;
 }
-function doctorProjectCode() {
-  var n = projectState.projectName || '';
-  var m = n.match(/^(YT[A-Z]{2,4}\d+)_/);
-  return m ? m[1] : (n || 'project');
-}
 function doctorTs() {
   var d = new Date(), p = function (n) { return n < 10 ? '0' + n : '' + n; };
   return '' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' +
@@ -12069,11 +11469,11 @@ async function doctorPathExists(path) {
 // mkdir -p for an absolute path: find deepest existing ancestor, then create down.
 async function doctorEnsureDir(dirPath) {
   dirPath = dirPath.replace(/\/+$/, '');
-  try { return await uxpfs.getEntryWithUrl('file://' + dirPath); } catch (e) {}
+  try { return await uxpfs.getEntryWithUrl('file://' + dirPath); } catch (e) { /* missing dir is the normal case; created below */ }
   var parts = dirPath.split('/');
   var baseEntry = null, i = parts.length;
   for (; i > 1; i--) {
-    try { baseEntry = await uxpfs.getEntryWithUrl('file://' + parts.slice(0, i).join('/')); break; } catch (e2) {}
+    try { baseEntry = await uxpfs.getEntryWithUrl('file://' + parts.slice(0, i).join('/')); break; } catch (e2) { /* ancestor missing: walk up; throws below if none */ }
   }
   if (!baseEntry) throw new Error('Cannot locate a base folder for ' + dirPath);
   for (var j = i; j < parts.length; j++) {
@@ -12092,10 +11492,10 @@ async function doctorCollectMedia(project) {
   var rootItem = await project.getRootItem();
   async function mediaPathOf(it) {
     var p = '';
-    try { p = await it.getMediaFilePath(); } catch (e) {}
-    if (!p) { try { p = it.getMediaPath(); } catch (e) {} }
+    try { p = await it.getMediaFilePath(); } catch (e) { /* fallback below handles it */ }
+    if (!p) { try { p = it.getMediaPath(); } catch (e) { /* fallback below handles it */ } }
     if (!p) {
-      try { var c = ppro.ClipProjectItem.cast(it); if (c) { try { p = await c.getMediaFilePath(); } catch (e) { try { p = c.getMediaPath(); } catch (e2) {} } } } catch (e) {}
+      try { var c = ppro.ClipProjectItem.cast(it); if (c) { try { p = await c.getMediaFilePath(); } catch (e) { try { p = c.getMediaPath(); } catch (e2) { doctorLogFn('mediaPathOf: no path for "' + (it && it.name) + '": ' + (e2 && e2.message)); } } } } catch (e) { /* not a clip item (bin/sequence): no media path */ }
     }
     return p || '';
   }
@@ -12105,9 +11505,9 @@ async function doctorCollectMedia(project) {
     try { items = await folder.getItems(); } catch (e) { return; }
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
-      var asFolder = null; try { asFolder = ppro.FolderItem.cast(it); } catch (e) {}
+      var asFolder = null; try { asFolder = ppro.FolderItem.cast(it); } catch (e) { /* cast throws for non-folder items; null is the answer */ }
       if (asFolder) { await scan(asFolder, depth + 1); continue; }
-      var asSeq = null; try { asSeq = ppro.Sequence.cast(it); } catch (e) {}
+      var asSeq = null; try { asSeq = ppro.Sequence.cast(it); } catch (e) { /* cast throws for non-sequence items; null is the answer */ }
       if (asSeq) continue;                       // sequences are not media
       var p = await mediaPathOf(it);
       var pl = (p || '').toLowerCase();
@@ -12127,35 +11527,12 @@ var DOCTOR_BUILD = 'D17';   // shown in the HTML report + debug log so a report 
 // Best-effort name of a Premiere object via property or getter (UXP varies by build/type).
 function doctorNameOf(obj) {
   var n = '';
-  try { n = obj && obj.name ? obj.name : ''; } catch (e) {}
-  if (!n) { try { if (obj && typeof obj.getName === 'function') n = obj.getName() || ''; } catch (e) {} }
-  if (!n) { try { if (obj && typeof obj.getMatchName === 'function') n = obj.getMatchName() || ''; } catch (e) {} }
+  try { n = obj && obj.name ? obj.name : ''; } catch (e) { /* fallback below handles it */ }
+  if (!n) { try { if (obj && typeof obj.getName === 'function') n = obj.getName() || ''; } catch (e) { /* fallback below handles it */ } }
+  if (!n) { try { if (obj && typeof obj.getMatchName === 'function') n = obj.getMatchName() || ''; } catch (e) { /* last resort; '' is valid for nameless objects */ } }
   return n || '';
 }
 
-// Recurse the bin tree collecting EVERY sequence as {name, item, seq}. seq = walkable Sequence
-// (cast result) or null when cast fails — caller resolves null via project.openSequence().
-// Detection is by `item.type === 1` (the codebase's reliable signal; ppro.Sequence.cast can
-// return null / throw for sequences in some Premiere builds).
-async function doctorCollectSequencesDeep(folderItem, acc, seen, depth) {
-  if (depth > 10) return;
-  var items;
-  try { items = await folderItem.getItems(); } catch (e) { doctorLogFn('seq-scan getItems threw: ' + (e && e.message)); return; }
-  if (depth === 0) doctorLogFn('seq-scan: root items len=' + (items && items.length));
-  for (var i = 0; i < items.length; i++) {
-    var it = items[i];
-    var ty = null; try { ty = it.type; } catch (e) {}
-    var nm = doctorNameOf(it);
-    var casted = null; try { casted = ppro.Sequence.cast(it); } catch (e) {}
-    if (depth <= 1) doctorLogFn('   item d' + depth + ' "' + nm + '" type=' + ty + ' seqCast=' + (casted ? 'Y' : 'n'));
-    if (ty === 1 || casted) {
-      if (nm && !seen[nm]) { seen[nm] = true; acc.push({ name: nm, item: it, seq: casted || null }); }
-      continue;
-    }
-    var asFolder = null; try { asFolder = ppro.FolderItem.cast(it); } catch (e) {}
-    if (asFolder) await doctorCollectSequencesDeep(asFolder, acc, seen, depth + 1);
-  }
-}
 
 // Lightweight: {name, mediaPath} of source projectItems placed on a sequence's tracks.
 // Recurses into NESTED sequences so media used only inside a nested sequence is still
@@ -12174,8 +11551,8 @@ async function doctorSequenceSources(seq, seqNameSet, resolveSeq) {
     if (sname) visited[sname] = true;
     async function walkTrack(track) {
       var items = null;
-      try { items = await track.getTrackItems(1, false); } catch (e) {}
-      if (!items) { try { items = await track.getTrackItems(); } catch (e) {} }
+      try { items = await track.getTrackItems(1, false); } catch (e) { /* fallback below handles it */ }
+      if (!items) { try { items = await track.getTrackItems(); } catch (e) { doctorLogFn('walkTrack: getTrackItems threw on "' + sname + '": ' + (e && e.message)); } }
       if (!items) return;
       for (var i = 0; i < items.length; i++) {
         stats.raw++;
@@ -12196,23 +11573,23 @@ async function doctorSequenceSources(seq, seqNameSet, resolveSeq) {
             if (stats.probed < 5) {
               stats.probed++;
               var meths = '';
-              try { meths = Object.getOwnPropertyNames(Object.getPrototypeOf(items[i])).filter(function (k) { return k !== 'constructor'; }).join(','); } catch (e) {}
+              try { meths = Object.getOwnPropertyNames(Object.getPrototypeOf(items[i])).filter(function (k) { return k !== 'constructor'; }).join(','); } catch (e) { /* diagnostic probe only; empty method list is fine */ }
               doctorLogFn('   ? unidentified clip: getPI=' + (piErr || '(null)') + ' tiName="' + tiName + '" methods=[' + meths + ']');
             }
             continue;
           }
           var p = '';
-          if (pi) { try { p = await pi.getMediaFilePath(); } catch (e) { try { p = pi.getMediaPath(); } catch (e2) {} } }
+          if (pi) { try { p = await pi.getMediaFilePath(); } catch (e) { try { p = pi.getMediaPath(); } catch (e2) { /* name still recorded; usage matches by name */ } } }
           out.push({ name: piName, mediaPath: p || '' });
           stats.leaves++;
-        } catch (e) {}
+        } catch (e) { doctorLogFn('walkTrack: item ' + i + ' of "' + sname + '" skipped: ' + (e && e.message)); }
       }
     }
-    try { var vc = await s.getVideoTrackCount(); for (var v = 0; v < vc; v++) { await walkTrack(await s.getVideoTrack(v)); } } catch (e) {}
-    try { var ac = await s.getAudioTrackCount(); for (var a = 0; a < ac; a++) { await walkTrack(await s.getAudioTrack(a)); } } catch (e) {}
+    try { var vc = await s.getVideoTrackCount(); for (var v = 0; v < vc; v++) { await walkTrack(await s.getVideoTrack(v)); } } catch (e) { doctorLogFn('WARN: video tracks of "' + sname + '" not walked: ' + (e && e.message)); }
+    try { var ac = await s.getAudioTrackCount(); for (var a = 0; a < ac; a++) { await walkTrack(await s.getAudioTrack(a)); } } catch (e) { doctorLogFn('WARN: audio tracks of "' + sname + '" not walked: ' + (e && e.message)); }
   }
   await walkSeq(seq);
-  try { doctorLogFn('  walk "' + doctorNameOf(seq) + '": raw=' + stats.raw + ' nopi=' + stats.nopi + ' nested=' + stats.nested + ' leaves=' + stats.leaves + ' visited=[' + Object.keys(visited).join(', ') + ']'); } catch (e) {}
+  try { doctorLogFn('  walk "' + doctorNameOf(seq) + '": raw=' + stats.raw + ' nopi=' + stats.nopi + ' nested=' + stats.nested + ' leaves=' + stats.leaves + ' visited=[' + Object.keys(visited).join(', ') + ']'); } catch (e) { /* stats line only; logging must not break the walk */ }
   return out;
 }
 
@@ -12231,7 +11608,7 @@ async function doctorCollectUsage(project, scope) {
     if (nmm && !seqByName[nmm]) { seqByName[nmm] = allSeq[m]; seqNameSet[nmm] = true; }
   }
   // make sure the active sequence is in the map (and walkable)
-  var savedActive = null; try { savedActive = await project.getActiveSequence(); } catch (e) {}
+  var savedActive = null; try { savedActive = await project.getActiveSequence(); } catch (e) { doctorLogFn('getActiveSequence threw: ' + (e && e.message)); }
   if (savedActive) { var an = doctorNameOf(savedActive); if (an && !seqByName[an]) { seqByName[an] = savedActive; seqNameSet[an] = true; } }
   doctorLogFn('getSequences = ' + Object.keys(seqByName).length + ' [' + Object.keys(seqByName).join(', ') + ']');
 
@@ -12327,7 +11704,7 @@ async function analyzeForDoctor(scope) {
   // Derive the project root automatically from the ACTIVE project's .prproj path.
   // (Doctor needs no "Select folder" — it follows whatever project is open.)
   var projPath = '';
-  try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+  try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) { /* panel-folder fallback below; logged as (none) */ }
   // Doctor follows the ACTIVE project: derive root from its .prproj path first.
   // Only fall back to the panel-selected folder if the project has no saved path.
   var projectRoot = projPath
@@ -12357,12 +11734,12 @@ async function onDoctorAnalyze() {
   var dbg = [];
   function log(m) {
     dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m);
-    try { console.log('[Doctor] ' + m); } catch (e) {}
+    try { console.log('[Doctor] ' + m); } catch (e) { /* console may be absent in UXP; dbg[] keeps the line */ }
   }
   doctorLogFn = log;
   doctorState.lastReportPath = null;
   doctorState.lastDebugPath = null;
-  try { $('btn-doctor-open').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-open').setAttribute('disabled', 'true'); } catch (e) { /* cosmetic; button may not be in the DOM yet */ }
   var projectRootForLog = '';
   var scopeEl = document.querySelector('input[name="doctor-scope"]:checked');
   var scope = scopeEl ? scopeEl.value : 'active';
@@ -12382,7 +11759,7 @@ async function onDoctorAnalyze() {
     var projectRoot = result.project.path;
     if (!projectRoot) throw new Error('Active project has no saved path. Save the .prproj once, then retry.');
     // prefill the relink "also search" box with the channel parent (sibling-project assets live there)
-    try { var _er = $('doctor-extra-root'); if (_er && !_er.value) _er.value = projectRoot.replace(/\/[^\/]*$/, ''); } catch (e) {}
+    try { var _er = $('doctor-extra-root'); if (_er && !_er.value) _er.value = projectRoot.replace(/\/[^\/]*$/, ''); } catch (e) { /* prefill is a convenience; user can type the path */ }
     var outDir = projectRoot + '/00_Setup/05_Review';
     log('writing report → ' + outDir);
     var dirEntry = await doctorEnsureDir(outDir);
@@ -12412,7 +11789,7 @@ async function onDoctorAnalyze() {
 
     setDoctorProgress(100, 'Done');
     var opened = await doctorOpen(doctorState.lastReportPath, log);
-    try { await navigator.clipboard.writeText(doctorState.lastReportPath); log('report path copied to clipboard'); } catch (e) {}
+    try { await navigator.clipboard.writeText(doctorState.lastReportPath); log('report path copied to clipboard'); } catch (e) { log('clipboard copy failed: ' + (e && e.message)); }
     setDoctorStatus(c.actionRequired + ' to obtain · report ' + (opened ? 'opened' : 'saved') + ' · path copied',
       c.actionRequired ? 'error' : 'ready');
   } catch (e) {
@@ -12425,12 +11802,12 @@ async function onDoctorAnalyze() {
     doctorLogFn = function () {};
     // Debug body → FILE (not clipboard). Clipboard holds a PATH to open/send.
     var text = '=== Project Doctor debug ===\n' + dbg.join('\n') + '\n';
-    try { await doctorWriteDebug(text, projectRootForLog); } catch (e3) {}
+    try { await doctorWriteDebug(text, projectRootForLog); } catch (e3) { /* debug writer is self-guarded; nowhere left to log */ }
     if (!doctorState.lastReportPath && doctorState.lastDebugPath) {
-      try { await navigator.clipboard.writeText(doctorState.lastDebugPath); } catch (e4) {}
+      try { await navigator.clipboard.writeText(doctorState.lastDebugPath); } catch (e4) { /* clipboard is best-effort; path is shown in status */ }
     }
     if (doctorState.lastDebugPath) {
-      try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e5) {}
+      try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e5) { /* cosmetic UI; button may not exist in this layout */ }
       var st = $('doctor-status-text');
       if (st) st.textContent += '  ·  log: ' + doctorState.lastDebugPath;
     }
@@ -12441,7 +11818,7 @@ async function onDoctorCopyDebug() {
   if (!doctorState.lastDebugPath) { setDoctorStatus('No debug log yet — run Analyze or Relink first.', 'waiting'); return; }
   // OPEN the log in the default app (most useful), and copy its path as a bonus.
   var ok = await doctorOpen(doctorState.lastDebugPath, null);
-  try { await navigator.clipboard.writeText(doctorState.lastDebugPath); } catch (e) {}
+  try { await navigator.clipboard.writeText(doctorState.lastDebugPath); } catch (e) { /* clipboard is best-effort; path is shown in status */ }
   setDoctorStatus(ok ? ('Debug log opened · ' + doctorState.lastDebugPath)
                      : ('Could not open — path copied · ' + doctorState.lastDebugPath), ok ? 'ready' : 'error');
 }
@@ -12475,23 +11852,23 @@ async function doctorWriteDebug(text, projectRoot) {
       var f = await d.createFile('doctor_debug_' + ts + '.log', { overwrite: true });
       await f.write(text);
       doctorState.lastDebugPath = projectRoot + '/00_Setup/logs/doctor_debug_' + ts + '.log';
-      try { console.log('[Doctor] debug log → ' + doctorState.lastDebugPath); } catch (e) {}
+      try { console.log('[Doctor] debug log → ' + doctorState.lastDebugPath); } catch (e) { /* console.log guard only; nothing to report */ }
       return;
-    } catch (e) { try { console.log('[Doctor] debug write (project) failed: ' + e.message); } catch (e1) {} }
+    } catch (e) { try { console.log('[Doctor] debug write (project) failed: ' + e.message); } catch (e1) { /* console.log guard; fallback below handles the write */ } }
   }
   try {
     var df = await uxpfs.getDataFolder();
     var f2 = await df.createFile('doctor_debug_' + ts + '.log', { overwrite: true });
     await f2.write(text);
     doctorState.lastDebugPath = (df.nativePath || '(plugin data folder)') + '/doctor_debug_' + ts + '.log';
-    try { console.log('[Doctor] debug log → ' + doctorState.lastDebugPath); } catch (e) {}
-  } catch (e3) { try { console.log('[Doctor] debug write failed entirely: ' + e3.message); } catch (e4) {} }
+    try { console.log('[Doctor] debug log → ' + doctorState.lastDebugPath); } catch (e) { /* console.log guard only; nothing to report */ }
+  } catch (e3) { try { console.log('[Doctor] debug write failed entirely: ' + e3.message); } catch (e4) { /* console.log guard only; nothing to report */ } }
 }
 
 async function onDoctorOpenLast() {
   if (!doctorState.lastReportPath) { setDoctorStatus('No report yet — run Analyze first.', 'waiting'); return; }
   var ok = await doctorOpen(doctorState.lastReportPath, null);
-  try { await navigator.clipboard.writeText(doctorState.lastReportPath); } catch (e) {}
+  try { await navigator.clipboard.writeText(doctorState.lastReportPath); } catch (e) { /* clipboard is a bonus; opening the report is primary */ }
   setDoctorStatus(ok ? 'Report opened · path copied' : 'Could not open — path copied to clipboard', ok ? 'ready' : 'error');
 }
 
@@ -12555,12 +11932,12 @@ async function doctorBuildIndex(roots, log) {
 
 // Re-point one bin item to targetPath. Returns 'ok' | 'skip' | 'fail'.
 async function doctorRelinkItem(it, targetPath, log) {
-  var clip = null; try { clip = ppro.ClipProjectItem.cast(it); } catch (e) {}
+  var clip = null; try { clip = ppro.ClipProjectItem.cast(it); } catch (e) { /* null check on next line handles a failed cast */ }
   if (!clip) { if (log) log('   skip (not a clip): ' + (it && it.name)); return 'skip'; }
-  try { if (clip.canChangeMediaPath && (await clip.canChangeMediaPath()) === false) { if (log) log('   skip (canChangeMediaPath=false): ' + it.name); return 'skip'; } } catch (e) {}
+  try { if (clip.canChangeMediaPath && (await clip.canChangeMediaPath()) === false) { if (log) log('   skip (canChangeMediaPath=false): ' + it.name); return 'skip'; } } catch (e) { /* optional API on this build; probe may throw */ }
   var ok = false;
   try { ok = await clip.changeMediaFilePath(targetPath); } catch (e) { if (log) log('   change threw: ' + (e && e.message)); }
-  if (!ok) { try { ok = await clip.changeMediaFilePath(targetPath, true); } catch (e2) {} }   // retry: override codec/format compat check
+  if (!ok) { try { ok = await clip.changeMediaFilePath(targetPath, true); } catch (e2) { if (log) log('   retry change threw: ' + (e2 && e2.message)); } }   // retry: override codec/format compat check
   return ok ? 'ok' : 'fail';
 }
 
@@ -12590,7 +11967,7 @@ async function doctorRelinkItem(it, targetPath, log) {
 // known spelling. Returns true | false | null (null = this build exposes no offline flag).
 async function doctorIsOfflineInPremiere(it) {
   var targets = [it];
-  try { var c = ppro.ClipProjectItem.cast(it); if (c) targets.push(c); } catch (e) {}
+  try { var c = ppro.ClipProjectItem.cast(it); if (c) targets.push(c); } catch (e) { /* cast is a probe; the raw item is still checked */ }
   var props = ['isOffline', 'isOfflineMedia', 'isMediaOffline', 'offline'];
   var getters = ['isOffline', 'getIsOffline', 'isOfflineMedia', 'getIsOfflineMedia', 'isMediaOffline', 'getIsMediaOffline'];
   for (var t = 0; t < targets.length; t++) {
@@ -12602,10 +11979,10 @@ async function doctorIsOfflineInPremiere(it) {
           var v = await o[getters[g]]();
           if (typeof v === 'boolean') return v;
         }
-      } catch (e) {}
+      } catch (e) { /* optional API on this build; next spelling is tried */ }
     }
     for (var p = 0; p < props.length; p++) {
-      try { if (typeof o[props[p]] === 'boolean') return o[props[p]]; } catch (e) {}
+      try { if (typeof o[props[p]] === 'boolean') return o[props[p]]; } catch (e) { /* optional API on this build; next spelling is tried */ }
     }
   }
   return null;
@@ -12623,7 +12000,7 @@ function doctorAltPathForm(p) {
 // Force Premiere to re-import a clip that is offline despite its path being valid.
 // Returns 'ok' | 'skip' | 'fail'. Always tries to leave the clip on the canonical path.
 async function doctorForceRefreshItem(it, canonicalPath, log) {
-  var clip = null; try { clip = ppro.ClipProjectItem.cast(it); } catch (e) {}
+  var clip = null; try { clip = ppro.ClipProjectItem.cast(it); } catch (e) { /* null check on next line handles a failed cast */ }
   if (!clip) { if (log) log('   skip (not a clip): ' + doctorNameOf(it)); return 'skip'; }
   var nm = doctorNameOf(it) || doctorBasename(canonicalPath);
 
@@ -12645,7 +12022,7 @@ async function doctorForceRefreshItem(it, canonicalPath, log) {
   async function setPath(p) {
     var ok = false;
     try { ok = await clip.changeMediaFilePath(p); } catch (e) { if (log) log('   change threw: ' + (e && e.message)); }
-    if (!ok) { try { ok = await clip.changeMediaFilePath(p, true); } catch (e2) {} }
+    if (!ok) { try { ok = await clip.changeMediaFilePath(p, true); } catch (e2) { if (log) log('   retry change threw: ' + (e2 && e2.message)); } }
     return ok;
   }
   var wentOut = await setPath(alt);
@@ -12657,7 +12034,7 @@ async function doctorForceRefreshItem(it, canonicalPath, log) {
   }
 
   var finalPath = '';
-  try { finalPath = (await clip.getMediaFilePath()) || ''; } catch (e) {}
+  try { finalPath = (await clip.getMediaFilePath()) || ''; } catch (e) { /* readback is best-effort; used for log text only */ }
   if (!cameBack && wentOut) {
     if (log) log('   WARN ' + nm + ' left on alt spelling (same file): ' + (finalPath || alt));
   }
@@ -12669,18 +12046,18 @@ async function doctorForceRefreshItem(it, canonicalPath, log) {
 
 async function onDoctorRelink() {
   var dbg = [];
-  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor relink] ' + m); } catch (e) {} }
+  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor relink] ' + m); } catch (e) { /* console.log guard inside log(); nothing to report */ } }
   doctorLogFn = log;
   var relinked = 0, failed = 0, skipped = 0, refreshed = 0, missing = [], projectRootForLog = '';
-  try { $('btn-doctor-relink').setAttribute('disabled', 'true'); } catch (e) {}
-  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-relink').setAttribute('disabled', 'true'); } catch (e) { /* cosmetic UI; button may not exist in this layout */ }
+  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) { /* cosmetic UI; button may not exist in this layout */ }
   setDoctorStatus('Searching for local copies + relinking…', 'waiting');
   setDoctorProgress(10, 'Reading project bin…');
   log('=== Project Doctor relink (build ' + DOCTOR_BUILD + ') ===');
   try {
     var project = await ppro.Project.getActiveProject();
     if (!project) throw new Error('No active project — open a project in Premiere first.');
-    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) { log('project.path threw: ' + (e && e.message)); }
     var projectRoot = projPath ? projPath.replace(/\/[^\/]*$/, '')
       : (projectState.folderPath ? projectState.folderPath.replace(/\\/g, '/').replace(/\/+$/, '') : '');
     if (!projectRoot) throw new Error('Project has no saved path — save the .prproj once, then retry.');
@@ -12688,7 +12065,7 @@ async function onDoctorRelink() {
     // media index never sees 01_Source/Video/<scene>/ where the originals live.
     projectRoot = await resolveProjectRoot(projectRoot);
     projectRootForLog = projectRoot;
-    var extra = ''; try { extra = ($('doctor-extra-root').value || '').trim().replace(/\/+$/, ''); } catch (e) {}
+    var extra = ''; try { extra = ($('doctor-extra-root').value || '').trim().replace(/\/+$/, ''); } catch (e) { /* optional field; roots line below shows what was used */ }
     var roots = [projectRoot]; if (extra && extra !== projectRoot) roots.push(extra);
     log('roots = ' + roots.join('  |  '));
 
@@ -12748,18 +12125,18 @@ async function onDoctorRelink() {
       $('doctor-validation').innerHTML = missing.length
         ? '<div style="margin-top:8px;color:#ff9800;font-size:11px"><b>Still missing (no local copy — request from editor):</b><br>' + missing.map(escapeHtml).join('<br>') + '</div>'
         : '<div style="margin-top:8px;color:#4caf50;font-size:11px">All offline clips relinked from local copies. Review &amp; ⌘S.</div>';
-    } catch (e) {}
+    } catch (e) { /* cosmetic summary; status line carries the counts */ }
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));
     if (e && e.stack) log('STACK: ' + e.stack);
     setDoctorStatus('Relink error: ' + (e && e.message ? e.message : String(e)), 'error');
     setDoctorProgress(100, 'Error');
   } finally {
-    try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) {}
-    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) { /* cosmetic UI; button may not exist in this layout */ }
+    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) { /* cosmetic UI; button may not exist in this layout */ }
     doctorLogFn = function () {};
-    try { await doctorWriteDebug('=== Project Doctor relink debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) {}
-    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) {} }
+    try { await doctorWriteDebug('=== Project Doctor relink debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) { /* debug writer is self-guarded; nowhere left to log */ }
+    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) { /* cosmetic: button state only */ } }
   }
 }
 
@@ -12771,19 +12148,19 @@ async function onDoctorRelink() {
    blind sweep — bouncing 500 healthy clips to fix one is not a trade worth making silently. */
 async function onDoctorForceRefresh() {
   var dbg = [];
-  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor force-refresh] ' + m); } catch (e) {} }
+  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor force-refresh] ' + m); } catch (e) { /* console mirror; dbg[] already holds the line */ } }
   doctorLogFn = log;
   var refreshed = 0, failed = 0, skipped = 0, noFile = [], projectRootForLog = '';
-  try { $('btn-doctor-forcerefresh').setAttribute('disabled', 'true'); } catch (e) {}
-  try { $('btn-doctor-relink').setAttribute('disabled', 'true'); } catch (e) {}
-  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-forcerefresh').setAttribute('disabled', 'true'); } catch (e) { /* cosmetic: static button, disable only */ }
+  try { $('btn-doctor-relink').setAttribute('disabled', 'true'); } catch (e) { /* cosmetic: static button, disable only */ }
+  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) { /* cosmetic: static button, disable only */ }
   setDoctorStatus('Force-refreshing ghost-offline clips…', 'waiting');
   setDoctorProgress(10, 'Reading project bin…');
   log('=== Project Doctor force-refresh (build ' + DOCTOR_BUILD + ') ===');
   try {
     var project = await ppro.Project.getActiveProject();
     if (!project) throw new Error('No active project — open a project in Premiere first.');
-    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) { log('project.path unreadable: ' + (e && e.message)); }
     var projectRoot = projPath ? projPath.replace(/\/[^\/]*$/, '')
       : (projectState.folderPath ? projectState.folderPath.replace(/\\/g, '/').replace(/\/+$/, '') : '');
     if (projectRoot) projectRoot = await resolveProjectRoot(projectRoot);
@@ -12791,7 +12168,7 @@ async function onDoctorForceRefresh() {
 
     var scopeEl = document.querySelector('input[name="doctor-scope"]:checked');
     var scope = scopeEl ? scopeEl.value : 'active';
-    var blind = false; try { var cb = $('doctor-force-blind'); blind = !!(cb && (cb.checked || cb.getAttribute('checked') !== null)); } catch (e) {}
+    var blind = false; try { var cb = $('doctor-force-blind'); blind = !!(cb && (cb.checked || cb.getAttribute('checked') !== null)); } catch (e) { /* cb null-guarded; resolved value logged next line */ }
     log('scope=' + scope + ' blindSweep=' + blind);
 
     setDoctorProgress(30, 'Asking Premiere which clips are offline…');
@@ -12825,7 +12202,7 @@ async function onDoctorForceRefresh() {
       log(why);
       setDoctorStatus(why, anyFlag ? 'ready' : 'error');
       setDoctorProgress(100, 'Nothing to do');
-      try { $('doctor-validation').innerHTML = '<div style="margin-top:8px;color:#ff9800;font-size:11px">' + escapeHtml(why) + '</div>'; } catch (e) {}
+      try { $('doctor-validation').innerHTML = '<div style="margin-top:8px;color:#ff9800;font-size:11px">' + escapeHtml(why) + '</div>'; } catch (e) { /* cosmetic: status line already carries the message */ }
       return;
     }
 
@@ -12855,19 +12232,19 @@ async function onDoctorForceRefresh() {
       $('doctor-validation').innerHTML = noFile.length
         ? '<div style="margin-top:8px;color:#ff9800;font-size:11px"><b>Offline AND file missing — these need 🔗 Find &amp; Relink local (or the editor):</b><br>' + noFile.map(escapeHtml).join('<br>') + '</div>'
         : '<div style="margin-top:8px;color:#4caf50;font-size:11px">Ghost-offline clips re-imported in place. Review &amp; ⌘S.</div>';
-    } catch (e) {}
+    } catch (e) { /* cosmetic: status line already carries the message */ }
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));
     if (e && e.stack) log('STACK: ' + e.stack);
     setDoctorStatus('Force-refresh error: ' + (e && e.message ? e.message : String(e)), 'error');
     setDoctorProgress(100, 'Error');
   } finally {
-    try { $('btn-doctor-forcerefresh').removeAttribute('disabled'); } catch (e) {}
-    try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) {}
-    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-forcerefresh').removeAttribute('disabled'); } catch (e) { /* cosmetic: static button re-enable */ }
+    try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) { /* cosmetic: static button re-enable */ }
+    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) { /* cosmetic: static button re-enable */ }
     doctorLogFn = function () {};
-    try { await doctorWriteDebug('=== Project Doctor force-refresh debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) {}
-    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) {} }
+    try { await doctorWriteDebug('=== Project Doctor force-refresh debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) { /* helper logs its own failure; dbg has no other sink */ }
+    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) { /* cosmetic: button state only */ } }
   }
 }
 
@@ -12887,10 +12264,10 @@ function doctorTranslateToLocal(mediaPath, projectRoot, projBase) {
   return projectRoot.replace(/\/+$/, '') + '/' + mp.slice(i + anchor.length);
 }
 async function doctorEnsureFolderAbs(absDir, log) {
-  try { return await uxpfs.getEntryWithUrl('file://' + absDir); } catch (e) {}
+  try { return await uxpfs.getEntryWithUrl('file://' + absDir); } catch (e) { /* probe: folder absent is created below */ }
   var parts = String(absDir).replace(/\/+$/, '').split('/');
   var idx = parts.length, base = null;
-  for (; idx > 1; idx--) { try { base = await uxpfs.getEntryWithUrl('file://' + parts.slice(0, idx).join('/')); break; } catch (e) {} }
+  for (; idx > 1; idx--) { try { base = await uxpfs.getEntryWithUrl('file://' + parts.slice(0, idx).join('/')); break; } catch (e) { /* probe: walk up to the first existing parent */ } }
   if (!base) return null;
   for (var j = idx; j < parts.length; j++) {
     try { base = await base.createFolder(parts[j]); }
@@ -12917,19 +12294,19 @@ async function doctorPlaceFile(srcNativePath, destAbsPath, log) {
 }
 async function onDoctorRestoreStructure() {
   var dbg = [];
-  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor restore] ' + m); } catch (e) {} }
+  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor restore] ' + m); } catch (e) { /* console mirror; dbg[] already holds the line */ } }
   doctorLogFn = log;
   var placed = 0, already = 0, failed = 0, missing = [], projectRootForLog = '';
-  try { $('btn-doctor-restore').setAttribute('disabled', 'true'); } catch (e) {}
-  try { $('btn-doctor-relink').setAttribute('disabled', 'true'); } catch (e) {}
-  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-restore').setAttribute('disabled', 'true'); } catch (e) { /* cosmetic: static button, disable only */ }
+  try { $('btn-doctor-relink').setAttribute('disabled', 'true'); } catch (e) { /* cosmetic: static button, disable only */ }
+  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) { /* cosmetic: static button, disable only */ }
   setDoctorStatus('Restoring structure — placing files at recorded paths…', 'waiting');
   setDoctorProgress(10, 'Reading project…');
   log('=== Project Doctor restore-structure (build ' + DOCTOR_BUILD + ') ===');
   try {
     var project = await ppro.Project.getActiveProject();
     if (!project) throw new Error('No active project — open a project in Premiere first.');
-    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) { log('project.path unreadable: ' + (e && e.message)); }
     var projectRoot = projPath ? projPath.replace(/\/[^\/]*$/, '')
       : (projectState.folderPath ? projectState.folderPath.replace(/\\/g, '/').replace(/\/+$/, '') : '');
     if (!projectRoot) throw new Error('Project has no saved path — save the .prproj once, then retry.');
@@ -12938,7 +12315,7 @@ async function onDoctorRestoreStructure() {
     projectRoot = await resolveProjectRoot(projectRoot);
     projectRootForLog = projectRoot;
     var projBase = projectRoot.split('/').pop();
-    var extra = ''; try { extra = ($('doctor-extra-root').value || '').trim().replace(/\/+$/, ''); } catch (e) {}
+    var extra = ''; try { extra = ($('doctor-extra-root').value || '').trim().replace(/\/+$/, ''); } catch (e) { log('extra root unreadable: ' + (e && e.message)); }
     var roots = [projectRoot]; if (extra && extra !== projectRoot) roots.push(extra);
     log('projectRoot = ' + projectRoot + '  projBase = ' + projBase);
 
@@ -12986,19 +12363,19 @@ async function onDoctorRestoreStructure() {
         ? '<div style="margin-top:8px;color:#4caf50;font-size:11px"><b>Placed ' + placed + ' file(s) at the paths the project records.</b> Close &amp; reopen the .prproj — Premiere relinks them (incl. AE Dynamic-Link comps) by path.</div>'
         : '<div style="margin-top:8px;color:#8a94ab;font-size:11px">Nothing to place — found files are already at their recorded paths.</div>')
         + (missing.length ? '<div style="margin-top:6px;color:#ff9800;font-size:11px"><b>Still missing (no local copy — request from editor):</b><br>' + missing.map(escapeHtml).join('<br>') + '</div>' : '');
-    } catch (e) {}
+    } catch (e) { /* cosmetic: status line already carries the message */ }
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));
     if (e && e.stack) log('STACK: ' + e.stack);
     setDoctorStatus('Restore error: ' + (e && e.message ? e.message : String(e)), 'error');
     setDoctorProgress(100, 'Error');
   } finally {
-    try { $('btn-doctor-restore').removeAttribute('disabled'); } catch (e) {}
-    try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) {}
-    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-restore').removeAttribute('disabled'); } catch (e) { /* cosmetic: static button re-enable */ }
+    try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) { /* cosmetic: static button re-enable */ }
+    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) { /* cosmetic: static button re-enable */ }
     doctorLogFn = function () {};
-    try { await doctorWriteDebug('=== Project Doctor restore-structure debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) {}
-    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) {} }
+    try { await doctorWriteDebug('=== Project Doctor restore-structure debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) { /* helper logs its own failure; dbg has no other sink */ }
+    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) { /* cosmetic: button state only */ } }
   }
 }
 
@@ -13011,18 +12388,18 @@ async function onDoctorRestoreStructure() {
    внутри — выводит списком «скопировать в 02_Edit/NewAssets». */
 async function onDoctorSelfContain() {
   var dbg = [];
-  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor self-contain] ' + m); } catch (e) {} }
+  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor self-contain] ' + m); } catch (e) { /* console is optional; dbg[] already holds the line */ } }
   doctorLogFn = log;
   var repoint = 0, already = 0, failed = 0, needCopy = [], projectRootForLog = '';
-  try { $('btn-doctor-selfcontain').setAttribute('disabled', 'true'); } catch (e) {}
-  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-selfcontain').setAttribute('disabled', 'true'); } catch (e) { /* non-fatal: button disable is cosmetic */ }
+  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) { /* non-fatal: button disable is cosmetic */ }
   setDoctorStatus('Making project self-contained…', 'waiting');
   setDoctorProgress(10, 'Reading project bin…');
   log('=== Make self-contained (build ' + DOCTOR_BUILD + ') ===');
   try {
     var project = await ppro.Project.getActiveProject();
     if (!project) throw new Error('No active project — open a project in Premiere first.');
-    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) { /* fallback below: folderPath, else explicit throw */ }
     var projectRoot = projPath ? projPath.replace(/\/[^\/]*$/, '')
       : (projectState.folderPath ? projectState.folderPath.replace(/\\/g, '/').replace(/\/+$/, '') : '');
     if (!projectRoot) throw new Error('Project has no saved path — save the .prproj once, then retry.');
@@ -13077,18 +12454,18 @@ async function onDoctorSelfContain() {
       $('doctor-validation').innerHTML = needCopy.length
         ? '<div style="margin-top:8px;color:#ff9800;font-size:11px"><b>Нет копии ВНУТРИ проекта — скопируй файл(ы) в 02_Edit/NewAssets и повтори:</b><br>' + needCopy.map(escapeHtml).join('<br>') + '</div>'
         : '<div style="margin-top:8px;color:#4caf50;font-size:11px">Все ссылки указывают внутрь проекта — проект самодостаточен. Сохрани (⌘S).</div>';
-    } catch (e) {}
+    } catch (e) { /* cosmetic: status line already carries the result */ }
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));
     if (e && e.stack) log('STACK: ' + e.stack);
     setDoctorStatus('Self-contain error: ' + (e && e.message ? e.message : String(e)), 'error');
     setDoctorProgress(100, 'Error');
   } finally {
-    try { $('btn-doctor-selfcontain').removeAttribute('disabled'); } catch (e) {}
-    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-selfcontain').removeAttribute('disabled'); } catch (e) { /* non-fatal: button re-enable is cosmetic */ }
+    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) { /* non-fatal: button re-enable is cosmetic */ }
     doctorLogFn = function () {};
-    try { await doctorWriteDebug('=== Make self-contained debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) {}
-    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) {} }
+    try { await doctorWriteDebug('=== Make self-contained debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) { /* doctorWriteDebug catches and console-logs internally */ }
+    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) { /* non-fatal: button enable is cosmetic */ } }
   }
 }
 
@@ -13187,7 +12564,7 @@ async function debugDump() {
 
     // Restore active sequence
     if (activeSeq) {
-      try { await project.setActiveSequence(activeSeq); } catch (e) {}
+      try { await project.setActiveSequence(activeSeq); } catch (e) { ingestLogger.debug('Dump: restore active sequence failed: ' + (e && e.message)); }
     }
 
     ingestLogger.info('Found ' + allSequences.length + ' sequence(s): ' + Object.keys(seenNames).join(', '));
@@ -13259,12 +12636,12 @@ async function debugDump() {
       for (var fci = 0; fci < ingestState.data.clips.length; fci++) {
         var fc = ingestState.data.clips[fci];
         var clipExists = false;
-        try { await uxpfs.getEntryWithUrl('file://' + fc.path); clipExists = true; } catch (e) {}
+        try { await uxpfs.getEntryWithUrl('file://' + fc.path); clipExists = true; } catch (e) { /* probe: absence is the recorded result (exists=false) */ }
         fsCheck.clips.push({ clip_id: fc.clip_id, path: fc.path, exists: clipExists });
         if (fc.dji_audio) {
           for (var di = 0; di < fc.dji_audio.length; di++) {
             var djiExists = false;
-            try { await uxpfs.getEntryWithUrl('file://' + fc.dji_audio[di].path); djiExists = true; } catch (e) {}
+            try { await uxpfs.getEntryWithUrl('file://' + fc.dji_audio[di].path); djiExists = true; } catch (e) { /* probe: absence is the recorded result (exists=false) */ }
             fsCheck.dji_audio.push({ clip_id: fc.clip_id, tx: fc.dji_audio[di].tx, path: fc.dji_audio[di].path, exists: djiExists });
           }
         }
@@ -13276,7 +12653,7 @@ async function debugDump() {
         var kfPath = (ingestState.data.files || {})[kf] || '';
         if (kfPath) {
           var kfExists = false;
-          try { await uxpfs.getEntryWithUrl('file://' + kfPath); kfExists = true; } catch (e) {}
+          try { await uxpfs.getEntryWithUrl('file://' + kfPath); kfExists = true; } catch (e) { /* probe: absence is the recorded result (exists=false) */ }
           fsCheck.files[kf] = { path: kfPath, exists: kfExists };
         }
       }
@@ -13307,7 +12684,7 @@ async function debugDump() {
     }
 
     // ── Copy path to clipboard ──
-    try { await navigator.clipboard.writeText(dumpPath); } catch (e) {}
+    try { await navigator.clipboard.writeText(dumpPath); } catch (e) { ingestLogger.debug('Clipboard copy of dump path failed: ' + (e && e.message)); }
     ingestLogger.info('=== DEBUG DUMP COMPLETE === Path: ' + dumpPath);
     setProjectStatus('Dump → ' + folderName + ' (path copied)', 'ready');
     $('project-compact-name').textContent = _savedCompactName + ' ✓';
@@ -13417,7 +12794,7 @@ document.addEventListener('DOMContentLoaded', () => {
     buildPicked('review').catch(function (e) { setReviewStatus('Build: ' + (e && e.message ? e.message : e), 'error'); });
   });
   // очередь заданий из терминала — тикаем, пока панель открыта
-  setInterval(function () { jobTick().catch(function () { }); }, 3000);
+  setInterval(function () { jobTick().catch(function (e) { assemblyLogger.debug('jobTick: ' + (e && e.message || e)); }); }, 3000);
 
   // INGEST scene selection quick-links (new = only unbuilt scenes)
   $('ingest-scenes-new').addEventListener('click', function (e) { e.preventDefault(); setIngestSceneChecks('new'); });
@@ -13520,10 +12897,10 @@ document.addEventListener('DOMContentLoaded', () => {
     onDoctorAnalyze().catch(function (e) { setDoctorStatus('Error: ' + e.message, 'error'); });
   });
   $('btn-doctor-open').addEventListener('click', function () {
-    onDoctorOpenLast().catch(function () {});
+    onDoctorOpenLast().catch(function (e) { setDoctorStatus('Error: ' + (e && e.message || e), 'error', e); });
   });
   $('btn-doctor-debug').addEventListener('click', function () {
-    onDoctorCopyDebug().catch(function () {});
+    onDoctorCopyDebug().catch(function (e) { setDoctorStatus('Error: ' + (e && e.message || e), 'error', e); });
   });
   $('btn-doctor-relink').addEventListener('click', function () {
     onDoctorRelink().catch(function (e) { setDoctorStatus('Relink error: ' + (e && e.message ? e.message : e), 'error'); });
@@ -13565,7 +12942,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nameEl && !nameEl.value) {
       footageProjectFolderName().then(function (n) {
         if (n && !nameEl.value) nameEl.value = footageHyphenate(n);
-      }).catch(function () {});
+      }).catch(function (e) { footageLogger.debug('footage name prefill: ' + (e && e.message || e)); });
     }
   });
 

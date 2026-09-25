@@ -32,7 +32,6 @@ try {
 }
 
 const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence } = require('../shared/clipActions');
-const { LABEL_COLOR_INDEX, MARKER_TYPE_COMMENT, MARKER_COLOR_INDEX } = require('../shared/constants');
 const { findProjectItemByName } = require('../shared/projectItemFinder');
 
 let sequenceFactory = null;
@@ -89,9 +88,9 @@ async function getClipItemsCompat(track) {
     && ppro.Constants.TrackItemType.CLIP !== undefined)
     ? ppro.Constants.TrackItemType.CLIP : 1;
   var items = null;
-  try { items = await track.getTrackItems(CLIP, false); } catch (e) {}
-  if (!items || !items.length) { try { items = await track.getTrackItems(1, false); } catch (e) {} }
-  if (!items || !items.length) { try { items = await track.getTrackItems(); } catch (e) {} }
+  try { items = await track.getTrackItems(CLIP, false); } catch (e) { /* fallback below handles it */ }
+  if (!items || !items.length) { try { items = await track.getTrackItems(1, false); } catch (e) { /* 2nd try of a 3-step fallback; last resort below */ } }
+  if (!items || !items.length) { try { items = await track.getTrackItems(); } catch (e) { /* last resort; no logger here, caller treats [] as empty */ } }
   return items || [];
 }
 
@@ -314,14 +313,14 @@ async function buildPartSequence(project, clipMap, part, segments, logger, proje
   async function disableBaseItemsAt(sec) {
     var targets = [];
     var tracks = [];
-    try { tracks.push(await seq.getVideoTrack(0)); } catch (e) { }
-    try { tracks.push(await seq.getAudioTrack(0)); } catch (e) { }
+    try { tracks.push(await seq.getVideoTrack(0)); } catch (e) { if (logger) logger.debug('disableBaseItemsAt getVideoTrack(0): ' + (e && e.message)); }
+    try { tracks.push(await seq.getAudioTrack(0)); } catch (e) { if (logger) logger.debug('disableBaseItemsAt getAudioTrack(0): ' + (e && e.message)); }
     for (var dt = 0; dt < tracks.length; dt++) {
       if (!tracks[dt]) continue;
       var its = await getClipItemsCompat(tracks[dt]);
       for (var di = 0; di < its.length; di++) {
         var st = null;
-        try { st = await its[di].getStartTime(); } catch (e) { }
+        try { st = await its[di].getStartTime(); } catch (e) { if (logger) logger.debug('disableBaseItemsAt getStartTime: ' + (e && e.message)); }
         var ss = st ? (typeof st.seconds === 'number' ? st.seconds : Number(st.ticks) / 254016000000) : null;
         if (ss !== null && Math.abs(ss - sec) < 0.02 && typeof its[di].createSetDisabledAction === 'function') targets.push(its[di]);
       }
@@ -490,8 +489,8 @@ async function buildPartSequence(project, clipMap, part, segments, logger, proje
       itemMarked[seg.source_file] = 1;
       try {
         var imOwner = null;
-        try { imOwner = await ppro.Markers.getMarkers(castItem); } catch (eIm1) { }
-        if (!imOwner) { try { imOwner = await ppro.Markers.getMarkers(rawItem); } catch (eIm2) { } }
+        try { imOwner = await ppro.Markers.getMarkers(castItem); } catch (eIm1) { /* optional API on this build; rawItem fallback below */ }
+        if (!imOwner) { try { imOwner = await ppro.Markers.getMarkers(rawItem); } catch (eIm2) { if (logger) logger.debug('Markers.getMarkers(rawItem) ' + segId + ': ' + (eIm2 && eIm2.message)); } }
         if (imOwner && typeof imOwner.createAddMarkerAction === 'function') {
           var imName = String(seg.item_marker.name || segId);
           var imText = String(seg.item_marker.comment || '');
@@ -618,7 +617,7 @@ async function buildPartSequence(project, clipMap, part, segments, logger, proje
   markerCount += chapMarks;
 
   var vCount = 0, aCount = 0;
-  try { vCount = await seq.getVideoTrackCount(); aCount = await seq.getAudioTrackCount(); } catch (e) {}
+  try { vCount = await seq.getVideoTrackCount(); aCount = await seq.getAudioTrackCount(); } catch (e) { /* counts only decorate the summary log line */ }
   if (logger) logger.info('Part "' + partName + '": ' + placed + '/' + segs.length + ' placed (' + skipped + ' skipped), tracks V' + vCount + '/A' + aCount +
     (reviewMode ? (cutMode ? ', V1 cut→' + basePlaced + ' segs' : ', base→V1') + ', markers=' + markerCount : '') + ' → ' + seqName);
 

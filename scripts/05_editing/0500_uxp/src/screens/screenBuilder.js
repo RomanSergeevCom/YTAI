@@ -31,7 +31,7 @@ try {
 const { SCREEN_CUE_COLOR, MARKER_TYPE_CHAPTER, MARKER_TYPE_SEGMENTATION, BLOCK_VALID_COLORS, MARKER_COLOR_INDEX } = require('../shared/constants');
 const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
 const { formatMarkerComment, formatSrtContent } = require('./screenParser');
-const { snapToFrame, getFps } = require('../shared/frameSnap');
+const { getFps } = require('../shared/frameSnap');
 
 // Default duration for PNG overlay on V2 (seconds)
 var OVERLAY_DURATION = 5.0;
@@ -247,7 +247,7 @@ async function findImportedItem(project, filename, targetBin) {
   // Fallback: search root + one level
   var rootItem = await project.getRootItem();
   var items = await rootItem.getItems();
-  for (var i = 0; i < items.length; i++) {
+  for (i = 0; i < items.length; i++) {
     if (items[i].name === filename) return items[i];
     try {
       var folder = ppro.FolderItem.cast(items[i]);
@@ -462,7 +462,7 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
   }
 
   for (var i = 1; i < useSegs.length; i++) {
-    var seg = useSegs[i];
+    seg = useSegs[i];
     var rawItem = clipMap[seg.sourceFile] || clipMap[seg.sourceFile.replace(/\.[^.]+$/, '')];
     if (!rawItem) {
       if (logger) logger.warn('  Skip ' + seg.id + ': no clip for ' + seg.sourceFile);
@@ -524,8 +524,8 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
         ', dur=' + seg.duration.toFixed(1) + 's');
     }
 
-    var sPremIn = Math.floor(seg.inSec / frameDur) * frameDur;
-    var sPremOut = Math.floor(seg.outSec / frameDur) * frameDur;
+    sPremIn = Math.floor(seg.inSec / frameDur) * frameDur;
+    sPremOut = Math.floor(seg.outSec / frameDur) * frameDur;
     cumulativePosition += (sPremOut - sPremIn);
   }
 
@@ -698,7 +698,7 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
 
   // E.2: Screen cue markers — Orange, Segmentation type
   for (var mi = 0; mi < screens.length; mi++) {
-    var screen = screens[mi];
+    screen = screens[mi];
     var markerPos = getScreenTimelinePosition(screen, segPositions);
     if (markerPos === null) continue;
 

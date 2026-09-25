@@ -23,7 +23,7 @@ try {
 
 const { applyColorToItem, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
 const { LABEL_COLOR_INDEX } = require('../shared/constants');
-const { snapToFrame, getFps } = require('../shared/frameSnap');
+const { getFps } = require('../shared/frameSnap');
 
 var ASSEMBLY_BUILDER_VERSION = '2.1.0'; // v2.1.0: exact source in/out, exact cumulative, logging
 
@@ -114,7 +114,7 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
   // Set source in/out BEFORE creating sequence (EXACT — no frame-snap for source points)
   var firstInTime = ppro.TickTime.createWithSeconds(firstSeg.inSec);
   var firstOutTime = ppro.TickTime.createWithSeconds(firstSeg.outSec);
-  var trimOk = setSourceInOut(project, firstClipForTrim, firstInTime, firstOutTime, firstSeg.id, logger);
+  setSourceInOut(project, firstClipForTrim, firstInTime, firstOutTime, firstSeg.id, logger);
 
   // Create sequence from first clip (inherits media settings)
   // NOTE: createSequenceFromMedia accepts ClipProjectItem — this is correct
@@ -157,8 +157,8 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
   var cumulativePosition = 0;
   try {
     var firstItems = null;
-    try { firstItems = v1Track.getTrackItems(1, false); } catch (ex) {}
-    if (!firstItems) try { firstItems = v1Track.getTrackItems(); } catch (ex) {}
+    try { firstItems = v1Track.getTrackItems(1, false); } catch (ex) { /* fallback below handles it */ }
+    if (!firstItems) try { firstItems = v1Track.getTrackItems(); } catch (ex) { if (logger) logger.warn('  Read-back of first clip failed (both getTrackItems forms) — next insert lands at 0s: ' + (ex && ex.message)); }
     if (firstItems && firstItems.length > 0) {
       var fi = firstItems[firstItems.length - 1];
       var fiStart = await fi.getStartTime();
@@ -176,7 +176,7 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
   var clipCount = 1;
 
   for (var i = 1; i < useSegs.length; i++) {
-    var seg = useSegs[i];
+    seg = useSegs[i];
     var rawItem = clipMap[seg.sourceFile] || clipMap[seg.sourceFile.replace(/\.[^.]+$/, '')];
     if (!rawItem) {
       if (logger) logger.warn('  Skip ' + seg.id + ': no clip for ' + seg.sourceFile);
@@ -266,8 +266,8 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
     // Read-back: get ACTUAL timeline end from Premiere (guaranteed 0-gap)
     try {
       var rbItems = null;
-      try { rbItems = v1Track.getTrackItems(1, false); } catch (ex) {}
-      if (!rbItems) try { rbItems = v1Track.getTrackItems(); } catch (ex) {}
+      try { rbItems = v1Track.getTrackItems(1, false); } catch (ex) { /* fallback below handles it */ }
+      if (!rbItems) try { rbItems = v1Track.getTrackItems(); } catch (ex) { if (logger) logger.debug('  Read-back failed for ' + seg.id + ' (both getTrackItems forms) — position not advanced: ' + (ex && ex.message)); }
       if (rbItems && rbItems.length > 0) {
         var lastItem = rbItems[rbItems.length - 1];
         var lStart = await lastItem.getStartTime();
@@ -304,13 +304,13 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
   try {
     var v0 = await seq.getVideoTrack(0);
     var finalItems = null;
-    try { finalItems = v0.getTrackItems(1, false); } catch (ex) { }
-    if (!finalItems) try { finalItems = v0.getTrackItems(); } catch (ex) { }
+    try { finalItems = v0.getTrackItems(1, false); } catch (ex) { /* fallback below handles it */ }
+    if (!finalItems) try { finalItems = v0.getTrackItems(); } catch (ex) { if (logger) logger.debug('Ghost check skipped: getTrackItems failed on V1: ' + (ex && ex.message)); }
 
     if (finalItems) {
       var minDuration = 2.0 / fps; // 2 frames minimum
       // Scan backwards to safely remove by index
-      for (var fi = finalItems.length - 1; fi >= 0; fi--) {
+      for (fi = finalItems.length - 1; fi >= 0; fi--) {
         try {
           var ti = finalItems[fi];
           var tiDur = await ti.getDuration();
@@ -329,12 +329,12 @@ async function buildAssemblySequence(project, clipMap, segments, projectName, lo
               if (logger) logger.warn('  Cannot remove ghost [' + fi + ']: ' + rmErr.message);
             }
           }
-        } catch (e) { }
+        } catch (e) { if (logger) logger.debug('  Ghost check: item [' + fi + '] unreadable: ' + (e && e.message)); }
       }
 
       // Re-read for verification log
-      try { finalItems = v0.getTrackItems(1, false); } catch (ex) { }
-      if (!finalItems) try { finalItems = v0.getTrackItems(); } catch (ex) { }
+      try { finalItems = v0.getTrackItems(1, false); } catch (ex) { /* fallback below handles it */ }
+      if (!finalItems) try { finalItems = v0.getTrackItems(); } catch (ex) { /* log-only re-read; stale count is acceptable */ }
 
       if (logger) {
         logger.info('V1 verification: ' + (finalItems ? finalItems.length : '?') +

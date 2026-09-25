@@ -37,8 +37,8 @@ test('review-overlay: base render kept on V1, inserts placed, no throw', async (
   // V1 (track 0) must STILL hold the base render (review mode does NOT clear it)
   const v1 = await result.sequence.getVideoTrack(0);
   let items = null;
-  try { items = v1.getTrackItems(1, false); } catch (e) {}
-  if (!items) { try { items = v1.getTrackItems(); } catch (e) {} }
+  try { items = v1.getTrackItems(1, false); } catch (e) { /* stub */ }
+  if (!items) { try { items = v1.getTrackItems(); } catch (e) { /* stub */ } }
   assert.ok(items && items.length >= 1, 'V1 retains the base render clip');
 });
 
@@ -61,8 +61,8 @@ test('review-overlay: inserts never write to A1 (render audio protected)', async
   const result = await buildPartSequence(project, clipMap, part, segments, LOG, {});
   var a1 = await result.sequence.getAudioTrack(0);
   var a1items = null;
-  try { a1items = a1.getTrackItems(1, false); } catch (e) {}
-  if (!a1items) { try { a1items = a1.getTrackItems(); } catch (e) {} }
+  try { a1items = a1.getTrackItems(1, false); } catch (e) { /* stub */ }
+  if (!a1items) { try { a1items = a1.getTrackItems(); } catch (e) { /* stub */ } }
   assert.strictEqual(a1items.length, 1, 'A1 holds ONLY the base render audio (no insert cut it)');
 });
 

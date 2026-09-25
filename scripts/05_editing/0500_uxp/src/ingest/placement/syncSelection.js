@@ -13,13 +13,6 @@
  * Чистая часть отбора живёт в `syncSpread.chooseSyncItems`; здесь только UXP.
  */
 
-let ppro;
-try {
-  ppro = require('premierepro');
-} catch (e) {
-  ppro = require('../../../tests/mocks/premierepro');
-}
-
 const { chooseSyncItems, MIN_SYNC_ITEM_SEC } = require('../syncSpread');
 const { createEmptySelectionCompat, getClipItems } = require('./sequenceFactory');
 

@@ -8,7 +8,7 @@ const {
   computeSceneClipOffsets,
   createGapSegment
 } = require('../../src/deletedScene/deletedSceneBuilder');
-const { DELETED_SCENE_COLOR_MAP, DELETED_SCENE_PRODUCER_COLOR, LABEL_COLOR_INDEX } = require('../../src/shared/constants');
+const { DELETED_SCENE_COLOR_MAP, DELETED_SCENE_PRODUCER_COLOR } = require('../../src/shared/constants');
 
 // --- getDeletedSceneCategory ---
 

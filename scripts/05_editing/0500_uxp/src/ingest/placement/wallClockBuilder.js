@@ -24,7 +24,6 @@ const sequenceFactory = require('./sequenceFactory');
 const clipPlacer = require('./clipPlacer');
 const binImporter = require('./binImporter');
 const { findProjectItemByName } = require('../../shared/projectItemFinder');
-const { camOfClip } = require('../layout/cameraResolver');
 const { addSceneMarkers } = require('./sceneMarkers');
 const { fileBuiltSceneSequences } = require('../../shared/sourceTimelines');
 

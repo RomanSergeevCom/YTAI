@@ -31,7 +31,7 @@ try {
 
 const { DELETED_SCENE_COLOR_MAP, DELETED_SCENE_PRODUCER_COLOR, DELETED_SCENE_EXPERT_COLOR, LABEL_COLOR_INDEX } = require('../shared/constants');
 const { applyColorByIndex, setSourceInOut, clearSourceInOut, cleanExistingSequence, insertDjiAudio } = require('../shared/clipActions');
-const { snapToFrame, getFps } = require('../shared/frameSnap');
+const { snapToFrame } = require('../shared/frameSnap');
 
 // Minimum gap duration (seconds) — gaps shorter than this are skipped
 var MIN_GAP_DURATION = 0.3;
