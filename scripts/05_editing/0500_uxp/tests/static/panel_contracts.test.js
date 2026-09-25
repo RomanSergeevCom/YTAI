@@ -119,3 +119,25 @@ describe('panel contracts — bindings', () => {
     assert.deepEqual(bound.filter(id => !htmlIds.includes(id)), []);
   });
 });
+
+describe('panel contracts — readback stops the build (task 5)', () => {
+  const src = read('index.js');
+  const start = src.indexOf('async function buildIngest(');
+  const body = src.slice(start, src.indexOf('\n}\n', start));
+
+  it('buildIngest fails on result.ok === false BEFORE «complete», btn-done and «Build verified»', () => {
+    const iVerdict = body.indexOf('if (result.ok === false)');
+    const iThrow = body.indexOf('if (readbackFailure) throw');
+    assert.ok(iVerdict > 0 && iThrow > iVerdict, 'verdict read, then thrown');
+    for (const later of ["'=== INGEST BUILD COMPLETE", "classList.add('btn-done')", "'Build verified'"]) {
+      const i = body.indexOf(later);
+      assert.ok(i > iThrow, later + ' comes after the readback throw');
+    }
+  });
+
+  it('the scene list is refreshed after the catch, so a failed scene gets its badge', () => {
+    const iCatch = body.lastIndexOf('} catch (err) {');
+    assert.ok(body.indexOf('renderIngestSceneList(', iCatch) > iCatch);
+    assert.ok(read('index.js').includes("'readback ✗'") || read('index.js').includes('readback ✗'));
+  });
+});

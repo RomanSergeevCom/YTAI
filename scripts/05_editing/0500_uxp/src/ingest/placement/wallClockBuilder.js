@@ -401,6 +401,11 @@ async function build(project, ingest, sourceBin, logger) {
   const results = [];
   let totalClipCount = 0;
   let totalTxPlaced = 0;
+  // Readback — the build's own verdict (TICKET_uxp_audit, task 5). Before 25.09
+  // «READBACK: … stray items present» was only printed, the build reported
+  // success and the project was saved and handed on. Now it is returned.
+  let missingAfterBuild = 0;
+  const failedScenes = [];
 
   for (const sceneName of sceneNames) {
     // Skip the orphan bucket: clips without a `scene` field land in '_all'
@@ -440,9 +445,12 @@ async function build(project, ingest, sourceBin, logger) {
       results.push(sceneResult);
       totalClipCount += sceneResult.placedCount;
       totalTxPlaced += sceneResult.txPlacedCount;
+      missingAfterBuild += sceneResult.missingAfterBuild || 0;
     } catch (err) {
-      logger.error(`[${sceneName}] buildScene failed: ${err.message}`);
-      // Continue with next scene rather than aborting the whole build
+      logger.error(`[${sceneName}] buildScene failed: ${err.message}`, err);
+      failedScenes.push({ sceneName, error: err.message });
+      // Continue with next scene rather than aborting the whole build — but the
+      // failure is part of the result, and the caller must not report success.
     }
   }
 
@@ -457,12 +465,24 @@ async function build(project, ingest, sourceBin, logger) {
 
   logger.info(`\nWall-clock ingest COMPLETE: ${results.length} sequence(s), ${totalClipCount} video clips, ${totalTxPlaced} TX TrackItems placed`);
 
+  const ok = missingAfterBuild === 0 && failedScenes.length === 0;
+  if (!ok) {
+    const bad = results.filter(r => r.missingAfterBuild).map(r => `${r.sceneName} (${r.missingAfterBuild})`);
+    logger.error(`Wall-clock ingest NOT OK: readback mismatch ${missingAfterBuild} item(s)`
+      + (bad.length ? ` in ${bad.join(', ')}` : '')
+      + (failedScenes.length ? `; failed scenes: ${failedScenes.map(f => f.sceneName).join(', ')}` : ''));
+  }
+
   return {
     sequences: results,
     totalClipCount,
     totalTxPlaced,
     // legacy compat
     totalDjiCount: totalTxPlaced,
+    // readback verdict: ok === false means the timeline does NOT match the plan
+    missingAfterBuild,
+    failedScenes,
+    ok,
   };
 }
 

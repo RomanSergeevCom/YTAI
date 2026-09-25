@@ -11,4 +11,4 @@
  * debug_snapshot.json. Гейты: lint-правило no-restricted-syntax (литерал
  * «vX.Y.Z» в коде) и tests/static/panel_contracts.test.js.
  */
-module.exports = { PANEL_VERSION: '2.24.0' };
+module.exports = { PANEL_VERSION: '2.25.0' };

@@ -346,3 +346,58 @@ test('build: skips invalid TX (sample_rate mismatch) without aborting', async ()
   assert.strictEqual(result.totalClipCount, 3);
   assert.strictEqual(result.totalTxPlaced, 0, 'mismatched TX skipped');
 });
+
+// ─── readback verdict (TICKET_uxp_audit, task 5) ─────────────────────────
+// Live 25.09: «READBACK: A4 has 2 item(s), plan says 1 — stray items present»
+// was printed, the build reported success and the project was handed on.
+// build() now returns the verdict; the panel fails the build on ok === false.
+
+test('build: clean build reports ok with no readback mismatch', async () => {
+  resetRecorder();
+  const { project, sourceBin } = makeProjectAndBin();
+  const result = await wallClockBuilder.build(project, SAMPLE_INGEST, sourceBin, silentLogger);
+  assert.strictEqual(result.ok, true);
+  assert.strictEqual(result.missingAfterBuild, 0);
+  assert.deepStrictEqual(result.failedScenes, []);
+});
+
+test('build: a placeholder that survives cleanup (live 25.6/26 no-op removal) fails readback', async () => {
+  resetRecorder();
+  const { project, sourceBin } = makeProjectAndBin();
+  // Live Premiere: remove actions commit without error and remove nothing.
+  const orig = project.executeTransaction.bind(project);
+  project.executeTransaction = (cb, undo) =>
+    (/^Remove seed\/placeholder/.test(String(undo)) ? true : orig(cb, undo));
+  const errors = [];
+  const logger = { ...silentLogger, error: (m) => errors.push(m) };
+  const result = await wallClockBuilder.build(project, SAMPLE_INGEST, sourceBin, logger);
+  assert.strictEqual(result.ok, false, 'a stray item is a failed build, not a log line');
+  assert.ok(result.missingAfterBuild >= 1);
+  assert.ok(result.sequences[0].missingAfterBuild >= 1, 'the scene carries its own count');
+  assert.ok(errors.some(m => /READBACK: .* stray items present/.test(m)));
+  assert.ok(errors.some(m => /NOT OK: readback mismatch/.test(m)));
+});
+
+test('build: a scene that throws is listed in failedScenes; the other scenes still build', async () => {
+  resetRecorder();
+  const { project, sourceBin } = makeProjectAndBin();
+  const second = {
+    ...SAMPLE_INGEST,
+    clips: [
+      ...SAMPLE_INGEST.clips,
+      { clip_id: 'DJI_0090', filename: 'DJI_0090.MP4', path: '/a/04_walk/DJI/DJI_0090.MP4',
+        duration: 10, wall_offset: 0, creation_time: '2026-04-02T10:00:00Z', scene: '04_walk' },
+    ],
+  };
+  for (const m of ['createSequence', 'createSequenceFromMedia']) {
+    const orig = project[m].bind(project);
+    project[m] = (name, ...rest) => (/04_walk/.test(String(name))
+      ? Promise.reject(new Error('simulated: cannot create ' + name)) : orig(name, ...rest));
+  }
+  const result = await wallClockBuilder.build(project, second, sourceBin, silentLogger);
+  assert.strictEqual(result.sequences.length, 1, 'the good scene is built');
+  assert.strictEqual(result.failedScenes.length, 1);
+  assert.strictEqual(result.failedScenes[0].sceneName, '04_walk');
+  assert.match(result.failedScenes[0].error, /simulated/);
+  assert.strictEqual(result.ok, false);
+});

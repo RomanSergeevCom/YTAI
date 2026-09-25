@@ -84,7 +84,10 @@ function toggleProjectExpand() {
 }
 
 // --- State (separate for INGEST and ASSEMBLY) ---
-let ingestState = { data: null, filePath: null, building: false };
+// readbackBad: {scene: reason} — scenes whose last build in THIS session failed
+// readback (TICKET_uxp_audit task 5). In-session only: after a panel reload the
+// badge falls back to «a sequence with this name exists».
+let ingestState = { data: null, filePath: null, building: false, readbackBad: {} };
 let assemblyState = { data: null, segments: [], blocks: [], screens: [], projectName: '', filePath: null, building: false, clipMap: null };
 
 // --- State: PROJECT (folder-level project selection with auto-detection) ---
@@ -1505,13 +1508,18 @@ async function renderIngestSceneList(ingest, existingSeqs) {
   // styles live in index.html's <style> (css/styles.css is NOT loaded by the panel).
   list.innerHTML = scenes.map(function (s) {
     var isBuilt = !!(built[code + '_' + s.name] || built[s.name]);
+    // A sequence that exists is not proof the build worked: readback-failed scenes
+    // (this session) are flagged and ticked for rebuild.
+    var bad = ingestState.readbackBad && ingestState.readbackBad[s.name];
+    var badge = bad ? '<span class="scene-badge bad" title="' + escapeHtml(bad) + '">readback ✗</span>'
+      : '<span class="scene-badge' + (isBuilt ? ' built' : '') + '">' + (isBuilt ? 'built ✓' : 'new') + '</span>';
     return '<div class="scene-row">' +
       '<label class="scene-pick">' +
-      '<input type="checkbox" class="ingest-scene-cb" value="' + escapeHtml(s.name) + '"' + (isBuilt ? '' : ' checked') + '>' +
+      '<input type="checkbox" class="ingest-scene-cb" value="' + escapeHtml(s.name) + '"' + (isBuilt && !bad ? '' : ' checked') + '>' +
       '<span class="scene-name">' + escapeHtml(s.name) + '</span>' +
       '</label>' +
       '<span class="scene-meta">' + s.clips + ' clips</span>' +
-      '<span class="scene-badge' + (isBuilt ? ' built' : '') + '">' + (isBuilt ? 'built ✓' : 'new') + '</span>' +
+      badge +
       '</div>';
   }).join('');
   panel.style.display = 'block';
@@ -1967,11 +1975,35 @@ async function buildIngest() {
         clipCount: multiResult.totalClipCount,
         djiCount: multiResult.totalDjiCount,
         totalDuration: multiResult.sequences.reduce((s, r) => s + r.totalDuration, 0),
+        // readback verdict (wall-clock builder); the linear builder has no ok field
+        ok: multiResult.ok,
+        missingAfterBuild: multiResult.missingAfterBuild || 0,
+        failedScenes: multiResult.failedScenes || [],
       };
     } else {
       result = await buildIngestSequence(project, ingest, bins[BIN_NAMES.SOURCE] || null, null, ingestLogger);
     }
     stepTimings.push('build ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
+
+    // READBACK verdict (TICKET_uxp_audit, task 5). The builder compares the
+    // timeline with the plan; a mismatch used to be only a log line — the build
+    // «succeeded» and the project was saved and handed on. Transcripts, LUTs and
+    // activation below still run for the scenes that did build; the build is
+    // failed right after them, before «complete» / btn-done / «Build verified».
+    // Strict === false: the linear builder returns no ok field at all.
+    var readbackFailure = null;
+    (result.sequences || []).forEach(function (r) { if (r && r.sceneName) delete ingestState.readbackBad[r.sceneName]; });
+    if (result.ok === false) {
+      (result.sequences || []).forEach(function (r) {
+        if (r && r.missingAfterBuild) ingestState.readbackBad[r.sceneName] = r.missingAfterBuild + ' item(s) off plan';
+      });
+      (result.failedScenes || []).forEach(function (f) { ingestState.readbackBad[f.sceneName] = 'build failed: ' + f.error; });
+      var badList = Object.keys(ingestState.readbackBad);
+      readbackFailure = 'READBACK: timeline does not match the plan — ' + result.missingAfterBuild + ' item(s) off'
+        + (result.failedScenes.length ? ', ' + result.failedScenes.length + ' scene(s) failed' : '')
+        + (badList.length ? ' (' + badList.join(', ') + ')' : '') + '. Rebuild these scenes; do not hand this project on.';
+      ingestLogger.error(readbackFailure);
+    }
 
     // Step 4: Import transcripts
     step++;
@@ -2045,6 +2077,8 @@ async function buildIngest() {
     }
     stepTimings.push('activate ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
+    if (readbackFailure) throw new Error(readbackFailure);
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     setIngestProgress(100, 'Complete!');
     ingestLogger.info('=== INGEST BUILD COMPLETE (' + elapsed + 's) ===');
@@ -2068,15 +2102,16 @@ async function buildIngest() {
     await saveIngestLogs(project);
     setIngestStatus('Build verified', 'ready');
 
-    // Refresh scene list badges (newly built scenes → "built ✓", unticked)
-    if (isMultiScene) {
-      try { await renderIngestSceneList(ingestFull); } catch (e) { ingestLogger.debug('Scene list refresh: ' + (e && e.message)); }
-    }
-
   } catch (err) {
     ingestLogger.error('INGEST BUILD FAILED: ' + err.message, err);
     setIngestStatus('Build failed: ' + err.message, 'error', err);
     try { await saveIngestLogs(await ppro.Project.getActiveProject()); } catch (e) { /* best-effort inside the error path */ }
+  }
+
+  // Scene badges — after success AND after failure, so a readback-failed scene
+  // shows «readback ✗» (ticked for rebuild) instead of «built ✓».
+  if (ingestState.data && ingestState.data.clips && ingestState.data.clips.some(function (c) { return c.scene; })) {
+    try { await renderIngestSceneList(ingestState.data); } catch (e) { ingestLogger.debug('Scene list refresh: ' + (e && e.message)); }
   }
 
   ingestState.building = false;
