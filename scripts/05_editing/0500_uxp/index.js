@@ -123,6 +123,22 @@ var PANEL_VERSION = require('./src/shared/version').PANEL_VERSION;
 // он переживает отсутствие кнопки и отдаёт любое исключение обработчика в «Err».
 const { $, on } = require('./src/shared/panelDom');
 
+// Errors OUTSIDE buttons (timers, background promises) → «Err». UXP delivers
+// these events only when manifest.json has
+//   "featureFlags": { "uncaughtException": true, "unhandledRejection": true }
+// (UXP changelog v9.4). Until that line is added the listeners are inert —
+// harmless; with it, nothing thrown anywhere in the panel goes unheard.
+try {
+  window.addEventListener('unhandledrejection', function (ev) {
+    var r = ev && ev.reason;
+    Logger.pushPanelError('ERROR', 'Unhandled rejection: ' + (r && r.message ? r.message : String(r)), 'global', r);
+  });
+  window.addEventListener('error', function (ev) {
+    var er = ev && ev.error;
+    Logger.pushPanelError('ERROR', 'Uncaught: ' + ((ev && ev.message) || (er && er.message) || String(er)), 'global', er);
+  });
+} catch (eGl) { /* listeners unsupported on this build — on() still covers every button */ }
+
 
 // Logs write to 99_Pipeline/logs/ only — no in-panel display
 

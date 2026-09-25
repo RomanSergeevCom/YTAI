@@ -105,6 +105,11 @@ describe('panel contracts — every on-screen error reaches «Err»', () => {
     assert.deepEqual(bad, []);
   });
 
+  it('errors outside buttons are wired to «Err» (active once manifest featureFlags are on)', () => {
+    assert.match(src, /window\.addEventListener\('unhandledrejection',[\s\S]{0,200}Logger\.pushPanelError\(/);
+    assert.match(src, /window\.addEventListener\('error',[\s\S]{0,200}Logger\.pushPanelError\(/);
+  });
+
   it('every reset of ingestState keeps readbackBad (review of eb739d2: Build Ingest threw after a project refresh)', () => {
     const literals = src.match(/ingestState = \{[^}]*\}/g) || [];
     assert.ok(literals.length >= 2, 'initial state and resetAllPipelineStates');
