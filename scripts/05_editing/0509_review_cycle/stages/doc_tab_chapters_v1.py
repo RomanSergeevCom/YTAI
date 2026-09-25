@@ -492,7 +492,7 @@ def main():
         reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': '\n'}})
         cur += 1
 
-    if CARDS:
+    if CARDS and not P.get('film_title_chapter'):
         fv = Path(P.MOCK) / 'bdd' / 'titles' / 'film_variants.json'
         film = json.loads(fv.read_text(encoding='utf-8')) if fv.is_file() else {}
         if film.get('variants'):

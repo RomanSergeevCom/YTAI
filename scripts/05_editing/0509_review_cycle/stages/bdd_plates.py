@@ -1214,7 +1214,7 @@ def render_plan(a):
     return 2 if bad else 0
 
 
-FILM_CAP = 600          # название фильма крупнее заставки главы, но «помельче» прежних 760 (25.09.2026)
+FILM_CAP = 540          # название фильма крупнее заставки главы; 760 → 600 → 540 по правкам Романа 25.09.2026
 FILM_VARIANTS = [
     ('a', 'ПОЛОТНО', 'кадр в затемнение, название по центру во всю ширину — как заставки глав'),
     ('b', 'СТОЛБИК', 'название в три строки у левого поля во всю высоту — как набрано в самом кате'),
@@ -1222,7 +1222,7 @@ FILM_VARIANTS = [
 ]
 
 
-def film_title(variant, title, shot):
+def film_title(variant, title, shot, caption=''):
     """Название фильма после хука (Роман 25.09.2026: «сначала хук, потом название фильма»).
 
     Не вид витрины и не входит в `plates`: название фильма ставится один раз, его не
@@ -1237,7 +1237,10 @@ def film_title(variant, title, shot):
                 f'align-items:center;justify-content:center;text-align:center;padding:0 {MARGIN}px">'
                 f'<div class="nm" style="font-size:{fs}px;line-height:.98;max-width:3400px;'
                 f'color:{WHITE};{SHADOW}">{esc(title)}</div>'
-                f'<div style="margin-top:90px">{rule(700, 22)}</div></div></div>')
+                f'<div style="margin-top:90px">{rule(700, 22)}</div>'
+                + (f'<div class="nm" style="margin-top:56px;font-size:96px;letter-spacing:.32em;'
+                   f'color:{WHITE};opacity:.86;{SHADOW}">{esc(str(caption).upper())}</div>' if caption else '')
+                + '</div></div>')
     if variant == 'b':
         lines = [words[0], ' '.join(words[1:-1]), words[-1]] if len(words) >= 3 else words
         lines = [x for x in lines if x]
@@ -1277,7 +1280,8 @@ def render_titles(a):
     Для глав, которых в кате нет, сдвиг тот же: так все примеры сравнимы между собой."""
     global CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH, CH_EYEBROW
     # 640 px Роман счёл слишком крупным («сделай помельче», 25.09.2026 вечер)
-    CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH, CH_EYEBROW = 470, 1050, 300, 700, False
+    # 640 → 470 → 400: «сделай помельче», потом «все главы чуть меньше» (25.09.2026)
+    CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH, CH_EYEBROW = 400, 950, 300, 700, False
     chap = [(int(t), str(n)) for t, n in P.CHAPTERS]
     names = P.get('ch_name', {}) or {}
     dur = float(P.duration_sec())
@@ -1288,7 +1292,14 @@ def render_titles(a):
         if not shot:
             miss.append(f'глава {no}: нет кадра')
             continue
-        page(f'titles/title_ch_{no}', q_ch(no, str(names.get(no, '')), shot))
+        if no == str(P.get('film_title_chapter') or ''):
+            # Роман 25.09.2026: «Одна с ребёнком — фильм — надо вместо тизера»: первая заставка —
+            # это название фильма тем же видом, что выбран для названия, с подписью «фильм»
+            v = str(P.get('film_title_variant') or 'a').lower()
+            page(f'titles/title_ch_{no}', film_title(v, str(names.get(no, '')).upper(), shot,
+                                                     str(P.get('film_title_caption') or '')))
+        else:
+            page(f'titles/title_ch_{no}', q_ch(no, str(names.get(no, '')), shot))
         made.append(f'title_ch_{no}')
     on_cut = {j for j in range(1, len(P.get('sub') or []) + 1)} - {int(x) for x in (P.get('sub_no_screen') or [])}
     for j, (sec, ch, label) in enumerate(P.get('sub') or [], 1):
