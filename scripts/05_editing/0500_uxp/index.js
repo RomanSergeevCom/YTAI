@@ -114,23 +114,19 @@ let reviewState = { data: null, filePath: null, building: false, editedVideoPath
 // перезагрузил ли человек панель или смотрит на старый код.
 var PANEL_VERSION = require('./src/shared/version').PANEL_VERSION;
 
-function $(id) { return document.querySelector('#' + id); }
-
-/** Привязка, переживающая отсутствие кнопки в разметке. */
-function on(id, handler) {
-  var el = $(id);
-  if (el) el.addEventListener('click', handler);
-  return !!el;
-}
+// $() и on() — src/shared/panelDom.js: кнопки вешаются ТОЛЬКО через on() —
+// он переживает отсутствие кнопки и отдаёт любое исключение обработчика в «Err».
+const { $, on } = require('./src/shared/panelDom');
 
 
 // Logs write to 99_Pipeline/logs/ only — no in-panel display
 
 // --- INGEST UI helpers ---
 
-function setIngestStatus(text, type) {
+function setIngestStatus(text, type, err) {
   $('ingest-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('ingest-status-text').textContent = text;
+  if (type === 'error') ingestLogger.error(text, err);
 }
 
 function setIngestProgress(percent, text) {
@@ -147,9 +143,10 @@ function hideIngestProgress() {
 
 // --- ASSEMBLY UI helpers ---
 
-function setAssemblyStatus(text, type) {
+function setAssemblyStatus(text, type, err) {
   $('assembly-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('assembly-status-text').textContent = text;
+  if (type === 'error') assemblyLogger.error(text, err);
 }
 
 function setAssemblyProgress(percent, text) {
@@ -166,9 +163,10 @@ function hideAssemblyProgress() {
 
 // --- SCREEN CUES UI helpers ---
 
-function setScreensStatus(text, type) {
+function setScreensStatus(text, type, err) {
   $('screens-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('screens-status-text').textContent = text;
+  if (type === 'error') screensLogger.error(text, err);
 }
 
 function setScreensProgress(percent, text) {
@@ -185,9 +183,10 @@ function hideScreensProgress() {
 
 // --- PROJECT UI helpers ---
 
-function setProjectStatus(text, type) {
+function setProjectStatus(text, type, err) {
   $('project-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('project-status-text').textContent = text;
+  if (type === 'error') recordPanelError(text, 'project', err);
 }
 
 /**
@@ -221,15 +220,12 @@ async function resolveProjectRoot(startPath) {
  */
 async function copyLastError() {
   var g = (typeof globalThis !== 'undefined') ? globalThis : window;
-  var errs = (g.__ytaiErrors || []).slice(-12);
-  var lines = [
-    '=== YTAI Assembly panel — error report ===',
+  var errs = g.__ytaiErrors || [];
+  var report = Logger.formatPanelReport(errs, [
+    '=== YTAI panel — error report ===',
     'panel: v' + PANEL_VERSION + ' · ' + new Date().toISOString(),
-    'project: ' + (projectState.projectName || '?') + ' @ ' + (projectState.folderPath || '?'),
-    '--- last errors / warnings (' + errs.length + ') ---'
-  ];
-  lines = lines.concat(errs.length ? errs : ['(no errors captured this session)']);
-  var report = lines.join('\n');
+    'project: ' + (projectState.projectName || '?') + ' @ ' + (projectState.folderPath || '?')
+  ]);
   var copied = false;
   try { require('uxp').clipboard.copyText(report); copied = true; } catch (eC1) { /* fallback below handles it (navigator.clipboard) */ }
   if (!copied) {
@@ -472,7 +468,7 @@ async function selectProjectFolder() {
 
   } catch (err) {
     ingestLogger.error('Project selection failed: ' + err.message);
-    setProjectStatus('Selection failed: ' + err.message, 'error');
+    setProjectStatus('Selection failed: ' + err.message, 'error', err);
   }
 }
 
@@ -1220,7 +1216,7 @@ async function spreadForSync() {
       + (sel ? ', выделено ' + nSel : '') + '. Дальше: Clip > Synchronize, потом Collect.');
   } catch (err) {
     ingestLogger.error('Sync spread failed: ' + err.message);
-    setIngestStatus('Spread failed: ' + err.message, 'error');
+    setIngestStatus('Spread failed: ' + err.message, 'error', err);
   } finally {
     $('btn-sync-spread').removeAttribute('disabled');
   }
@@ -1289,7 +1285,7 @@ async function selectForSyncClick() {
     }
   } catch (err) {
     ingestLogger.error('Select for Sync: ' + err.message);
-    setIngestStatus('Выделение не встало: ' + err.message, 'error');
+    setIngestStatus('Выделение не встало: ' + err.message, 'error', err);
   } finally {
     $('btn-sync-select').removeAttribute('disabled');
   }
@@ -1319,7 +1315,7 @@ async function cleanStraysClick() {
     }
   } catch (err) {
     ingestLogger.error('Clean: ' + err.message);
-    setIngestStatus('Чистка не вышла: ' + err.message, 'error');
+    setIngestStatus('Чистка не вышла: ' + err.message, 'error', err);
   } finally {
     $('btn-sync-clean').removeAttribute('disabled');
   }
@@ -1470,7 +1466,7 @@ async function collectFromSync() {
     ingestLogger.info('The *_SYNC sequence is disposable — delete it after the rebuild.');
   } catch (err) {
     ingestLogger.error('Sync collect failed: ' + err.message);
-    setIngestStatus('Collect failed: ' + err.message, 'error');
+    setIngestStatus('Collect failed: ' + err.message, 'error', err);
   } finally {
     $('btn-sync-collect').removeAttribute('disabled');
   }
@@ -1629,7 +1625,7 @@ async function loadIngest() {
     await renderIngestSceneList(ingest);
   } catch (err) {
     ingestLogger.error('Failed to load ingest: ' + err.message);
-    setIngestStatus('Error: ' + err.message, 'error');
+    setIngestStatus('Error: ' + err.message, 'error', err);
   }
 }
 
@@ -2078,9 +2074,8 @@ async function buildIngest() {
     }
 
   } catch (err) {
-    ingestLogger.error('INGEST BUILD FAILED: ' + err.message);
-    if (err.stack) ingestLogger.debug(err.stack);
-    setIngestStatus('Build failed: ' + err.message, 'error');
+    ingestLogger.error('INGEST BUILD FAILED: ' + err.message, err);
+    setIngestStatus('Build failed: ' + err.message, 'error', err);
     try { await saveIngestLogs(await ppro.Project.getActiveProject()); } catch (e) { /* best-effort inside the error path */ }
   }
 
@@ -2602,7 +2597,7 @@ async function loadBrief() {
     loadBriefFromString(contents, sourcePath);
   } catch (err) {
     assemblyLogger.error('Failed to load brief: ' + err.message);
-    setAssemblyStatus('Error: ' + err.message, 'error');
+    setAssemblyStatus('Error: ' + err.message, 'error', err);
   }
 }
 
@@ -2612,11 +2607,12 @@ async function loadBrief() {
 // audio kept on both). Additive — does NOT touch the Assembly path.
 let partsState = { part: null, segments: [], bundle: null, filePath: null, building: false };
 
-function setPartsStatus(text, type) {
+function setPartsStatus(text, type, err) {
   var dot = $('parts-status-dot');
   var txt = $('parts-status-text');
   if (txt) txt.textContent = text;
   if (dot) dot.className = 'status-dot ' + (type || 'waiting');
+  if (type === 'error') recordPanelError(text, 'parts', err);
 }
 
 function setPartsValidation(html) {
@@ -2635,23 +2631,16 @@ function setPartsValidation(html) {
  * на экране, а отчёт про него молчал. Обещание кнопки — «здесь то, что
  * сломалось», поэтому любой статус уровня error теперь регистрируется.
  */
-function recordPanelError(text, pipeline) {
-  try {
-    var g = (typeof globalThis !== 'undefined') ? globalThis : window;
-    if (!g.__ytaiErrors) g.__ytaiErrors = [];
-    var ts = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    var line = '[' + ts + '] [ERROR] ' + text + (pipeline ? '  [' + pipeline + ']' : '');
-    if (g.__ytaiErrors[g.__ytaiErrors.length - 1] !== line) g.__ytaiErrors.push(line);
-    if (g.__ytaiErrors.length > 30) g.__ytaiErrors.shift();
-  } catch (e) { /* не фатально */ }
+function recordPanelError(text, pipeline, err) {
+  Logger.pushPanelError('ERROR', text, pipeline, err);
 }
 
-function setAdjustStatus(text, type) {
+function setAdjustStatus(text, type, err) {
   var dot = $('adjust-status-dot');
   var txt = $('adjust-status-text');
   if (txt) txt.textContent = text;
   if (dot) dot.className = 'status-dot ' + (type || 'waiting');
-  if (type === 'error') recordPanelError(text, 'adjust');
+  if (type === 'error') recordPanelError(text, 'adjust', err);
 }
 
 var ADJUST_REASON_TEXT = {
@@ -2698,7 +2687,7 @@ async function runAdjustOverSelection(opts) {
     setAdjustStatus(msg, 'ready');
   } catch (err) {
     adjustLogger.error('runAdjustOverSelection: ' + err.message);
-    setAdjustStatus('Error: ' + err.message, 'error');
+    setAdjustStatus('Error: ' + err.message, 'error', err);
   }
 }
 
@@ -2971,7 +2960,7 @@ async function runAdjustPerClipFromPlan(allSequences) {
       var f2 = await adjustProjectFolder(await ppro.Project.getActiveProject());
       if (f2) await saveAdjustLog(f2, adjustLogger);
     } catch (e2) { /* best effort */ }
-    setAdjustStatus('Error: ' + err.message, 'error');
+    setAdjustStatus('Error: ' + err.message, 'error', err);
   }
 }
 
@@ -3022,7 +3011,7 @@ async function runAdjustBuildDonor() {
       var f2 = await adjustProjectFolder(await ppro.Project.getActiveProject());
       if (f2) await saveAdjustLog(f2, adjustLogger);
     } catch (e2) { /* best effort */ }
-    setAdjustStatus('Error: ' + err.message, 'error');
+    setAdjustStatus('Error: ' + err.message, 'error', err);
   }
 }
 
@@ -3065,7 +3054,7 @@ async function runAdjustProbeClone() {
       var f2 = await adjustProjectFolder(await ppro.Project.getActiveProject());
       if (f2) await saveAdjustLog(f2, adjustLogger);
     } catch (e2) { /* best effort */ }
-    setAdjustStatus('Error: ' + err.message, 'error');
+    setAdjustStatus('Error: ' + err.message, 'error', err);
   }
 }
 
@@ -3164,7 +3153,7 @@ async function loadPart(auto) {
     $('btn-build-part').removeAttribute('disabled');
     assemblyLogger.info('Part loaded: ' + (data.part.name || '?') + ', ' + data.segments.length + ' segments → ' + seqName);
   } catch (err) {
-    setPartsStatus('Error: ' + err.message, 'error');
+    setPartsStatus('Error: ' + err.message, 'error', err);
     assemblyLogger.error('Load part failed: ' + err.message);
   }
 }
@@ -3432,7 +3421,7 @@ async function selArchive() {
     setPartsStatus('Archived ' + moved + '/' + picked.length + ' selection(s)', moved === picked.length ? 'ready' : 'warning');
     await selRefresh();
   } catch (err) {
-    setPartsStatus('Archive error: ' + err.message, 'error');
+    setPartsStatus('Archive error: ' + err.message, 'error', err);
     assemblyLogger.error('Selections archive failed: ' + err.message);
   }
 }
@@ -3460,11 +3449,12 @@ let shortsState = {
   issues: []             // current validation result (pure W01/O01/S01/B01 + B03 [+B02 after build])
 };
 
-function setShortsStatus(text, type) {
+function setShortsStatus(text, type, err) {
   var dot = $('shorts-status-dot');
   var txt = $('shorts-status-text');
   if (txt) txt.textContent = text;
   if (dot) dot.className = 'status-dot ' + (type || 'waiting');
+  if (type === 'error') shortsLogger.error(text, err);
 }
 
 function setShortsValidation(html) {
@@ -3694,7 +3684,7 @@ async function shortsRefresh() {
     shortsLogger.info('Shorts brief loaded: ' + best.name + ' (' + list.length + ' candidates, ' +
       shortsState.issues.length + ' issue(s))');
   } catch (err) {
-    setShortsStatus('Error: ' + err.message, 'error');
+    setShortsStatus('Error: ' + err.message, 'error', err);
     shortsLogger.error('Shorts refresh failed: ' + err.message);
   }
 }
@@ -3717,7 +3707,7 @@ async function shortsBuildPreview() {
     try { await project.save(); } catch (eS) { /* non-fatal */ }
     setShortsStatus('Preview built: ' + r.seqName + ' — ' + r.markers + '/' + r.candidates + ' markers. Drag markers to fix boundaries, then Read Back.', 'ready');
   } catch (err) {
-    setShortsStatus('Preview error: ' + err.message, 'error');
+    setShortsStatus('Preview error: ' + err.message, 'error', err);
     shortsLogger.error('Shorts preview failed: ' + err.message);
   }
 }
@@ -3783,7 +3773,7 @@ async function shortsReadBackMarkers() {
     shortsRenderCandidates();
     setShortsStatus('Read back: ' + matched + ' marker(s) matched, ' + moved + ' boundary edit(s) — durations updated', 'ready');
   } catch (err) {
-    setShortsStatus('Read back error: ' + err.message, 'error');
+    setShortsStatus('Read back error: ' + err.message, 'error', err);
     shortsLogger.error('Shorts read-back failed: ' + err.message);
   }
 }
@@ -3857,7 +3847,7 @@ async function shortsBuildApproved() {
     shortsRenderCandidates();
     shortsLogger.info('=== SHORTS BUILD DONE: ' + okN + '/' + reports.length + ' ok ===');
   } catch (err) {
-    setShortsStatus('Build error: ' + err.message, 'error');
+    setShortsStatus('Build error: ' + err.message, 'error', err);
     shortsLogger.error('Shorts build failed: ' + err.message);
   } finally {
     shortsState.building = false;
@@ -3923,7 +3913,7 @@ async function shortsExportOut() {
       Object.keys(out.sequence_dumps).length + ' sequence dump(s) · ' + (shortsState.issues || []).length + ' issue(s)</div>');
     shortsLogger.info('=== SHORTS OUT → ' + outPath + ' ===');
   } catch (err) {
-    setShortsStatus('Export error: ' + err.message, 'error');
+    setShortsStatus('Export error: ' + err.message, 'error', err);
     shortsLogger.error('Shorts export failed: ' + err.message);
   }
 }
@@ -3946,7 +3936,7 @@ async function shortsOpenReviewHtml() {
     await shell.openPath(best.nativePath || (shortsDir() + '/' + best.name));
     setShortsStatus('Opened ' + best.name, 'ready');
   } catch (err) {
-    setShortsStatus('Open HTML error: ' + err.message, 'error');
+    setShortsStatus('Open HTML error: ' + err.message, 'error', err);
     shortsLogger.error('Shorts open review HTML failed: ' + err.message);
   }
 }
@@ -4163,7 +4153,7 @@ async function buildPremontage() {
     setAssemblyStatus(res && res.ok ? 'Built: ' + res.builtNames.join(', ')
       : 'Build failed: ' + ((res && res.error) || '?'), res && res.ok ? 'ready' : 'error');
   } catch (err) {
-    setAssemblyStatus('Premontage: ' + err.message, 'error');
+    setAssemblyStatus('Premontage: ' + err.message, 'error', err);
     assemblyLogger.error('Premontage build failed: ' + err.message);
   } finally {
     asmScenesBuilding = false;
@@ -4178,11 +4168,12 @@ async function buildPremontage() {
 const footageLogger = new Logger('FOOTAGE');
 let footageState = { building: false };
 
-function setFootageStatus(text, type) {
+function setFootageStatus(text, type, err) {
   var dot = $('footage-status-dot');
   var txt = $('footage-status-text');
   if (txt) txt.textContent = text;
   if (dot) dot.className = 'status-dot ' + (type || 'waiting');
+  if (type === 'error') footageLogger.error(text, err);
 }
 
 function setFootageValidation(html) {
@@ -4449,9 +4440,8 @@ async function buildFootage() {
         : '<div class="val-line" style="color:#e88">Log NOT saved: ' + escapeHtml(footageState.lastLogError || 'unknown') + '</div>'));
     footageLogger.info('=== FOOTAGE REVIEW DONE: ' + result.srcSeqName + ' (' + result.placed + '/' + result.total + ', luts=' + lutCount + ') ===');
   } catch (err) {
-    setFootageStatus('Error: ' + err.message, 'error');
-    footageLogger.error('Footage review failed: ' + err.message);
-    if (err.stack) footageLogger.debug(err.stack);
+    setFootageStatus('Error: ' + err.message, 'error', err);
+    footageLogger.error('Footage review failed: ' + err.message, err);
     try { await saveFootageLog(await ppro.Project.getActiveProject()); } catch (e) { /* ignore */ }
   } finally {
     footageState.building = false;
@@ -4643,9 +4633,8 @@ async function buildAssembly() {
     setAssemblyStatus('Assembly + Deleted Scene built (' + result.clipCount + ' clips)', 'ready');
 
   } catch (err) {
-    assemblyLogger.error('ASSEMBLY BUILD FAILED: ' + err.message);
-    if (err.stack) assemblyLogger.debug(err.stack);
-    setAssemblyStatus('Build failed: ' + err.message, 'error');
+    assemblyLogger.error('ASSEMBLY BUILD FAILED: ' + err.message, err);
+    setAssemblyStatus('Build failed: ' + err.message, 'error', err);
     try { await saveAssemblyLogs(await ppro.Project.getActiveProject(), clipMap, result); } catch (e) { assemblyLogger.debug('saveAssemblyLogs after failure: ' + (e && e.message)); }
   }
 
@@ -5314,9 +5303,8 @@ async function exportMarkers() {
     $('btn-copy-markers-prompt').removeAttribute('disabled');
 
   } catch (err) {
-    assemblyLogger.error('Marker export failed: ' + err.message);
-    if (err.stack) assemblyLogger.debug(err.stack);
-    setAssemblyStatus('Export failed: ' + err.message, 'error');
+    assemblyLogger.error('Marker export failed: ' + err.message, err);
+    setAssemblyStatus('Export failed: ' + err.message, 'error', err);
   }
 
   $('btn-export-markers').removeAttribute('disabled');
@@ -5549,9 +5537,8 @@ async function debugExport() {
     setAssemblyStatus('Debug: ' + status, problemClips > 0 ? 'error' : 'ready');
 
   } catch (err) {
-    assemblyLogger.error('Debug export failed: ' + err.message);
-    if (err.stack) assemblyLogger.debug(err.stack);
-    setAssemblyStatus('Debug failed: ' + err.message, 'error');
+    assemblyLogger.error('Debug export failed: ' + err.message, err);
+    setAssemblyStatus('Debug failed: ' + err.message, 'error', err);
   }
 
   $('btn-debug-export').removeAttribute('disabled');
@@ -5592,7 +5579,7 @@ async function applyChapterMarkersToActive() {
       ' (old ones replaced)', added ? 'ready' : 'error');
   } catch (err) {
     ingestLogger.error('Chapter markers failed: ' + err.message);
-    setIngestStatus('Chapter markers failed: ' + err.message, 'error');
+    setIngestStatus('Chapter markers failed: ' + err.message, 'error', err);
   }
 }
 
@@ -6450,9 +6437,8 @@ async function exportAudioMap() {
     setIngestStatus('Audio Map: ' + summary + ' (path copied)', 'ready');
 
   } catch (err) {
-    ingestLogger.error('Export Audio Map failed: ' + err.message);
-    if (err.stack) ingestLogger.debug(err.stack);
-    setIngestStatus('Export Audio Map failed: ' + err.message, 'error');
+    ingestLogger.error('Export Audio Map failed: ' + err.message, err);
+    setIngestStatus('Export Audio Map failed: ' + err.message, 'error', err);
   }
 
   $('btn-export-audio-map').removeAttribute('disabled');
@@ -6525,7 +6511,7 @@ async function applyAudioFill(effectName) {
 
   } catch (err) {
     assemblyLogger.error('Audio fill failed: ' + err.message);
-    setAssemblyStatus('Audio fill failed: ' + err.message, 'error');
+    setAssemblyStatus('Audio fill failed: ' + err.message, 'error', err);
   }
 }
 
@@ -6590,7 +6576,7 @@ async function applyVoiceEnhance() {
     setAssemblyStatus('Voice Enhance: ' + applied + '/' + trackItems.length + ' clips (' + VOICE_EFFECTS.length + ' effects)', 'ready');
   } catch (err) {
     assemblyLogger.error('Voice Enhance failed: ' + err.message);
-    setAssemblyStatus('Voice Enhance failed: ' + err.message, 'error');
+    setAssemblyStatus('Voice Enhance failed: ' + err.message, 'error', err);
   }
 }
 
@@ -6651,7 +6637,7 @@ async function removeAudioEffects() {
     setAssemblyStatus('Removed ' + totalRemoved + ' effects from ' + trackItems.length + ' clips', 'ready');
   } catch (err) {
     assemblyLogger.error('Remove FX failed: ' + err.message);
-    setAssemblyStatus('Remove FX failed: ' + err.message, 'error');
+    setAssemblyStatus('Remove FX failed: ' + err.message, 'error', err);
   }
 }
 
@@ -7160,9 +7146,10 @@ async function saveAssemblyLogs(project, clipMap, result) {
 //  DELETED SCENE PIPELINE
 // ══════════════════════════════════════════════════════════════════
 
-function setDeletedSceneStatus(text, type) {
+function setDeletedSceneStatus(text, type, err) {
   $('ds-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('ds-status-text').textContent = text;
+  if (type === 'error') deletedSceneLogger.error(text, err);
 }
 
 function setDeletedSceneProgress(percent, text) {
@@ -7656,9 +7643,8 @@ async function buildDeletedScene() {
     updateLogPath('ds', deletedSceneLogger.getLastSavedPath());
 
   } catch (err) {
-    deletedSceneLogger.error('DELETED SCENE BUILD FAILED: ' + err.message);
-    if (err.stack) deletedSceneLogger.debug(err.stack);
-    setDeletedSceneStatus('Build failed: ' + err.message, 'error');
+    deletedSceneLogger.error('DELETED SCENE BUILD FAILED: ' + err.message, err);
+    setDeletedSceneStatus('Build failed: ' + err.message, 'error', err);
   }
 }
 
@@ -8354,9 +8340,8 @@ async function buildScreenCuesPipeline() {
     await saveScreensLogs(project, screenResult);
 
   } catch (err) {
-    screensLogger.error('SCREEN CUES BUILD FAILED: ' + err.message);
-    if (err.stack) screensLogger.debug(err.stack);
-    setScreensStatus('Build failed: ' + err.message, 'error');
+    screensLogger.error('SCREEN CUES BUILD FAILED: ' + err.message, err);
+    setScreensStatus('Build failed: ' + err.message, 'error', err);
     try { await saveScreensLogs(await ppro.Project.getActiveProject(), null); } catch (e) { /* failure path; debug bundle save is best-effort */ }
   }
 }
@@ -9058,9 +9043,8 @@ async function exportPreEditDoc() {
     setScreensStatus('Exported ' + outputSegments.length + ' segments → ' + jsonFileName, 'ready');
 
   } catch (err) {
-    screensLogger.error('Pre-Edit Doc export failed: ' + err.message);
-    if (err.stack) screensLogger.debug(err.stack);
-    setScreensStatus('Export failed: ' + err.message, 'error');
+    screensLogger.error('Pre-Edit Doc export failed: ' + err.message, err);
+    setScreensStatus('Export failed: ' + err.message, 'error', err);
   }
 
   $('btn-export-pre-edit-doc').removeAttribute('disabled');
@@ -9224,7 +9208,7 @@ async function copyPreEditPrompt() {
 
   } catch (err) {
     screensLogger.error('Copy Prompt failed: ' + err.message);
-    setScreensStatus('Copy Prompt failed: ' + err.message, 'error');
+    setScreensStatus('Copy Prompt failed: ' + err.message, 'error', err);
   }
 }
 
@@ -9482,9 +9466,8 @@ async function exportPreEdit() {
     // Save debug bundle
     await screensLogger.saveDebugBundle(exportData, null, { operation: 'export', exportPath: exportPath });
   } catch (err) {
-    screensLogger.error('Export failed: ' + err.message);
-    if (err.stack) screensLogger.debug(err.stack);
-    setScreensStatus('Export failed: ' + err.message, 'error');
+    screensLogger.error('Export failed: ' + err.message, err);
+    setScreensStatus('Export failed: ' + err.message, 'error', err);
     // Save log even on failure
     await screensLogger.saveDebugBundle(null, null, { operation: 'export_failed', error: err.message });
   }
@@ -9747,9 +9730,8 @@ async function importPreEdit() {
     // Save debug bundle
     await screensLogger.saveDebugBundle(assemblyState.data, null, { operation: 'import', summary: summary });
   } catch (err) {
-    screensLogger.error('Import failed: ' + err.message);
-    if (err.stack) screensLogger.debug(err.stack);
-    setScreensStatus('Import failed: ' + err.message, 'error');
+    screensLogger.error('Import failed: ' + err.message, err);
+    setScreensStatus('Import failed: ' + err.message, 'error', err);
     await screensLogger.saveDebugBundle(null, null, { operation: 'import_failed', error: err.message });
   }
 }
@@ -10023,17 +10005,17 @@ async function processReview() {
     updateLogPath('review', reviewLogger.getLastSavedPath());
 
   } catch (err) {
-    reviewLogger.error('PROCESS REVIEW FAILED: ' + err.message);
-    if (err.stack) reviewLogger.debug(err.stack);
-    setReviewStatus('Failed: ' + err.message, 'error');
+    reviewLogger.error('PROCESS REVIEW FAILED: ' + err.message, err);
+    setReviewStatus('Failed: ' + err.message, 'error', err);
   } finally {
     $('btn-process-review').removeAttribute('disabled');
   }
 }
 
-function setReviewStatus(text, type) {
+function setReviewStatus(text, type, err) {
   $('review-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('review-status-text').textContent = text;
+  if (type === 'error') reviewLogger.error(text, err);
 }
 
 function setReviewProgress(percent, text) {
@@ -10069,7 +10051,7 @@ async function loadReviewBrief() {
     reviewLogger.info('Review brief loaded successfully');
   } catch (err) {
     reviewLogger.error('Failed to load review brief: ' + err.message);
-    setReviewStatus('Load failed: ' + err.message, 'error');
+    setReviewStatus('Load failed: ' + err.message, 'error', err);
   }
 }
 
@@ -10260,7 +10242,7 @@ async function buildReviewOverlay() {
     hideReviewProgress();
     reviewLogger.info('=== REVIEW-OVERLAY DONE: ' + result.seqName + ' (' + result.placed + ' placed, ' + result.skipped + ' skipped) ===');
   } catch (err) {
-    setReviewStatus('Error: ' + err.message, 'error');
+    setReviewStatus('Error: ' + err.message, 'error', err);
     reviewLogger.error('Review-overlay failed: ' + err.message);
     hideReviewProgress();
   } finally {
@@ -10404,7 +10386,7 @@ async function buildReviewV3() {
     hideReviewProgress();
     reviewLogger.info('=== REVIEW v3 DONE: ' + result.seqName + ' (full V1, ' + result.placed + ' overlays, no markers) ===');
   } catch (err) {
-    setReviewStatus('Error: ' + err.message, 'error');
+    setReviewStatus('Error: ' + err.message, 'error', err);
     reviewLogger.error('Review v3 failed: ' + err.message);
     hideReviewProgress();
   } finally {
@@ -10492,7 +10474,7 @@ async function exportSequenceJson() {
         '<div class="val-line">' + nclips + ' clips · ' + data.markers.length + ' markers · tracks ' + escapeHtml(Object.keys(data.tracks).join(', ')) + '</div>';
     } catch (e) { /* cosmetic panel; export already written and logged */ }
   } catch (err) {
-    setReviewStatus('Export error: ' + err.message, 'error');
+    setReviewStatus('Export error: ' + err.message, 'error', err);
     reviewLogger.error('Export sequence failed: ' + err.message);
   } finally {
     var b = $('btn-export-sequence-json'); if (b) b.removeAttribute('disabled');
@@ -10955,9 +10937,8 @@ async function buildReview() {
     updateLogPath('review', reviewLogger.getLastSavedPath());
 
   } catch (err) {
-    reviewLogger.error('REVIEW BUILD FAILED: ' + err.message);
-    if (err.stack) reviewLogger.debug(err.stack);
-    setReviewStatus('Build failed: ' + err.message, 'error');
+    reviewLogger.error('REVIEW BUILD FAILED: ' + err.message, err);
+    setReviewStatus('Build failed: ' + err.message, 'error', err);
   } finally {
     reviewState.building = false;
     $('btn-build-review').removeAttribute('disabled');
@@ -11208,9 +11189,8 @@ async function exportReviewMarkers() {
     setReviewStatus('Exported v' + version + ' → clipboard: ' + fileName, 'ready');
 
   } catch (err) {
-    reviewLogger.error('Review marker export failed: ' + err.message);
-    if (err.stack) reviewLogger.debug(err.stack);
-    setReviewStatus('Export failed: ' + err.message, 'error');
+    reviewLogger.error('Review marker export failed: ' + err.message, err);
+    setReviewStatus('Export failed: ' + err.message, 'error', err);
   }
 
   $('btn-export-review-markers').removeAttribute('disabled');
@@ -11442,9 +11422,10 @@ async function dumpBinTree(item, depth) {
 var doctorState = { lastReportPath: null, lastDebugPath: null };
 var doctorLogFn = function () {};   // set by onDoctorAnalyze so analysis steps are captured
 
-function setDoctorStatus(text, type) {
+function setDoctorStatus(text, type, err) {
   $('doctor-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('doctor-status-text').textContent = text;
+  if (type === 'error') recordPanelError(text, 'doctor', err);
 }
 function setDoctorProgress(percent, text) {
   $('doctor-progress-bar').style.display = 'block';
@@ -11790,7 +11771,7 @@ async function onDoctorAnalyze() {
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));
     if (e && e.stack) log('STACK: ' + e.stack);
-    setDoctorStatus('Error: ' + (e && e.message ? e.message : String(e)) + ' — log path copied', 'error');
+    setDoctorStatus('Error: ' + (e && e.message ? e.message : String(e)) + ' — log path copied', 'error', e);
     setDoctorProgress(100, 'Error');
   } finally {
     $('btn-doctor-analyze').removeAttribute('disabled');
@@ -12124,7 +12105,7 @@ async function onDoctorRelink() {
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));
     if (e && e.stack) log('STACK: ' + e.stack);
-    setDoctorStatus('Relink error: ' + (e && e.message ? e.message : String(e)), 'error');
+    setDoctorStatus('Relink error: ' + (e && e.message ? e.message : String(e)), 'error', e);
     setDoctorProgress(100, 'Error');
   } finally {
     try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) { /* cosmetic UI; button may not exist in this layout */ }
@@ -12231,7 +12212,7 @@ async function onDoctorForceRefresh() {
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));
     if (e && e.stack) log('STACK: ' + e.stack);
-    setDoctorStatus('Force-refresh error: ' + (e && e.message ? e.message : String(e)), 'error');
+    setDoctorStatus('Force-refresh error: ' + (e && e.message ? e.message : String(e)), 'error', e);
     setDoctorProgress(100, 'Error');
   } finally {
     try { $('btn-doctor-forcerefresh').removeAttribute('disabled'); } catch (e) { /* cosmetic: static button re-enable */ }
@@ -12362,7 +12343,7 @@ async function onDoctorRestoreStructure() {
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));
     if (e && e.stack) log('STACK: ' + e.stack);
-    setDoctorStatus('Restore error: ' + (e && e.message ? e.message : String(e)), 'error');
+    setDoctorStatus('Restore error: ' + (e && e.message ? e.message : String(e)), 'error', e);
     setDoctorProgress(100, 'Error');
   } finally {
     try { $('btn-doctor-restore').removeAttribute('disabled'); } catch (e) { /* cosmetic: static button re-enable */ }
@@ -12453,7 +12434,7 @@ async function onDoctorSelfContain() {
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));
     if (e && e.stack) log('STACK: ' + e.stack);
-    setDoctorStatus('Self-contain error: ' + (e && e.message ? e.message : String(e)), 'error');
+    setDoctorStatus('Self-contain error: ' + (e && e.message ? e.message : String(e)), 'error', e);
     setDoctorProgress(100, 'Error');
   } finally {
     try { $('btn-doctor-selfcontain').removeAttribute('disabled'); } catch (e) { /* non-fatal: button re-enable is cosmetic */ }
@@ -12687,9 +12668,8 @@ async function debugDump() {
     setTimeout(function() { $('project-compact-name').textContent = _savedCompactName; $('project-compact-name').style.color = ''; }, 3000);
 
   } catch (err) {
-    ingestLogger.error('Debug dump failed: ' + err.message);
-    if (err.stack) ingestLogger.debug(err.stack);
-    setProjectStatus('Dump failed: ' + err.message, 'error');
+    ingestLogger.error('Debug dump failed: ' + err.message, err);
+    setProjectStatus('Dump failed: ' + err.message, 'error', err);
     $('project-compact-name').textContent = _savedCompactName + ' ✗';
     $('project-compact-name').style.color = '#f44336';
     setTimeout(function() { $('project-compact-name').textContent = _savedCompactName; $('project-compact-name').style.color = ''; }, 3000);
@@ -12703,106 +12683,105 @@ async function debugDump() {
 
 document.addEventListener('DOMContentLoaded', () => {
   // PROJECT buttons
-  $('btn-select-project').addEventListener('click', selectProjectFolder);
-  $('btn-use-open-project').addEventListener('click', function () { useOpenProjectFolder(); });
-  $('btn-copy-project-prompt').addEventListener('click', copyProjectPrompt);
+  on('btn-select-project', selectProjectFolder);
+  on('btn-use-open-project', function () { useOpenProjectFolder(); });
+  on('btn-copy-project-prompt', copyProjectPrompt);
   // Auto-fill the folder from the OPEN Premiere project on load (parity with Footage).
   // Silent: does nothing if no project is open or it is unsaved (untitled).
   if (!projectState.folderPath) {
     useOpenProjectFolder({ silent: true }).catch(function () { /* non-fatal */ });
   }
-  $('btn-copy-markers-prompt').addEventListener('click', copyMarkersPrompt);
-  $('btn-refresh-project').addEventListener('click', refreshProject);
-  $('btn-debug-dump').addEventListener('click', debugDump);
+  on('btn-copy-markers-prompt', copyMarkersPrompt);
+  on('btn-refresh-project', refreshProject);
+  on('btn-debug-dump', debugDump);
 
   // PROJECT compact bar — toggle expand, wire compact buttons
   // sp-button uses Shadow DOM so e.target.closest('sp-button') fails.
   // Use stopPropagation on buttons to prevent toggle from firing.
-  $('btn-refresh-compact').addEventListener('click', function(e) {
+  on('btn-refresh-compact', function(e) {
     e.stopPropagation();
     refreshProject();
   });
-  $('btn-debug-dump-compact').addEventListener('click', function(e) {
+  on('btn-debug-dump-compact', function(e) {
     e.stopPropagation();
     debugDump();
   });
-  $('btn-copy-error').addEventListener('click', function(e) {
+  on('btn-copy-error', function(e) {
     e.stopPropagation();
     copyLastError();
   });
-  $('project-compact-bar').addEventListener('click', function() {
+  on('project-compact-bar', function() {
     toggleProjectExpand();
   });
 
   // INGEST buttons (btn-load-ingest is fallback — hidden by default)
-  $('btn-load-ingest').addEventListener('click', loadIngest);
-  $('btn-build-ingest').addEventListener('click', buildIngest);
+  on('btn-load-ingest', loadIngest);
+  on('btn-build-ingest', buildIngest);
   // 📁 Hide source timelines — same action on the Ingest and Doctor tabs (status → own tab)
-  $('btn-hide-source-timelines').addEventListener('click', function () {
+  on('btn-hide-source-timelines', function () {
     onHideSourceTimelines(setIngestStatus).catch(function (e) {
-      setIngestStatus('Hide source timelines: ' + (e && e.message ? e.message : e), 'error');
+      setIngestStatus('Hide source timelines: ' + (e && e.message ? e.message : e), 'error', e);
     });
   });
-  $('btn-finesync').addEventListener('click', runFineSync);
-  $('btn-sync-spread').addEventListener('click', spreadForSync);
-  $('btn-sync-select').addEventListener('click', selectForSyncClick);
-  $('btn-sync-clean').addEventListener('click', cleanStraysClick);
-  $('btn-sync-collect').addEventListener('click', collectFromSync);
-  $('btn-verify-ingest').addEventListener('click', verifyIngest);
-  $('btn-sync-audio').addEventListener('click', syncAudio);
-  $('btn-chapter-markers').addEventListener('click', function () {
+  on('btn-finesync', runFineSync);
+  on('btn-sync-spread', spreadForSync);
+  on('btn-sync-select', selectForSyncClick);
+  on('btn-sync-clean', cleanStraysClick);
+  on('btn-sync-collect', collectFromSync);
+  on('btn-verify-ingest', verifyIngest);
+  on('btn-sync-audio', syncAudio);
+  on('btn-chapter-markers', function () {
     applyChapterMarkersToActive().catch(function (e) {
-      setIngestStatus('Chapter markers: ' + (e && e.message ? e.message : e), 'error');
+      setIngestStatus('Chapter markers: ' + (e && e.message ? e.message : e), 'error', e);
     });
   });
-  $('btn-chapter-markers-all').addEventListener('click', function () {
+  on('btn-chapter-markers-all', function () {
     applyChapterMarkersToAll().catch(function (e) {
-      setIngestStatus('Chapters → all: ' + (e && e.message ? e.message : e), 'error');
+      setIngestStatus('Chapters → all: ' + (e && e.message ? e.message : e), 'error', e);
     });
   });
 
   // PARTS picker — тот же выбор галочками, что и «Sequences to build» в Ingest
-  $('parts-pick-new').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('parts','new'); });
-  $('parts-pick-all').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('parts','all'); });
-  $('parts-pick-none').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('parts','none'); });
-  $('parts-pick-refresh').addEventListener('click', function (e) {
+  on('parts-pick-new', function (e) { e.preventDefault(); setPickChecks('parts','new'); });
+  on('parts-pick-all', function (e) { e.preventDefault(); setPickChecks('parts','all'); });
+  on('parts-pick-none', function (e) { e.preventDefault(); setPickChecks('parts','none'); });
+  on('parts-pick-refresh', function (e) {
     e.preventDefault();
-    refreshPick('parts').catch(function (er) { setPartsStatus('Parts list: ' + (er && er.message), 'error'); });
+    refreshPick('parts').catch(function (er) { setPartsStatus('Parts list: ' + (er && er.message), 'error', er); });
   });
-  $('btn-parts-pick-build').addEventListener('click', function () {
-    buildPicked('parts').catch(function (e) { setPartsStatus('Build: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-parts-pick-build', function () {
+    buildPicked('parts').catch(function (e) { setPartsStatus('Build: ' + (e && e.message ? e.message : e), 'error', e); });
   });
 
   // REVIEW picker — тот же выбор галочками; ревью-версии собираются здесь, а не в Parts
-  $('review-pick-new').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('review', 'new'); });
-  $('review-pick-all').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('review', 'all'); });
-  $('review-pick-none').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('review', 'none'); });
-  $('review-pick-refresh').addEventListener('click', function (e) {
+  on('review-pick-new', function (e) { e.preventDefault(); setPickChecks('review', 'new'); });
+  on('review-pick-all', function (e) { e.preventDefault(); setPickChecks('review', 'all'); });
+  on('review-pick-none', function (e) { e.preventDefault(); setPickChecks('review', 'none'); });
+  on('review-pick-refresh', function (e) {
     e.preventDefault();
-    refreshPick('review').catch(function (er) { setReviewStatus('Review list: ' + (er && er.message), 'error'); });
+    refreshPick('review').catch(function (er) { setReviewStatus('Review list: ' + (er && er.message), 'error', er); });
   });
-  $('btn-note-add').addEventListener('click', addReviewNote);
-  $('btn-note-copyall').addEventListener('click', copyAllReviewNotes);
-  $('btn-note-sheet').addEventListener('click', openNotesSheet);
-  $('btn-tz-copy').addEventListener('click', copyTzAtPlayhead);
-  $('btn-review-pick-build').addEventListener('click', function () {
-    buildPicked('review').catch(function (e) { setReviewStatus('Build: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-note-add', addReviewNote);
+  on('btn-note-copyall', copyAllReviewNotes);
+  on('btn-note-sheet', openNotesSheet);
+  on('btn-tz-copy', copyTzAtPlayhead);
+  on('btn-review-pick-build', function () {
+    buildPicked('review').catch(function (e) { setReviewStatus('Build: ' + (e && e.message ? e.message : e), 'error', e); });
   });
   // очередь заданий из терминала — тикаем, пока панель открыта
   setInterval(function () { jobTick().catch(function (e) { assemblyLogger.debug('jobTick: ' + (e && e.message || e)); }); }, 3000);
 
   // INGEST scene selection quick-links (new = only unbuilt scenes)
-  $('ingest-scenes-new').addEventListener('click', function (e) { e.preventDefault(); setIngestSceneChecks('new'); });
-  $('ingest-scenes-all').addEventListener('click', function (e) { e.preventDefault(); setIngestSceneChecks('all'); });
-  $('ingest-scenes-none').addEventListener('click', function (e) { e.preventDefault(); setIngestSceneChecks('none'); });
+  on('ingest-scenes-new', function (e) { e.preventDefault(); setIngestSceneChecks('new'); });
+  on('ingest-scenes-all', function (e) { e.preventDefault(); setIngestSceneChecks('all'); });
+  on('ingest-scenes-none', function (e) { e.preventDefault(); setIngestSceneChecks('none'); });
 
   // PARTS buttons (build-by-part stage)
-  $('btn-load-part').addEventListener('click', function () { loadPart().catch(function (e) { setPartsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); }); });
-  $('btn-build-part').addEventListener('click', function () { buildParts().catch(function (e) { setPartsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); }); });
+  on('btn-load-part', function () { loadPart().catch(function (e) { setPartsStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); }); });
+  on('btn-build-part', function () { buildParts().catch(function (e) { setPartsStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); }); });
   // Parts "Out": same exporter as Review — dumps the ACTIVE sequence to 05_Review + copies path to clipboard.
-  var bpOut = $('btn-export-part-out');
-  if (bpOut) bpOut.addEventListener('click', function () {
-    exportSequenceJson().catch(function (e) { setPartsStatus('Export error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-export-part-out', function () {
+    exportSequenceJson().catch(function (e) { setPartsStatus('Export error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
   // SELECTIONS (подборки): checkbox list of parts/selections/*.json → build/archive
   // ⚠️ $() отдаёт null, и addEventListener на нём бросает — одна убранная из
@@ -12814,119 +12793,119 @@ document.addEventListener('DOMContentLoaded', () => {
   // Clone / Build LUT Donor) убраны 25.09.2026: они читают {CODE}_lut_plan.json,
   // которого больше никто не пишет, ставят только Look и ищут кубы прошлого
   // поколения. Код функций оставлен — на него ещё ссылается донорский путь.
-  $('btn-sel-refresh').addEventListener('click', function () { selRefresh().catch(function (e) { setPartsStatus('Selections: ' + (e && e.message ? e.message : e), 'error'); }); });
-  $('btn-sel-build').addEventListener('click', function () { selBuild().catch(function (e) { setPartsStatus('Selections build: ' + (e && e.message ? e.message : e), 'error'); }); });
-  $('btn-sel-archive').addEventListener('click', function () { selArchive().catch(function (e) { setPartsStatus('Selections archive: ' + (e && e.message ? e.message : e), 'error'); }); });
-  $('btn-export-audio-map').addEventListener('click', exportAudioMap);
+  on('btn-sel-refresh', function () { selRefresh().catch(function (e) { setPartsStatus('Selections: ' + (e && e.message ? e.message : e), 'error', e); }); });
+  on('btn-sel-build', function () { selBuild().catch(function (e) { setPartsStatus('Selections build: ' + (e && e.message ? e.message : e), 'error', e); }); });
+  on('btn-sel-archive', function () { selArchive().catch(function (e) { setPartsStatus('Selections archive: ' + (e && e.message ? e.message : e), 'error', e); }); });
+  on('btn-export-audio-map', exportAudioMap);
 
   // SHORTS buttons (moments → 9:16 sequences; wired directly — sp-button Shadow DOM breaks closest())
-  $('btn-shorts-refresh').addEventListener('click', function () {
-    shortsRefresh().catch(function (e) { shortsLogger.error('refresh: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-shorts-refresh', function () {
+    shortsRefresh().catch(function (e) { shortsLogger.error('refresh: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-shorts-preview').addEventListener('click', function () {
-    shortsBuildPreview().catch(function (e) { shortsLogger.error('preview: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-shorts-preview', function () {
+    shortsBuildPreview().catch(function (e) { shortsLogger.error('preview: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-shorts-readback').addEventListener('click', function () {
-    shortsReadBackMarkers().catch(function (e) { shortsLogger.error('read-back: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-shorts-readback', function () {
+    shortsReadBackMarkers().catch(function (e) { shortsLogger.error('read-back: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-shorts-build').addEventListener('click', function () {
-    shortsBuildApproved().catch(function (e) { shortsLogger.error('build: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-shorts-build', function () {
+    shortsBuildApproved().catch(function (e) { shortsLogger.error('build: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-shorts-out').addEventListener('click', function () {
-    shortsExportOut().catch(function (e) { shortsLogger.error('out: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-shorts-out', function () {
+    shortsExportOut().catch(function (e) { shortsLogger.error('out: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-shorts-open-html').addEventListener('click', function () {
-    shortsOpenReviewHtml().catch(function (e) { shortsLogger.error('open html: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-shorts-open-html', function () {
+    shortsOpenReviewHtml().catch(function (e) { shortsLogger.error('open html: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
 
   // ASSEMBLY buttons (btn-load-brief is fallback — hidden by default)
-  $('btn-load-brief').addEventListener('click', loadBrief);
-  $('btn-build-assembly').addEventListener('click', buildAssembly);
-  $('btn-export-markers').addEventListener('click', exportMarkers);
-  $('btn-debug-export').addEventListener('click', debugExport);
-  $('btn-fill-left').addEventListener('click', function() { applyAudioFill('Fill Right with Left'); }); // L→R
-  $('btn-fill-right').addEventListener('click', function() { applyAudioFill('Fill Left with Right'); }); // R→L
-  $('btn-voice-enhance').addEventListener('click', applyVoiceEnhance);
-  $('btn-remove-audio-fx').addEventListener('click', removeAudioEffects);
+  on('btn-load-brief', loadBrief);
+  on('btn-build-assembly', buildAssembly);
+  on('btn-export-markers', exportMarkers);
+  on('btn-debug-export', debugExport);
+  on('btn-fill-left', function() { applyAudioFill('Fill Right with Left'); }); // L→R
+  on('btn-fill-right', function() { applyAudioFill('Fill Left with Right'); }); // R→L
+  on('btn-voice-enhance', applyVoiceEnhance);
+  on('btn-remove-audio-fx', removeAudioEffects);
 
   // ASSEMBLY scene timelines (scenes/ bundles) quick-links + build buttons.
   // Wired directly on elements — sp-button Shadow DOM breaks closest().
-  $('assembly-scenes-new').addEventListener('click', function (e) { e.preventDefault(); setAssemblySceneChecks('new'); });
-  $('assembly-scenes-all').addEventListener('click', function (e) { e.preventDefault(); setAssemblySceneChecks('all'); });
-  $('assembly-scenes-none').addEventListener('click', function (e) { e.preventDefault(); setAssemblySceneChecks('none'); });
-  $('btn-build-assembly-scenes').addEventListener('click', function () { buildAssemblyScenes().catch(function (e) { setAssemblyStatus('Error: ' + (e && e.message ? e.message : e), 'error'); }); });
-  $('btn-build-premontage').addEventListener('click', function () { buildPremontage().catch(function (e) { setAssemblyStatus('Error: ' + (e && e.message ? e.message : e), 'error'); }); });
+  on('assembly-scenes-new', function (e) { e.preventDefault(); setAssemblySceneChecks('new'); });
+  on('assembly-scenes-all', function (e) { e.preventDefault(); setAssemblySceneChecks('all'); });
+  on('assembly-scenes-none', function (e) { e.preventDefault(); setAssemblySceneChecks('none'); });
+  on('btn-build-assembly-scenes', function () { buildAssemblyScenes().catch(function (e) { setAssemblyStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); }); });
+  on('btn-build-premontage', function () { buildPremontage().catch(function (e) { setAssemblyStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); }); });
 
   // DELETED SCENE buttons
-  $('btn-build-deleted-scene').addEventListener('click', buildDeletedScene);
+  on('btn-build-deleted-scene', buildDeletedScene);
 
   // REVIEW buttons (external editor review)
-  $('btn-process-review').addEventListener('click', processReview);
-  $('btn-load-review-brief').addEventListener('click', loadReviewBrief);
-  $('btn-build-review').addEventListener('click', buildReview);
-  $('btn-build-review-overlay').addEventListener('click', buildReviewOverlay);
-  $('btn-build-review-v3').addEventListener('click', buildReviewV3);
-  $('btn-export-sequence-json').addEventListener('click', exportSequenceJson);
-  $('btn-export-review-markers').addEventListener('click', exportReviewMarkers);
+  on('btn-process-review', processReview);
+  on('btn-load-review-brief', loadReviewBrief);
+  on('btn-build-review', buildReview);
+  on('btn-build-review-overlay', buildReviewOverlay);
+  on('btn-build-review-v3', buildReviewV3);
+  on('btn-export-sequence-json', exportSequenceJson);
+  on('btn-export-review-markers', exportReviewMarkers);
 
   // PRE-EDIT buttons (wrap async to catch unhandled rejections)
-  $('btn-export-pre-edit-doc').addEventListener('click', function() {
+  on('btn-export-pre-edit-doc', function() {
     exportPreEditDoc().catch(function(e) { screensLogger.error('Doc export error: ' + e.message); setScreensStatus('Doc export error: ' + e.message, 'error'); });
   });
-  $('btn-copy-pre-edit-prompt').addEventListener('click', function() {
+  on('btn-copy-pre-edit-prompt', function() {
     copyPreEditPrompt().catch(function(e) { screensLogger.error('Copy Prompt error: ' + e.message); setScreensStatus('Copy Prompt error: ' + e.message, 'error'); });
   });
-  $('btn-export-screens').addEventListener('click', function() {
+  on('btn-export-screens', function() {
     exportPreEdit().catch(function(e) { screensLogger.error('Export error: ' + e.message); setScreensStatus('Export error: ' + e.message, 'error'); });
   });
-  $('btn-import-pre-edit').addEventListener('click', function() {
+  on('btn-import-pre-edit', function() {
     screensLogger.info('Import Pre-Edit button clicked');
     setScreensStatus('Importing...', 'waiting');
     importPreEdit().catch(function(e) { screensLogger.error('Import error: ' + e.message); setScreensStatus('Import error: ' + e.message, 'error'); });
   });
-  $('btn-generate-pngs').addEventListener('click', generateScreenPngs);
-  $('btn-build-screens').addEventListener('click', buildScreenCuesPipeline);
+  on('btn-generate-pngs', generateScreenPngs);
+  on('btn-build-screens', buildScreenCuesPipeline);
 
   // DOCTOR buttons (project health — missing media vs timeline usage)
-  $('btn-doctor-analyze').addEventListener('click', function () {
-    onDoctorAnalyze().catch(function (e) { setDoctorStatus('Error: ' + e.message, 'error'); });
+  on('btn-doctor-analyze', function () {
+    onDoctorAnalyze().catch(function (e) { setDoctorStatus('Error: ' + e.message, 'error', e); });
   });
-  $('btn-doctor-open').addEventListener('click', function () {
+  on('btn-doctor-open', function () {
     onDoctorOpenLast().catch(function (e) { setDoctorStatus('Error: ' + (e && e.message || e), 'error', e); });
   });
-  $('btn-doctor-debug').addEventListener('click', function () {
+  on('btn-doctor-debug', function () {
     onDoctorCopyDebug().catch(function (e) { setDoctorStatus('Error: ' + (e && e.message || e), 'error', e); });
   });
-  $('btn-doctor-relink').addEventListener('click', function () {
-    onDoctorRelink().catch(function (e) { setDoctorStatus('Relink error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-doctor-relink', function () {
+    onDoctorRelink().catch(function (e) { setDoctorStatus('Relink error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-doctor-forcerefresh').addEventListener('click', function () {
-    onDoctorForceRefresh().catch(function (e) { setDoctorStatus('Force-refresh error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-doctor-forcerefresh', function () {
+    onDoctorForceRefresh().catch(function (e) { setDoctorStatus('Force-refresh error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-doctor-restore').addEventListener('click', function () {
-    onDoctorRestoreStructure().catch(function (e) { setDoctorStatus('Restore error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-doctor-restore', function () {
+    onDoctorRestoreStructure().catch(function (e) { setDoctorStatus('Restore error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-doctor-selfcontain').addEventListener('click', function () {
-    onDoctorSelfContain().catch(function (e) { setDoctorStatus('Self-contain error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-doctor-selfcontain', function () {
+    onDoctorSelfContain().catch(function (e) { setDoctorStatus('Self-contain error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-doctor-hide-source-timelines').addEventListener('click', function () {
+  on('btn-doctor-hide-source-timelines', function () {
     onHideSourceTimelines(setDoctorStatus).catch(function (e) {
-      setDoctorStatus('Hide source timelines: ' + (e && e.message ? e.message : e), 'error');
+      setDoctorStatus('Hide source timelines: ' + (e && e.message ? e.message : e), 'error', e);
     });
   });
 
   // FOOTAGE REVIEW
-  $('btn-footage-build').addEventListener('click', function () {
-    buildFootage().catch(function (e) { setFootageStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  on('btn-footage-build', function () {
+    buildFootage().catch(function (e) { setFootageStatus('Error: ' + (e && e.message ? e.message : e), 'error', e); });
   });
-  $('btn-footage-log').addEventListener('click', function () {
+  on('btn-footage-log', function () {
     if (!footageState.lastLogPath) return;
     navigator.clipboard.writeText(footageState.lastLogPath)
       .then(function () { setFootageStatus('Log path copied to clipboard', 'ready'); })
       .catch(function (e) { footageLogger.warn('clipboard copy failed: ' + e.message); });
   });
   // Footage Review launch button — standalone, separate from the pipeline tabs.
-  $('footage-launch').addEventListener('click', function () {
+  on('footage-launch', function () {
     document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
     document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
     this.classList.add('active');

@@ -41,7 +41,7 @@ const UXP_HOST = {
 const UXP_MODULE = { window: RO, document: RO, console: RO, setTimeout: RO, __dirname: RO, globalThis: RO };
 const NODE = {
   process: RO, console: RO, __dirname: RO, __filename: RO, Buffer: RO, globalThis: RO,
-  setTimeout: RO, clearTimeout: RO, setInterval: RO, clearInterval: RO,
+  setTimeout: RO, clearTimeout: RO, setInterval: RO, clearInterval: RO, setImmediate: RO,
 };
 
 export default defineConfig([

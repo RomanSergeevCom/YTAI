@@ -68,18 +68,16 @@ class Logger {
   /**
    * Internal log method.
    */
-  _log(level, message) {
+  _log(level, message, err) {
     const entry = `[${this._timestamp()}] [${level}] ${message}`;
     this._buffer.push(entry);
-    // Global error ring buffer → panel "Copy Err" button (Roman: любую ошибку можно
-    // скопировать и отправить Claude). Warnings included — often the real clue.
+    // Стек идёт в log.txt под строкой ошибки (раньше его писали отдельным
+    // debug(err.stack) — и в «Err» он не попадал никогда).
+    const stack = Logger.stackOf(err);
+    if (stack) this._buffer.push(stack.split('\n').map(l => '    ' + l).join('\n'));
+    // WARN/ERROR → кольцо кнопки «Err». Предупреждения тоже: часто именно они улика.
     if (level === 'ERROR' || level === 'WARN') {
-      try {
-        const g = (typeof globalThis !== 'undefined') ? globalThis : window;
-        if (!g.__ytaiErrors) g.__ytaiErrors = [];
-        g.__ytaiErrors.push(entry + (this._pipeline ? '  [' + this._pipeline + ']' : ''));
-        if (g.__ytaiErrors.length > 30) g.__ytaiErrors.shift();
-      } catch (eG) { /* non-fatal */ }
+      Logger.pushPanelError(level, message, this._pipeline, err);
     }
     if (typeof this.onLog === 'function') {
       this.onLog(entry, level, message);
@@ -87,9 +85,93 @@ class Logger {
   }
 
   info(message) { this._log('INFO', message); }
-  warn(message) { this._log('WARN', message); }
-  error(message) { this._log('ERROR', message); }
+  /** @param {Error} [err] — со стеком: стек уйдёт в log.txt и в отчёт «Err» */
+  warn(message, err) { this._log('WARN', message, err); }
+  /** @param {Error} [err] — со стеком: стек уйдёт в log.txt и в отчёт «Err» */
+  error(message, err) { this._log('ERROR', message, err); }
   debug(message) { this._log('DEBUG', message); }
+
+  /** Стек ошибки или '' (не Error, пустой стек, геттер бросил). */
+  static stackOf(err) {
+    try { return (err && typeof err.stack === 'string') ? err.stack : ''; } catch (e) { return ''; }
+  }
+
+  /**
+   * ЕДИНСТВЕННЫЙ писатель кольца ошибок панели (globalThis.__ytaiErrors) —
+   * кнопка «Err» копирует его человеку. Любая ошибка, которую панель
+   * показывает или логирует, приходит сюда: logger.warn/error и status(…,'error')
+   * всех вкладок (index.js recordPanelError).
+   *
+   * Запись: { line, stack }. line — «[время] [LEVEL] текст  [pipeline]»,
+   * stack — стек ЭТОЙ ошибки или ''. Стек привязан к своей записи, поэтому
+   * отчёт не может склеить свежую строку статуса с чужим старым стеком.
+   *
+   * Дедуп: парные места пишут одну ошибку дважды разным текстом —
+   * logger.error('BUILD FAILED: X') и status('Build failed: X'). Среди трёх
+   * последних записей ищется «та же ошибка» (Logger.sameError); нашлась — новая
+   * не добавляется, а стек, если его не было, дописывается к найденной.
+   */
+  static pushPanelError(level, message, pipeline, err) {
+    try {
+      const g = (typeof globalThis !== 'undefined') ? globalThis : window;
+      if (!g.__ytaiErrors) g.__ytaiErrors = [];
+      const ring = g.__ytaiErrors;
+      const text = String(message);
+      const stack = Logger.stackOf(err);
+      const pipe = String(pipeline || '').toLowerCase();
+      for (let i = ring.length - 1; i >= Math.max(0, ring.length - 3); i--) {
+        const r = ring[i];
+        if (r && typeof r === 'object' && Logger.sameError(r, text, pipe, err)) {
+          if (stack && !r.stack) r.stack = stack;
+          return;
+        }
+      }
+      const ts = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const entry = {
+        line: `[${ts}] [${level}] ${text}` + (pipeline ? `  [${pipeline}]` : ''),
+        text: text,
+        pipeline: pipe,
+        stack: stack,
+      };
+      // Сам объект ошибки — только для дедупа по тождеству, в отчёт не идёт.
+      if (err && typeof err === 'object') Object.defineProperty(entry, 'err', { value: err });
+      ring.push(entry);
+      while (ring.length > Logger.PANEL_RING_MAX) ring.shift();
+    } catch (eG) { /* кольцо — вспомогательное; сама ошибка уже в _buffer/на экране */ }
+  }
+
+  /**
+   * «Та же ошибка»: тот же объект ошибки; либо тот же pipeline и текст совпал
+   * целиком или по детали — части после первого «: » (≥ 8 символов): у
+   * 'INGEST BUILD FAILED: Track V3 missing' и 'Build failed: Track V3 missing'
+   * одна деталь. Хвост фиксированной длины здесь не годится: сообщения короче
+   * окна, и в него попадают разные префиксы.
+   */
+  static sameError(entry, text, pipe, err) {
+    if (err && typeof err === 'object' && entry.err === err) return true;
+    if (entry.pipeline !== pipe) return false;
+    if (entry.text === text) return true;
+    const detail = (t) => { const i = t.indexOf(': '); return i >= 0 ? t.slice(i + 2) : ''; };
+    const dNew = detail(text), dOld = detail(entry.text);
+    return (dNew.length >= 8 && entry.text.endsWith(dNew)) || (dOld.length >= 8 && text.endsWith(dOld));
+  }
+
+  /**
+   * Текст отчёта кнопки «Err»: заголовок + ВСЕ записи кольца, стек — сразу
+   * под своей записью. Чистая функция, тестируется без UXP.
+   */
+  static formatPanelReport(ring, header) {
+    const entries = ring || [];
+    const out = (header || []).slice();
+    out.push('--- errors / warnings this session (' + entries.length + ') ---');
+    if (!entries.length) out.push('(no errors captured this session)');
+    for (const r of entries) {
+      if (typeof r === 'string') { out.push(r); continue; }
+      out.push(r.line);
+      if (r.stack) out.push(r.stack.split('\n').map(l => '    ' + l).join('\n'));
+    }
+    return out.join('\n');
+  }
 
   /**
    * Get all log entries as array.
@@ -376,5 +458,8 @@ class Logger {
     return null;
   }
 }
+
+// 60: отчёт копирует кольцо целиком, а парные места теперь не удваивают записи.
+Logger.PANEL_RING_MAX = 60;
 
 module.exports = { Logger };
