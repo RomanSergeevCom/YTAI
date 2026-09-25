@@ -25,6 +25,8 @@ const { parseIngest, generateSummary } = require('./src/ingest/ingestLoader');
 const { createBinStructure, BIN_NAMES } = require('./src/ingest/binManager');
 const { buildIngestSequence, buildMultiSceneIngest, findProjectItemByName } = require('./src/ingest/timelineBuilder');
 const { importTranscripts } = require('./src/ingest/transcriptImporter');
+// Export Audio Map 1.3 — the timeline as it is, every item of every track
+const audioMapMod = require('./src/ingest/audioMap');
 const { copyLutsToCreativeFolder, applyLumetriToClips } = require('./src/ingest/lutManager');
 const { addSceneMarkers, generatedMarkerNames } = require('./src/ingest/placement/sceneMarkers');
 
@@ -6205,7 +6207,7 @@ async function applyChapterMarkersToAll() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Export Audio Map — complete video→audio track mapping for DJI sync analysis
+// Export Audio Map — the active timeline AS IT IS (src/ingest/audioMap.js, format 1.3)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function exportAudioMap() {
@@ -6217,233 +6219,20 @@ async function exportAudioMap() {
   setIngestStatus('Exporting Audio Map...', 'waiting');
   $('btn-export-audio-map').setAttribute('disabled', 'true');
 
-  function parseTxMic(filename) {
-    var txm = filename.match(/(?:^|_)TX(\d+)/);
-    var micm = filename.match(/(?:^|_)(MIC\d+)/);
-    return { tx: txm ? 'TX' + txm[1] : null, mic: micm ? micm[1] : null };
-  }
-
-  function parseScene(videoPath, seqName) {
-    if (videoPath) {
-      var parts = videoPath.replace(/\\/g, '/').split('/');
-      for (var i = 0; i < parts.length - 1; i++) {
-        if (parts[i] === 'Video' || parts[i] === 'Source') {
-          if (i + 1 < parts.length - 1) return parts[i + 1];
-        }
-      }
-    }
-    // Fallback: parse scene from sequence name (e.g. "YTFP03_02_Kids_Session" → "02_Kids_Session")
-    var seqMatch = seqName.match(/^YT\w+\d+_(.+?)(?:_\d+_Ingest)?$/);
-    if (seqMatch) return seqMatch[1];
-    return '_unknown';
-  }
-
-  async function readTrackItems(seq, trackType, trackIndex) {
-    var items = [];
-    try {
-      var track = trackType === 'video'
-        ? await seq.getVideoTrack(trackIndex)
-        : await seq.getAudioTrack(trackIndex);
-      if (!track) return items;
-      var tis = null;
-      try { tis = track.getTrackItems(1, false); } catch (ex) { /* signature differs per build; fallback below handles it */ }
-      if (!tis) try { tis = track.getTrackItems(); } catch (ex) { ingestLogger.debug('getTrackItems ' + trackType + '[' + trackIndex + ']: ' + (ex && ex.message)); }
-      if (!tis) return items;
-      for (var i = 0; i < tis.length; i++) {
-        var ti = tis[i];
-        var pi = await ti.getProjectItem();
-        var name = pi ? pi.name : '';
-        var path = '';
-        try { path = pi ? pi.getMediaPath() : ''; } catch (e) { /* synthetic items have no media path; scene falls back */ }
-        // Keep the raw TickTimes: ticks are the ground truth (sub-frame
-        // diagnostics are impossible from 0.04-quantized seconds alone).
-        var st = await ti.getStartTime(), ip = await ti.getInPoint(),
-            op = await ti.getOutPoint(), du = await ti.getDuration();
-        items.push({
-          filename: name,
-          path: path || '',
-          timeline_start_sec: Math.round(tickSec(st) * 1000000) / 1000000,
-          source_in_sec: Math.round(tickSec(ip) * 1000000) / 1000000,
-          source_out_sec: Math.round(tickSec(op) * 1000000) / 1000000,
-          duration_sec: Math.round(tickSec(du) * 1000000) / 1000000,
-          timeline_start_ticks: String((st && st.ticks) || ''),
-          source_in_ticks: String((ip && ip.ticks) || ''),
-          source_out_ticks: String((op && op.ticks) || ''),
-          duration_ticks: String((du && du.ticks) || '')
-        });
-      }
-    } catch (e) {
-      ingestLogger.warn('Track ' + trackType + '[' + trackIndex + ']: ' + e.message);
-    }
-    return items;
-  }
-
-  function findClipAtPos(trackItems, posSec) {
-    for (var i = 0; i < trackItems.length; i++) {
-      var c = trackItems[i];
-      var end = c.timeline_start_sec + c.duration_sec;
-      if (posSec >= c.timeline_start_sec && posSec < end) return c;
-    }
-    return null;
-  }
-
-  function classifyAudio(audioClip, videoFilename) {
-    if (!audioClip) return null;
-    var base = {
-      source_in_sec: audioClip.source_in_sec,
-      source_out_sec: audioClip.source_out_sec,
-      timeline_start_sec: audioClip.timeline_start_sec,
-      source_in_ticks: audioClip.source_in_ticks,
-      source_out_ticks: audioClip.source_out_ticks,
-      timeline_start_ticks: audioClip.timeline_start_ticks
-    };
-    var tm = parseTxMic(audioClip.filename);
-    if (tm.tx) {
-      base.type = 'dji'; base.filename = audioClip.filename;
-      base.tx = tm.tx; base.mic = tm.mic; base.path = audioClip.path;
-      return base;
-    }
-    if (audioClip.filename === videoFilename || audioClip.filename.replace(/\.\w+$/, '') === videoFilename.replace(/\.\w+$/, '')) {
-      base.type = 'camera_embed'; base.filename = audioClip.filename;
-      return base;
-    }
-    base.type = 'external'; base.filename = audioClip.filename; base.path = audioClip.path;
-    return base;
-  }
-
   try {
     var seq = await project.getActiveSequence();
     if (!seq) throw new Error('No active sequence — open a timeline first');
-    var seqName = seq.name;
-    // fps from the REAL sequence timebase. The old code read the never-populated
-    // projectState.projectSettings and always fell back to 29.97 — YTCH13's
-    // audio_map claimed 29.97 on a 25p project (found 16.08.2026).
-    var fps = 25;
-    try {
-      var tbTicks = await seq.getTimebase(); // ticks per frame, e.g. "10160640000" @25p
-      if (tbTicks) fps = Math.round((254016000000 / Number(tbTicks)) * 1000) / 1000; // 25 / 29.97 / 23.976
-    } catch (eTb) {
-      ingestLogger.warn('getTimebase failed (' + eTb.message + ') — fps fallback 25');
-    }
-    ingestLogger.info('Sequence: ' + seqName + ', fps=' + fps);
+    // Every item of every track, re-read from the live timeline on each click —
+    // nothing dropped, disabled / one-frame / nested items flagged (Roman 25.09:
+    // the map is how a discrepancy is shown, so it must be the timeline itself).
+    var read = await audioMapMod.readSequence(seq, ingestLogger);
+    var map = audioMapMod.buildSequenceMap(read, new Date().toISOString());
+    var sm = map.summary;
+    ingestLogger.info('Sequence: ' + read.name + ', fps=' + read.fps + ' · items per track '
+      + JSON.stringify(sm.items_per_track) + ' · disabled ' + sm.disabled + ' · strays ' + sm.strays
+      + ' · nested ' + sm.nested + ' · audio without video ' + sm.audio_without_video);
 
-    // ⚠️ Читаем ВСЕ дорожки, а не V1 и A1..A3.
-    // Прежний код ходил только по первой видеодорожке и трём первым звуковым —
-    // раскладка YTUVIE01 (V1 FX3 · V2 ZV-E1 · V3 экран · V4 ролики, петличка на
-    // A5/A6) давала из-за этого карту на 6 клипов вместо 15, первой строкой
-    // однокадровый огрызок, а звук ВТОРОЙ камеры и звук ЭКРАНА объявляла
-    // «внешними» — то есть петличкой. Настоящую петличку на A5/A6 не видела вовсе.
-    ingestLogger.info('Reading tracks...');
-    var vCount = await seq.getVideoTrackCount();
-    var aCount = (typeof seq.getAudioTrackCount === 'function')
-      ? await seq.getAudioTrackCount() : 3;
-    var vTracks = [];
-    for (var vt = 0; vt < vCount; vt++) vTracks.push(await readTrackItems(seq, 'video', vt));
-    var aTracks = [];
-    for (var at = 0; at < aCount; at++) aTracks.push(await readTrackItems(seq, 'audio', at));
-    ingestLogger.info('дорожек: V' + vCount + '/A' + aCount + ' · айтемов V['
-      + vTracks.map(function (t) { return t.length; }).join(',') + '] A['
-      + aTracks.map(function (t) { return t.length; }).join(',') + ']');
-
-    // Однокадровый мусор преднагрева в карту не пускаем — именно он раньше
-    // становился первой строкой и ломал всё, что её читало.
-    var MIN_MAP_ITEM = 0.2;
-    var strayCount = 0;
-
-    var scenes = {};
-    var totalWithDji = 0;
-    var totalWithoutDji = 0;
-    var txSet = {};
-    var trackUsage = {};
-
-    for (var vIdx = 0; vIdx < vTracks.length; vIdx++) {
-      for (var vi = 0; vi < vTracks[vIdx].length; vi++) {
-        var vc = vTracks[vIdx][vi];
-        if (vc.duration_sec < MIN_MAP_ITEM) { strayCount++; continue; }
-        var scene = parseScene(vc.path, seqName);
-        if (!scenes[scene]) scenes[scene] = { clips: [] };
-
-        var mid = vc.timeline_start_sec + vc.duration_sec * 0.5;
-        var audio = {};
-        var hasDji = false;
-        for (var ai = 0; ai < aTracks.length; ai++) {
-          var m = findClipAtPos(aTracks[ai], mid);
-          if (!m || m.duration_sec < MIN_MAP_ITEM) continue;
-          var cls = classifyAudio(m, vc.filename);
-          if (!cls) continue;
-          // ⚠️ Звук ЧУЖОЙ камеры — не «внешний источник». Если имя совпало с
-          // видеоклипом, лежащим в этот же момент на другой видеодорожке, это
-          // её собственная дорожка, и петличкой её звать нельзя.
-          if (cls.type === 'external') {
-            for (var ov = 0; ov < vTracks.length; ov++) {
-              if (ov === vIdx) continue;
-              var other = findClipAtPos(vTracks[ov], mid);
-              if (other && other.filename === m.filename) {
-                cls.type = 'other_camera_embed';
-                cls.of_track = 'V' + (ov + 1);
-                break;
-              }
-            }
-          }
-          var label = 'A' + (ai + 1);
-          audio[label] = cls;
-          if (cls.type === 'dji') {
-            hasDji = true;
-            trackUsage[label] = (trackUsage[label] || 0) + 1;
-            txSet[cls.tx + (cls.mic ? '/' + cls.mic : '')] = true;
-          }
-        }
-        if (hasDji) totalWithDji++; else totalWithoutDji++;
-
-        var clipId = vc.filename.replace(/\.\w+$/, '');
-        scenes[scene].clips.push({
-          clip_id: clipId,
-          filename: vc.filename,
-          video_path: vc.path,
-          v_track: 'V' + (vIdx + 1),
-          timeline_start_sec: vc.timeline_start_sec,
-          duration_sec: vc.duration_sec,
-          timeline_start_ticks: vc.timeline_start_ticks,
-          duration_ticks: vc.duration_ticks,
-          audio: audio
-        });
-      }
-    }
-    if (strayCount) ingestLogger.warn('в карту не пущено однокадровых огрызков: ' + strayCount);
-    for (var scn in scenes) {
-      scenes[scn].clips.sort(function (a, b) {
-        return a.timeline_start_sec - b.timeline_start_sec
-          || a.v_track.localeCompare(b.v_track);
-      });
-    }
-
-    var mappedClips = 0;
-    for (var scnK in scenes) mappedClips += scenes[scnK].clips.length;
-
-    var output = {
-      // 1.2: все видео- и аудиодорожки, а не V1+A1..A3; звук ключуется меткой
-      // дорожки; добавлены v_track у клипа и тип other_camera_embed
-      version: '1.2',
-      type: 'audio_map',
-      sequence: seqName,
-      exported_at: new Date().toISOString(),
-      fps: fps,
-      ticks_per_second: 254016000000,
-      video_tracks: vCount,
-      audio_tracks: aCount,
-      project_folder: projectState.folderPath,
-      scenes: scenes,
-      summary: {
-        total_video_clips: mappedClips,
-        strays_skipped: strayCount,
-        clips_with_dji: totalWithDji,
-        clips_without_dji: totalWithoutDji,
-        tx_channels: Object.keys(txSet).sort(),
-        track_usage: trackUsage
-      }
-    };
-
-    // Write to 00_Setup/01_Ingest/
+    // 00_Setup/01_Ingest/{CODE}_audio_map.json — one file per project, one entry per sequence.
     var ingestDir = projectState.folderPath + '/00_Setup/01_Ingest';
     var ingestEntry;
     try {
@@ -6452,25 +6241,37 @@ async function exportAudioMap() {
       var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup');
       ingestEntry = await ensureSubfolder(setupEntry, '01_Ingest', ingestLogger);
     }
-    var code = projectState.projectCode || seqName.split('_')[0];
+    var code = audioMapMod.projectCodeOf(projectState.folderPath, read.name);
     var outFileName = code + '_audio_map.json';
+    var utf8 = require('uxp').storage.formats.utf8;
+    var existing = null;
+    var prevEntry = null;
+    try { prevEntry = await ingestEntry.getEntry(outFileName); } catch (e) { /* first export for this project */ }
+    if (prevEntry) {
+      var prevText = await prevEntry.read({ format: utf8 });
+      try { existing = JSON.parse(prevText); } catch (eP) {
+        // Never overwrite other sequences' maps silently: keep the unreadable file aside.
+        var bak = await ingestEntry.createFile(outFileName.replace(/\.json$/, '.unreadable.json'), { overwrite: true });
+        await bak.write(prevText, { format: utf8 });
+        ingestLogger.warn('Previous ' + outFileName + ' was not valid JSON — kept as *.unreadable.json, starting a new file', eP);
+      }
+    }
+    var file = audioMapMod.mergeAudioMapFile(existing, read.name, map,
+      { projectCode: code, projectFolder: projectState.folderPath });
     var outFile = await ingestEntry.createFile(outFileName, { overwrite: true });
-    await outFile.write(JSON.stringify(output, null, 2), { format: require('uxp').storage.formats.utf8 });
+    await outFile.write(JSON.stringify(file, null, 2), { format: utf8 });
 
     var fullPath = ingestDir + '/' + outFileName;
     try { await navigator.clipboard.writeText(fullPath); } catch (e) { ingestLogger.debug('clipboard: ' + (e && e.message)); }
-    ingestLogger.info('Path copied: ' + fullPath);
+    ingestLogger.info('Path copied: ' + fullPath + ' · sequences in file: ' + Object.keys(file.sequences).join(', '));
 
-    var sceneNames = Object.keys(scenes);
-    // ⚠️ Здесь стояло v1Items.length — переменная из audioDebug(), в этой
-    // функции её нет. Файл уже записан строкой выше, поэтому падение выглядело
-    // как «Export Audio Map failed», хотя карта на диске полная и верная.
-    // Считаем то же, что ушло в JSON: сумму клипов по сценам.
-    var summary = mappedClips + ' clips, ' + sceneNames.length + ' scene(s), ' +
-      totalWithDji + ' with DJI → ' + outFileName;
-    ingestLogger.info('Audio Map: ' + summary);
-    setIngestStatus('Audio Map: ' + summary + ' (path copied)', 'ready');
-
+    var line = audioMapMod.statusLine(read.name, map, outFileName);
+    ingestLogger.info('Audio Map: ' + line);
+    if (sm.unreadable) {
+      setIngestStatus('Audio Map INCOMPLETE — ' + sm.unreadable + ' item(s) could not be read: ' + line, 'error');
+    } else {
+      setIngestStatus('Audio Map: ' + line + ' (path copied)', 'ready');
+    }
   } catch (err) {
     ingestLogger.error('Export Audio Map failed: ' + err.message, err);
     setIngestStatus('Export Audio Map failed: ' + err.message, 'error', err);

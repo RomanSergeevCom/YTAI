@@ -316,6 +316,10 @@ class MockTrackItem {
   async getProjectItem() {
     return this._projectItem || new MockClipProjectItem(this.name);
   }
+
+  // Source in/out of the placed slice (live TrackItem.getInPoint/getOutPoint).
+  async getInPoint() { return new MockTickTime(this._sourceInSec || 0); }
+  async getOutPoint() { return new MockTickTime((this._sourceInSec || 0) + this._durationSec); }
 }
 
 // --- VideoTrack / AudioTrack ---
