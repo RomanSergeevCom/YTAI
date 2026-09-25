@@ -339,51 +339,99 @@ describe('setEffectParam', () => {
 
   function logText() { return logger.getBuffer().join('\n'); }
 
-  it('sets a string param via the start-keyframe path (no createKeyframe)', async () => {
+  const kfCalls = () => ppro._recorder.getCalls('ComponentParam.createKeyframe').length;
+  const setCalls = () => ppro._recorder.getCalls('ComponentParam.createSetValueAction').length;
+
+  it('writes through a FRESH keyframe first and reads it back', async () => {
     const look = new ppro._MockComponentParam('Look', 'none');
     const clip = clipWithLumetri([look]);
     const ok = await setEffectParam(project, clip, 'Lumetri', 'Look', 'dark_scene', logger);
     assert.equal(ok, true);
     assert.equal(look._value, 'dark_scene');
-    assert.equal(ppro._recorder.getCalls('ComponentParam.createKeyframe').length, 0);
+    assert.equal(kfCalls(), 1, 'createKeyframe is the first path');
+    assert.equal(setCalls(), 1, 'one write was enough');
     assert.match(logText(), /current: type=string/); // type-probe = human diagnosis contract
+    assert.match(logText(), /= "dark_scene" \(createKeyframe\)/);
   });
 
-  it('falls back to createKeyframe when getStartValue is unavailable', async () => {
+  it('uses createKeyframe when getStartValue is unavailable (unverified)', async () => {
     const look = new ppro._MockComponentParam('Look', 'none', { noStartValue: true });
     const clip = clipWithLumetri([look]);
     const ok = await setEffectParam(project, clip, 'Lumetri', 'Look', 'bright_scene', logger);
     assert.equal(ok, true);
     assert.equal(look._value, 'bright_scene');
-    assert.equal(ppro._recorder.getCalls('ComponentParam.createKeyframe').length, 1);
+    assert.equal(kfCalls(), 1);
+    assert.match(logText(), /unverified/);
   });
 
-  it('reports failure when the commit succeeds but the value does not stick (menu-index Look)', async () => {
-    // Measured YTCH13 18.08 16:30: Look is a NUMERIC menu index; the string
-    // «set» commits without throwing and readback stays 0. The old code
-    // counted that as success («Look auto 26» while the timeline shows None).
+  it('live 26: a mutation that commits and does not apply is NOT reported as success (defect D)', async () => {
+    const exposure = new ppro._MockComponentParam('Exposure', 0, { mutateNoop: true });
+    const clip = clipWithLumetri([exposure]);
+    const ok = await setEffectParam(project, clip, 'Lumetri', 'Exposure', 1.2, logger);
+    assert.equal(ok, true, 'the fresh keyframe path applies');
+    assert.ok(Math.abs(exposure._value - 1.2) < 1e-4);
+    assert.equal(setCalls(), 1, 'no need to fall back to the mutation');
+  });
+
+  it('float32 readback (1.2 → 1.2000000476837158) is success, not failure (defect E)', async () => {
+    const exposure = new ppro._MockComponentParam('Exposure', 0, { fround: true });
+    const clip = clipWithLumetri([exposure]);
+    assert.equal(await setEffectParam(project, clip, 'Lumetri', 'Exposure', 1.2, logger), true);
+    assert.notEqual(exposure._value, 1.2, 'stored as float32');
+    assert.equal(setCalls(), 1, 'the drift is not mistaken for a miss');
+  });
+
+  it('a repeat with the value already set writes nothing (idempotent)', async () => {
+    const exposure = new ppro._MockComponentParam('Exposure', 0, { fround: true });
+    const clip = clipWithLumetri([exposure]);
+    await setEffectParam(project, clip, 'Lumetri', 'Exposure', 1.2, logger);
+    ppro._recorder.reset();
+    assert.equal(await setEffectParam(project, clip, 'Lumetri', 'Exposure', 1.2, logger), true);
+    assert.equal(setCalls(), 0, 'second run must not write');
+    assert.match(logText(), /already set/);
+  });
+
+  it('falls back to the mutation when createKeyframe throws, and reads it back', async () => {
+    const exposure = new ppro._MockComponentParam('Exposure', 0);
+    exposure.createKeyframe = () => { throw new Error('Illegal Parameter type'); };
+    const clip = clipWithLumetri([exposure]);
+    assert.equal(await setEffectParam(project, clip, 'Lumetri', 'Exposure', 2.4, logger), true);
+    assert.ok(Math.abs(exposure._value - 2.4) < 1e-4);
+    assert.match(logText(), /\(mutate-start\)/);
+  });
+
+  it('nothing sticks on any path → false with the reason in the log', async () => {
+    const exposure = new ppro._MockComponentParam('Exposure', 0, { ignoreSet: true });
+    const clip = clipWithLumetri([exposure]);
+    assert.equal(await setEffectParam(project, clip, 'Lumetri', 'Exposure', 2.4, logger), false);
+    assert.equal(exposure._value, 0);
+    assert.equal(setCalls(), 2, 'both paths tried');
+    assert.match(logText(), /Lumetri\.Exposure: mutate-start: не прилипло/);
+  });
+
+  it('a string into a numeric menu (Look) is terminal: false, nothing written', async () => {
+    // Measured YTCH13 18.08 16:30 and the 25.09 dump: Look is a NUMERIC menu
+    // index; a string «set» commits without throwing and readback stays 0.
     const look = new ppro._MockComponentParam('Look', 0, { ignoreSet: true });
     const clip = clipWithLumetri([look]);
     const ok = await setEffectParam(project, clip, 'Lumetri', 'Look', 'dark_scene', logger);
     assert.equal(ok, false);
-    assert.equal(look._value, 0); // untouched, as on live
+    assert.equal(look._value, 0);
     assert.match(logText(), /current: type=number/);
-    assert.match(logText(), /did NOT stick/);
-    // Terminal: no pointless createKeyframe throw after a proven type mismatch
-    assert.equal(ppro._recorder.getCalls('ComponentParam.createKeyframe').length, 0);
+    assert.match(logText(), /ЧИСЛОВОЕ МЕНЮ.*numericSlot/);
+    assert.equal(kfCalls(), 0, 'no pointless createKeyframe after a proven type mismatch');
+    assert.equal(setCalls(), 0);
   });
 
-  it('never throws on a type-mismatched param and logs the exact step', async () => {
-    // Worst case: Look is secretly a menu INDEX (number) and the API validates
-    // on both paths — the blocker scenario («Illegal Parameter type»).
+  it('never throws on a strict numeric param given a string', async () => {
     const look = new ppro._MockComponentParam('Look', 3, { strictSet: true });
     const clip = clipWithLumetri([look]);
-    const ok = await setEffectParam(project, clip, 'Lumetri', 'Look', 'dark_scene', logger);
+    let ok;
+    await assert.doesNotReject(async () => { ok = await setEffectParam(project, clip, 'Lumetri', 'Look', 'dark_scene', logger); });
     assert.equal(ok, false);
-    assert.equal(look._value, 3); // untouched
-    assert.match(logText(), /current: type=number/);           // probe reveals the real type
-    assert.match(logText(), /start-keyframe set failed/);      // path A tagged
-    assert.match(logText(), /failed @ createKeyframe\(Look\)/); // path B step-tagged
+    assert.equal(look._value, 3);
+    assert.match(logText(), /current: type=number/);
+    assert.match(logText(), /numericSlot/);
   });
 
   it('enumerates all param names when the target param is absent', async () => {

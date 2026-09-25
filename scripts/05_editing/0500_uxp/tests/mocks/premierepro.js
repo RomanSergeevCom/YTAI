@@ -1070,6 +1070,13 @@ class MockComponentParam {
     this._type = opts.type || typeof value;
     this._strictSet = !!opts.strictSet;
     this._ignoreSet = !!opts.ignoreSet;
+    // Live Premiere 26 (25.09.2026, 10 of 10 clips): a MUTATED getStartValue()
+    // keyframe commits without an exception and does not apply; a keyframe from
+    // createKeyframe() applies. mutateNoop reproduces exactly that.
+    this._mutateNoop = !!opts.mutateNoop;
+    this._fresh = new WeakSet();
+    // Premiere stores float32: write 1.2, read 1.2000000476837158.
+    this._fround = !!opts.fround;
     if (opts.noStartValue) this.getStartValue = undefined;
   }
 
@@ -1080,7 +1087,9 @@ class MockComponentParam {
   createKeyframe(v) {
     recorder.record('ComponentParam.createKeyframe', [v]);
     if (typeof v !== this._type) throw new Error('Illegal Parameter type');
-    return { value: { value: v } };
+    const kf = { value: { value: v } };
+    this._fresh.add(kf);
+    return kf;
   }
 
   createSetValueAction(kf, inSafeForPlayback) {
@@ -1090,7 +1099,12 @@ class MockComponentParam {
     const landed = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
     if (this._strictSet && typeof landed !== this._type) throw new Error('Illegal Parameter type');
     const action = new MockAction('setParamValue', { value: landed });
-    action.apply = function () { if (!self._ignoreSet) self._value = landed; };
+    const fresh = this._fresh.has(kf);
+    action.apply = function () {
+      if (self._ignoreSet) return;
+      if (self._mutateNoop && !fresh) return;
+      self._value = (self._fround && typeof landed === 'number') ? Math.fround(landed) : landed;
+    };
     return action;
   }
 }

@@ -141,3 +141,15 @@ describe('panel contracts — readback stops the build (task 5)', () => {
     assert.ok(read('index.js').includes("'readback ✗'") || read('index.js').includes('readback ✗'));
   });
 });
+
+describe('panel contracts — one verified parameter write (task 4)', () => {
+  it('createSetValueAction is called only in src/adjust/paramWrite.js', () => {
+    const offenders = PANEL_CODE.filter(rel => rel !== path.join('src', 'adjust', 'paramWrite.js'))
+      .filter(rel => /\.createSetValueAction\(/.test(read(rel).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')));
+    assert.deepEqual(offenders, [], 'write a param through writeParamVerified — it reads back and knows float32');
+  });
+
+  it('no strict-equality readback survives in the adjust code', () => {
+    assert.doesNotMatch(read('src/adjust/adjustmentBuilder.js'), /postInner === paramValue/);
+  });
+});

@@ -31,6 +31,7 @@ try {
 const clipActions = require('../shared/clipActions');
 const { findProjectItemByName } = require('../shared/projectItemFinder');
 const { removeAllItemsOnTrack } = require('../ingest/placement/sequenceFactory');
+const { writeParamVerified, unwrapKf } = require('./paramWrite');
 
 const TICKS_PER_SEC = 254016000000;
 const DONOR_NAMES = ['YTAI_ADJ', 'Adjustment Layer'];
@@ -408,17 +409,21 @@ function safeJson(v) {
 
 /**
  * Set ONE param (by display name) on the LAST component whose name contains
- * displaySubstring. Safe to call repeatedly — re-setting the same value is a
- * no-op visually. Returns true when the set action executed.
+ * displaySubstring. Returns true only when the value is READ BACK (or was
+ * already set — a repeat is a no-op, nothing is written).
  *
  * Every native call is step-tagged: a failure logs «failed @ <step>», so a
  * single live run pinpoints the exact API that threw (the 18.08 blocker:
- * «Illegal Parameter type» with no step info). Value-set order:
- *   A. getStartValue() → mutate keyframe.value(.value) → createSetValueAction —
- *      the canonical Adobe UXP-sample path; bypasses createKeyframe's own
- *      value-type validation and lets the probe log the param's REAL type.
- *   B. createKeyframe(value) → createSetValueAction — typings say createKeyframe
- *      THROWS on a value/param type mismatch (prime suspect for the blocker).
+ * «Illegal Parameter type» with no step info). The write itself is
+ * paramWrite.writeParamVerified — the same code as colorApply:
+ *   1. createKeyframe(value) → createSetValueAction — FIRST: on live Premiere 26
+ *      (25.09.2026, 10 of 10 clips) this is the path that applies;
+ *   2. getStartValue() mutated → createSetValueAction — fallback only: it
+ *      commits without an exception and does not apply;
+ *   readback after each path, numbers compared with a float32 tolerance
+ *   (write 1.2 → read 1.2000000476837158 is success, not failure).
+ * Lumetri Look / Input LUT are numeric menus — a string cannot select them
+ * (numericSlot, terminal); the cube goes through the donor clone.
  */
 async function setEffectParam(project, trackItem, displaySubstring, paramDisplayName, paramValue, logger) {
   let step = 'init';
@@ -475,83 +480,38 @@ async function setEffectParam(project, trackItem, displaySubstring, paramDisplay
 
     // Probe the CURRENT value — its runtime type is the ground truth for what
     // the param accepts (e.g. is Lumetri "Look" a string or a menu index?).
+    // Diagnostic only: the write below reads the value again itself.
     step = 'getStartValue(' + pname + ')';
-    let startKf = null;
-    let preInner;
     try {
       if (typeof param.getStartValue === 'function') {
-        startKf = await param.getStartValue();
+        const startKf = await param.getStartValue();
         const v = startKf ? startKf.value : undefined;
-        preInner = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
+        const preInner = unwrapKf(startKf);
         if (logger) logger.info(displaySubstring + '.' + pname + ' current: type=' + (typeof preInner)
           + ' value=' + safeJson(preInner) + ' kf.value=' + safeJson(v));
       } else if (logger) {
         logger.info(displaySubstring + '.' + pname + ': no getStartValue on this build');
       }
     } catch (e) {
-      if (logger) logger.warn(displaySubstring + '.' + pname + ': getStartValue probe failed: ' + e.message);
-      startKf = null;
+      if (logger) logger.warn(displaySubstring + '.' + pname + ': getStartValue probe failed: ' + (e && e.message));
     }
 
-    // Path A: mutate the start keyframe (canonical UXP-sample pattern).
-    if (startKf) {
-      step = 'mutate-set(' + pname + ')';
-      try {
-        if (startKf.value && typeof startKf.value === 'object' && 'value' in startKf.value) {
-          startKf.value.value = paramValue;
-        } else {
-          startKf.value = paramValue;
-        }
-        await project.lockedAccess(function () {
-          return project.executeTransaction(function (ca) {
-            ca.addAction(param.createSetValueAction(startKf, true));
-          }, 'Set ' + pname);
-        });
-        // No-throw ≠ value landed (measured YTCH13 18.08 16:30: Look is a
-        // NUMERIC menu index, the string «set» commits fine and readback stays
-        // 0). Verify: success = readback equals what we wrote, or at least
-        // moved off the pre-set value (normalisation, e.g. name → path).
-        let verified = null; // null = could not read back, trust the commit
-        try {
-          if (typeof param.getStartValue === 'function') {
-            const postKf = await param.getStartValue();
-            const pv = postKf ? postKf.value : undefined;
-            const postInner = (pv && typeof pv === 'object' && 'value' in pv) ? pv.value : pv;
-            if (logger) logger.info(displaySubstring + '.' + pname + ' post-set readback: ' + safeJson(postInner));
-            verified = (postInner === paramValue) || (postInner !== preInner);
-          }
-        } catch (e) { /* readback is best-effort */ }
-        if (verified !== false) {
-          if (logger) logger.info(displaySubstring + '.' + pname + ' = ' + paramValue + ' (start-keyframe path'
-            + (verified === null ? ', unverified' : '') + ')');
-          return true;
-        }
-        if (logger) logger.warn(displaySubstring + '.' + pname + ': set did NOT stick (readback unchanged)'
-          + ' — param is a menu index, a string cannot select it; use the donor-clone path');
-        if (typeof preInner === 'number' && typeof paramValue !== 'number') {
-          return false; // type mismatch is terminal — createKeyframe would only throw
-        }
-      } catch (e) {
-        if (logger) logger.warn(displaySubstring + '.' + pname + ': start-keyframe set failed: ' + e.message
-          + ' — falling back to createKeyframe');
-      }
+    // Write + read back (paramWrite.js — the one implementation for the panel):
+    // fresh keyframe FIRST, mutation of getStartValue() only as fallback
+    // (defect D: on live Premiere 26 the mutation commits and does not apply),
+    // float32 tolerance instead of === (defect E), readback after every path.
+    step = 'write(' + pname + ')';
+    const r = await writeParamVerified(project, param, paramValue, displaySubstring + '.' + pname, logger,
+      { undoLabel: 'Set ' + pname });
+    if (r.ok) {
+      if (logger) logger.info(displaySubstring + '.' + pname + ' = ' + safeJson(paramValue) + ' ('
+        + (r.noop ? 'already set' : r.path)
+        + (r.unverified ? ', unverified — no readback on this build' : '')
+        + (r.normalized ? ', normalized → ' + safeJson(r.after) : '') + ')');
+      return true;
     }
-
-    // Path B: fresh keyframe from the raw value.
-    if (typeof param.createKeyframe !== 'function') {
-      if (logger) logger.warn(displaySubstring + '.' + pname + ': createKeyframe unavailable on this build');
-      return false;
-    }
-    step = 'createKeyframe(' + pname + ')';
-    const kf = param.createKeyframe(paramValue);
-    step = 'setValueAction(' + pname + ')';
-    await project.lockedAccess(function () {
-      return project.executeTransaction(function (ca) {
-        ca.addAction(param.createSetValueAction(kf, true));
-      }, 'Set ' + pname);
-    });
-    if (logger) logger.info(displaySubstring + '.' + pname + ' = ' + paramValue + ' (createKeyframe path)');
-    return true;
+    if (logger) logger.warn(r.why + (r.numericSlot ? ' — numericSlot: a string cannot select a menu index; use the donor-clone path' : ''));
+    return false;
   } catch (e) {
     if (logger) logger.warn('setEffectParam(' + displaySubstring + ') failed @ ' + step + ': ' + e.message);
   }
@@ -1194,9 +1154,7 @@ async function readLutLookValue(trackItem, logger) {
       try { pname = await readDisplayName(param); } catch (e) { /* skip */ }
       if (pname.toLowerCase() !== 'look') continue;
       if (typeof param.getStartValue !== 'function') return null;
-      const kf = await param.getStartValue();
-      const v = kf ? kf.value : undefined;
-      return (v && typeof v === 'object' && 'value' in v) ? v.value : v;
+      return unwrapKf(await param.getStartValue());
     }
   } catch (e) {
     if (logger) logger.debug('readLutLookValue: ' + e.message);

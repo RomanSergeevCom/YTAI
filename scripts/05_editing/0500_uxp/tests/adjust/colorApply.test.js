@@ -103,7 +103,7 @@ describe('colorApply — адресация параметра Lumetri по ин
     assert.equal(res.ok, true);
     assert.equal(res.res.noop, true);
     assert.equal(
-      ppro._recorder.calls.filter((c) => c.name === 'ComponentParam.createSetValueAction').length, 0,
+      ppro._recorder.getCalls('ComponentParam.createSetValueAction').length, 0,
       'второй проход не должен писать'
     );
   });

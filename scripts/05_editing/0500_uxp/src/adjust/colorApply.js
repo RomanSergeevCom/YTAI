@@ -19,8 +19,9 @@
  */
 
 const AB = require('./adjustmentBuilder');
-
-const EPS = 1e-4;                 // допуск сравнения float32
+// Запись с чтением обратно — одна на всю панель (paramWrite.js): свежий
+// кейфрейм первым, допуск float32, readback после каждого пути.
+const { writeParamVerified, unwrapKf, EPS } = require('./paramWrite');
 const LUMETRI = 'lumetri';
 
 /** Полный дамп параметров компонента: то, чего в панели не было никогда. */
@@ -35,9 +36,7 @@ async function dumpComponentParams(comp) {
     try { row.name = await AB.readDisplayName(p); } catch (e) { /* имя не обязательно */ }
     try {
       if (p && typeof p.getStartValue === 'function') {
-        const kf = await p.getStartValue();
-        const v = kf ? kf.value : undefined;
-        const inner = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
+        const inner = unwrapKf(await p.getStartValue());
         row.value = inner;
         row.type = typeof inner;
       }
@@ -93,10 +92,6 @@ async function lumetriOf(trackItem) {
   return null;
 }
 
-function sameValue(a, b) {
-  if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) < EPS;
-  return a === b;
-}
 
 /** Записать в параметр по индексу и подтвердить чтением. */
 async function setParamAtIndex(project, comp, index, value, label, logger) {
@@ -107,77 +102,8 @@ async function setParamAtIndex(project, comp, index, value, label, logger) {
   if (!param || typeof param.createSetValueAction !== 'function') {
     return { ok: false, why: 'нет createSetValueAction на индексе ' + index };
   }
-
-  let before;
-  let kf = null;
-  try {
-    if (typeof param.getStartValue === 'function') {
-      kf = await param.getStartValue();
-      const v = kf ? kf.value : undefined;
-      before = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
-    }
-  } catch (e) { /* пробуем писать вслепую */ }
-
-  // тип уже верен и значение совпало — не трогаем
-  if (before !== undefined && sameValue(before, value)) {
-    return { ok: true, noop: true, before: before, after: before };
-  }
-  // числовой слот строкой не выставить — это терминально, а не «попробуем»
-  if (typeof before === 'number' && typeof value !== 'number') {
-    return { ok: false, numericSlot: true,
-      why: 'индекс ' + index + ' — ЧИСЛОВОЕ МЕНЮ (' + before + '), строку туда не положить' };
-  }
-
-  // ⚠️ Порядок путей важен. Сначала СВЕЖИЙ кейфрейм, и только потом мутация
-  // того, что вернул getStartValue(). Мутация — путь, который на живой
-  // Premiere 26 молча не прилипает: 25.09.2026 Exposure у 10 клипов
-  // коммитился без исключения и читался прежним. Рабочий прецедент в этом же
-  // репозитории (shortsBuilder, Motion → Position) создаёт новый кейфрейм, и
-  // только он и работает.
-  var paths = [];
-  if (typeof param.createKeyframe === 'function') {
-    paths.push({ name: 'createKeyframe', make: function () { return param.createKeyframe(value); } });
-  }
-  if (kf) {
-    paths.push({ name: 'mutate-start', make: function () {
-      if (kf.value && typeof kf.value === 'object' && 'value' in kf.value) kf.value.value = value;
-      else kf.value = value;
-      return kf;
-    } });
-  }
-  if (!paths.length) return { ok: false, why: 'нечем записать: ни createKeyframe, ни getStartValue' };
-
-  var lastWhy = '';
-  for (var pi = 0; pi < paths.length; pi++) {
-    try {
-      var k = paths[pi].make();
-      await project.lockedAccess(function () {
-        return project.executeTransaction(function (ca) {
-          ca.addAction(param.createSetValueAction(k, true));
-        }, 'YTAI color: ' + label);
-      });
-    } catch (e) {
-      lastWhy = paths[pi].name + ' упал: ' + e.message;
-      continue;
-    }
-    var got;
-    try {
-      if (typeof param.getStartValue === 'function') {
-        var kk = await param.getStartValue();
-        var vv = kk ? kk.value : undefined;
-        got = (vv && typeof vv === 'object' && 'value' in vv) ? vv.value : vv;
-      }
-    } catch (e) { /* прочитать не смогли */ }
-    if (got === undefined) return { ok: true, unverified: true, path: paths[pi].name, before: before };
-    if (sameValue(got, value)) return { ok: true, path: paths[pi].name, before: before, after: got };
-    if (!sameValue(got, before)) {
-      return { ok: true, normalized: true, path: paths[pi].name, before: before, after: got };
-    }
-    lastWhy = paths[pi].name + ': не прилипло, читается прежнее';
-    if (logger) logger.debug('color: ' + label + ' — ' + lastWhy + ', пробую следующий путь');
-  }
-  return { ok: false, why: lastWhy || 'не прилипло', before: before };
-
+  return writeParamVerified(project, param, value, 'индекс ' + index + ' (' + label + ')', logger,
+    { undoLabel: 'YTAI color: ' + label });
 }
 
 /**

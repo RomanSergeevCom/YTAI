@@ -40,6 +40,7 @@ try {
 } catch (e) {
   ppro = require('../../tests/mocks/premierepro');
 }
+const { writeParamVerified } = require('../adjust/paramWrite');
 
 const { TICKS_PER_SECOND, LABEL_COLOR_INDEX, MARKER_TYPE_CHAPTER, MARKER_COLOR_INDEX } = require('../shared/constants');
 const { snapToFrame } = require('../shared/frameSnap');
@@ -551,19 +552,14 @@ async function trySetMotionStatic(project, trackItem, cropCenterXPct, logger) {
     if (cur && typeof cur === 'object' && cur.x != null) newVal = { x: x, y: (cur.y != null ? cur.y : 0.5) };
     else if (Array.isArray(cur)) newVal = [x, cur.length > 1 ? cur[1] : 0.5];
     else newVal = x;
-    var kf = null;
-    try {
-      kf = (typeof pos.createKeyframe === 'function') ? pos.createKeyframe(newVal) : null;
-    } catch (e8) { return 'S-1 spike: motion API present but createKeyframe rejected value (' + e8.message + ')'; }
-    if (!kf) return 'S-1 spike: motion API absent (Position has no createKeyframe)';
-    try {
-      project.lockedAccess(function () {
-        project.executeTransaction(function (ca) {
-          ca.addAction(pos.createSetValueAction(kf, true));
-        }, 'S-1 Motion Position');
-      });
-    } catch (e9) { return 'S-1 spike: motion API present but createSetValueAction failed (' + e9.message + ')'; }
-    verdict = 'S-1 spike: motion component API available — position set (x=' + x.toFixed(3) + ' via ' + via + ')';
+    // Write + read back through the panel's one write path (adjust/paramWrite):
+    // fresh keyframe first, then the mutation fallback; «position set» is
+    // claimed only when the value is read back. The old spike did not even
+    // await the transaction before reporting success.
+    var r = await writeParamVerified(project, pos, newVal, 'Motion.Position', logger, { undoLabel: 'S-1 Motion Position' });
+    if (!r.ok) return 'S-1 spike: motion API present but Position did not stick (' + r.why + ')';
+    verdict = 'S-1 spike: motion component API available — position set (x=' + x.toFixed(3) + ' via ' + via
+      + ', ' + (r.noop ? 'already set' : r.path) + (r.unverified ? ', unverified' : '') + ')';
   } catch (e) {
     verdict = 'S-1 spike: motion API absent (' + e.message + ')';
   }
