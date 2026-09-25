@@ -51,8 +51,8 @@ STRINGS = {
     'c2.tz_head_v2': {'ru': 'V2 — футажи: видео и фото', 'en': 'V2 — footage: video and photos'},
     'c2.tz_head_v3': {'ru': 'V3 — инфографика, плашки терминов, мини-карты локаций, нарисованные исправления',
                       'en': 'V3 — infographics, term cards, location mini-maps, drawn fixes'},
-    'c2.tz_head_v4': {'ru': 'V4 — плашки ТЗ: полный текст и ссылки (маркер клипа / кнопка панели «Copy ТЗ @ playhead»)',
-                      'en': 'V4 — fix cards: full text and links (clip marker, or the panel button “Copy ТЗ @ playhead”)'},
+    'c2.tz_head_v4': {'ru': 'V4 — плашки ТЗ: полный текст и ссылки (маркер клипа / кнопка панели «Copy Brief @ playhead»)',
+                      'en': 'V4 — fix cards: full text and links (clip marker, or the panel button “Copy Brief @ playhead”)'},
     'c2.tz_head_v5': {'ru': 'V5 — стрелки правок на кадре', 'en': 'V5 — arrows marking the fixes on the frame'},
     'c2.tz_head_v6': {'ru': 'V6 — главы, подглавы, прогресс перечислений гл.{chs}',
                       'en': 'V6 — chapters, sub-chapters, list progress in ch. {chs}'},
@@ -120,7 +120,7 @@ STRINGS = {
     'c2.sheet_legend': {
         'ru': ('Секвенция: {code}_5_Review_v6_tz_v{{N}} (панель UXP → Review → Review_v6). '
                'Слои: V1 = ОРИГИНАЛ (не тронут) · V2 = футажи видео+фото · V3 = инфографика + плашки терминов при каждом упоминании + мини-карты локаций + нарисованные исправления · '
-               'V4 = плашки ТЗ (полный текст + ссылки: маркер клипа / кнопка панели «Copy ТЗ @ playhead») '
+               'V4 = плашки ТЗ (полный текст + ссылки: маркер клипа / кнопка панели «Copy Brief @ playhead») '
                '· V5 = стрелки правок на кадре · V6 = прозрачные главы + подглавы + прогресс перечислений. '
                'Маркеры секвенции = только разноцветные главы; '
                'CTA сразу после конца рендера.\n'
@@ -130,7 +130,7 @@ STRINGS = {
                '«Ревью v2 · правки»; компакт-ТЗ — вкладка «ТЗ монтажёру · v4».'),
         'en': ('Sequence: {code}_5_Review_v6_tz_v{{N}} (UXP panel → Review → Review_v6). '
                'Tracks: V1 = ORIGINAL (untouched) · V2 = footage video+photo · V3 = infographics + term cards at every mention + location mini-maps + drawn fixes · '
-               'V4 = fix cards (full text + links: clip marker / panel button “Copy ТЗ @ playhead”) '
+               'V4 = fix cards (full text + links: clip marker / panel button “Copy Brief @ playhead”) '
                '· V5 = arrows marking fixes on the frame · V6 = transparent chapters + sub-chapters + list progress. '
                'Sequence markers = colour-coded chapters only; '
                'CTA right after the end of the render.\n'

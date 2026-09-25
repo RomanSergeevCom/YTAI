@@ -16,7 +16,7 @@ STRINGS = {
     'd.rv.note': {'ru': '6 слоёв (канон 07.09) + тикет v6: V1 оригинал не тронут · V2 футажи · V3 инфографика '
                         '(прозрачные панели, термины при каждом упоминании, мини-карты локаций, нарисованные '
                         'исправления) · V4 плашки ТЗ (полный текст+ссылки в маркере мастер-клипа; кнопка панели '
-                        '«Copy ТЗ @ playhead») · V5 стрелки «где ошибка» (аудит всех экранов) · V6 главы + подглавы + '
+                        '«Copy Brief @ playhead») · V5 стрелки «где ошибка» (аудит всех экранов) · V6 главы + подглавы + '
                         'прогресс перечислений. Маркеры секвенции = ТОЛЬКО {n} глав.',
                   'en': '6 layers + review ticket v6: V1 original untouched · V2 footage · V3 graphics '
                         '(transparent panels, term cards at every mention, location mini-maps, drawn fixes) · '
@@ -40,7 +40,7 @@ STRINGS = {
                              'V5 arrows: {v5} · V6 structure: {v6}.'},
     'd.rv.md_dropped': {'ru': '- Выпало по арбитражу наездов: {n} (см. `dropped` в JSON).',
                         'en': '- Dropped by overlap arbitration: {n} (see `dropped` in the JSON).'},
-    'd.rv.md_builder': {'ru': '- Требует partsBuilder ≥1.11.0; текст ТЗ — маркер клипа или кнопка «Copy ТЗ @ playhead» (панель v2.17.0).',
+    'd.rv.md_builder': {'ru': '- Требует partsBuilder ≥1.11.0; текст ТЗ — маркер клипа или кнопка «Copy Brief @ playhead» (панель v2.17.0).',
                         'en': '- Requires partsBuilder ≥1.11.0; FIX text is in the clip marker or the “Copy @ playhead” panel button (panel v2.17.0).'},
 
     # ══ make_infographics_v6.py ══
