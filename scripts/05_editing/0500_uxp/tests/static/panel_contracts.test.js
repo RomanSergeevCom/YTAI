@@ -79,11 +79,36 @@ describe('panel contracts — every on-screen error reaches «Err»', () => {
     assert.doesNotMatch(src.replace(/\/\/.*$/gm, ''), /__ytaiErrors\s*(\.push|=\s*\[)/, 'nobody else pushes into the ring');
   });
 
-  it('catch handlers in the binding block pass the error on (stack survives)', () => {
-    const block = src.slice(src.indexOf("document.addEventListener('DOMContentLoaded'"));
-    const bad = [...block.matchAll(/\.catch\(function \((\w+)\) \{[^}]*?set\w+Status\([^;]*?'error'(?:, (\w+))?\);/g)]
-      .filter(m => m[2] !== m[1]).map(m => m[0].slice(0, 90));
+  it('an error status that shows a caught error also passes it on (stack survives) — whole file, AST', () => {
+    // Any set*Status(…, 'error') inside `catch (x)` or `.catch(function (x)`
+    // whose text uses x must pass x as the third argument. The earlier regex
+    // missed `function(e)` without a space (review: six sites, incl. Color failed).
+    const acorn = require('acorn');
+    const ast = acorn.parse(src, { ecmaVersion: 2022, sourceType: 'script', locations: true });
+    const idsOf = (n, acc) => { if (!n || typeof n.type !== 'string') return acc; if (n.type === 'Identifier') acc.add(n.name);
+      for (const k of Object.keys(n)) { const c = n[k]; if (Array.isArray(c)) c.forEach(x => idsOf(x, acc)); else if (c && typeof c.type === 'string') idsOf(c, acc); }
+      return acc; };
+    const bad = [];
+    (function walk(n, errVars) { if (!n || typeof n.type !== 'string') return;
+      let ev = errVars;
+      if (n.type === 'CatchClause' && n.param && n.param.type === 'Identifier') ev = errVars.concat([n.param.name]);
+      if ((n.type === 'FunctionExpression' || n.type === 'ArrowFunctionExpression') && n.params.length === 1
+        && n.params[0].type === 'Identifier' && /^(e|err|er|ex|e\d|err\d)$/.test(n.params[0].name)) ev = errVars.concat([n.params[0].name]);
+      if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && /^set\w+Status$/.test(n.callee.name)
+        && n.arguments[1] && n.arguments[1].type === 'Literal' && n.arguments[1].value === 'error') {
+        const used = idsOf(n.arguments[0], new Set());
+        const v = ev.filter(x => used.has(x)).pop();
+        if (v && !(n.arguments[2] && n.arguments[2].type === 'Identifier' && n.arguments[2].name === v)) bad.push('index.js:' + n.loc.start.line);
+      }
+      for (const k of Object.keys(n)) { const c = n[k]; if (Array.isArray(c)) c.forEach(x => walk(x, ev)); else if (c && typeof c.type === 'string') walk(c, ev); }
+    })(ast, []);
     assert.deepEqual(bad, []);
+  });
+
+  it('every reset of ingestState keeps readbackBad (review of eb739d2: Build Ingest threw after a project refresh)', () => {
+    const literals = src.match(/ingestState = \{[^}]*\}/g) || [];
+    assert.ok(literals.length >= 2, 'initial state and resetAllPipelineStates');
+    assert.deepEqual(literals.filter(l => !/readbackBad/.test(l)), []);
   });
 });
 
@@ -195,10 +220,31 @@ describe('panel contracts — English UI (Roman 25.09: all button and function n
     assert.deepEqual([...new Set(bad)], []);
   });
 
-  it('no Cyrillic in thrown error messages (they end up in status lines)', () => {
-    const bad = PANEL_CODE.flatMap(rel => read(rel).split('\n')
-      .map((l, i) => (/throw new Error\(/.test(l) && CY.test(l.replace(/\/\/.*$/, ''))) ? rel + ':' + (i + 1) : null)
-      .filter(Boolean));
+  it('no Cyrillic in error messages built with new Error(...) — any number of lines (they end up in status lines)', () => {
+    // AST, not a per-line regex: a message continued on the next line
+    // («+ ' — проверь…'») slipped through the line check (review of 86e9ef7).
+    const acorn = require('acorn');
+    const bad = [];
+    for (const rel of PANEL_CODE) {
+      const ast = acorn.parse(read(rel), { ecmaVersion: 2022, sourceType: 'script', locations: true, allowHashBang: true });
+      const walk = (n) => { if (!n || typeof n.type !== 'string') return;
+        if (n.type === 'NewExpression' && n.callee.type === 'Identifier' && n.callee.name === 'Error') {
+          const lit = (m) => { if (!m || typeof m.type !== 'string') return;
+            if ((m.type === 'Literal' && typeof m.value === 'string' && CY.test(m.value))
+              || (m.type === 'TemplateElement' && CY.test(m.value.raw))) bad.push(rel + ':' + m.loc.start.line);
+            for (const k of Object.keys(m)) { const c = m[k];
+              if (Array.isArray(c)) c.forEach(lit); else if (c && typeof c.type === 'string') lit(c); } };
+          n.arguments.forEach(lit);
+        }
+        for (const k of Object.keys(n)) { const c = n[k];
+          if (Array.isArray(c)) c.forEach(walk); else if (c && typeof c.type === 'string') walk(c); } };
+      walk(ast);
+    }
     assert.deepEqual(bad, []);
+  });
+
+  it('no file in the pipeline still names the old «Copy ТЗ @ playhead» button in a live string', () => {
+    const offenders = PANEL_CODE.filter(rel => /['"`][^'"`\n]*Copy ТЗ @ playhead/.test(read(rel)));
+    assert.deepEqual(offenders, []);
   });
 });

@@ -406,7 +406,7 @@ describe('setEffectParam', () => {
     assert.equal(await setEffectParam(project, clip, 'Lumetri', 'Exposure', 2.4, logger), false);
     assert.equal(exposure._value, 0);
     assert.equal(setCalls(), 2, 'both paths tried');
-    assert.match(logText(), /Lumetri\.Exposure: mutate-start: не прилипло/);
+    assert.match(logText(), /Lumetri\.Exposure: createKeyframe: не прилипло, читается прежнее; mutate-start: не прилипло/);
   });
 
   it('a string into a numeric menu (Look) is terminal: false, nothing written', async () => {

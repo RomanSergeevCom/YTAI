@@ -526,7 +526,7 @@ async function buildPartSequence(project, clipMap, part, segments, logger, proje
               } else if (logger) logger.debug('item_marker OK ' + segId + ' name="' + curName + '" text=' + curText.length + ' chars');
             } else if (logger) logger.warn('item_marker: marker not found after add for ' + segId);
           } catch (eIm3) { if (logger) logger.warn('item_marker verify failed ' + segId + ': ' + eIm3.message); }
-        } else if (logger) logger.warn('item_marker: no Markers API for ' + seg.source_file + ' — use panel button «Copy ТЗ @ playhead»');
+        } else if (logger) logger.warn('item_marker: no Markers API for ' + seg.source_file + ' — use panel button «Copy Brief @ playhead»');
       } catch (eIm) { if (logger) logger.debug('item_marker failed ' + segId + ': ' + eIm.message); }
     }
     if (ok) {

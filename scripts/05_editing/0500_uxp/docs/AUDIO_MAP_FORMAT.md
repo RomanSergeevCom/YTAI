@@ -14,12 +14,14 @@ Build в карте видны.
 {project}/00_Setup/01_Ingest/{CODE}_audio_map.json
 ```
 
-`{CODE}` — из имени папки проекта (`YTCR02_Kamran_Sharaf` → `YTCR02`).
+`{CODE}` — из имени папки проекта (`YTCR02_Kamran_Sharaf` → `YTCR02`,
+`YTAgeFree05_…` → `YTAgeFree05`, `YTRSCEN01_…` → `YTRSCEN01`).
 Один файл на проект, внутри — карта **каждой** выгруженной секвенции.
 Повторная выгрузка секвенции заменяет только её запись. Файл старого
 формата (1.0–1.2, одна секвенция наверху) при первой выгрузке переносится
 внутрь `sequences` под своим именем с пометкой `format`. Файл, который не
-читается как JSON, откладывается в `{CODE}_audio_map.unreadable.json`.
+читается как JSON, откладывается в `{CODE}_audio_map.unreadable_{время}.json`,
+а статус становится красным: карты других секвенций теперь в этой копии.
 
 ```json
 {
@@ -41,10 +43,10 @@ Build в карте видны.
 |---|---|
 | `fps` | из таймбейза секвенции (`254016000000 / ticks_per_frame`) |
 | `video_tracks`, `audio_tracks` | число дорожек |
-| `track_state` | `{V1: {muted}, …}` — `null`, если сборка Premiere не отдаёт |
+| `track_state` | `{V1: {muted}, …}` — `null`, если сборка Premiere не отдаёт; `error` — айтемы дорожки не перечислились |
 | `tracks` | **весь таймлайн**: `{V1: [айтем…], A1: [айтем…]}` |
 | `scenes` | сопоставление видео → звук по середине клипа (формула ниже) |
-| `summary` | счётчики: всего, по дорожкам, disabled, strays, nested, audio_without_video, unreadable |
+| `summary` | счётчики: всего, по дорожкам, disabled, strays, nested, audio_without_video, unreadable (айтемы + целые дорожки), `unreadable_tracks` |
 
 ### Айтем в `tracks`
 
@@ -57,13 +59,14 @@ Build в карте видны.
 | `disabled` | Clip → Enable снят (`null` — сборка не отдаёт) |
 | `stray` | короче 0,2 с — однокадровый мусор преднагрева |
 | `nested` | айтем — вложенная секвенция |
-| `kind` (только звук) | `dji` (+`tx`, `mic`) · `camera_embed` (+`of_track`) · `external` |
+| `kind` (только звук) | `dji` (+`tx`, `mic`) · `camera_embed` (+`of_track`: тот же файл на видеодорожке, перекрывающий звук где угодно) · `external` |
 | `error` | айтем не прочитался — карта неполная, статус красный |
 
 ### `scenes` и формула 0103
 
 Для каждого видеоклипа (кроме `stray`) — звук каждой A-дорожки под его
-серединой: `camera_embed` · `other_camera_embed` (+`of_track`) · `dji` · `external`.
+серединой: `camera_embed` (тот же файл, что этот клип) · `other_camera_embed`
+(+`of_track`: файл другой камеры) · `dji` · `external`.
 У клипа есть `source_in_sec` / `source_out_sec` и пометка `disabled`.
 
 ```
@@ -79,5 +82,5 @@ position_in_wav = audio_source_in + (video_timeline_start - audio_timeline_start
 YTUVIE01_01_zachem_nuzhen: V3/A6 · 31 items · 2 disabled · 1 one-frame strays → YTUVIE01_audio_map.json (path copied)
 ```
 
-Если хоть один айтем не прочитался — статус красный («Audio Map INCOMPLETE»)
-и попадает в «Err».
+Если хоть один айтем или целая дорожка не прочитались — статус красный
+(«Audio Map INCOMPLETE», с именем дорожки) и попадает в «Err».

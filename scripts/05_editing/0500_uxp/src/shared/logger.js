@@ -127,6 +127,9 @@ class Logger {
         const r = ring[i];
         if (r && typeof r === 'object' && Logger.sameError(r, text, pipe, err, source || 'logger', i === ring.length - 1)) {
           if (stack && !r.stack) r.stack = stack;
+          // The merged entry now stands for this error object too: a later,
+          // DIFFERENT error object must not fold into it (review of ad2b225).
+          if (err && typeof err === 'object' && !r.err) Object.defineProperty(r, 'err', { value: err });
           return;
         }
       }
@@ -149,7 +152,9 @@ class Logger {
    * «Та же ошибка» — только то, что действительно одно событие:
    *   - тот же объект ошибки → да; РАЗНЫЕ объекты ошибки → нет, при любом тексте;
    *   - другой pipeline → нет;
-   *   - тот же текст подряд (непосредственно предыдущая запись) → да;
+   *   - тот же текст: пара «логгер + статус» → да (даже через запись между ними);
+   *     повтор из того же источника → да, только если это непосредственно предыдущая запись;
+   *   - слившаяся запись забирает объект ошибки — следующая ДРУГАЯ ошибка к ней не прилипнет;
    *   - деталь (часть после первого «: », ≥ 8 символов) совпала → да, но ТОЛЬКО
    *     между записью логгера и строкой статуса — это пара «BUILD FAILED: X» +
    *     «Build failed: X». Две записи логгера с одной деталью — разные события:
@@ -161,8 +166,11 @@ class Logger {
     if (errObj && entry.err === errObj) return true;
     if (errObj && entry.err && entry.err !== errObj) return false;
     if (entry.pipeline !== pipe) return false;
-    if (entry.text === text) return !!isLast;
-    if ((entry.source || 'logger') === source) return false;
+    const crossSource = (entry.source || 'logger') !== source;
+    // Same text: a logger + status pair is one error even with a warning in
+    // between; a same-source repeat merges only with the entry right before it.
+    if (entry.text === text) return !!isLast || crossSource;
+    if (!crossSource) return false;
     const detail = (t) => { const i = t.indexOf(': '); return i >= 0 ? t.slice(i + 2) : ''; };
     const dNew = detail(text), dOld = detail(entry.text);
     return (dNew.length >= 8 && entry.text.endsWith(dNew)) || (dOld.length >= 8 && text.endsWith(dOld));

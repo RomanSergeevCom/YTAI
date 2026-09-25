@@ -11,6 +11,13 @@ if [ ! -f "$REQ" ]; then
   exit 1
 fi
 python3 verify_sync.py --request "$REQ"
+STATUS=$?
 echo
+if [ $STATUS -ne 0 ]; then
+  # Keep the window open: the reason is printed above (like finesync.command).
+  echo "Verify Sync FAILED (exit $STATUS) — the reason is above and in the panel status line."
+  read -r -n 1 -p "Press any key to close…"
+  exit $STATUS
+fi
 echo "The verdict is in the panel status line; the full table is in the Ingest log."
 read -r -n 1 -t 30 -p "This window closes in 30 s (or press any key)…"

@@ -92,7 +92,10 @@ async function writeParamVerified(project, param, value, label, logger, opts) {
   }
   if (!paths.length) return { ok: false, why: label + ': нечем записать — ни createKeyframe, ни getStartValue' };
 
-  let lastWhy = '';
+  // Every path's outcome is kept: on live 26 createKeyframe may THROW (the real
+  // cause) and the mutation then «commits» without applying — reporting only the
+  // last path would blame the one that is known never to apply (review of ac7b975).
+  const whys = [];
   for (const p of paths) {
     try {
       const k = p.make();
@@ -102,8 +105,8 @@ async function writeParamVerified(project, param, value, label, logger, opts) {
         }, undoLabel);
       });
     } catch (e) {
-      lastWhy = p.name + ' упал: ' + (e && e.message);
-      if (logger) logger.debug(label + ' — ' + lastWhy + ', пробую следующий путь');
+      whys.push(p.name + ' упал: ' + (e && e.message));
+      if (logger) logger.debug(label + ' — ' + whys[whys.length - 1] + ', пробую следующий путь');
       continue;
     }
     let got;
@@ -115,10 +118,10 @@ async function writeParamVerified(project, param, value, label, logger, opts) {
     if (!sameValue(got, before)) {
       return { ok: true, normalized: true, path: p.name, before: before, after: got };
     }
-    lastWhy = p.name + ': не прилипло, читается прежнее';
-    if (logger) logger.debug(label + ' — ' + lastWhy + ', пробую следующий путь');
+    whys.push(p.name + ': не прилипло, читается прежнее');
+    if (logger) logger.debug(label + ' — ' + whys[whys.length - 1] + ', пробую следующий путь');
   }
-  return { ok: false, why: label + ': ' + (lastWhy || 'не прилипло'), before: before };
+  return { ok: false, why: label + ': ' + (whys.length ? whys.join('; ') : 'не прилипло'), before: before };
 }
 
 module.exports = { writeParamVerified, sameValue, unwrapKf, EPS };

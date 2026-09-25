@@ -47,7 +47,7 @@ describe('paramWrite.writeParamVerified', () => {
     p.createSetValueAction = () => { throw new Error('boom 2'); };
     const r = await writeParamVerified(project, p, 1, 'X', null);
     assert.equal(r.ok, false);
-    assert.match(r.why, /boom 2/);
+    assert.match(r.why, /createKeyframe упал: boom 1; mutate-start упал: boom 2/, 'both causes reported, first one included');
   });
 
   it('a param without createSetValueAction is refused, not crashed on', async () => {

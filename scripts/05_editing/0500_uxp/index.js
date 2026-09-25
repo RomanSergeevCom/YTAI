@@ -257,7 +257,9 @@ function hideAllFallbackButtons() {
 
 function resetAllPipelineStates() {
   // Reset state objects
-  ingestState = { data: null, filePath: null, building: false };
+  // readbackBad must survive every reset: the build's verdict block writes into it
+  // (review of eb739d2: without it every multi-scene Build Ingest threw a TypeError).
+  ingestState = { data: null, filePath: null, building: false, readbackBad: {} };
   assemblyState = { data: null, segments: [], blocks: [], screens: [], projectName: '', filePath: null, building: false, clipMap: null };
   reviewState = { data: null, filePath: null, building: false, editedVideoPath: null, pipelineResult: null };
 
@@ -540,8 +542,8 @@ async function useOpenProjectFolder(opts) {
     collapseProjectSection(extractProjectCode(projectName));
 
   } catch (err) {
-    ingestLogger.error('Use-open-project failed: ' + err.message);
-    if (!silent) setProjectStatus('Use open project failed: ' + err.message, 'error');
+    ingestLogger.error('Use-open-project failed: ' + err.message, err);
+    if (!silent) setProjectStatus('Use open project failed: ' + err.message, 'error', err);
   }
 }
 
@@ -1081,7 +1083,7 @@ async function spreadForSync() {
         itemByFilename[p.filename] = await findProjectItemByName(project, p.filename, ingestLogger);
         if (!itemByFilename[p.filename]) {
           throw new Error('Media not in project after import: ' + p.filename
-            + ' (' + p.path + ') — проверь, что файл на месте');
+            + ' (' + p.path + ') — check that the file is still on disk');
         }
       }
     }
@@ -1908,6 +1910,7 @@ async function buildIngest() {
   $('btn-build-ingest').setAttribute('disabled', 'true');
   $('ingest-validation').style.display = 'none';
   setIngestStatus('Building timeline...', 'waiting');
+  var buildSucceeded = false;
 
   try {
     const project = await ppro.Project.getActiveProject();
@@ -1996,6 +1999,7 @@ async function buildIngest() {
     // failed right after them, before «complete» / btn-done / «Build verified».
     // Strict === false: the linear builder returns no ok field at all.
     var readbackFailure = null;
+    if (!ingestState.readbackBad) ingestState.readbackBad = {};
     (result.sequences || []).forEach(function (r) { if (r && r.sceneName) delete ingestState.readbackBad[r.sceneName]; });
     if (result.ok === false) {
       (result.sequences || []).forEach(function (r) {
@@ -2105,6 +2109,7 @@ async function buildIngest() {
     // Save logs + project
     await saveIngestLogs(project);
     setIngestStatus('Build verified', 'ready');
+    buildSucceeded = true;
 
   } catch (err) {
     ingestLogger.error('INGEST BUILD FAILED: ' + err.message, err);
@@ -2113,9 +2118,22 @@ async function buildIngest() {
   }
 
   // Scene badges — after success AND after failure, so a readback-failed scene
-  // shows «readback ✗» (ticked for rebuild) instead of «built ✓».
+  // shows «readback ✗» instead of «built ✓». After a failure the user's own
+  // ticks are restored (as the reload path above does) and readback-failed
+  // scenes are ticked on top, so pressing Build again retries what was meant.
   if (ingestState.data && ingestState.data.clips && ingestState.data.clips.some(function (c) { return c.scene; })) {
-    try { await renderIngestSceneList(ingestState.data); } catch (e) { ingestLogger.debug('Scene list refresh: ' + (e && e.message)); }
+    var ticksBefore = buildSucceeded ? null : getSelectedIngestScenes();
+    var rowsBefore = buildSucceeded ? null : Array.prototype.map.call(
+      document.querySelectorAll('.ingest-scene-cb'), function (cb) { return cb.value; });
+    try {
+      await renderIngestSceneList(ingestState.data);
+      if (!buildSucceeded) {
+        document.querySelectorAll('.ingest-scene-cb').forEach(function (cb) {
+          if (rowsBefore.indexOf(cb.value) !== -1) cb.checked = ticksBefore.indexOf(cb.value) !== -1;
+          if (ingestState.readbackBad && ingestState.readbackBad[cb.value]) cb.checked = true;
+        });
+      }
+    } catch (e) { ingestLogger.debug('Scene list refresh: ' + (e && e.message)); }
   }
 
   ingestState.building = false;
@@ -2906,10 +2924,10 @@ async function runColorFromPlan(allSequences) {
     }
   } catch (e) {
     // статус короткий, лог подробный: без стека такую ошибку не найти
-    try { log.error('color: упало — ' + (e && e.message ? e.message : e)); } catch (e2) { /* logging must not mask the status line below */ }
-    try { if (e && e.stack) log.debug(e.stack); } catch (e2) { /* logging must not mask the status line below */ }
+    // Defect A of the ticket lived exactly here: the stack must reach «Err».
+    try { log.error('color: упало — ' + (e && e.message ? e.message : e), e); } catch (e2) { /* logging must not mask the status line below */ }
     try { await saveAdjustLog(folder, log); } catch (e2) { /* best-effort inside the error path */ }
-    setAdjustStatus('Color failed: ' + (e && e.message ? e.message : e), 'error');
+    setAdjustStatus('Color failed: ' + (e && e.message ? e.message : e), 'error', e);
   }
 }
 
@@ -6270,14 +6288,21 @@ async function verifySync() {
   $('btn-verify-sync').removeAttribute('disabled');
 }
 
-/** Poll a verdict file until it carries runId (or give up). Returns the verdict or null. */
+/**
+ * Poll the verdict file until it carries runId (or give up). Returns the verdict or null.
+ * Also polls the fixed /tmp fallback verify_sync.py writes when the project
+ * folder cannot be written (review of aaff5ba: otherwise the panel waited 15 min).
+ */
 async function waitForVerdict(path, runId, maxSec) {
+  var paths = [path, '/tmp/ytai_verify_sync_verdict.json'];
   for (var waited = 0; waited <= maxSec; waited += 3) {
-    try {
-      var entry = await uxpfs.getEntryWithUrl('file://' + path);
-      var v = JSON.parse(await entry.read());
-      if (v && v.run_id === runId) return v;
-    } catch (e) { /* not written yet, or mid-write — next tick */ }
+    for (var pi = 0; pi < paths.length; pi++) {
+      try {
+        var entry = await uxpfs.getEntryWithUrl('file://' + paths[pi]);
+        var v = JSON.parse(await entry.read());
+        if (v && v.run_id === runId) return v;
+      } catch (e) { /* not written yet, or mid-write — next tick */ }
+    }
     await new Promise(function (r) { setTimeout(r, 3000); });
   }
   return null;
@@ -6323,14 +6348,18 @@ async function exportAudioMap() {
     var utf8 = require('uxp').storage.formats.utf8;
     var existing = null;
     var prevEntry = null;
+    var lostBackup = null;
     try { prevEntry = await ingestEntry.getEntry(outFileName); } catch (e) { /* first export for this project */ }
     if (prevEntry) {
       var prevText = await prevEntry.read({ format: utf8 });
       try { existing = JSON.parse(prevText); } catch (eP) {
-        // Never overwrite other sequences' maps silently: keep the unreadable file aside.
-        var bak = await ingestEntry.createFile(outFileName.replace(/\.json$/, '.unreadable.json'), { overwrite: true });
+        // Never lose other sequences' maps silently: keep the unreadable file
+        // aside under a timestamped name (a second occurrence must not overwrite
+        // the first backup) and make the status red (review of 6fe3cc6).
+        lostBackup = outFileName.replace(/\.json$/, '.unreadable_' + new Date().toISOString().replace(/[:.]/g, '-') + '.json');
+        var bak = await ingestEntry.createFile(lostBackup, { overwrite: false });
         await bak.write(prevText, { format: utf8 });
-        ingestLogger.warn('Previous ' + outFileName + ' was not valid JSON — kept as *.unreadable.json, starting a new file', eP);
+        ingestLogger.warn('Previous ' + outFileName + ' was not valid JSON — kept as ' + lostBackup + ', starting a new file', eP);
       }
     }
     var file = audioMapMod.mergeAudioMapFile(existing, read.name, map,
@@ -6345,7 +6374,10 @@ async function exportAudioMap() {
     var line = audioMapMod.statusLine(read.name, map, outFileName);
     ingestLogger.info('Audio Map: ' + line);
     if (sm.unreadable) {
-      setIngestStatus('Audio Map INCOMPLETE — ' + sm.unreadable + ' item(s) could not be read: ' + line, 'error');
+      setIngestStatus('Audio Map INCOMPLETE — ' + sm.unreadable + ' item(s)/track(s) could not be read: ' + line, 'error');
+    } else if (lostBackup) {
+      setIngestStatus('Audio Map written, but the previous file was unreadable — other sequences\' maps are in '
+        + lostBackup + ': ' + line, 'error');
     } else {
       setIngestStatus('Audio Map: ' + line + ' (path copied)', 'ready');
     }
@@ -12764,18 +12796,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // PRE-EDIT buttons (wrap async to catch unhandled rejections)
   on('btn-export-pre-edit-doc', function() {
-    exportPreEditDoc().catch(function(e) { screensLogger.error('Doc export error: ' + e.message); setScreensStatus('Doc export error: ' + e.message, 'error'); });
+    exportPreEditDoc().catch(function (e) { setScreensStatus('Doc export error: ' + (e && e.message || e), 'error', e); });
   });
   on('btn-copy-pre-edit-prompt', function() {
-    copyPreEditPrompt().catch(function(e) { screensLogger.error('Copy Prompt error: ' + e.message); setScreensStatus('Copy Prompt error: ' + e.message, 'error'); });
+    copyPreEditPrompt().catch(function (e) { setScreensStatus('Copy Prompt error: ' + (e && e.message || e), 'error', e); });
   });
   on('btn-export-screens', function() {
-    exportPreEdit().catch(function(e) { screensLogger.error('Export error: ' + e.message); setScreensStatus('Export error: ' + e.message, 'error'); });
+    exportPreEdit().catch(function (e) { setScreensStatus('Export error: ' + (e && e.message || e), 'error', e); });
   });
   on('btn-import-pre-edit', function() {
     screensLogger.info('Import Pre-Edit button clicked');
     setScreensStatus('Importing...', 'waiting');
-    importPreEdit().catch(function(e) { screensLogger.error('Import error: ' + e.message); setScreensStatus('Import error: ' + e.message, 'error'); });
+    importPreEdit().catch(function (e) { setScreensStatus('Import error: ' + (e && e.message || e), 'error', e); });
   });
   on('btn-generate-pngs', generateScreenPngs);
   on('btn-build-screens', buildScreenCuesPipeline);

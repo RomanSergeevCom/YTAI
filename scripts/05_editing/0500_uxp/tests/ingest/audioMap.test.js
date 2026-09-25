@@ -74,6 +74,28 @@ describe('audioMap — the map is the whole timeline', () => {
     assert.equal(v2.audio.A5.source_in_sec, 3.25);
   });
 
+  it('camera audio stays camera audio when its video was trimmed away from the audio midpoint (review of 6fe3cc6)', async () => {
+    const seq = new ppro._MockSequence('YTX01_01_s', { videoTracks: 1, audioTracks: 2 });
+    const v = (await seq.getVideoTrack(0))._addItem('FX3_0001.MP4', 0, 25);          // trimmed / unlinked
+    v._projectItem = new ppro._MockClipProjectItem('FX3_0001.MP4', '/p/01_Source/Video/01_s/FX3_0001.MP4');
+    const a = (await seq.getAudioTrack(0))._addItem('FX3_0001.MP4', 0, 60);          // still 0–60, midpoint 30
+    a._projectItem = new ppro._MockClipProjectItem('FX3_0001.MP4', '/p/01_Source/Video/01_s/FX3_0001.MP4');
+    const map = AM.buildSequenceMap(await AM.readSequence(seq, null), 'T');
+    assert.equal(map.tracks.A1[0].kind, 'camera_embed', 'not «external» — that reads as a lav');
+    assert.equal(map.scenes['01_s'].clips[0].audio.A1.type, 'camera_embed');
+  });
+
+  it('a track whose items cannot be listed makes the map UNREADABLE, not silently empty', async () => {
+    const seq = await scene();
+    const a3 = await seq.getAudioTrack(2);
+    a3.getTrackItems = () => { throw new Error('API unavailable'); };
+    const map = AM.buildSequenceMap(await AM.readSequence(seq, null), 'T');
+    assert.equal(map.summary.unreadable, 1);
+    assert.deepEqual(map.summary.unreadable_tracks, ['A3']);
+    assert.match(map.track_state.A3.error, /getTrackItems failed: API unavailable/);
+    assert.match(AM.statusLine('SEQ', map, 'f.json'), /1 UNREADABLE \(whole track A3\)/);
+  });
+
   it('audio with no video above it is counted', async () => {
     const seq = await scene();
     (await seq.getAudioTrack(4))._addItem('TX01_tail.wav', 120, 30);
@@ -88,6 +110,11 @@ describe('audioMap — file and names', () => {
     assert.equal(AM.projectCodeOf('/Volumes/T9/YTCR/YTCR02_Kamran_Sharaf', '01_Scene'), 'YTCR02');
     assert.equal(AM.projectCodeOf('/x/whatever', 'YTUVIE01_01_scene'), 'YTUVIE01');
     assert.equal(AM.projectCodeOf('/x/whatever', '01_Scene'), 'project', 'never «01_audio_map.json» again');
+    // real channels longer than four letters or in mixed case (review of 6fe3cc6)
+    assert.equal(AM.projectCodeOf('/Volumes/T9/YTRSCEN01_relaunch', 'x'), 'YTRSCEN01');
+    assert.equal(AM.projectCodeOf('/Volumes/T9/YTMSEN02_usa', 'x'), 'YTMSEN02');
+    assert.equal(AM.projectCodeOf('/Volumes/T9/YTAgeFree05_Oleskina', 'x'), 'YTAgeFree05');
+    assert.equal(AM.sceneOf('', 'YTAgeFree05_03_walk'), '03_walk');
   });
 
   it('scene from the sequence name keeps its NN_ prefix', () => {

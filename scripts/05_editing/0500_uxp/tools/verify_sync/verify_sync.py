@@ -110,7 +110,9 @@ def measure_sequence(tsa, seq, fps, tol_frames, max_shift, log):
 
 
 def summary_line(res, tol_frames):
-    s = res["sequences"][0] if res["sequences"] else None
+    # Describe the sequence that SET the verdict, not merely the first one.
+    seqs = res["sequences"]
+    s = next((x for x in seqs if x["verdict"] == res.get("verdict")), seqs[0] if seqs else None)
     if not s:
         return "Verify Sync: no sequence in the dump"
     w = s["worst_cam_lav"]
@@ -123,6 +125,29 @@ def summary_line(res, tol_frames):
     if s["verdict"] == "INSTRUMENT":
         return "INSTRUMENT ✗ lav↔lav control is not ≈ 0 — the measurement is broken, do not trust the numbers"
     return "NO DATA — no camera↔lav pair with enough overlap and a clear correlation peak"
+
+
+FALLBACK_VERDICT = Path("/tmp/ytai_verify_sync_verdict.json")
+
+
+def write_verdict(path, obj):
+    """Write the verdict the panel waits for — never let the write itself fail silently.
+
+    Older projects have no 00_Setup/01_Ingest/ (review of aaff5ba: the write
+    crashed and the panel waited 15 minutes with no reason). Create the folder;
+    if the project folder still cannot be written, write the fixed fallback in
+    /tmp, which the panel polls too. Returns the path actually written.
+    """
+    text = json.dumps(obj, ensure_ascii=False, indent=1,
+                      default=lambda o: o.item() if hasattr(o, "item") else str(o))
+    try:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text(text)
+        return str(path)
+    except Exception as e:
+        print(f"Cannot write {path}: {e} — writing {FALLBACK_VERDICT} instead")
+        FALLBACK_VERDICT.write_text(text)
+        return str(FALLBACK_VERDICT)
 
 
 def main():
@@ -151,7 +176,7 @@ def main():
                    "error": "prproj_dump failed: " + (r.stderr or r.stdout)[-800:],
                    "summary": "Verify Sync failed: could not read the saved project (prproj_dump)",
                    "sequences": []}
-            Path(a.json_out).write_text(json.dumps(err, ensure_ascii=False, indent=1))
+            write_verdict(a.json_out, err)
             print(err["summary"] + "\n" + err["error"])
             return 2
     if not (a.dump and a.fps and a.json_out):
@@ -168,6 +193,11 @@ def main():
         seqs = [s for s in d["sequences"] if a.seq is None or s["name"] == a.seq]
         if not seqs:
             raise RuntimeError(f"sequence {a.seq!r} is not in the dump")
+        if a.seq is not None and len(seqs) > 1:
+            # Two sequences share the active scene's exact name: the measured one
+            # may not be the one on screen (review of aaff5ba). Refuse, loudly.
+            raise RuntimeError(f"{len(seqs)} sequences are named {a.seq!r} — rename the duplicates, "
+                               "then run Verify Sync again")
         for seq in seqs:
             print(f"{seq['name']}")
             out["sequences"].append(measure_sequence(tsa, seq, a.fps, a.tol_frames, a.max_shift,
@@ -179,10 +209,8 @@ def main():
         out["verdict"], out["error"] = "ERROR", f"{type(e).__name__}: {e}"
         out["summary"] = "Verify Sync failed: " + out["error"]
         out["traceback"] = traceback.format_exc()
-    # default= keeps the write alive whatever type sneaks in: the panel polls for this file
-    Path(a.json_out).write_text(json.dumps(out, ensure_ascii=False, indent=1,
-                                           default=lambda o: o.item() if hasattr(o, 'item') else str(o)))
-    print("\n" + out["summary"])
+    written = write_verdict(a.json_out, out)
+    print("\n" + out["summary"] + f"\n→ {written}")
     return 0 if out["verdict"] != "ERROR" else 2
 
 

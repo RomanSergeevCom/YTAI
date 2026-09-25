@@ -41,12 +41,17 @@ function parseTxMic(filename) {
 }
 const stem = (f) => String(f || '').replace(/\.\w+$/, '');
 
-/** Код проекта по имени папки: /…/YTCR01_Arty_Dzis → YTCR01. */
+/**
+ * Код проекта по имени папки: /…/YTCR01_Arty_Dzis → YTCR01.
+ * Каналы бывают длиннее четырёх букв и в смешанном регистре (YTRSCEN01,
+ * YTMSEN02, YTAgeFree05) — ревью 6fe3cc6: узкий шаблон давал «project».
+ */
+const PROJECT_CODE_RE = /^(YT[A-Za-z]{2,8}\d+)(?:_|\.|$)/;
 function projectCodeOf(folderPath, seqName) {
   const base = String(folderPath || '').replace(/\\/g, '/').replace(/\/+$/, '').split('/').pop();
-  let m = base.match(/^(YT[A-Z]{2,4}\d+)_/);
+  let m = base.match(PROJECT_CODE_RE);
   if (m) return m[1];
-  m = String(seqName || '').match(/^(YT[A-Z]{2,4}\d+)_/);
+  m = String(seqName || '').match(PROJECT_CODE_RE);
   return m ? m[1] : 'project';
 }
 
@@ -58,7 +63,7 @@ function sceneOf(mediaPath, seqName) {
       if (parts[i] === 'Video' || parts[i] === 'Source') return parts[i + 1];
     }
   }
-  const m = String(seqName || '').match(/^YT[A-Z]{2,4}\d+_(.+?)(?:_\d+_Ingest|_SYNC)?$/);
+  const m = String(seqName || '').match(/^YT[A-Za-z]{2,8}\d+_(.+?)(?:_\d+_Ingest|_SYNC)?$/);
   return m ? m[1] : '_unknown';
 }
 
@@ -98,13 +103,23 @@ async function readItem(ti, label, index) {
 
 async function readTrack(track, label, logger) {
   const out = [];
-  if (!track) return out;
+  if (!track) return { items: out, muted: null, error: 'track not available' };
   let tis = null;
-  try { tis = await track.getTrackItems(1, false); } catch (e) { /* signature differs per build */ }
-  if (!tis) { try { tis = await track.getTrackItems(); } catch (e) { if (logger) logger.debug('getTrackItems ' + label + ': ' + (e && e.message)); } }
+  let lastErr = null;
+  try { tis = await track.getTrackItems(1, false); } catch (e) { lastErr = e; /* signature differs per build */ }
+  if (!tis) {
+    try { tis = await track.getTrackItems(); lastErr = null; } catch (e) { lastErr = e; }
+  }
+  // Both forms threw: the track's clips are NOT in the map. That is an
+  // incomplete map, not an empty track (review of 6fe3cc6) — count it as unreadable.
+  if (!tis && lastErr) {
+    const msg = 'getTrackItems failed: ' + (lastErr && lastErr.message);
+    if (logger) logger.warn('Audio map: ' + label + ' — ' + msg + ' — this track is missing from the map', lastErr);
+    return { items: out, muted: null, error: msg };
+  }
   for (let i = 0; i < (tis || []).length; i++) {
     try { out.push(await readItem(tis[i], label, i)); }
-    catch (e) { out.push({ track: label, index: i, error: String(e && e.message) }); if (logger) logger.warn('Audio map: ' + label + ' item ' + i + ' unreadable: ' + (e && e.message)); }
+    catch (e) { out.push({ track: label, index: i, error: String(e && e.message) }); if (logger) logger.warn('Audio map: ' + label + ' item ' + i + ' unreadable: ' + (e && e.message), e); }
   }
   let muted = null;
   try { if (typeof track.isMuted === 'function') muted = !!(await track.isMuted()); } catch (e) { /* optional API */ }
@@ -126,12 +141,12 @@ async function readSequence(seq, logger) {
   for (let v = 0; v < vCount; v++) {
     const r = await readTrack(await seq.getVideoTrack(v), 'V' + (v + 1), logger);
     tracks['V' + (v + 1)] = r.items || [];
-    trackState['V' + (v + 1)] = { muted: r.muted === undefined ? null : r.muted };
+    trackState['V' + (v + 1)] = r.error ? { muted: null, error: r.error } : { muted: r.muted === undefined ? null : r.muted };
   }
   for (let a = 0; a < aCount; a++) {
     const r = await readTrack(await seq.getAudioTrack(a), 'A' + (a + 1), logger);
     tracks['A' + (a + 1)] = r.items || [];
-    trackState['A' + (a + 1)] = { muted: r.muted === undefined ? null : r.muted };
+    trackState['A' + (a + 1)] = r.error ? { muted: null, error: r.error } : { muted: r.muted === undefined ? null : r.muted };
   }
   return { name, fps, videoTracks: vCount, audioTracks: aCount, tracks, trackState };
 }
@@ -140,15 +155,20 @@ function atPos(items, sec) {
   return items.find(c => !c.error && sec >= c.timeline_start_sec && sec < c.timeline_end_sec) || null;
 }
 
-/** Классифицировать звуковой айтем против видео, лежащего в тот же момент. */
+/**
+ * Классифицировать звуковой айтем. Звук камеры — это тот же файл, что и
+ * видеоклип, ПЕРЕКРЫВАЮЩИЙ его где угодно, а не только в середине звука:
+ * видео обрезали или отвязали и сдвинули — его звук не становится «внешним»
+ * (ревью 6fe3cc6: иначе он выглядел как петличка ровно в ручных правках).
+ */
 function classifyAudio(a, tracks) {
   const tm = parseTxMic(a.filename);
   if (tm.tx) return { kind: 'dji', tx: tm.tx, mic: tm.mic };
-  const mid = a.timeline_start_sec + a.duration_sec * 0.5;
   for (const [label, items] of Object.entries(tracks)) {
     if (label[0] !== 'V') continue;
-    const v = atPos(items, mid);
-    if (v && stem(v.filename) === stem(a.filename)) return { kind: 'camera_embed', of_track: label };
+    const v = items.find(c => !c.error && stem(c.filename) === stem(a.filename)
+      && c.timeline_start_sec < a.timeline_end_sec && a.timeline_start_sec < c.timeline_end_sec);
+    if (v) return { kind: 'camera_embed', of_track: label };
   }
   return { kind: 'external' };
 }
@@ -181,17 +201,31 @@ function buildSequenceMap(read, exportedAt) {
       for (const al of aLabels) {
         const m = atPos(tracks[al], mid);
         if (!m || m.stray) continue;
+        // Type against THIS clip (the 1.2 rule): same file as vc → its own camera
+        // audio, wherever the audio's own midpoint happens to fall.
+        let type = m.kind;
+        let ofTrack = m.of_track;
+        if (m.kind !== 'dji') {
+          if (stem(m.filename) === stem(vc.filename)) {
+            type = 'camera_embed'; ofTrack = vl;
+          } else {
+            const ov = vLabels.find(l => l !== vl && (atPos(tracks[l], mid) || {}).filename
+              && stem(atPos(tracks[l], mid).filename) === stem(m.filename));
+            if (ov) { type = 'other_camera_embed'; ofTrack = ov; }
+            else if (m.kind === 'camera_embed') type = 'other_camera_embed';
+          }
+        }
         const a = {
-          type: m.kind === 'camera_embed' && m.of_track !== vl ? 'other_camera_embed' : m.kind,
+          type: type,
           filename: m.filename,
           source_in_sec: m.source_in_sec, source_out_sec: m.source_out_sec,
           timeline_start_sec: m.timeline_start_sec, duration_sec: m.duration_sec,
           source_in_ticks: m.source_in_ticks, source_out_ticks: m.source_out_ticks,
           timeline_start_ticks: m.timeline_start_ticks,
         };
-        if (a.type === 'other_camera_embed') a.of_track = m.of_track;
+        if (a.type === 'other_camera_embed') a.of_track = ofTrack;
         if (m.kind === 'dji') { a.tx = m.tx; a.mic = m.mic; a.path = m.media_path; }
-        if (m.kind === 'external') a.path = m.media_path;
+        if (a.type === 'external') a.path = m.media_path;
         if (m.disabled) a.disabled = true;
         audio[al] = a;
         if (m.kind === 'dji') {
@@ -237,7 +271,10 @@ function buildSequenceMap(read, exportedAt) {
       disabled: count(i => i.disabled === true),
       strays: count(i => i.stray === true),
       nested: count(i => i.nested === true),
-      unreadable: count(i => !!i.error),
+      // unreadable items + whole tracks whose items could not be listed
+      unreadable: count(i => !!i.error)
+        + Object.values(read.trackState || {}).filter(s => s && s.error).length,
+      unreadable_tracks: Object.keys(read.trackState || {}).filter(l => read.trackState[l] && read.trackState[l].error),
       audio_without_video: audioOnly,
       total_video_clips: Object.values(scenes).reduce((n, s) => n + s.clips.length, 0),
       clips_with_dji: withDji,
@@ -274,7 +311,10 @@ function statusLine(seqName, map, fileName) {
   if (s.strays) bits.push(s.strays + ' one-frame strays');
   if (s.nested) bits.push(s.nested + ' nested');
   if (s.audio_without_video) bits.push(s.audio_without_video + ' audio without video');
-  if (s.unreadable) bits.push(s.unreadable + ' UNREADABLE');
+  if (s.unreadable) {
+    bits.push(s.unreadable + ' UNREADABLE'
+      + (s.unreadable_tracks && s.unreadable_tracks.length ? ' (whole track ' + s.unreadable_tracks.join(', ') + ')' : ''));
+  }
   return seqName + ': ' + bits.join(' · ') + ' → ' + fileName;
 }
 

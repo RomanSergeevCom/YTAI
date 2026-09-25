@@ -57,5 +57,50 @@ class VerdictTest(unittest.TestCase):
         self.assertEqual(r["pairs"][0]["kind"], "cam-cam")
 
 
+class RobustnessTest(unittest.TestCase):
+    """Review of aaff5ba: the panel must always get a verdict it can trust."""
+
+    def test_verdict_folder_is_created_when_missing(self):
+        import tempfile, json
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d) / "00_Setup" / "01_Ingest" / "X_sync_verdict.json"   # old project: no 01_Ingest
+            written = vs.write_verdict(target, {"run_id": "r1", "verdict": "SYNC"})
+            self.assertEqual(written, str(target))
+            self.assertEqual(json.loads(target.read_text())["run_id"], "r1")
+
+    def test_unwritable_target_falls_back_to_tmp(self):
+        import json
+        written = vs.write_verdict(Path("/dev/null/cannot/exist.json"), {"run_id": "r2", "verdict": "ERROR"})
+        self.assertEqual(written, str(vs.FALLBACK_VERDICT))
+        self.assertEqual(json.loads(vs.FALLBACK_VERDICT.read_text())["run_id"], "r2")
+
+    def test_summary_describes_the_sequence_that_set_the_verdict(self):
+        good = {"verdict": "SYNC", "worst_cam_lav": {"a": {"track": "A1"}, "b": {"track": "A4"}},
+                "worst_cam_lav_frames": 0.1, "bad_cam_lav": 0}
+        bad = {"verdict": "DESYNC", "worst_cam_lav": {"a": {"track": "A3"}, "b": {"track": "A4"}},
+               "worst_cam_lav_frames": 1.44, "bad_cam_lav": 2}
+        line = vs.summary_line({"sequences": [good, bad], "verdict": "DESYNC"}, 0.5)
+        self.assertTrue(line.startswith("DESYNC ✗ worst camera↔lav 1.44 fr A3↔A4"), line)
+
+    def test_duplicate_sequence_names_are_refused(self):
+        import tempfile, json, sys, io, contextlib
+        with tempfile.TemporaryDirectory() as d:
+            dump = Path(d) / "dump.json"
+            seq = {"name": "S", "audio": [], "video": []}
+            dump.write_text(json.dumps({"sequences": [seq, dict(seq)]}))
+            out = Path(d) / "v.json"
+            argv = sys.argv
+            sys.argv = ["verify_sync.py", "--dump", str(dump), "--fps", "25", "--seq", "S", "--json-out", str(out)]
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    rc = vs.main()
+            finally:
+                sys.argv = argv
+            v = json.loads(out.read_text())
+            self.assertEqual(rc, 2)
+            self.assertEqual(v["verdict"], "ERROR")
+            self.assertIn("2 sequences are named 'S'", v["error"])
+
+
 if __name__ == "__main__":
     unittest.main()

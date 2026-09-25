@@ -81,6 +81,25 @@ describe('Logger — panel error ring', () => {
     assert.equal(ring()[0].text.trim(), 'w5');
   });
 
+  it('a second, different failure of the same button is its own entry (review of ad2b225)', () => {
+    const log = new Logger('INGEST');
+    const e1 = boom('Track A2 locked'), e2 = boom('Track A2 locked');
+    log.error('Sync spread failed: ' + e1.message);          // click 1: logger line, no err
+    log.errorShown('Spread failed: ' + e1.message, e1);        // click 1: status line → merges, takes e1
+    log.error('Sync spread failed: ' + e2.message);          // click 2: same text right after → one event
+    log.errorShown('Spread failed: ' + e2.message, e2);        // click 2: a different error object → new entry
+    assert.equal(ring().length, 2);
+    assert.equal(ring()[1].stack, e2.stack, 'the second failure keeps its own stack');
+  });
+
+  it('a logger + status pair merges even with a warning in between (review of ad2b225)', () => {
+    const log = new Logger('ASSEMBLY');
+    log.error('Export failed: disk full');
+    log.warn('cleanup: tmp not removed');
+    log.errorShown('Export failed: disk full');
+    assert.deepEqual(ring().map(r => r.text), ['Export failed: disk full', 'cleanup: tmp not removed']);
+  });
+
   it('a non-Error throwable (undefined, string) never breaks the logger', () => {
     const log = new Logger('X');
     assert.doesNotThrow(() => { log.error('rejected with undefined', undefined); log.error('string', 'oops'); });
