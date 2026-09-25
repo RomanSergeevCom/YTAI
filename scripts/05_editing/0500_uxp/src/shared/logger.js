@@ -68,7 +68,7 @@ class Logger {
   /**
    * Internal log method.
    */
-  _log(level, message, err) {
+  _log(level, message, err, source) {
     const entry = `[${this._timestamp()}] [${level}] ${message}`;
     this._buffer.push(entry);
     // Стек идёт в log.txt под строкой ошибки (раньше его писали отдельным
@@ -77,7 +77,7 @@ class Logger {
     if (stack) this._buffer.push(stack.split('\n').map(l => '    ' + l).join('\n'));
     // WARN/ERROR → кольцо кнопки «Err». Предупреждения тоже: часто именно они улика.
     if (level === 'ERROR' || level === 'WARN') {
-      Logger.pushPanelError(level, message, this._pipeline, err);
+      Logger.pushPanelError(level, message, this._pipeline, err, source || 'logger');
     }
     if (typeof this.onLog === 'function') {
       this.onLog(entry, level, message);
@@ -89,6 +89,9 @@ class Logger {
   warn(message, err) { this._log('WARN', message, err); }
   /** @param {Error} [err] — со стеком: стек уйдёт в log.txt и в отчёт «Err» */
   error(message, err) { this._log('ERROR', message, err); }
+  /** Ошибка, показанная человеку в статус-строке (set*Status(…,'error')). Отличается
+   *  от error() только источником: парная запись логгера о той же ошибке сольётся с ней. */
+  errorShown(message, err) { this._log('ERROR', message, err, 'status'); }
   debug(message) { this._log('DEBUG', message); }
 
   /** Стек ошибки или '' (не Error, пустой стек, геттер бросил). */
@@ -110,8 +113,9 @@ class Logger {
    * logger.error('BUILD FAILED: X') и status('Build failed: X'). Среди трёх
    * последних записей ищется «та же ошибка» (Logger.sameError); нашлась — новая
    * не добавляется, а стек, если его не было, дописывается к найденной.
+   * source: 'logger' (logger.warn/error) или 'status' (строка статуса, recordPanelError).
    */
-  static pushPanelError(level, message, pipeline, err) {
+  static pushPanelError(level, message, pipeline, err, source) {
     try {
       const g = (typeof globalThis !== 'undefined') ? globalThis : window;
       if (!g.__ytaiErrors) g.__ytaiErrors = [];
@@ -121,7 +125,7 @@ class Logger {
       const pipe = String(pipeline || '').toLowerCase();
       for (let i = ring.length - 1; i >= Math.max(0, ring.length - 3); i--) {
         const r = ring[i];
-        if (r && typeof r === 'object' && Logger.sameError(r, text, pipe, err)) {
+        if (r && typeof r === 'object' && Logger.sameError(r, text, pipe, err, source || 'logger', i === ring.length - 1)) {
           if (stack && !r.stack) r.stack = stack;
           return;
         }
@@ -131,6 +135,7 @@ class Logger {
         line: `[${ts}] [${level}] ${text}` + (pipeline ? `  [${pipeline}]` : ''),
         text: text,
         pipeline: pipe,
+        source: source || 'logger',
         stack: stack,
       };
       // Сам объект ошибки — только для дедупа по тождеству, в отчёт не идёт.
@@ -141,16 +146,23 @@ class Logger {
   }
 
   /**
-   * «Та же ошибка»: тот же объект ошибки; либо тот же pipeline и текст совпал
-   * целиком или по детали — части после первого «: » (≥ 8 символов): у
-   * 'INGEST BUILD FAILED: Track V3 missing' и 'Build failed: Track V3 missing'
-   * одна деталь. Хвост фиксированной длины здесь не годится: сообщения короче
-   * окна, и в него попадают разные префиксы.
+   * «Та же ошибка» — только то, что действительно одно событие:
+   *   - тот же объект ошибки → да; РАЗНЫЕ объекты ошибки → нет, при любом тексте;
+   *   - другой pipeline → нет;
+   *   - тот же текст подряд (непосредственно предыдущая запись) → да;
+   *   - деталь (часть после первого «: », ≥ 8 символов) совпала → да, но ТОЛЬКО
+   *     между записью логгера и строкой статуса — это пара «BUILD FAILED: X» +
+   *     «Build failed: X». Две записи логгера с одной деталью — разные события:
+   *     '[S01] buildScene failed: Track V3 missing' и '[S02] …' обе попадают в отчёт.
+   *     (Ревью 568c195: прежнее правило схлопывало сбой трёх сцен в один.)
    */
-  static sameError(entry, text, pipe, err) {
-    if (err && typeof err === 'object' && entry.err === err) return true;
+  static sameError(entry, text, pipe, err, source, isLast) {
+    const errObj = err && typeof err === 'object' ? err : null;
+    if (errObj && entry.err === errObj) return true;
+    if (errObj && entry.err && entry.err !== errObj) return false;
     if (entry.pipeline !== pipe) return false;
-    if (entry.text === text) return true;
+    if (entry.text === text) return !!isLast;
+    if ((entry.source || 'logger') === source) return false;
     const detail = (t) => { const i = t.indexOf(': '); return i >= 0 ? t.slice(i + 2) : ''; };
     const dNew = detail(text), dOld = detail(entry.text);
     return (dNew.length >= 8 && entry.text.endsWith(dNew)) || (dOld.length >= 8 && text.endsWith(dOld));

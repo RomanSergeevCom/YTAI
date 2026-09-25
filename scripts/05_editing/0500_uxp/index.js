@@ -129,7 +129,7 @@ const { $, on } = require('./src/shared/panelDom');
 function setIngestStatus(text, type, err) {
   $('ingest-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('ingest-status-text').textContent = text;
-  if (type === 'error') ingestLogger.error(text, err);
+  if (type === 'error') ingestLogger.errorShown(text, err);
 }
 
 function setIngestProgress(percent, text) {
@@ -149,7 +149,7 @@ function hideIngestProgress() {
 function setAssemblyStatus(text, type, err) {
   $('assembly-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('assembly-status-text').textContent = text;
-  if (type === 'error') assemblyLogger.error(text, err);
+  if (type === 'error') assemblyLogger.errorShown(text, err);
 }
 
 function setAssemblyProgress(percent, text) {
@@ -169,7 +169,7 @@ function hideAssemblyProgress() {
 function setScreensStatus(text, type, err) {
   $('screens-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('screens-status-text').textContent = text;
-  if (type === 'error') screensLogger.error(text, err);
+  if (type === 'error') screensLogger.errorShown(text, err);
 }
 
 function setScreensProgress(percent, text) {
@@ -2667,7 +2667,7 @@ function setPartsValidation(html) {
  * сломалось», поэтому любой статус уровня error теперь регистрируется.
  */
 function recordPanelError(text, pipeline, err) {
-  Logger.pushPanelError('ERROR', text, pipeline, err);
+  Logger.pushPanelError('ERROR', text, pipeline, err, 'status');
 }
 
 function setAdjustStatus(text, type, err) {
@@ -3489,7 +3489,7 @@ function setShortsStatus(text, type, err) {
   var txt = $('shorts-status-text');
   if (txt) txt.textContent = text;
   if (dot) dot.className = 'status-dot ' + (type || 'waiting');
-  if (type === 'error') shortsLogger.error(text, err);
+  if (type === 'error') shortsLogger.errorShown(text, err);
 }
 
 function setShortsValidation(html) {
@@ -4208,7 +4208,7 @@ function setFootageStatus(text, type, err) {
   var txt = $('footage-status-text');
   if (txt) txt.textContent = text;
   if (dot) dot.className = 'status-dot ' + (type || 'waiting');
-  if (type === 'error') footageLogger.error(text, err);
+  if (type === 'error') footageLogger.errorShown(text, err);
 }
 
 function setFootageValidation(html) {
@@ -7184,7 +7184,7 @@ async function saveAssemblyLogs(project, clipMap, result) {
 function setDeletedSceneStatus(text, type, err) {
   $('ds-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('ds-status-text').textContent = text;
-  if (type === 'error') deletedSceneLogger.error(text, err);
+  if (type === 'error') deletedSceneLogger.errorShown(text, err);
 }
 
 function setDeletedSceneProgress(percent, text) {
@@ -10050,7 +10050,7 @@ async function processReview() {
 function setReviewStatus(text, type, err) {
   $('review-status-dot').className = 'status-dot ' + (type || 'waiting');
   $('review-status-text').textContent = text;
-  if (type === 'error') reviewLogger.error(text, err);
+  if (type === 'error') reviewLogger.errorShown(text, err);
 }
 
 function setReviewProgress(percent, text) {

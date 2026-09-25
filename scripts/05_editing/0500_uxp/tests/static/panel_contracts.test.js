@@ -68,7 +68,7 @@ describe('panel contracts — every on-screen error reaches «Err»', () => {
     assert.ok(setters.length >= 11, 'found ' + setters.length + ' setters');
     for (const [, name, params, body] of setters) {
       assert.match(params, /\berr\b/, name + ' takes err as its third argument');
-      assert.match(body, /if \(type === 'error'\) (\w+Logger\.error|recordPanelError)\(text, [^)]*err\)/,
+      assert.match(body, /if \(type === 'error'\) (\w+Logger\.errorShown|recordPanelError)\(text, [^)]*err\)/,
         name + ' routes errors with their stack');
     }
   });

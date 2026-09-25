@@ -30,7 +30,7 @@ describe('Logger — panel error ring', () => {
     const log = new Logger('INGEST');
     const err = boom('Track V3 missing on scene 04');
     log.error('INGEST BUILD FAILED: ' + err.message);          // the old paired form: no err
-    log.error('Build failed: ' + err.message, err);            // what setIngestStatus(…,'error', err) does
+    log.errorShown('Build failed: ' + err.message, err);       // what setIngestStatus(…,'error', err) does
     assert.equal(ring().length, 1);
     assert.match(ring()[0].stack, /Track V3 missing/, 'stack from the second write is attached');
   });
@@ -48,10 +48,25 @@ describe('Logger — panel error ring', () => {
     assert.equal(ring().length, 2);
   });
 
-  it('short messages without a detail dedup only on exact text', () => {
+  it('an exact repeat merges only with the entry right before it', () => {
+    Logger.pushPanelError('ERROR', 'Load ingest first', 'ingest');
     Logger.pushPanelError('ERROR', 'Load ingest first', 'ingest');
     Logger.pushPanelError('ERROR', 'Load brief first', 'ingest');
     Logger.pushPanelError('ERROR', 'Load ingest first', 'ingest');
+    assert.deepEqual(ring().map(r => r.text), ['Load ingest first', 'Load brief first', 'Load ingest first']);
+  });
+
+  it('three scenes failing with the same message are three entries (review of 568c195)', () => {
+    const log = new Logger('INGEST');
+    for (const sc of ['S01', 'S02', 'S03']) log.error('[' + sc + '] buildScene failed: Track V3 missing', boom('Track V3 missing'));
+    assert.equal(ring().length, 3);
+    for (const sc of ['S01', 'S02', 'S03']) log.warn(sc + ' A1 clip 3: would go negative, skipping');
+    assert.equal(ring().length, 6, 'per-clip warnings with one detail are not merged either');
+  });
+
+  it('different error objects never merge, even with identical text', () => {
+    Logger.pushPanelError('ERROR', 'x failed: same', 'a', boom('same'));
+    Logger.pushPanelError('ERROR', 'x failed: same', 'a', boom('same'));
     assert.equal(ring().length, 2);
   });
 
