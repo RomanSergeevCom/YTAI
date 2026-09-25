@@ -33,7 +33,6 @@ def main():
     sub = P.get('sub', []) or []
     if not sub:
         print('sub в карточке пуст — кадров подглав не будет')
-        return 0
     n_frames = len(list(HIRES.glob('h*.jpg')))
     if not n_frames:
         print(f'!! нет кадров в {HIRES} — сначала стадия screens')

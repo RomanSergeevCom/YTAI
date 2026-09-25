@@ -526,6 +526,9 @@ RULE_W, RULE_H = max(560, int(_r[0])), max(18, int(_r[1]))
 # `titles` поднимает их: Роман 25.09.2026 «шрифт должен быть очень крупный». Переменные, а не
 # параметры: по подписи функции гейт предложений и KB 1.1 читают поля вида
 CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH = 380, 1080, 210, 520
+# «ГЛАВА NN» над названием. Режим titles его убирает: Роман 25.09.2026 «убери названия глав с
+# картинки» — номер живёт во вкладке, а на экране только само название, как у названия фильма
+CH_EYEBROW = True
 
 
 NBSP = '\u00a0'
@@ -550,8 +553,8 @@ def q_ch(num, name, shot):
             f'<div style="position:absolute;inset:0;background:{SCRIM}"></div>'
             f'<div style="position:absolute;inset:0;display:flex;flex-direction:column;'
             f'align-items:center;justify-content:center;text-align:center;padding:0 {MARGIN}px">'
-            + eyebrow(f'ГЛАВА {num}', acc, 104, 46)
-            + f'<div class="nm" style="font-size:{fs}px;max-width:3300px;color:{WHITE};{SHADOW}">'
+            + (eyebrow(f'ГЛАВА {num}', acc, 104, 46) if CH_EYEBROW else '')
+            + f'<div class="nm" style="font-size:{fs}px;line-height:.98;max-width:3300px;color:{WHITE};{SHADOW}">'
               f'{esc(name)}</div>'
             + f'<div style="margin-top:78px">{rule()}</div>'
             + '</div></div>')
@@ -1211,6 +1214,7 @@ def render_plan(a):
     return 2 if bad else 0
 
 
+FILM_CAP = 600          # название фильма крупнее заставки главы, но «помельче» прежних 760 (25.09.2026)
 FILM_VARIANTS = [
     ('a', 'ПОЛОТНО', 'кадр в затемнение, название по центру во всю ширину — как заставки глав'),
     ('b', 'СТОЛБИК', 'название в три строки у левого поля во всю высоту — как набрано в самом кате'),
@@ -1226,7 +1230,7 @@ def film_title(variant, title, shot):
     title = hang(str(title))
     words = [w for w in title.split(' ') if w]
     if variant == 'a':
-        fs = fit_block(title, 3400, 760, 1500)
+        fs = fit_block(title, 3400, FILM_CAP, 1250)
         return (f'<div class="pl">{shot_div(shot, satur=SATUR)}'
                 f'<div style="position:absolute;inset:0;background:{SCRIM}"></div>'
                 f'<div style="position:absolute;inset:0;display:flex;flex-direction:column;'
@@ -1271,8 +1275,9 @@ def render_titles(a):
     ⚠️ Кадр берётся не на секунде начала главы, а через несколько секунд: в начале главы в
     кате стоит его СОБСТВЕННАЯ заставка, и новая легла бы поверх старой — два названия разом.
     Для глав, которых в кате нет, сдвиг тот же: так все примеры сравнимы между собой."""
-    global CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH
-    CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH = 640, 1500, 340, 760
+    global CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH, CH_EYEBROW
+    # 640 px Роман счёл слишком крупным («сделай помельче», 25.09.2026 вечер)
+    CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH, CH_EYEBROW = 470, 1050, 300, 700, False
     chap = [(int(t), str(n)) for t, n in P.CHAPTERS]
     names = P.get('ch_name', {}) or {}
     dur = float(P.duration_sec())
@@ -1299,15 +1304,27 @@ def render_titles(a):
     title = str(a.film or P.get('film_title') or '').strip().upper()
     if title:
         shot = frame(int(a.film_sec))
-        for v, _nm, _why in FILM_VARIANTS:
+        picked = str(P.get('film_title_variant') or '').strip().lower()
+        variants = [x for x in FILM_VARIANTS if not picked or x[0] == picked]
+        for v, _nm, _why in variants:
             page(f'titles/title_film_{v}', film_title(v, title, shot))
             made.append(f'title_film_{v}')
         # подписи вариантов — рядом с картинками: вкладка дока читает их отсюда, а не держит копию
         (OUT / 'titles' / 'film_variants.json').write_text(json.dumps(
-            {'title': title, 'variants': [{'v': v, 'name': nm, 'why': why} for v, nm, why in FILM_VARIANTS]},
+            {'title': title, 'picked': picked,
+             'variants': [{'v': v, 'name': nm, 'why': why} for v, nm, why in variants]},
             ensure_ascii=False, indent=1), encoding='utf-8')
     else:
         miss.append('название фильма: нет ни --film, ни film_title в карточке')
+    # плашки спикеров (card.name_plates): подпись уже стоит в кате — кадр берём после неё
+    for k, npl in enumerate(P.get('name_plates') or [], 1):
+        fn = globals().get(PLAN_FN.get(str(npl.get('kind') or 'q_lower_a'), ''), lower_a)
+        shot = lit_frame(int(npl['sec']) + 7, int(npl['sec']) + 25)
+        if not shot:
+            miss.append(f'плашка спикера {k:02d}: нет кадра')
+            continue
+        page(f'titles/title_lower_{k:02d}', fn(str(npl['name']), str(npl.get('role', '')), shot))
+        made.append(f'title_lower_{k:02d}')
     for m in miss:
         print('  ✗ ' + m, file=sys.stderr)
     print(f'\nотрисовано {len(made)} · глав {len(chap)} · подглав {len(P.get("sub") or [])}'

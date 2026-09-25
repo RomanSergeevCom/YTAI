@@ -229,6 +229,14 @@ for i, (sec, no) in enumerate(CHAP):
         rows.append({'no': '', 'img': (f'bdd/titles/title_sub_{j:02d}.png' if CARDS
                                        else SUB_IMG.get(f'{j:02d}', '')), 'body': f'▸ {t}', 'ch': False,
                      'tc': f'{tmm(s)}–{tmm(s_end)}', 'now': now, 'do': do})
+    # плашки спикеров (card.name_plates) — строкой под своей главой: это не подглава, а подпись
+    # человека (Роман 25.09.2026: «это же не глава, это плашка спикера»)
+    if CARDS:
+        for k, npl in enumerate(P.get('name_plates') or [], 1):
+            if sec <= int(npl['sec']) < end:
+                rows.append({'no': '', 'img': f'bdd/titles/title_lower_{k:02d}.png',
+                             'body': f'👤 {npl["name"]}\n{npl.get("role", "")}', 'ch': False,
+                             'tc': tmm(int(npl['sec'])), 'now': npl.get('now', ''), 'do': npl.get('do', '')})
     if not mine and not CARDS:
         rows.append({'no': '', 'img': '', 'body': T('chp.no_subs'), 'ch': False,
                      'tc': '', 'now': '', 'do': ''})
@@ -296,7 +304,7 @@ head = [(1, T('chp.head_title', code=P.CODE, tab=TAB_TITLE), {'bold': True}),
              T('chp.lead', ver=P.CUT_VERSION, dur=tmm(DUR)) + _no_num + T('chp.lead2') + T('chp.lead3')), {}),
         (0, '', {}),
         ] + STRUCT + MAP_BLOCK + [
-        (2, T('chp.map_h', ch=n_ch, sub=n_sub), {'bold': True}),
+        (2, T('chp.map_h', ch=n_ch, sub=n_sub) if n_sub else T('chp.map_h_nosub', ch=n_ch), {'bold': True}),
         (0, T('chp.map_note', ch=n_ch, last=f'{n_ch:02d}'), {}),
         (0, T('chp.map_link') + 'mockups/info_structure_map.png (4K, в папке проекта)', {}),
         ] + map_lines + [(0, '', {})] + ([] if ONLY_CH else [

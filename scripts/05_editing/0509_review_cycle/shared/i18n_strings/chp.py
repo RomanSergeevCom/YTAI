@@ -16,6 +16,7 @@ STRINGS = {
     'chp.hdr_now': {'ru': 'Что сейчас', 'en': 'What it is now'},
     'chp.hdr_do': {'ru': 'Как надо', 'en': 'What it should be'},
     'chp.hdr_card': {'ru': 'Заставка · пример', 'en': 'Title card · example'},
+    'chp.map_h_nosub': {'ru': 'КАРТА ВЫПУСКА — глав: {ch}', 'en': 'EPISODE MAP — chapters: {ch}'},
     # шапка режима заставок считается по фильму: `chp.lead`/`lead2` — утверждения про YTUVI01
     # («несогласованы», «светлый по светлому»), на другом фильме они врут
     'chp.lead_cards': {'ru': 'Кат {ver}, {dur}. Глав {n}: заставки в кате есть у {have}, создать {new}. '
