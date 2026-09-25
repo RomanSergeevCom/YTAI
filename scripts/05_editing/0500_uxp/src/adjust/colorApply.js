@@ -58,14 +58,14 @@ function formatDump(rows) {
 /**
  * Развернуть обёртку, если пришла она.
  *
- * ⚠️ `collectVideoClipItems()` отдаёт НЕ айтемы таймлайна, а обёртки
- * `{item, name, startSec, endSec, trackIdx}`. Отдать такую обёртку в
+ * ⚠️ `collectVideoClipEntries()` отдаёт НЕ айтемы таймлайна, а записи
+ * `{trackItem, name, startSec, endSec, trackIdx}`. Отдать такую обёртку в
  * `asVideoClip()` — получить «vclip.getComponentChain is not a function»,
  * ровно это и случилось на первом живом прогоне 25.09.2026. Разворачиваем
  * здесь, чтобы ошибка не могла повториться ни на одном будущем вызове.
  */
 function rawItem(x) {
-  if (x && typeof x.getComponentChain !== 'function' && x.item) return x.item;
+  if (x && typeof x.getComponentChain !== 'function' && x.trackItem) return x.trackItem;
   return x;
 }
 
@@ -73,7 +73,7 @@ function rawItem(x) {
 function itemName(x) {
   if (!x) return '?';
   if (x.name) return String(x.name);
-  if (x.item && x.item.name) return String(x.item.name);
+  if (x.trackItem && x.trackItem.name) return String(x.trackItem.name);
   return '?';
 }
 

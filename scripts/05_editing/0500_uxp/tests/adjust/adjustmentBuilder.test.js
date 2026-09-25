@@ -206,7 +206,7 @@ describe('addAdjustmentOverRanges', () => {
   });
 });
 
-const { addAdjustmentPerClipFromPlan, collectVideoClipItems } = require('../../src/adjust/adjustmentBuilder');
+const { addAdjustmentPerClipFromPlan, collectVideoClipEntries } = require('../../src/adjust/adjustmentBuilder');
 
 describe('addAdjustmentPerClipFromPlan', () => {
   let project, seq, logger;
@@ -229,9 +229,17 @@ describe('addAdjustmentPerClipFromPlan', () => {
   it('collects clips across video tracks with times', async () => {
     placeClip2(0, 'A.MP4', 0, 5);
     placeClip2(0, 'B.MP4', 5, 3);
-    const items = await collectVideoClipItems(seq, logger);
+    const items = await collectVideoClipEntries(seq, logger);
     assert.equal(items.length, 2);
     assert.equal(items[1].endSec, 8);
+  });
+
+  it('returns entries whose raw item is .trackItem — never an ambiguous .item', async () => {
+    placeClip2(0, 'A.MP4', 0, 5);
+    const [entry] = await collectVideoClipEntries(seq, logger);
+    assert.deepEqual(Object.keys(entry).sort(), ['endSec', 'name', 'startSec', 'trackIdx', 'trackItem']);
+    assert.equal(typeof entry.trackItem.getStartTime, 'function', 'trackItem is the Premiere item');
+    assert.equal(typeof entry.getComponentChain, 'undefined', 'the entry itself is not an item');
   });
 
   it('places one named layer per matched clip on the track above', async () => {

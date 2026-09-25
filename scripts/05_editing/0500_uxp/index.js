@@ -32,7 +32,7 @@ const { addSceneMarkers, generatedMarkerNames } = require('./src/ingest/placemen
 const { buildFootageReview, FOOTAGE_REVIEW_VERSION } = require('./src/footageReview/footageReviewBuilder');
 const { addAdjustmentOverSelection, addAdjustmentPerClipFromPlan, probeDonorClone,
         buildLutDonorSequence, LUT_DONOR_SEQUENCE,
-        collectVideoClipItems } = require('./src/adjust/adjustmentBuilder');
+        collectVideoClipEntries } = require('./src/adjust/adjustmentBuilder');
 // Цвет из color_plan.json: параметр Lumetri адресуется по ИНДЕКСУ, а не по имени
 const colorApply = require('./src/adjust/colorApply');
 
@@ -2810,7 +2810,7 @@ async function runColorFromPlan(allSequences) {
       try { seqName = String(await seq.getName()); } catch (e) { seqName = String(seq.name || ''); }
       if (seqName === LUT_DONOR_SEQUENCE) continue;
       setAdjustStatus('Color: ' + (si + 1) + '/' + seqs.length + ' ' + seqName, 'working');
-      var items = await collectVideoClipItems(seq, log);
+      var items = await collectVideoClipEntries(seq, log);
       for (var ci = 0; ci < items.length; ci++) {
         var it = items[ci];
         var nm = String((it && it.name) || '');

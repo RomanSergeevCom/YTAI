@@ -212,7 +212,7 @@ describe('colorApply — перебор форм значения', () => {
   });
 });
 
-describe('colorApply — обёртка collectVideoClipItems', () => {
+describe('colorApply — запись collectVideoClipEntries', () => {
   let project, logger;
   beforeEach(() => { ppro._recorder.reset(); project = new ppro._MockProject('P'); logger = new Logger(); });
 
@@ -221,8 +221,8 @@ describe('colorApply — обёртка collectVideoClipItems', () => {
     try {
       delete ppro.VideoClipTrackItem.cast;
       const L = lumetriLike();
-      // ровно то, что отдаёт collectVideoClipItems
-      const wrapper = { item: L.clip, name: 'RYA-FX3-1263.MP4', startSec: 0, endSec: 69.6, trackIdx: 0 };
+      // ровно то, что отдаёт collectVideoClipEntries
+      const wrapper = { trackItem: L.clip, name: 'RYA-FX3-1263.MP4', startSec: 0, endSec: 69.6, trackIdx: 0 };
       const out = await CA.applyColorToClip(project, wrapper, { exposure: 1.2 }, logger);
       assert.equal(out.error, undefined, 'обёртка не должна ронять «getComponentChain is not a function»');
       assert.equal(out.clip, 'RYA-FX3-1263.MP4', 'имя берётся из обёртки');
@@ -245,8 +245,8 @@ describe('colorApply — обёртка collectVideoClipItems', () => {
   it('rawItem разворачивает только обёртку, сырой айтем не трогает', () => {
     const raw = { getComponentChain: async () => ({}) };
     assert.equal(CA.rawItem(raw), raw);
-    assert.equal(CA.rawItem({ item: raw, name: 'x' }), raw);
-    assert.equal(CA.itemName({ item: raw, name: 'x' }), 'x');
+    assert.equal(CA.rawItem({ trackItem: raw, name: 'x' }), raw);
+    assert.equal(CA.itemName({ trackItem: raw, name: 'x' }), 'x');
   });
 });
 

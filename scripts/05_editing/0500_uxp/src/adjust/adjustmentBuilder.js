@@ -633,8 +633,14 @@ async function addAdjustmentOverRanges(project, sequence, ranges, opts, logger) 
   return { ok: placedCount === ranges.length, placed: placedCount, total: ranges.length };
 }
 
-/** All clip trackItems across a sequence's video tracks: {item, name, startSec, endSec, trackIdx}. */
-async function collectVideoClipItems(sequence, logger) {
+/**
+ * All clips across a sequence's video tracks as ENTRIES, not track items:
+ * { trackItem, name, startSec, endSec, trackIdx }. The raw Premiere item is
+ * entry.trackItem — an entry passed where a TrackItem is expected fails with
+ * «getComponentChain is not a function» (25.09.2026), so the field is named
+ * to make that mix-up visible in code.
+ */
+async function collectVideoClipEntries(sequence, logger) {
   const out = [];
   let vCount = 0;
   try { vCount = await sequence.getVideoTrackCount(); } catch (e) { return out; }
@@ -650,7 +656,7 @@ async function collectVideoClipItems(sequence, logger) {
         const name = String(await it.getName());
         const s = secondsOf(await it.getStartTime());
         const d = secondsOf(await it.getDuration());
-        out.push({ item: it, name, startSec: s, endSec: s + d, trackIdx: vi });
+        out.push({ trackItem: it, name, startSec: s, endSec: s + d, trackIdx: vi });
       } catch (e) { /* unreadable item */ }
     }
   }
@@ -686,7 +692,7 @@ async function addAdjustmentPerClipFromPlan(project, sequence, planByClip, opts,
   const skipNames = new Set(
     [].concat(opts.donorNames || DONOR_NAMES, lutNames, Object.keys(LEGACY_LUT_ALIASES)));
 
-  const all = await collectVideoClipItems(sequence, logger);
+  const all = await collectVideoClipEntries(sequence, logger);
   if (!all.length) return { ok: false, placed: 0, total: 0, lumetriApplied: 0, lookSet: 0, skipped: 0, reason: 'empty-sequence' };
 
   // Matched = plan hit by basename; existing LUT-named layers are collected
@@ -771,7 +777,7 @@ async function addAdjustmentPerClipFromPlan(project, sequence, planByClip, opts,
       try {
         await project.lockedAccess(function () {
           return project.executeTransaction(function (ca) {
-            ca.addAction(ex.item.createSetNameAction(c.lut));
+            ca.addAction(ex.trackItem.createSetNameAction(c.lut));
           }, 'Rename LUT layer');
         });
       } catch (e) {
@@ -781,13 +787,13 @@ async function addAdjustmentPerClipFromPlan(project, sequence, planByClip, opts,
     // Legacy heal: append Lumetri when it is missing; re-try the Look param
     // (honest now — counts only when the value actually lands).
     if (applyLumetri) {
-      const has = await hasEffect(ex.item, 'Lumetri', logger);
+      const has = await hasEffect(ex.trackItem, 'Lumetri', logger);
       if (has === false) {
-        const r = await applyEffect(project, ex.item, 'Lumetri', 'Look', c.lut, logger);
+        const r = await applyEffect(project, ex.trackItem, 'Lumetri', 'Look', c.lut, logger);
         if (r.applied) lumetriApplied++;
         if (r.paramSet) lookSet++;
       } else if (has === true) {
-        if (await setEffectParam(project, ex.item, 'Lumetri', 'Look', c.lut, logger)) lookSet++;
+        if (await setEffectParam(project, ex.trackItem, 'Lumetri', 'Look', c.lut, logger)) lookSet++;
       }
     }
   }
@@ -887,7 +893,7 @@ async function placeDonorClone(project, sequence, donor, c, vIdx, logger) {
     await project.lockedAccess(function () {
       return project.executeTransaction(function (ca) {
         ca.addAction(seqEditor.createCloneTrackItemAction(
-          d.item, tickTimeOfSeconds(c.startSec), vIdx - d.trackIdx, 0, true, false));
+          d.trackItem, tickTimeOfSeconds(c.startSec), vIdx - d.trackIdx, 0, true, false));
       }, 'Clone LUT layer');
     });
   } catch (e) {
@@ -1070,7 +1076,7 @@ async function buildLutDonorSequence(project, opts, logger) {
     if (!adjItem) return { ok: false, reason: 'no-donor' };
 
     step = 'scan existing clips';
-    let existing = await collectVideoClipItems(seq, logger);
+    let existing = await collectVideoClipEntries(seq, logger);
 
     // Old sequential layout (any clip off t=0, or two clips sharing a track) →
     // wipe and rebuild in the canonical per-track@0 layout.
@@ -1118,7 +1124,7 @@ async function buildLutDonorSequence(project, opts, logger) {
       const name = clipNames[i];
       if (blocked.has(name)) { needLook.push(name); continue; }
       const found = existing.find((c) => c.name === name);
-      let item = found ? found.item : null;
+      let item = found ? found.trackItem : null;
       if (!item) {
         step = 'place ' + name;
         item = await placeAdjustment(project, seq, adjItem, 0, LUT_DONOR_CLIP_SEC, i, logger, true);
@@ -1242,7 +1248,7 @@ async function ensureLutDonorSequence(project, opts, logger) {
   // LUT_DONOR_CLIPS name present (alias/pre-rename/partial donors fail — their
   // Looks reference renamed .cube files or cannot serve the canonical plan).
   const validate = async function (seq) {
-    const clips = await collectVideoClipItems(seq, logger);
+    const clips = await collectVideoClipEntries(seq, logger);
     if (!clips.length) return null;
     const byName = {};
     for (const c of clips) {
@@ -1383,7 +1389,7 @@ async function probeDonorClone(project, opts, logger) {
     if (target === donorSeq || tname === donorSeqName) return { ok: false, reason: 'donor-is-active' };
 
     step = 'collect donor clips';
-    let donorClips = await collectVideoClipItems(donorSeq, logger);
+    let donorClips = await collectVideoClipEntries(donorSeq, logger);
     if (!donorClips.length) return { ok: false, reason: 'donor-sequence-empty' };
     let donor = donorClips[0];
     if (logger) logger.info('probeDonorClone: donor "' + donor.name + '" @ '
@@ -1393,7 +1399,7 @@ async function probeDonorClone(project, opts, logger) {
     // content. NB: topIdx is computed from READABLE clips only; unreadable
     // items are invisible to this probe (and to the clobber gate below).
     step = 'snapshot target';
-    const before = await collectVideoClipItems(target, logger);
+    const before = await collectVideoClipEntries(target, logger);
     const topIdx = before.length ? Math.max(...before.map((c) => c.trackIdx)) + 1 : 0;
     step = 'getEditor';
     const seqEditor = ppro.SequenceEditor.getEditor(target);
@@ -1414,7 +1420,7 @@ async function probeDonorClone(project, opts, logger) {
     // for the same reason). A stale handle here would masquerade as
     // «cross-sequence clone does not work» and misroute the Plan-B decision.
     step = 'refetch donor';
-    donorClips = await collectVideoClipItems(donorSeq, logger);
+    donorClips = await collectVideoClipEntries(donorSeq, logger);
     if (donorClips.length) donor = donorClips[0];
 
     if (logger) logger.info('probeDonorClone: expecting the clone on V' + (topIdx + 1)
@@ -1423,7 +1429,7 @@ async function probeDonorClone(project, opts, logger) {
     await project.lockedAccess(function () {
       return project.executeTransaction(function (ca) {
         ca.addAction(seqEditor.createCloneTrackItemAction(
-          donor.item,
+          donor.trackItem,
           tickTimeOfSeconds(0),          // timeOffset — semantics probed via landing spot
           topIdx - donor.trackIdx,       // video vertical offset → the fresh track
           0,                              // audio vertical offset (AL is video-only)
@@ -1433,7 +1439,7 @@ async function probeDonorClone(project, opts, logger) {
     });
 
     step = 'locate clone';
-    const after = await collectVideoClipItems(target, logger);
+    const after = await collectVideoClipEntries(target, logger);
     // Identity diffing is unreliable on live 26.x (getTrackItems may hand out
     // fresh wrapper objects per call) — the fresh track was empty, so anything
     // on trackIdx >= topIdx IS the clone; signature-count diff as fallback in
@@ -1476,7 +1482,7 @@ async function probeDonorClone(project, opts, logger) {
     const clone = fresh[0];
     const offTarget = clone.trackIdx !== topIdx;
     let lumetriKept = null;
-    try { lumetriKept = await hasEffect(clone.item, 'Lumetri', logger); } catch (e) { /* null */ }
+    try { lumetriKept = await hasEffect(clone.trackItem, 'Lumetri', logger); } catch (e) { /* null */ }
     if (logger) logger.info('probeDonorClone: CLONE OK — "' + clone.name + '" landed @ '
       + clone.startSec.toFixed(2) + 's V' + (clone.trackIdx + 1)
       + (offTarget ? ' (⚠️ expected V' + (topIdx + 1) + ' — vertical-offset semantics differ!)' : '')
@@ -1506,7 +1512,7 @@ module.exports = {
   setEffectParam,
   addAdjustmentOverSelection,
   addAdjustmentOverRanges,
-  collectVideoClipItems,
+  collectVideoClipEntries,
   addAdjustmentPerClipFromPlan,
   probeDonorClone,
   buildLutDonorSequence,
