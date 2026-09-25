@@ -7,6 +7,8 @@
  * Fallback: ~/Library/Application Support/Adobe/UXP/PluginsStorage/...
  */
 
+const { PANEL_VERSION } = require('./version');
+
 class Logger {
   /**
    * @param {string} pipeline - Pipeline identifier: 'INGEST', 'ASSEMBLY', or '' (generic)
@@ -110,7 +112,7 @@ class Logger {
     const pipelineLabel = this._pipeline ? ` ${this._pipeline}` : '';
     const header = [
       `=== YTAI${pipelineLabel} — Log ===`,
-      `Version: 1.9.3`,
+      `Version: ${PANEL_VERSION}`,
       `Pipeline: ${this._pipeline || 'generic'}`,
       `Project: ${this._projectName || 'N/A'}`,
       `Project Path: ${this._projectPath || 'N/A'}`,
@@ -132,7 +134,7 @@ class Logger {
   getDebugSnapshot(pipelineData, extras) {
     const snapshot = {
       timestamp: this._timestamp(),
-      pluginVersion: '1.9.3',
+      pluginVersion: PANEL_VERSION,
       pipeline: this._pipeline || 'generic',
       projectName: this._projectName,
       projectPath: this._projectPath,

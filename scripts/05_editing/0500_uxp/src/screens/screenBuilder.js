@@ -394,7 +394,7 @@ async function buildScreenCues(project, screens, segments, clipMap, projectName,
   result.assemblySegments = useSegs;
 
   if (logger) {
-    logger.info('Screen Cues v1.9.3: ' + useSegs.length + ' Assembly segments, ' + screens.length + ' screens');
+    logger.info('Screen Cues: ' + useSegs.length + ' Assembly segments, ' + screens.length + ' screens');
     for (var si = 0; si < useSegs.length; si++) {
       var seg = useSegs[si];
       logger.debug('  [' + (si + 1) + '] ' + seg.id + ' [' + seg.blockName + '] ' +

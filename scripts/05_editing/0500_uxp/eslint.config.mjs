@@ -21,6 +21,16 @@ const RULES = {
   'eqeqeq': ['error', 'always', { null: 'ignore' }],
   'no-fallthrough': 'error',
   'no-redeclare': 'error',
+  // Инвариант версии (тикет, задача 3): у панели ОДНА версия — src/shared/version.js.
+  // Строковый литерал «vX.Y.Z» в коде = вторая версия, которая начнёт врать.
+  // String.raw обязателен: в обычной строке \b и \d схлопнутся, и правило
+  // молча перестанет срабатывать. Комментарии могут цитировать старые версии.
+  'no-restricted-syntax': ['error',
+    { selector: String.raw`Literal[value=/\bv\d+\.\d+\.\d+\b/]`,
+      message: 'Версия панели живёт только в src/shared/version.js' },
+    { selector: String.raw`TemplateElement[value.raw=/\bv\d+\.\d+\.\d+\b/]`,
+      message: 'Версия панели живёт только в src/shared/version.js' },
+  ],
 };
 
 const RO = 'readonly';

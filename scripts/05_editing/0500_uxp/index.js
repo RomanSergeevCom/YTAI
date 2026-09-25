@@ -109,15 +109,10 @@ let reviewState = { data: null, filePath: null, building: false, editedVideoPath
 
 // --- UI Helpers ---
 
-// ⚠️ Версия панели. Поднимать при КАЖДОЙ правке index.js/index.html: она уходит
-// в «Copy error report», и это единственный способ понять, перезагрузил ли
-// человек панель в UXP Developer Tool или смотрит на старый код.
-// ⚠️ ОДИН источник версии панели. До 25.09.2026 их было три и все разные:
-// шапка index.html «v2.20.0», отчёт об ошибках «v2.17.1», строка лога
-// «Version 2.4.0». По такому набору невозможно ответить на главный вопрос
-// живой отладки — перезагрузил человек панель или смотрит на старый код.
-// Поднимать при КАЖДОЙ правке index.js / index.html / src/.
-var PANEL_VERSION = '2.21.0';
+// ⚠️ Версия панели — одна, в src/shared/version.js. Поднимать там при КАЖДОЙ
+// правке index.js / index.html / src/: по шапке и отчёту «Err» видно,
+// перезагрузил ли человек панель или смотрит на старый код.
+var PANEL_VERSION = require('./src/shared/version').PANEL_VERSION;
 
 function $(id) { return document.querySelector('#' + id); }
 
@@ -8199,7 +8194,7 @@ async function buildScreenCuesPipeline() {
     step++;
     stepStart = Date.now();
     setScreensProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Building ScreenCues sequence...');
-    screensLogger.info('=== Step 2: Building Screen Cues sequence (v1.9.3) ===');
+    screensLogger.info('=== Step 2: Building Screen Cues sequence ===');
     var screenResult = await buildScreenCues(
       project, assemblyState.screens, assemblyState.segments, clipMap,
       assemblyState.projectCode || assemblyState.projectName, screensLogger, assemblyState.filePath, pngFiles, screenCuesBin, assemblyState.projectSettings
