@@ -1,5 +1,7 @@
 # 0500_uxp — Specification v2.2.0
 
+> Панель сейчас **v2.29.0** (`src/shared/version.js`). Вкладки и кнопки — KB 4.7 https://yt.rya.ae/kb/uxp-panel/.
+
 UXP-плагин для Adobe Premiere Pro: **Ingest** + **Assembly** + **Review** + **Screen Cues** в одной панели.
 
 **Вход:**
@@ -718,122 +720,36 @@ briefParser.js
 
 ---
 
-## UI Panel (index.html) — v2.1.0
+## UI Panel (index.html)
 
-```
-┌──────────────────────────────────────────┐
-│                v2.1.0 · Powered by RYA.AE│  ← branding
-├──────────── PROJECT ─────────────────────│
-│  ● No project selected                  │  ← status dot + text
-│  [Select Project Folder]                 │  ← folder picker (uxpfs.getFolder)
-│  ✓ Ingest JSON found                    │  ← checklist (green/red dots)
-│  ✗ Edit Brief not found                 │    + path hints for missing files
-│    Expected: {folder}/00_Setup/...       │
-│  [Refresh]                               │  ← re-check auto-detection
-├──────────── INGEST ──────────────────────│
-│  ● Ready — ingest loaded                 │  ← status dot + text
-│  ┌ Load Ingest JSON ┐ (fallback, hidden) │  ← shown only if auto-detect fails
-│  [Build Ingest]                          │
-│  Validation panel (green/yellow/red)     │
-├──────────── ASSEMBLY ────────────────────│
-│  ● Ready — brief loaded                  │
-│  ┌ Load Edit Brief ┐ (fallback, hidden)  │  ← shown only if auto-detect fails
-│  [Build Assembly]                        │
-│  Validation panel (green/yellow/red)     │
-├──────────── REVIEW ──────────────────────│
-│  ● Ready                                 │
-│  [Build Review]                          │
-│  Validation panel (green/yellow/red)     │
-├──────────── SCREEN CUES ────────────────│
-│  ● Ready                                 │
-│  [Generate PNGs] [Build Screen Cues]     │
-│  Validation panel (V1/V2/markers/SRT)   │
-├──────────── INGEST LOG ──────────────────│
-│  /path/to/logs [copy path] [clear]       │  ← log path display + copy
-│  Scrollable monospace log                │
-├──────────── ASSEMBLY LOG ────────────────│
-│  /path/to/logs [copy path] [clear]       │
-│  Scrollable monospace log                │
-├──────────── REVIEW LOG ──────────────────│
-│  /path/to/logs [copy path] [clear]       │
-│  Scrollable monospace log                │
-├──────────── SCREEN CUES LOG ─────────────│
-│  /path/to/logs [copy path] [clear]       │
-│  Scrollable monospace log                │
-└──────────────────────────────────────────┘
-```
+Вкладки, все кнопки с экранами и что делает каждая — **KB 4.7 UXP Panel**:
+https://yt.rya.ae/kb/uxp-panel/ (обновлять при добавлении или удалении кнопки).
+Здесь — только то, на чём панель держится как система.
 
-### Project Selection + Auto-detection (v2.0.0)
+| что | где | правило |
+|---|---|---|
+| версия панели | `src/shared/version.js` | одна; поднимать при каждой правке `index.js` / `index.html` / `src/`; её показывают шапка, отчёт «Err», `log.txt` |
+| кнопки | `src/shared/panelDom.js` → `on(id, fn)` | только через `on()`: переживает отсутствие кнопки, ловит throw и отклонённый промис; удалил кнопку из разметки — удали её `on()` в том же коммите |
+| статус-строки | `set*Status(text, type, err)` | `type === 'error'` → логгер вкладки (`errorShown`) или `recordPanelError` — строка и стек уходят в «Err» |
+| отчёт «⧉ Err» | `Logger.pushPanelError` / `formatPanelReport` | единственный писатель кольца (60 записей); стек печатается под своей записью |
+| запись параметра Premiere | `src/adjust/paramWrite.js` | единственный путь: свежий кейфрейм → мутация, чтение обратно, допуск float32 |
+| проверка | `npm test` | `eslint --max-warnings 0` + тесты + `tests/static/panel_contracts.test.js` (версия, «Err», привязки, запись, READBACK, English UI) |
 
-| Действие | Описание |
-|--------|----------|
-| **Select Project Folder** | `uxpfs.getFolder()` → сохраняет `projectState.folderPath` + `projectName` → `autoDetectFiles()` |
-| **Auto-detect** | Ищет файлы: `{CODE}_ingest.json` в `00_Setup/` (приоритет), затем legacy full-name; `{CODE}_pre_edit_brief.json` в `00_Setup/`, затем legacy `_edit_brief.json` — через `uxpfs.getEntryWithUrl()` |
-| **Checklist** | Визуальный чеклист: ✓ зелёный (найдено) / ✗ красный (не найдено) + подсказка пути для отсутствующих файлов |
-| **Refresh** | Re-run `autoDetectFiles()` — проверить заново после перемещения файлов |
-| **Fallback** | Если auto-detect не нашёл файл → показывается кнопка ручной загрузки (Load Ingest JSON / Load Edit Brief) с оранжевой рамкой |
-
-### projectState
-
-```javascript
-let projectState = {
-  folderPath: null,     // полный путь к папке проекта
-  projectName: null,    // имя проекта (из имени папки)
-  ingestPath: null,     // путь к найденному ingest.json
-  briefPath: null,      // путь к найденному pre_edit_brief.json
-  ingestDetected: false, // auto-detect нашёл ingest
-  briefDetected: false   // auto-detect нашёл brief
-};
-```
-
-### Кнопки Ingest
-
-| Кнопка | Действие |
-|--------|----------|
-| **Load Ingest JSON** | File picker → parseIngest → показать summary (fallback, скрыта по умолчанию) |
-| **Build Ingest** | 6-step pipeline (clean → bins → sequence → transcripts → LUTs → activate) |
-
-### Кнопки Assembly
-
-| Кнопка | Действие |
-|--------|----------|
-| **Load Edit Brief** | File picker → parseBrief → показать summary (fallback, скрыта по умолчанию) |
-| **Build Assembly** | 6-step pipeline (scan → colors+build → markers → validate → captions) |
-
-### Кнопки Review
-
-| Кнопка | Действие |
-|--------|----------|
-| **Build Review** | 6-step pipeline (scan → build → markers → validate → captions) — доступна после загрузки edit brief |
-
-### Кнопки Screen Cues
-
-| Кнопка | Действие |
-|--------|----------|
-| **Generate PNGs** | Запускает `run_generate.command` через `shell.openPath()` → Terminal с цветным выводом → автозакрытие через 3с. Кнопка disabled во время выполнения (double-click protection). |
-| **Build Screen Cues** | 4-step pipeline (scan → V1+V2+markers+SRT → write SRT → import SRT) |
-
-### Generate PNGs — Terminal workflow (v2.1.0)
-
-1. UXP записывает путь к brief в `/tmp/ytai_screen_cues_brief.txt`
-2. `shell.openPath()` открывает `run_generate.command` в Terminal
-3. Скрипт: валидация → красивый header → `python3 generate_screen_cues_png.py` → цветной статус
-4. По завершении: `sleep 3` → `osascript` auto-close Terminal window
-5. UXP polling: каждые 2с проверяет `{briefDir}/screen_cues/.done` → при успехе разблокирует Build Screen Cues
-
-### Validation: `>=` comparison (v2.1.0)
-
-Все validation checks используют `>=` вместо `===` для сравнения количества TrackItems с ожидаемым:
-- `items.length >= expectedCount` → зелёный ● (ok)
-- `items.length < expectedCount` → жёлтый ● (warn: "X/Y clips")
-
-Причина: Premiere `getTrackItems()` может возвращать больше items, чем было вставлено (transitions, gaps, items от предыдущих builds). `>=` корректнее отражает "всё на месте".
+Всё видимое в панели — по-английски (кнопки, подсказки, статусы, сообщения
+ошибок); логи и комментарии — по-русски. Проверяется контрактом.
 
 ---
 
 ## Обработка ошибок
 
-### Per-segment (assemblyBuilder.js / reviewBuilder.js)
+### Канал «панель → человек»
+
+Любая ошибка, которую панель показала или залогировала, попадает в кольцо
+кнопки «⧉ Err» с версией панели и стеком (см. таблицу в «UI Panel»).
+Сборка ingest: READBACK-расхождение (`wallClockBuilder.build().ok === false`)
+валит сборку до «Build verified», сцена получает бейдж «readback ✗».
+
+### Per-segment (assemblyBuilder.js)
 
 ```
 Для каждого сегмента (через clipActions.js):
@@ -861,7 +777,6 @@ createAssemblyMarkers()
 
 ### Diagnostics
 
-- **readBack** — `rawItem.getColorLabelIndex()` после `createSetColorLabelAction` (в standalone applyAssemblyColors)
 - **V1 verification** — read back всех TrackItems после build (position + duration + name)
 - **API discovery** — логирование методов `markersOwner` и `marker[0]` для отладки
 - **Marker color log** — `Marker colors: X/Y colored` (сколько маркеров покрашено)
