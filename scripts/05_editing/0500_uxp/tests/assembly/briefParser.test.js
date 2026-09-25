@@ -47,12 +47,13 @@ describe('formatTimecode', () => {
     assert.ok(result.includes('28'));
   });
 
-  it('returns 00:00.0 for zero', () => {
-    assert.equal(formatTimecode(0), '00:00.0');
+  // 3-decimal precision since the word-level (frame-exact tc) brief change
+  it('returns 00:00.000 for zero', () => {
+    assert.equal(formatTimecode(0), '00:00.000');
   });
 
-  it('returns 00:00.0 for negative', () => {
-    assert.equal(formatTimecode(-5), '00:00.0');
+  it('returns 00:00.000 for negative', () => {
+    assert.equal(formatTimecode(-5), '00:00.000');
   });
 });
 

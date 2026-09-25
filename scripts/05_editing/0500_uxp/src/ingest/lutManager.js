@@ -152,16 +152,21 @@ async function applyLumetriToClips(project, sequence, logger) {
 
     let lumetriMatchName = null;
     for (let i = 0; i < displayNames.length; i++) {
-      if (displayNames[i] === 'Lumetri Color' || displayNames[i].toLowerCase().includes('lumetri')) {
+      const disp = String(displayNames[i] || '');
+      const mn = String(matchNames[i] || '');
+      // Match by display name OR by match name (e.g. 'AE.ADBE Lumetri') — display
+      // names can vary/localise between Premiere builds, match names are stable.
+      if (disp === 'Lumetri Color' || disp.toLowerCase().includes('lumetri') || mn.toLowerCase().includes('lumetri')) {
         lumetriMatchName = matchNames[i];
-        logger.info(`Found Lumetri Color: matchName="${lumetriMatchName}", display="${displayNames[i]}"`);
+        logger.info(`Found Lumetri: matchName="${lumetriMatchName}", display="${disp}"`);
         break;
       }
     }
 
     if (!lumetriMatchName) {
       logger.warn(`Lumetri Color effect not found in VideoFilterFactory`);
-      logger.debug(`All display names: ${displayNames.join(', ')}`);
+      logger.warn(`Display names (${displayNames.length}): ${displayNames.join(' | ')}`);
+      logger.warn(`Match names (${matchNames.length}): ${matchNames.join(' | ')}`);
       return 0;
     }
 
@@ -173,15 +178,21 @@ async function applyLumetriToClips(project, sequence, logger) {
     // Step 3: Apply to each clip
     for (let i = 0; i < trackItems.length; i++) {
       const ti = trackItems[i];
-      const name = await ti.getName();
+      let name = `clip #${i + 1}`;
 
       try {
-        // Cast to VideoClipTrackItem for component chain access
-        const videoClip = ppro.VideoClipTrackItem.cast(ti);
-        if (!videoClip) {
-          logger.warn(`Cannot cast "${name}" to VideoClipTrackItem`);
-          continue;
-        }
+        try { name = String(await ti.getName()); } catch (nameErr) { /* keep placeholder */ }
+        // Live 26.x has NO VideoClipTrackItem.cast — items from
+        // getTrackItems(CLIP) already expose getComponentChain directly
+        // (measured YTCH13 18.08.2026; the dead cast was why ingest logged
+        // «Lumetri: not applied» forever). Try the cast for older builds/mock,
+        // fall back to the raw item.
+        let videoClip = ti;
+        try {
+          if (ppro.VideoClipTrackItem && typeof ppro.VideoClipTrackItem.cast === 'function') {
+            videoClip = ppro.VideoClipTrackItem.cast(ti) || ti;
+          }
+        } catch (castErr) { videoClip = ti; }
 
         // Create Lumetri component (async in UXP)
         const lumetriComponent = await ppro.VideoFilterFactory.createComponent(lumetriMatchName);
@@ -192,8 +203,8 @@ async function applyLumetriToClips(project, sequence, logger) {
 
         // Get component chain and append
         const chain = await videoClip.getComponentChain();
-        project.lockedAccess(() => {
-          project.executeTransaction((compoundAction) => {
+        await project.lockedAccess(() => {
+          return project.executeTransaction((compoundAction) => {
             const appendAction = chain.createAppendComponentAction(lumetriComponent);
             compoundAction.addAction(appendAction);
           }, `Apply Lumetri to ${name}`);
@@ -206,7 +217,18 @@ async function applyLumetriToClips(project, sequence, logger) {
         if (i === 0) {
           try {
             const updatedChain = await videoClip.getComponentChain();
-            const components = await updatedChain.getComponents();
+            // Live 26.x: getComponentCount()/getComponentAtIndex(i); the mock
+            // (and possibly older builds) expose getComponents().
+            let components;
+            if (typeof updatedChain.getComponents === 'function') {
+              components = (await updatedChain.getComponents()) || [];
+            } else {
+              components = [];
+              const compCount = await updatedChain.getComponentCount();
+              for (let ci = 0; ci < compCount; ci++) {
+                try { components.push(await updatedChain.getComponentAtIndex(ci)); } catch (e) { /* skip */ }
+              }
+            }
             const lastComp = components[components.length - 1];
             if (lastComp) {
               const paramCount = await lastComp.getParamCount();
@@ -238,4 +260,70 @@ async function applyLumetriToClips(project, sequence, logger) {
   return appliedCount;
 }
 
-module.exports = { copyLutsToCreativeFolder, applyLumetriToClips };
+/**
+ * Copy the bundled .cube LUTs into an arbitrary destination folder (by native path),
+ * creating it if missing. Used by Footage Review to drop LUTs right next to the project
+ * so they can be added manually (drag onto an adjustment layer / Lumetri Input LUT) —
+ * the UXP API can't create an adjustment layer or set a LUT, so this is the reliable path.
+ *
+ * @param {string} destNativePath - absolute folder path (e.g. /Volumes/.../Proj/LUT)
+ * @param {Object} logger
+ * @returns {string[]} names of copied .cube files
+ */
+// Resolve a folder entry from a native path, trying multiple URL forms — different UXP
+// builds accept raw paths vs encoded ones. Raw first (matches the rest of the panel).
+async function lutResolveFolder(fs, nativePath) {
+  var p = String(nativePath);
+  var forms = [
+    'file://' + p,
+    'file://' + encodeURI(p),
+    'file://' + p.split('/').map(function (s) { return encodeURIComponent(s); }).join('/')
+  ];
+  var lastErr = null;
+  for (var i = 0; i < forms.length; i++) {
+    try { return await fs.getEntryWithUrl(forms[i]); } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('cannot resolve folder: ' + p);
+}
+
+/**
+ * Copy the bundled .cube LUTs into baseNativePath + subParts (created if missing).
+ * @param {string} baseNativePath - absolute folder (e.g. the project folder)
+ * @param {string[]} subParts - nested subfolders to ensure, e.g. ['01_Source','LUT']
+ * @param {Object} logger
+ * @returns {{ folder: string|null, files: string[] }}
+ */
+async function copyLutsToFolder(baseNativePath, subParts, logger) {
+  const uxp = require('uxp');
+  const fs = uxp.storage.localFileSystem;
+
+  let lutsSource = DEFAULT_LUTS_SOURCE;
+  if (!lutsSource) {
+    try {
+      const pf = await fs.getPluginFolder();
+      lutsSource = pf.nativePath + '/LUTs';
+    } catch (e) { lutsSource = './LUTs'; }
+  }
+
+  const srcFolder = await lutResolveFolder(fs, lutsSource);
+  const cubes = (await srcFolder.getEntries()).filter(e => e.name.endsWith('.cube'));
+  if (cubes.length === 0) { if (logger) logger.warn('No .cube files in ' + lutsSource); return { folder: null, files: [] }; }
+
+  // Resolve base, then ensure each nested subfolder (getEntry or createFolder).
+  let dest = await lutResolveFolder(fs, baseNativePath);
+  for (const part of (subParts || [])) {
+    try { dest = await dest.getEntry(part); }
+    catch (e) { dest = await dest.createFolder(part); }
+  }
+
+  const copied = [];
+  for (const c of cubes) {
+    try { await c.copyTo(dest, { overwrite: true }); copied.push(c.name); }
+    catch (e) { if (logger) logger.warn('LUT copy ' + c.name + ': ' + e.message); }
+  }
+  const folder = dest.nativePath || (baseNativePath + '/' + (subParts || []).join('/'));
+  if (logger && copied.length) logger.info('LUTs → ' + folder + ': ' + copied.join(', '));
+  return { folder: folder, files: copied };
+}
+
+module.exports = { copyLutsToCreativeFolder, applyLumetriToClips, copyLutsToFolder };

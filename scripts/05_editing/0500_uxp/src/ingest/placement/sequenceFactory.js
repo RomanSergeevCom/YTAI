@@ -227,6 +227,10 @@ async function removeAllItemsOnTrack(project, seqEditor, track, mediaType, logge
   }
 }
 
+
+//: тиков в секунде у Premiere — та же величина, что в sceneLayout.js
+const TICKS_PER_SECOND = 254016000000;
+
 /**
  * Ensure the sequence has at least vNeeded video tracks and aNeeded audio tracks.
  *
@@ -245,9 +249,11 @@ async function removeAllItemsOnTrack(project, seqEditor, track, mediaType, logge
  * @param {number} vNeeded
  * @param {number} aNeeded
  * @param {Object} logger
+ * @param {Object} [opts] - { coverAtSec } секунда, куда поставить заглушку,
+ *   чтобы её перекрыл настоящий клип верхней дорожки (см. ниже про удаление)
  * @returns {Promise<{ vCount: number, aCount: number }>}
  */
-async function ensureTracks(project, sequence, seqEditor, placeholderItem, vNeeded, aNeeded, logger) {
+async function ensureTracks(project, sequence, seqEditor, placeholderItem, vNeeded, aNeeded, logger, opts) {
   let vCurrent = await sequence.getVideoTrackCount();
   let aCurrent = await sequence.getAudioTrackCount();
 
@@ -261,7 +267,27 @@ async function ensureTracks(project, sequence, seqEditor, placeholderItem, vNeed
 
   const vIdx = Math.max(0, vNeeded - 1);
   const aIdx = Math.max(0, aNeeded - 1);
-  const t0 = ppro.TickTime.createWithSeconds(0);
+
+  // ⚠️ Заглушку ставим НЕ В НОЛЬ, а туда, где потом ляжет настоящий клип этой
+  // дорожки, — и он её собой перекроет. Иначе она остаётся навсегда: в живой
+  // 25.6/26 ОБА способа удаления отрабатывают вхолостую (не падают, но клип
+  // на месте), лог полон «1 item(s) REMAIN», и каждая сборка сеет однокадровые
+  // огрызки в начало V1/V3/A1/A4/A5. Удаление ниже оставлено как было — если
+  // однажды заработает, тем лучше; но правильность больше от него не зависит.
+  // ⚠️ НОЛЬ — законная позиция перекрытия, а не «не задано»: у сцены, где
+  // верхняя дорожка начинается с нуля (запись экрана), настоящий клип накроет
+  // заглушку именно там. Поэтому отличаем null/undefined от 0, а не сравниваем
+  // с нулём — поймано на сценах 02 и 03 блока 1.
+  const hasCover = opts && typeof opts.coverAtSec === 'number' && isFinite(opts.coverAtSec)
+    && opts.coverAtSec >= 0;
+  const coverSec = hasCover ? opts.coverAtSec : 0;
+  if (hasCover) {
+    logger.info(`Pre-warm: заглушка на ${coverSec.toFixed(3)} с — её перекроет настоящий клип`);
+  } else {
+    logger.warn('Pre-warm: позиция перекрытия не задана — заглушка в 0, '
+      + 'останется огрызком, если удаление не сработает');
+  }
+  const t0 = ppro.TickTime.createWithSeconds(coverSec);
   const MT = ppro.Constants && ppro.Constants.MediaType ? ppro.Constants.MediaType : { VIDEO: 0, AUDIO: 1 };
 
   logger.info(`Pre-warming tracks → V${vNeeded}/A${aNeeded} (have V${vCurrent}/A${aCurrent}) via placeholder insert+remove`);
@@ -274,12 +300,32 @@ async function ensureTracks(project, sequence, seqEditor, placeholderItem, vNeed
   // multi-minute stray fragments. A 1-frame speck at 0 is invisible and is
   // normally replaced by the first real overwrite anyway.
   const phCast = ppro.ClipProjectItem.cast(placeholderItem) || placeholderItem;
+
+  // ⚠️ Длину кадра берём У САМОЙ СЕКВЕНЦИИ, а не пишем 0.04 (кадр при 25p).
+  // На YTUVIE01 образцом секвенции оказалась запись экрана с ПЕРЕМЕННЫМ кадром
+  // (797 кадров на 1106 с, в среднем 0,72 кадра/с). В секвенции 0,72 fps кадр
+  // длится 1389 мс, подрезка в 40 мс короче его в 34 раза — вставка не клала
+  // ничего, дорожки не рождались, и преднагрев молча отдавал V3/A3 вместо
+  // V15/A17. Чтение таймбазы best-effort: не вышло — остаёмся на 0.04.
+  let oneFrameSec = 0.04;
+  try {
+    const tpf = Number(await sequence.getTimebase());
+    if (tpf > 0) {
+      const fromSeq = tpf / TICKS_PER_SECOND;
+      if (fromSeq > 0 && fromSeq < 10) oneFrameSec = fromSeq;
+      if (fromSeq >= 0.25) {
+        logger.warn(`ensureTracks: у секвенции кадр ${(fromSeq * 1000).toFixed(0)} мс ` +
+          `(${(1 / fromSeq).toFixed(2)} fps) — образец почти наверняка с переменным кадром`);
+      }
+    }
+  } catch (e) { logger.debug(`getTimebase unavailable (${e.message}) — trim stays 0.04 s`); }
+
   let phTrimmed = false;
   try {
     project.lockedAccess(() => {
       project.executeTransaction((ca) => {
         ca.addAction(phCast.createSetInOutPointsAction(
-          ppro.TickTime.createWithSeconds(0), ppro.TickTime.createWithSeconds(0.04)));
+          ppro.TickTime.createWithSeconds(0), ppro.TickTime.createWithSeconds(oneFrameSec)));
       }, 'Pre-warm placeholder 1-frame trim');
     });
     phTrimmed = true;
@@ -357,8 +403,76 @@ async function ensureTracks(project, sequence, seqEditor, placeholderItem, vNeed
   return { vCount: vCurrent, aCount: aCurrent };
 }
 
+/**
+ * Создать секвенцию ИЗ ПРЕСЕТА — путь звукового стенда.
+ *
+ * Чем это лучше `create()`: пресет задаёт число дорожек при рождении, поэтому
+ * не нужен ни сид (`createSequenceFromMedia` кладёт образец на V1/A1 в НОЛЬ, и
+ * снять его нечем — перекрыть тоже нельзя, раскладка начинается с преролла),
+ * ни преднагрев (`ensureTracks` сеет по огрызку на дорожку). Плюс пресет —
+ * единственное место, где можно включить цели аудиодорожек: API таргетинга в
+ * UXP нет.
+ *
+ * ⚠️ Файл пресета пишет ВЫЗЫВАЮЩИЙ (в панели есть uxpfs, в этом модуле — нет),
+ * сюда приходит готовый путь.
+ *
+ * @param {Object} project
+ * @param {string} name
+ * @param {string} presetPath  путь к .sqpreset, уже лежащему на диске
+ * @param {{vTracks:number, aTracks:number}} expect  чего ждём от результата
+ * @param {Object} logger
+ * @returns {Promise<Object|null>} секвенция или null — тогда откатывайся на create()
+ */
+async function createFromPreset(project, name, presetPath, expect, logger) {
+  let sequence = null;
+  let how = null;
+  // Справочник UXP: «Parameter presetPath is deprecated, instead use
+  // createSequenceWithPresetPath()». Пробуем новый вход, затем старый —
+  // он в этом репозитории уже работает (linearBuilder.js:86).
+  if (typeof project.createSequenceWithPresetPath === 'function') {
+    try {
+      sequence = await project.createSequenceWithPresetPath(name, presetPath);
+      how = 'createSequenceWithPresetPath';
+    } catch (e) {
+      logger.debug(`createSequenceWithPresetPath: ${e.message}`);
+    }
+  }
+  if (!sequence) {
+    try {
+      sequence = await project.createSequence(name, presetPath);
+      how = 'createSequence(name, preset)';
+    } catch (e) {
+      logger.warn(`createSequence(preset) failed: ${e.message}`);
+    }
+  }
+  if (!sequence) return null;
+
+  // ⚠️ ПРОВЕРЯЕМ, а не верим. applyMediaSettings глотает любые ошибки, и
+  // «секвенция создана» ещё не значит «дорожки те». Не сошлось — отдаём null,
+  // вызывающий уйдёт на прежний путь и скажет об этом в лог.
+  let vCount = null;
+  let aCount = null;
+  try {
+    vCount = await sequence.getVideoTrackCount();
+    aCount = await sequence.getAudioTrackCount();
+  } catch (e) {
+    logger.warn(`createFromPreset: счётчики дорожек не читаются (${e.message})`);
+    return null;
+  }
+  if (expect && (aCount < expect.aTracks || vCount < (expect.vTracks || 1))) {
+    logger.warn(`createFromPreset: пресет дал V${vCount}/A${aCount}, а нужно `
+      + `V${expect.vTracks || 1}/A${expect.aTracks} — откат на прежний путь`);
+    try { await project.deleteSequence(sequence); } catch (e) { /* уберёт человек */ }
+    return null;
+  }
+  logger.info(`Created sequence: ${name} (${how}) — V${vCount}/A${aCount} из пресета`);
+  try { await logSequenceSettings(sequence, logger); } catch (e) { /* non-fatal */ }
+  return sequence;
+}
+
 module.exports = {
   create,
+  createFromPreset,
   ensureTracks,
   removeAllItemsOnTrack,
   createEmptySelectionCompat,

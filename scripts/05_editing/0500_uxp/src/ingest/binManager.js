@@ -29,14 +29,28 @@ async function createBinStructure(project, logger) {
 
   const binOrder = [BIN_NAMES.SOURCE, BIN_NAMES.TRANSCRIPTS];
 
-  project.lockedAccess(() => {
-    project.executeTransaction((compoundAction) => {
-      for (const binName of binOrder) {
-        const action = rootItem.createBinAction(binName, true);
-        compoundAction.addAction(action);
-      }
-    }, 'Create bin structure');
-  });
+  // Only create bins that don't exist yet: createBinAction on an existing name
+  // makes Premiere spawn a renamed duplicate ("00_Source 05") on every build.
+  const existing = await rootItem.getItems();
+  const have = {};
+  for (const item of existing) {
+    if (binOrder.includes(item.name) && !have[item.name]) {
+      const folder = ppro.FolderItem.cast(item);
+      if (folder) have[item.name] = true;
+    }
+  }
+  const toCreate = binOrder.filter(b => !have[b]);
+
+  if (toCreate.length > 0) {
+    project.lockedAccess(() => {
+      project.executeTransaction((compoundAction) => {
+        for (const binName of toCreate) {
+          const action = rootItem.createBinAction(binName, true);
+          compoundAction.addAction(action);
+        }
+      }, 'Create bin structure');
+    });
+  }
 
   const items = await rootItem.getItems();
   logger.debug(`Root items after bin creation: ${items.length} item(s)`);

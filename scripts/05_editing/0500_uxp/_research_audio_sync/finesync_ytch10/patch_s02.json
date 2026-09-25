@@ -1,0 +1,123 @@
+{
+  "scenes": {
+    "02_House_And_Kitchen_Talk": {
+      "sources": {
+        "RYA-FX3-0711": {
+          "kind": "video",
+          "corr": -0.1878
+        },
+        "RYA-FX3-0715": {
+          "kind": "video",
+          "corr": 0.0424
+        },
+        "RYA-FX3-0716": {
+          "kind": "video",
+          "corr": -1.3352
+        },
+        "RYA-FX3-0721": {
+          "kind": "video",
+          "corr": -0.1985
+        },
+        "RYA-FX3-0722": {
+          "kind": "video",
+          "corr": -0.2062
+        },
+        "RYA-FX3-0726": {
+          "kind": "video",
+          "corr": -0.2036
+        },
+        "RYA-FX3-0727": {
+          "kind": "video",
+          "corr": 0.0243
+        },
+        "RYA-FX3-0728": {
+          "kind": "video",
+          "corr": -0.2057
+        },
+        "RYA-FX3-0729": {
+          "kind": "video",
+          "corr": -0.1242
+        },
+        "RYA-FX3-0730": {
+          "kind": "video",
+          "corr": -0.0243
+        },
+        "RYA-FX3-0731": {
+          "kind": "video",
+          "corr": 0.2875
+        },
+        "RYA-FX3-0732": {
+          "kind": "video",
+          "corr": 0.2803
+        },
+        "RYA-FX3-0733": {
+          "kind": "video",
+          "corr": 0.2834
+        },
+        "RYA-FX3-0736": {
+          "kind": "video",
+          "corr": 0.286
+        },
+        "RYA-FX3-0737": {
+          "kind": "video",
+          "corr": 0.2665
+        },
+        "RYA-FX3-0738": {
+          "kind": "video",
+          "corr": 0.2851
+        },
+        "RYA-FX3-0740": {
+          "kind": "video",
+          "corr": -0.0256
+        },
+        "RYA-FX3-0741": {
+          "kind": "video",
+          "corr": 0.2759
+        },
+        "RYA-FX3-0742": {
+          "kind": "video",
+          "corr": -0.0224
+        },
+        "RYA-FX3-0744": {
+          "kind": "video",
+          "corr": 0.2853
+        },
+        "RYA-FX3-0745": {
+          "kind": "video",
+          "corr": 0.2169
+        },
+        "TX01_MIC038_20260717_143649_orig__S04.wav": {
+          "kind": "tx",
+          "corr": -0.196
+        },
+        "TX01_MIC039_20260717_150650_orig__S05.wav": {
+          "kind": "tx",
+          "corr": -0.0299
+        },
+        "TX01_MIC040_20260717_153649_orig__S05.wav": {
+          "kind": "tx",
+          "corr": 0.1384
+        },
+        "TX02_MIC034_20260717_143729_orig__S04.wav": {
+          "kind": "tx",
+          "corr": 0.0306
+        },
+        "TX02_MIC035_20260717_150730_orig__S05.wav": {
+          "kind": "tx",
+          "corr": 0.282
+        },
+        "TX02_MIC036_20260717_153729_orig__S05.wav": {
+          "kind": "tx",
+          "corr": -0.6103
+        }
+      },
+      "resid_rms": 0.0011,
+      "resid_max": 0.0034,
+      "n_meas": 50,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 0
+    }
+  },
+  "generated_at": "2026-08-16T20:13:29"
+}

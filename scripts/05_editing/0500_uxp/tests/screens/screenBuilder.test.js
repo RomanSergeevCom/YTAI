@@ -450,8 +450,8 @@ describe('generateCaptionsSrt', () => {
       { id: 's1', duration: 6, transcript: 'one two three four five six', sourceFile: 'c.mp4', inSec: 0, outSec: 6 }
     ];
     var srt = generateCaptionsSrt(segs, 6);
-    // 6 words → ceil(6/2)=3 per line: "one two three\nfour five six"
-    assert.ok(srt.includes('one two three\nfour five six'));
+    // 6 words → ceil(6/2)=3 per line; cleanCaptionText capitalizes the first letter
+    assert.ok(srt.includes('One two three\nfour five six'));
   });
 
   it('distributes timing evenly across chunks', () => {

@@ -3,7 +3,7 @@
 UXP-плагин для Adobe Premiere Pro: **Ingest** + **Assembly** + **Review** + **Screen Cues** в одной панели.
 
 **Вход:**
-- INGEST: `{CODE}_ingest.json` (из 02_transcribe, auto-detect: Setup/{CODE}_ingest.json)
+- INGEST: `{CODE}_ingest.json` (из 02_transcribe, auto-detect: 00_Setup/01_Ingest/{CODE}_ingest.json)
 - ASSEMBLY: `{CODE}_pre_edit_brief.json` (из 0501_brief / Claude KB)
 - REVIEW: `{CODE}_pre_edit_brief.json` (тот же файл, обратный фильтр)
 - SCREEN CUES: `{CODE}_pre_edit_brief.json` → `screens[]` массив + PNGs (из 0504_screen_cues)
@@ -87,12 +87,28 @@ INGEST, ASSEMBLY, REVIEW и SCREENS модули **не импортируют �
 
 DJI WAV — моно 24-bit 48kHz, обрезанные под длину видеоклипа скриптом `01_prepare/0103_sync_dji_audio.py`.
 
+**Single-camera (default):**
+
 | Track | Содержание |
 |-------|-----------|
 | V1 | Видеоклипы |
 | A1 | Камерное аудио (стерео, L=mic1 R=mic2) |
 | A2 | DJI TX02 (моно, оба уха) — опционально |
 | A3 | DJI TX03 (моно, оба уха) — опционально |
+
+**Multicam (dual-camera, detected from ingest.json `multicam` field):**
+
+| Track | Содержание |
+|-------|-----------|
+| V1 | Camera 1 видеоклипы (sequential) |
+| V2 | Camera 2 видеоклипы (aligned с парами из V1) |
+| A1 | Camera 1 аудио (наследуется от V1) |
+| A2 | Camera 2 аудио (наследуется от V2) |
+| A3 | DJI TX (моно) — опционально |
+
+Multicam detection: `ingest.multicam[sceneName].pairs` — массив `[[cam1_id, cam2_id], ...]`.
+Camera 2 clips placed via `createOverwriteItemAction` on V2 at same position as paired cam1 clip.
+Camera pairing: `ingest_json.py` detects by clip_id prefix (C\\d+ vs RYA-FX3-\\d+), matches by creation_time offset + duration.
 
 **DJI аудио во всех секвенциях:** DJI WAV файлы автоматически размещаются на A2/A3 не только в Ingest, но и в Assembly, Review, и Screen Cues секвенциях. Поскольку DJI аудио синхронизировано 1:1 с видео, используются те же source in/out точки, что и для V1. Функция `insertDjiAudio()` из `clipActions.js` вызывается после каждой вставки видео-клипа.
 
@@ -625,7 +641,7 @@ ASSEMBLY Pipeline                    REVIEW Pipeline             SCREEN CUES Pip
 
 ```
 01_prepare/0103_sync_dji_audio
-└── Source/Audio/{clip}_TX{N}.wav ──→ 020101_transcribe (→ ingest.json clips[].dji_audio)
+└── 01_Source/Audio/{clip}_TX{N}.wav ──→ 020101_transcribe (→ ingest.json clips[].dji_audio)
 
 020101_transcribe
 ├── transcript.json ──→ 0501_brief (Claude) ──→ pre_edit_brief.json ─┬─→ 0500_uxp ASSEMBLY
@@ -712,7 +728,7 @@ briefParser.js
 │  [Select Project Folder]                 │  ← folder picker (uxpfs.getFolder)
 │  ✓ Ingest JSON found                    │  ← checklist (green/red dots)
 │  ✗ Edit Brief not found                 │    + path hints for missing files
-│    Expected: {folder}/01_Media/Source/...│
+│    Expected: {folder}/00_Setup/...       │
 │  [Refresh]                               │  ← re-check auto-detection
 ├──────────── INGEST ──────────────────────│
 │  ● Ready — ingest loaded                 │  ← status dot + text
@@ -752,7 +768,7 @@ briefParser.js
 | Действие | Описание |
 |--------|----------|
 | **Select Project Folder** | `uxpfs.getFolder()` → сохраняет `projectState.folderPath` + `projectName` → `autoDetectFiles()` |
-| **Auto-detect** | Ищет файлы: `{CODE}_ingest.json` в `Setup/` (приоритет), затем legacy full-name; `{CODE}_pre_edit_brief.json` в `Setup/`, затем legacy `_edit_brief.json` — через `uxpfs.getEntryWithUrl()` |
+| **Auto-detect** | Ищет файлы: `{CODE}_ingest.json` в `00_Setup/` (приоритет), затем legacy full-name; `{CODE}_pre_edit_brief.json` в `00_Setup/`, затем legacy `_edit_brief.json` — через `uxpfs.getEntryWithUrl()` |
 | **Checklist** | Визуальный чеклист: ✓ зелёный (найдено) / ✗ красный (не найдено) + подсказка пути для отсутствующих файлов |
 | **Refresh** | Re-run `autoDetectFiles()` — проверить заново после перемещения файлов |
 | **Fallback** | Если auto-detect не нашёл файл → показывается кнопка ручной загрузки (Load Ingest JSON / Load Edit Brief) с оранжевой рамкой |
@@ -852,6 +868,105 @@ createAssemblyMarkers()
 - **Marker type log** — `Marker types: X/Y set to Chapter` (сколько маркеров сменили тип)
 
 ---
+
+## ADJUST — Adjustment Layer over Selection (блок кнопок внизу вкладки Ingest; отдельной вкладки Adjust нет)
+
+Кнопка в стиле NACGunner: один непрерывный adjustment layer поверх текущего
+выделения таймлайна, обрезанный по его границам, на треке над верхним выделенным
+клипом. Вторая кнопка дополнительно вешает Transform (Scale 101, edge-safe
+микро-зум). Модуль: `src/adjust/adjustmentBuilder.js`; тесты: `tests/adjust/`.
+
+**Донор обязателен.** UXP НЕ создаёт adjustment layer (проверено по типингам
+`@adobe/premierepro` 26.5.0-beta.73 — синтетических item-фабрик нет; QE DOM тоже
+не умеет — подтверждено Bruce Bullis, Adobe). Панель ищет в проекте item
+`YTAI_ADJ` (или `Adjustment Layer`); если нет — `opts.donorPrproj` импортируется
+через `importFiles`. Канонический путь: положить `YTAI_ADJ` в мастер-шаблон
+`scripts/01_prepare/0101_init_folders/RYA_example.prproj` один раз руками
+(New Item > Adjustment Layer → rename) — именно его `create_folders.py -p`
+копирует в корень каждого нового Type-2 проекта, так что все новые проекты
+получают донора даром.
+
+Механика placement = clipPlacer-канон: `setSourceInOut(0, dur)` →
+`createOverwriteItemAction(item, startTick, vIdx, -1)` (overwrite не сдвигает и
+не округляет; аудио -1 — item video-only) → `clearSourceInOut`.
+
+⚠️ **Треки растим ТОЛЬКО через `growVideoTracks()`** (placeholder-спек 1 кадр,
+insert c `limitShift=true` на новый пустой трек, удаление только на нём).
+`sequenceFactory.ensureTracks` здесь ЗАПРЕЩЁН: его sweep чистит ВСЕ треки
+секвенции (Build-Ingest-семантика пустой секвенции) — на таймлайне с контентом
+он съедает клипы (поймано тестом lane-stacking 18.08.2026; live-запуск на
+YTCH13 выжил только потому, что треков уже хватало и pre-warm не стартовал).
+
+**Пайплайн-режим (главная кнопка): `addAdjustmentPerClipFromPlan()`** — слой над
+КАЖДЫМ клипом, LUT из `00_Setup/01_Ingest/{CODE}_lut_plan.json` (ключи
+`сцена/клип.MP4`, матчинг по basename). Слой переименовывается в свой LUT
+(`createSetNameAction`), сверху добавляется Lumetri. UI живёт во вкладке
+**Ingest** (финальный шаг после Build Ingest, отдельной вкладки Adjust нет):
+«AL по плану — все секвенции» (обход `project.getSequences()`) / «только
+активная» + ручной режим по выделению. Пересечения клипов раскладываются по
+лейнам (greedy) на треки выше всего контента.
+**Repair-идемпотентность:** клип, чей слой (то же имя LUT, те же границы ±0.5 с)
+уже стоит, пропускается → повторное нажатие ДОЗАПОЛНЯЕТ удалённые слои без
+дублей (статус: «+N новых, M уже стояли»). Донор ищется по имени; нет — импорт
+по цепочке `00_Setup/YTAI_ADJ_donor.prproj` → центральный шаблон
+`scripts/01_prepare/0101_init_folders/RYA_example.prproj`. Transform на живом
+26.x упал («Transform failed») — причина ещё не диагностирована, лог Adjust
+пока не попадает в debug-dump.
+
+**Установка Lumetri Look (блокер 18.08: «Illegal Parameter type» ×26).**
+`setEffectParam()` переписан (18.08): каждый нативный вызов помечен шагом —
+при падении лог говорит `failed @ <step>` (точное место за 1 прогон). Порядок
+установки значения: **(A)** канонический путь Adobe UXP-сэмплов
+`getStartValue()` → мутировать `keyframe.value.value` → `createSetValueAction`
+(обходит валидацию `createKeyframe` и заодно логирует РЕАЛЬНЫЙ тип параметра:
+`Lumetri.Look current: type=… value=…`); **(B)** fallback
+`createKeyframe(value)` — по типингам он БРОСАЕТ исключение при несовпадении
+типа значения с типом параметра (главный подозреваемый блокера: warn «not
+found among» не печатается и тогда, когда Look НАЙДЕН, но упал createKeyframe).
+Контракт «никогда не бросает» сохранён.
+
+**КЛОН-РЕЖИМ (основной, 18.08 после успешной пробы).**
+`addAdjustmentPerClipFromPlan` при наличии секвенции `YTAI_LUT_DONOR`
+(раскладка v2: каждый LUT-клип @0 НА СВОЁМ треке — при donorStart=0 трактовки
+timeOffset shift/absolute совпадают) работает клонами:
+`createCloneTrackItemAction(донор, t=startSec, vOffset, 0, true, false)` →
+клон приезжает С Lumetri+Look → трим `createSetEndAction(endSec)` (AL
+синтетический — удлинение легально). Heal: слой с Look=0/None (наследие
+legacy-прогонов) удаляется (`TrackItemSelection`+`createRemoveItemsAction`,
+selection создаётся В lockedAccess) и заменяется клоном; здоровый клон (запись в манифесте
+`99_Pipeline/lut_layers_manifest.json`) пропускается — идемпотентно. Донор-секвенция
+резолвится цепочкой: в проекте → `deleteSequence`+re-import при устаревшей
+раскладке → импорт шаблона. Без донора — legacy fallback (голый AL+Lumetri,
+Look руками; статус честный после фикса readback-verify). Базовый трек
+клонов — над КОНТЕНТОМ (skip-имена исключены), замена не уползает вверх.
+
+**План Б: донор-секвенцию строит панель.** Кнопка **Build LUT Donor**
+(вкладка Ingest) → `buildLutDonorSequence()`: в ОТКРЫТОМ проекте (открывать
+мастер-шаблон!) создаёт `YTAI_LUT_DONOR` (`project.createSequence`), кладёт 3
+AL-клипа из YTAI_ADJ (`placeAdjustment`) в раскладке v2 — каждый @0 НА СВОЁМ
+треке (V1/V2/V3), называет их `01_bright_scene`/`02_normal_scene`/`03_dark_scene`,
+вешает Lumetri; Look — руками (статус «pick Look by hand: …»). Старую
+последовательную раскладку пересобирает (wipe → rebuild, Look'и выбираются
+заново). Идемпотентно (repair). Apply LUT Layers («все секвенции»)
+пропускает `YTAI_LUT_DONOR` по имени.
+
+**План Б (донор-секвенция) — проба готова.** Кнопка **Probe Donor Clone**
+(вкладка Ingest, рядом с Apply LUT Layers) → `probeDonorClone()`: находит
+секвенцию `YTAI_LUT_DONOR` (в мастер-шаблон её кладёт Рома руками: 3 AL-клипа
+`01_bright_scene`/`02_normal_scene`/`03_dark_scene` с настроенными Lumetri+Look; в
+существующих проектах её нет — проба автоимпортирует шаблон цепочкой
+`opts.donorPrproj`, как ensureDonorAdjustment для YTAI_ADJ),
+клонирует ПЕРВЫЙ её клип в активную секвенцию через
+`SequenceEditor.createCloneTrackItemAction` (26.x typings) на свежий пустой
+трек над всем контентом (grow отказал → abort, контент не трогаем). Лог
+отвечает на оба открытых вопроса: работает ли клон МЕЖДУ секвенциями и
+семантика `timeOffset` (куда лёг клон vs позиция донора), плюс уехал ли
+Lumetri вместе с клоном. Результат остаётся на таймлайне для визуальной
+проверки Look — убрать ⌘Z. **Клоббер-гейт**: семантика оффсета не доказана,
+поэтому после транзакции проба сверяет каждый существовавший клип
+(имя+границы+трек); пропажа/подрезка = `⚠️ CLOBBER … press ⌘Z NOW` вместо
+«CLONE OK». Ошибка `The script object is no longer valid` на шаге клона
+помечается как stale-handle (НЕ вердикт о кросс-секвенционности — перезапуск).
 
 ## Подтверждённые баги Adobe UXP API
 

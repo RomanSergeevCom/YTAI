@@ -7,7 +7,7 @@ const { Logger } = require('../../src/shared/logger');
 describe('BIN_NAMES', () => {
   it('defines expected bin names', () => {
     assert.equal(BIN_NAMES.SOURCE, '00_Source');
-    assert.equal(BIN_NAMES.TRANSCRIPTS, '02_Transcripts');
+    assert.equal(BIN_NAMES.TRANSCRIPTS, '01_Transcripts');
   });
 
   it('has exactly 2 bins', () => {
@@ -40,7 +40,7 @@ describe('createBinStructure', () => {
 
     const binNames = binCalls.map(c => c.args[0]);
     assert.ok(binNames.includes('00_Source'));
-    assert.ok(binNames.includes('02_Transcripts'));
+    assert.ok(binNames.includes('01_Transcripts'));
   });
 
   it('wraps in lockedAccess and executeTransaction', async () => {
@@ -65,6 +65,6 @@ describe('createBinStructure', () => {
 
     const binNames = items.map(i => i.name);
     assert.ok(binNames.includes('00_Source'));
-    assert.ok(binNames.includes('02_Transcripts'));
+    assert.ok(binNames.includes('01_Transcripts'));
   });
 });

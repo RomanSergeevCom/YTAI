@@ -1,4 +1,7 @@
 /* YTAI Brief — Dark theme matching Premiere Pro */
+/* ⚠️ DEAD FILE: not referenced by index.html, manifest.json or any JS.
+   The panel's live styles are the inline <style> block in index.html —
+   put new rules THERE. Kept only as legacy reference. */
 
 * {
   margin: 0;
@@ -155,4 +158,29 @@ button:disabled:hover {
 /* Utility */
 .hidden {
   display: none !important;
+}
+
+/* ── Ingest: per-scene sequence selection (v2.3.0) ── */
+.scene-select-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin: 8px 0;
+}
+.scene-select-head {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.scene-select-head .scene-links { font-weight: 400; color: var(--text-secondary); }
+.scene-select-head .scene-links a { color: var(--accent, #7cb8ff); text-decoration: none; }
+/* (scene-list styles moved to index.html <style> — the only stylesheet the
+   panel actually loads; this file is referenced by NOTHING, see header) */
+
+/* v2.6.0: error/status text must be selectable — Roman copies errors to Claude */
+.val-line, #project-status-text, #sel-list, .status-text {
+  -webkit-user-select: text;
+  user-select: text;
 }

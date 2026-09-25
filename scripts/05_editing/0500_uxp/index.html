@@ -17,13 +17,16 @@
       --error: #f44336;
       --border: #1e3355;
       --section-border: #2a4a6a;
+      --blue: #4a90d9;
+      --blue-hover: #5da0e9;
+      --blue-dim: #1e3a5c;
     }
 
     body {
       font-family: "Adobe Clean", system-ui, sans-serif;
       color: var(--text-primary);
       background: var(--bg-primary);
-      padding: 10px 14px;
+      padding: 8px 10px;
       overflow-y: auto;
       height: 100vh;
       margin: 0;
@@ -38,7 +41,7 @@
       font-size: 10px;
       color: var(--text-secondary);
       text-align: right;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       letter-spacing: 0.5px;
     }
 
@@ -52,7 +55,7 @@
     .section-header {
       display: flex;
       align-items: center;
-      margin: 16px 0 10px 0;
+      margin: 8px 0 6px 0;
       gap: 8px;
     }
 
@@ -74,15 +77,15 @@
     }
 
     .section-content {
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     /* === Status === */
     .status-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 4px;
       font-size: 11px;
       color: var(--text-primary);
     }
@@ -102,13 +105,13 @@
     /* === Buttons === */
     .btn-row {
       display: flex;
-      gap: 8px;
+      gap: 4px;
       flex-wrap: wrap;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
     }
 
     sp-button {
-      height: 30px;
+      height: 26px;
       border-radius: 4px;
       font-size: 11px;
     }
@@ -128,11 +131,38 @@
     /* === Project section === */
     #project-section {
       background: var(--bg-secondary);
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-radius: 6px;
-      border: 1px solid var(--accent);
+      border: 1px solid var(--border);
       margin-bottom: 4px;
     }
+
+    /* Compact mode: project selected, details hidden */
+    #project-section.project-compact .project-details { display: none; }
+    #project-section.project-compact { padding: 4px 8px; }
+
+    .project-compact-bar {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    #project-section.project-compact .project-compact-bar { display: flex; }
+    #project-section:not(.project-compact) .project-compact-bar { display: none; }
+
+    .project-compact-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      flex: 1;
+    }
+
+    .project-compact-chevron {
+      font-size: 10px;
+      color: var(--text-secondary);
+      transition: transform 0.15s;
+    }
+    #project-section:not(.project-compact) .project-compact-chevron { transform: rotate(90deg); }
 
     #project-path-info {
       font-size: 11px;
@@ -233,137 +263,269 @@
 
     .val-line { padding: 2px 0; color: var(--text-primary); }
 
-    /* === Log panel === */
-    .log-header {
+    /* === Tab bar === */
+    .tab-bar {
       display: flex;
-      align-items: center;
-      margin: 16px 0 6px 0;
-      gap: 8px;
-    }
-
-    .log-header::before,
-    .log-header::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--section-border);
-    }
-
-    .log-panel {
-      background: #060e1a;
-      color: #c0c0c0;
-      font-family: "Menlo", "Monaco", "Consolas", monospace;
-      font-size: 10px;
-      padding: 8px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      height: 140px;
-      overflow-y: auto;
-      margin-bottom: 8px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .log-info { color: #7eb8da; }
-    .log-warn { color: #ffb74d; }
-    .log-error { color: #ef5350; }
-    .log-debug { color: #556677; }
-
-    /* Step header: === Step N: ... === */
-    .log-step {
-      display: block;
-      color: var(--accent);
-      font-weight: 700;
-      padding: 3px 0 1px 0;
-      margin-top: 4px;
-      border-top: 1px solid #1e3355;
-      letter-spacing: 0.3px;
-    }
-
-    /* Build start/complete headers */
-    .log-header-line {
-      display: block;
-      color: #fff;
-      font-weight: 700;
-      background: linear-gradient(90deg, #1a3050, transparent);
-      padding: 3px 6px;
-      margin: 4px -4px 2px -4px;
-      border-left: 3px solid var(--accent);
-      border-radius: 2px;
-      letter-spacing: 0.5px;
-    }
-
-    /* Result/summary line */
-    .log-result {
-      color: var(--success);
-      font-weight: 600;
-    }
-
-    /* Timing line */
-    .log-timing {
-      color: #a0a0a0;
-      font-style: italic;
-    }
-
-    .log-path-text {
-      font-size: 9px;
-      color: var(--text-secondary);
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .clear-log-btn {
-      cursor: pointer;
-      font-size: 10px;
-      color: var(--text-secondary);
-      background: none;
-      border: none;
+      gap: 1px;
+      margin: 6px 0 0 0;
       padding: 0;
     }
+    .tab-btn {
+      flex: 1;
+      min-width: 0;
+      padding: 5px 2px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-size: 10px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+    }
+    .tab-btn.active {
+      color: #fff;
+      background: #4a90d9;
+      border-color: #4a90d9;
+      font-weight: 700;
+    }
+    /* Footage Review — prominent standalone entry (used often), separate from the pipeline tabs */
+    .footage-launch {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 8px 0 2px 0;
+      padding: 9px 12px;
+      background: #c2f24a;
+      color: #11140c;
+      border: 1px solid #c2f24a;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .footage-launch:hover { filter: brightness(1.06); }
+    .footage-launch.active { box-shadow: 0 0 0 2px rgba(255,255,255,0.35) inset; }
+    .tab-content {
+      display: none;
+      border: 1px solid var(--border);
+      border-radius: 0 0 6px 6px;
+      padding: 6px 6px;
+      margin-top: 4px;
+      background: var(--bg-tertiary);
+    }
+    .tab-content.active { display: block; }
 
-    .clear-log-btn:hover { color: var(--text-primary); }
+    /* === Ingest: per-scene sequence list ===
+       Plain inline flow, one line per scene. UXP quirks: flex gap / float
+       don't work here, and the UA stylesheet dims + blockifies <label> —
+       hence explicit display:inline and colors. */
+    .scene-select-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      margin: 8px 0;
+    }
+    .scene-select-head { font-size: 11px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .scene-select-head .scene-links { font-weight: 400; color: var(--text-secondary); }
+    .scene-select-head .scene-links a { color: var(--blue); text-decoration: none; }
+    /* FLEX, не inline-flow: UXP не Chromium — nowrap-строку он на узкой панели
+       не клипует, а роняет элементы друг на друга (badges поверх имён, 03.09).
+       flex-wrap складывает meta/badge на строку ниже — вёрстка держится всегда. */
+    .scene-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      column-gap: 8px;
+      row-gap: 1px;
+      padding: 3px 0;
+      font-size: 11.5px;
+    }
+    .scene-row .scene-badge { margin-left: auto; flex: 0 0 auto; }
+    .scene-row .scene-head, .scene-row .scene-sub { flex: 1 1 100%; }
+    .scene-row .scene-pick { display: flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; flex: 0 1 auto; cursor: pointer; }
+    .scene-row > .scene-name, .scene-row .scene-pick .scene-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .scene-row > .scene-meta, .scene-row > .scene-when { margin-left: 0; flex: 0 1 auto; }
+    /* UXP blockifies a bare checkbox — without an explicit inline margin rule the row
+       wraps and the tick lands on its own line. Keep this generic: every picker list
+       (ingest / assembly / parts / review) relies on it. */
+    .scene-row input[type="checkbox"] { display: inline-block; margin: 0; vertical-align: middle; flex: 0 0 auto; }
+    .scene-row .scene-name { color: var(--text-primary); }
+    .scene-row .scene-meta { color: var(--text-secondary); font-size: 10.5px; margin-left: 0; }
+    .scene-row .scene-when { color: var(--text-secondary); font-size: 10px; margin-left: 0; opacity: .75; }
+    .scene-row .scene-when.fresh { color: var(--accent); opacity: 1; }
+    .scene-row .scene-badge {
+      display: inline-block;
+      margin-left: auto;
+      padding: 0 7px;
+      font-size: 9.5px;
+      letter-spacing: 0.5px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+    .scene-row .scene-badge.built { color: var(--success); border-color: var(--success); }
+    /* Двухстрочная строка пикера part-JSON (parts/review): head = чекбокс+имя+бейдж,
+       sub = даты+мета. Складывается на любой ширине панели, ничего не наезжает. */
+    .scene-row .scene-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .scene-row .scene-head .scene-pick { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1 1 auto; }
+    .scene-row .scene-head .scene-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .scene-row .scene-head .scene-badge { flex: 0 0 auto; margin-left: auto; }
+    .scene-row .scene-sub { display: flex; flex-wrap: wrap; gap: 2px 10px; padding-left: 21px; white-space: normal; }
+    .scene-row .scene-sub .scene-when, .scene-row .scene-sub .scene-meta { margin-left: 0; }
+
+    /* === Shorts tab ===
+       Same UXP quirks as the scene list: flex gap / float don't work, <label> is
+       UA-blockified — block divs with explicit inline display throughout. */
+    .shorts-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin: 10px 0 4px 0;
+    }
+    .shorts-row { display: block; margin-bottom: 4px; font-size: 11px; }
+    .shorts-row .shorts-mode-label { display: inline; color: var(--text-secondary); margin-right: 4px; }
+    #shorts-mode { display: inline; color: var(--text-primary); font-weight: 600; margin-right: 10px; }
+    .shorts-cand-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+    .shorts-cand { display: block; padding: 3px 0; border-bottom: 1px solid var(--border); }
+    .shorts-cand:last-child { border-bottom: none; }
+    .shorts-cand.rejected { opacity: 0.45; }
+    .shorts-cand-main {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .shorts-cand-main input.shorts-approve { display: inline; margin: 0 6px 0 0; vertical-align: middle; }
+    .shorts-sid { display: inline; font-weight: 700; color: var(--text-primary); }
+    .shorts-score { display: inline; color: var(--accent); font-weight: 700; margin: 0 6px; }
+    .shorts-dur { display: inline; color: var(--text-secondary); margin-right: 6px; }
+    .shorts-hook { display: inline; color: var(--text-primary); }
+    .shorts-st {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 0 5px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    .shorts-st:hover { color: var(--text-primary); background: var(--bg-primary); }
+    .shorts-st.on-ok { color: #0a1628; background: var(--success); border-color: var(--success); }
+    .shorts-st.on-no { color: #fff; background: var(--error); border-color: var(--error); }
+    .shorts-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 0 6px;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+    .shorts-badge.built { color: var(--success); border-color: var(--success); }
+    .shorts-cand-sub {
+      display: block;
+      font-size: 10px;
+      color: var(--text-secondary);
+      padding: 1px 0 2px 20px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .shorts-inline { display: inline-block; font-size: 11px; color: var(--text-secondary); margin-left: 8px; }
+    .shorts-inline input { display: inline; vertical-align: middle; margin-right: 4px; }
+    .shorts-dim { display: inline; color: var(--text-secondary); }
   </style>
 
   <body>
 
     <!-- ═══════════ BRANDING ═══════════ -->
-    <div class="branding">v2.1.0 · Powered by <span class="branding-name">RYA.AE</span></div>
+    <div class="branding"><span id="branding-ver">v2.20.0</span> · <span id="branding-time"></span> · <span class="branding-name">RYA.AE</span></div>
 
-    <!-- ═══════════ PROJECT SECTION ═══════════ -->
-    <div class="section-header">
-      <span class="section-label">Project</span>
-    </div>
-
+    <!-- ═══════════ PROJECT ═══════════ -->
     <div class="section-content" id="project-section">
-      <div class="status-row">
-        <span class="status-dot waiting" id="project-status-dot"></span>
-        <span id="project-status-text">No project selected</span>
+      <!-- Compact bar (shown after project selected) -->
+      <div class="project-compact-bar" id="project-compact-bar">
+        <span class="status-dot ready" id="project-compact-dot"></span>
+        <span class="project-compact-name" id="project-compact-name"></span>
+        <sp-button id="btn-refresh-compact" size="s">Refresh</sp-button>
+        <sp-button id="btn-debug-dump-compact" size="s" variant="secondary">Debug</sp-button>
+        <sp-button id="btn-copy-error" size="s" variant="secondary" title="Copy last errors + context for Claude">⧉ Err</sp-button>
+        <span class="project-compact-chevron" id="project-compact-chevron">&#9654;</span>
       </div>
-      <div class="btn-row">
-        <sp-button id="btn-select-project" variant="cta">Select Project Folder</sp-button>
-        <sp-button id="btn-copy-project-prompt" size="s" disabled>Copy Prompt</sp-button>
-      </div>
-      <div class="info-text" id="project-path-info"></div>
-      <div id="project-checklist"></div>
-      <div class="btn-row" id="project-actions-row" style="display:none">
-        <sp-button id="btn-refresh-project" size="s">Refresh</sp-button>
+      <!-- Full details (shown before selection or when expanded) -->
+      <div class="project-details" id="project-details">
+        <div class="status-row">
+          <span class="status-dot waiting" id="project-status-dot"></span>
+          <span id="project-status-text">No project selected</span>
+        </div>
+        <div class="btn-row">
+          <sp-button id="btn-select-project" variant="cta">Select Project Folder</sp-button>
+          <sp-button id="btn-use-open-project" size="s">Use Open Project</sp-button>
+          <sp-button id="btn-copy-project-prompt" size="s" disabled>Copy Prompt</sp-button>
+        </div>
+        <div class="info-text" id="project-path-info"></div>
+        <div id="project-checklist"></div>
+        <div class="btn-row" id="project-actions-row" style="display:none">
+          <sp-button id="btn-refresh-project" size="s">Refresh</sp-button>
+          <sp-button id="btn-debug-dump" size="s" variant="secondary" disabled>Debug Dump</sp-button>
+        </div>
       </div>
     </div>
 
-    <!-- ═══════════ INGEST SECTION ═══════════ -->
-    <div class="section-header">
-      <span class="section-label">Ingest</span>
+    <!-- Footage Review — standalone prominent button (separate from pipeline tabs) -->
+    <div class="footage-launch" id="footage-launch" data-tab="footage">🎬 Footage Review</div>
+
+    <!-- ═══════════ TAB BAR ═══════════ -->
+    <div class="tab-bar">
+      <div class="tab-btn active" data-tab="ingest">Ingest</div>
+      <div class="tab-btn" data-tab="assembly">Assembly</div>
+      <div class="tab-btn" data-tab="parts">Parts</div>
+      <div class="tab-btn" data-tab="pre-edit">Pre-Edit</div>
+      <div class="tab-btn" data-tab="review">Review</div>
+      <div class="tab-btn" data-tab="shorts">Shorts</div>
+      <div class="tab-btn" data-tab="doctor">Doctor</div>
     </div>
 
-    <div class="section-content">
+    <!-- 📌 Review notes — pinned above the tabs' content, visible from ANY tab:
+         marker @ playhead of the ACTIVE sequence + JSON row for the notes queue
+         (00_Setup/05_Review/notes/ → notes_sync.py → Google Sheet → Claude picks) -->
+    <div id="review-notes" style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:8px 0 4px">
+      <sp-textfield id="note-comment" placeholder="📌 Note comment (optional)" style="flex:1 1 140px; min-width:0"></sp-textfield>
+      <sp-button id="btn-note-add" variant="cta" size="s" style="flex:0 0 auto">Note @ playhead</sp-button>
+      <sp-button id="btn-note-copyall" variant="secondary" size="s" style="flex:0 0 auto">Copy all</sp-button>
+      <sp-button id="btn-note-sheet" variant="secondary" size="s" style="flex:0 0 auto">Sheet ↗</sp-button>
+      <sp-button id="btn-tz-copy" variant="secondary" size="s" style="flex:0 0 auto" title="Full ТЗ text + material links for the nearest V4 plate → clipboard">Copy ТЗ @ playhead</sp-button>
+      <div class="info-text" id="note-status" style="flex:1 1 100%; margin:0"></div>
+    </div>
+
+    <!-- ═══════════ TAB: INGEST ═══════════ -->
+    <div class="tab-content active" id="tab-ingest">
       <div class="status-row">
         <span class="status-dot waiting" id="ingest-status-dot"></span>
         <span id="ingest-status-text">Select project folder...</span>
       </div>
 
-      <!-- Fallback — hidden by default, shown when auto-detect fails -->
       <div class="btn-row fallback-row" id="ingest-fallback-row" style="display:none">
         <sp-button id="btn-load-ingest">Load Ingest JSON</sp-button>
       </div>
@@ -371,35 +533,80 @@
       <div class="info-text" id="ingest-file-info"></div>
       <div class="summary-panel" id="ingest-summary"></div>
 
+      <div class="scene-select-panel" id="ingest-scenes" style="display:none">
+        <div class="scene-select-head">Sequences to build
+          <span class="scene-links">(<a href="#" id="ingest-scenes-new">new</a> · <a href="#" id="ingest-scenes-all">all</a> · <a href="#" id="ingest-scenes-none">none</a>)</span>
+        </div>
+        <div id="ingest-scenes-list"></div>
+      </div>
+
       <div class="progress-bar" id="ingest-progress-bar"><div class="progress-fill" id="ingest-progress-fill"></div></div>
       <div class="progress-text" id="ingest-progress-text"></div>
 
       <div class="btn-row">
         <sp-button id="btn-build-ingest" disabled>Build Ingest</sp-button>
-        <sp-button id="btn-audio-debug" disabled variant="secondary" size="s">Audio Debug</sp-button>
+        <sp-button id="btn-hide-source-timelines" variant="secondary" size="s" title="Move every scene timeline {CODE}_NN_Scene (two-digit index) from the project root into the 00_Source_Timelines bin. Verified move, never deletes, safe to re-run. Stage timelines like {CODE}_5_Review_*, _part_*, shorts stay where they are.">📁 Hide source timelines</sp-button>
+        <sp-button id="btn-finesync" disabled variant="secondary" size="s">Fine Sync</sp-button>
+        <sp-button id="btn-verify-ingest" disabled variant="secondary" size="s">Verify Ingest</sp-button>
+        <sp-button id="btn-export-audio-map" disabled variant="secondary" size="s">Export Audio Map</sp-button>
+        <sp-button id="btn-chapter-markers" variant="secondary" size="s" title="Place ingest.markers[scene] as coloured Chapter markers on the ACTIVE scene sequence — no rebuild">Chapters → Active</sp-button>
+        <sp-button id="btn-chapter-markers-all" variant="cta" size="s" title="Replace the Chapter markers on EVERY scene sequence at once — nothing needs to be open">Chapters → ALL</sp-button>
+      </div>
+
+      <div class="btn-row" style="align-items:center;gap:6px">
+        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">Offset:</label>
+        <input id="sync-offset-input" type="number" step="0.1" value="0" style="width:60px;padding:3px 6px;font-size:11px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:3px">
+        <sp-button id="btn-sync-audio" disabled variant="secondary" size="s">Sync Audio</sp-button>
+      </div>
+
+      <!-- Premiere-native fine sync: spread scene sources one-per-track,
+           human runs Clip → Synchronize, panel collects deltas into ingest -->
+      <div class="btn-row" style="align-items:center;gap:6px">
+        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">Premiere sync:</label>
+        <sp-button id="btn-sync-spread" disabled variant="secondary" size="s">Spread</sp-button>
+        <sp-button id="btn-sync-select" disabled variant="secondary" size="s" title="Выделить ровно источники манифеста — ⌘A ловит однокадровый мусор, и Synchronize гаснет">Select</sp-button>
+        <sp-button id="btn-sync-clean" disabled variant="secondary" size="s" title="Выделить весь однокадровый мусор преднагрева; если снос не сработает — нажми ⌫">Clean</sp-button>
+        <sp-button id="btn-sync-collect" disabled variant="secondary" size="s">Collect</sp-button>
+      </div>
+
+      <!-- LUT layers by plan — final ingest step (SOP: /kb/luts/ — 3.8 Scene LUTs) -->
+      <div class="status-row" style="margin-top:14px">
+        <span class="status-dot waiting" id="adjust-status-dot"></span>
+        <span id="adjust-status-text">Color: run after Build Ingest</span>
+      </div>
+      <div class="info-text">Input LUT + Exposure + Look straight onto each clip, from <code>01_Source/00_LUT/_build/{CODE}_color_plan.json</code>. One Lumetri per clip — Basic Correction then Creative, same chain the LUT board previewed. Clips absent from the plan (screencast, reference footage) are left alone. Safe to re-run.</div>
+      <div class="btn-row">
+        <sp-button id="btn-color-plan-all" variant="cta" title="Apply the colour plan to every sequence">Apply Color</sp-button>
+        <sp-button id="btn-color-plan-active" size="s" variant="secondary" title="Apply the colour plan to the active sequence only">Active Only</sp-button>
       </div>
 
       <div class="validation-panel" id="ingest-validation"></div>
     </div>
 
-    <!-- ═══════════ ASSEMBLY SECTION ═══════════ -->
-    <div class="section-header">
-      <span class="section-label">Assembly</span>
-    </div>
-
-    <div class="section-content">
+    <!-- ═══════════ TAB: ASSEMBLY ═══════════ -->
+    <div class="tab-content" id="tab-assembly">
       <div class="status-row">
         <span class="status-dot waiting" id="assembly-status-dot"></span>
         <span id="assembly-status-text">Select project folder...</span>
       </div>
 
-      <!-- Fallback — hidden by default, shown when auto-detect fails -->
       <div class="btn-row fallback-row" id="assembly-fallback-row" style="display:none">
         <sp-button id="btn-load-brief">Load Edit Brief</sp-button>
       </div>
 
       <div class="info-text" id="assembly-file-info"></div>
       <div class="summary-panel" id="assembly-summary"></div>
+
+      <div class="scene-select-panel" id="assembly-scenes" style="display:none">
+        <div class="scene-select-head">Timelines to build
+          <span class="scene-links">(<a href="#" id="assembly-scenes-new">new</a> · <a href="#" id="assembly-scenes-all">all</a> · <a href="#" id="assembly-scenes-none">none</a>)</span>
+        </div>
+        <div id="assembly-scenes-list"></div>
+        <div class="btn-row">
+          <sp-button id="btn-build-assembly-scenes" disabled>Build Selected</sp-button>
+          <sp-button id="btn-build-premontage" variant="secondary" disabled>Build Premontage (PE)</sp-button>
+        </div>
+      </div>
 
       <div class="progress-bar" id="assembly-progress-bar"><div class="progress-fill" id="assembly-progress-fill"></div></div>
       <div class="progress-text" id="assembly-progress-text"></div>
@@ -418,35 +625,60 @@
       </div>
 
       <div class="validation-panel" id="assembly-validation"></div>
+
+      <!-- Deleted Scene — auto-built from Assembly -->
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+        <div class="status-row">
+          <span class="status-dot waiting" id="ds-status-dot"></span>
+          <span id="ds-status-text" style="font-size:11px">Deleted Scene</span>
+        </div>
+        <div class="progress-bar" id="ds-progress-bar"><div class="progress-fill" id="ds-progress-fill"></div></div>
+        <div class="progress-text" id="ds-progress-text"></div>
+        <div class="btn-row">
+          <sp-button id="btn-build-deleted-scene" disabled size="s">Build Deleted Scene</sp-button>
+        </div>
+        <div class="validation-panel" id="ds-validation"></div>
+      </div>
     </div>
 
-    <!-- ═══════════ REVIEW SECTION ═══════════ -->
-    <div class="section-header">
-      <span class="section-label">Review</span>
-    </div>
-
-    <div class="section-content">
+    <!-- ═══════════ TAB: PRE-EDIT ═══════════ -->
+    <!-- ═══════════ TAB: PARTS ═══════════ -->
+    <div class="tab-content" id="tab-parts">
       <div class="status-row">
-        <span class="status-dot waiting" id="review-status-dot"></span>
-        <span id="review-status-text">Select project folder...</span>
+        <span class="status-dot waiting" id="parts-status-dot"></span>
+        <span id="parts-status-text">Load a part JSON (ytai-part-v1)...</span>
       </div>
 
-      <div class="progress-bar" id="review-progress-bar"><div class="progress-fill" id="review-progress-fill"></div></div>
-      <div class="progress-text" id="review-progress-text"></div>
+      <div class="info-text">Build the film <b>part by part</b>. Each part = a colour/block as its own sequence with 2 video + 2 audio tracks (voice below, shown B-roll above; audio kept on both). Load a <code>{CODE}_part_{name}.json</code> from <code>02_Assembly/parts/</code>, then Build.</div>
 
       <div class="btn-row">
-        <sp-button id="btn-build-review" disabled>Build Review</sp-button>
+        <sp-button id="btn-load-part" variant="cta">Load Part JSON</sp-button>
+        <sp-button id="btn-build-part" disabled>Build Part</sp-button>
+        <sp-button id="btn-export-part-out">Out → Claude 📋</sp-button>
       </div>
 
-      <div class="validation-panel" id="review-validation"></div>
+      <div class="scene-select-panel" id="parts-pick" style="display:none">
+        <div class="scene-select-head">Parts to build
+          <span class="scene-links">(<a href="#" id="parts-pick-new">new</a> · <a href="#" id="parts-pick-all">all</a> · <a href="#" id="parts-pick-none">none</a> · <a href="#" id="parts-pick-refresh">refresh</a>)</span>
+        </div>
+        <div id="parts-pick-list"></div>
+        <div class="btn-row" style="margin-top:6px">
+          <sp-button id="btn-parts-pick-build" variant="cta" size="s" disabled>Build Selected</sp-button>
+        </div>
+      </div>
+
+      <div class="validation-panel" id="parts-validation"></div>
+
+      <div class="info-text" style="margin-top:14px"><b>Selections (подборки)</b> — тематические нарезки из Source по запросам Claude. Каждая = своя секвенция; галочками выбери что строить. Файлы: <code>02_Assembly/parts/selections/</code>, Archive убирает в <code>selections/archive/</code>.</div>
+      <div class="btn-row">
+        <sp-button id="btn-sel-refresh" variant="secondary">Refresh</sp-button>
+        <sp-button id="btn-sel-build" disabled>Build Selected</sp-button>
+        <sp-button id="btn-sel-archive" disabled>Archive Selected</sp-button>
+      </div>
+      <div class="validation-panel" id="sel-list" style="display:none"></div>
     </div>
 
-    <!-- ═══════════ PRE-EDIT SECTION ═══════════ -->
-    <div class="section-header">
-      <span class="section-label">Pre-Edit</span>
-    </div>
-
-    <div class="section-content">
+    <div class="tab-content" id="tab-pre-edit">
       <div class="status-row">
         <span class="status-dot waiting" id="screens-status-dot"></span>
         <span id="screens-status-text">Select project folder...</span>
@@ -471,41 +703,152 @@
       <div class="validation-panel" id="screens-validation"></div>
     </div>
 
-    <!-- ═══════════ INGEST LOG ═══════════ -->
-    <div class="log-header">
-      <span class="section-label">Ingest Log</span>
-      <span class="log-path-text" id="ingest-log-path"></span>
-      <button class="clear-log-btn" id="btn-copy-ingest-log-path">copy path</button>
-      <button class="clear-log-btn" id="btn-clear-ingest-log">clear</button>
-    </div>
-    <div id="ingest-log-panel" class="log-panel"></div>
+    <!-- ═══════════ TAB: REVIEW ═══════════ -->
+    <div class="tab-content" id="tab-review">
+      <div class="status-row">
+        <span class="status-dot waiting" id="review-status-dot"></span>
+        <span id="review-status-text">Load review brief...</span>
+      </div>
 
-    <!-- ═══════════ ASSEMBLY LOG ═══════════ -->
-    <div class="log-header">
-      <span class="section-label">Assembly Log</span>
-      <span class="log-path-text" id="assembly-log-path"></span>
-      <button class="clear-log-btn" id="btn-copy-assembly-log-path">copy path</button>
-      <button class="clear-log-btn" id="btn-clear-assembly-log">clear</button>
-    </div>
-    <div id="assembly-log-panel" class="log-panel"></div>
+      <div class="progress-bar" id="review-progress-bar"><div class="progress-fill" id="review-progress-fill"></div></div>
+      <div class="progress-text" id="review-progress-text"></div>
 
-    <!-- ═══════════ REVIEW LOG ═══════════ -->
-    <div class="log-header">
-      <span class="section-label">Review Log</span>
-      <span class="log-path-text" id="review-log-path"></span>
-      <button class="clear-log-btn" id="btn-copy-review-log-path">copy path</button>
-      <button class="clear-log-btn" id="btn-clear-review-log">clear</button>
-    </div>
-    <div id="review-log-panel" class="log-panel"></div>
+      <div class="scene-select-panel" id="review-pick" style="display:none">
+        <div class="scene-select-head">Review versions to build
+          <span class="scene-links">(<a href="#" id="review-pick-new">new</a> · <a href="#" id="review-pick-all">all</a> · <a href="#" id="review-pick-none">none</a> · <a href="#" id="review-pick-refresh">refresh</a>)</span>
+        </div>
+        <div id="review-pick-list"></div>
+        <div class="btn-row" style="margin-top:6px">
+          <sp-button id="btn-review-pick-build" variant="cta" size="s" disabled>Build Selected</sp-button>
+        </div>
+      </div>
 
-    <!-- ═══════════ PRE-EDIT LOG ═══════════ -->
-    <div class="log-header">
-      <span class="section-label">Pre-Edit Log</span>
-      <span class="log-path-text" id="screens-log-path"></span>
-      <button class="clear-log-btn" id="btn-copy-screens-log-path">copy path</button>
-      <button class="clear-log-btn" id="btn-clear-screens-log">clear</button>
+      <!-- legacy auto-scan builds: they GUESS the JSON by scoring and reliably picked the
+           wrong one — kept only as a fallback, the picker above is the way -->
+      <div class="info-text" style="margin-top:10px">Auto buttons below guess the JSON by scoring — prefer the explicit list above.</div>
+      <div class="btn-row">
+        <sp-button id="btn-build-review-overlay" disabled variant="secondary" size="s">Auto: Review-Overlay</sp-button>
+        <sp-button id="btn-build-review-v3" disabled variant="secondary" size="s">Auto: Review v3</sp-button>
+      </div>
+      <div class="btn-row">
+        <sp-button id="btn-export-sequence-json" disabled variant="cta">Export Sequence → JSON (for Claude)</sp-button>
+      </div>
+      <!-- legacy review-brief flow (hidden — overlay workflow replaces it; restore by removing style) -->
+      <div class="btn-row" style="display:none">
+        <sp-button id="btn-process-review" disabled variant="cta">Process Review</sp-button>
+        <sp-button id="btn-load-review-brief" disabled>Load Review Brief</sp-button>
+        <sp-button id="btn-build-review" disabled>Build Review</sp-button>
+        <sp-button id="btn-export-review-markers" disabled variant="secondary">Export Markers</sp-button>
+      </div>
+
+      <div class="validation-panel" id="review-validation"></div>
     </div>
-    <div id="screens-log-panel" class="log-panel"></div>
+
+    <!-- ═══════════ TAB: SHORTS ═══════════ -->
+    <div class="tab-content" id="tab-shorts">
+      <div class="status-row">
+        <span class="status-dot waiting" id="shorts-status-dot"></span>
+        <span id="shorts-status-text">Select project folder, then Refresh...</span>
+      </div>
+
+      <div class="shorts-section-title">1 · Source</div>
+      <div class="shorts-row">
+        <span class="shorts-mode-label">mode:</span><span id="shorts-mode">—</span>
+        <sp-button id="btn-shorts-refresh" size="s" variant="cta">Refresh</sp-button>
+      </div>
+      <div class="info-text" id="shorts-file-info">Reads the newest <code>{CODE}_Shorts_v{N}_in.json</code> from <code>00_Setup/07_Shorts/</code> (generated by Claude).</div>
+
+      <div class="shorts-section-title">2 · Candidates</div>
+      <div class="shorts-cand-panel" id="shorts-candidates"><div class="val-line">No shorts brief loaded — hit Refresh.</div></div>
+
+      <div class="shorts-section-title">3 · Preview</div>
+      <div class="btn-row">
+        <sp-button id="btn-shorts-preview" size="s">Build Preview Seq</sp-button>
+        <sp-button id="btn-shorts-readback" size="s" variant="secondary">Read Back Markers</sp-button>
+      </div>
+
+      <div class="shorts-section-title">4 · Build</div>
+      <div class="btn-row" style="align-items:center">
+        <sp-button id="btn-shorts-build">Build Approved →9:16</sp-button>
+        <div class="shorts-inline"><input type="checkbox" id="shorts-also-h" disabled> <span class="shorts-dim">also 16:9 (MVP-2)</span></div>
+      </div>
+
+      <div class="shorts-section-title">5 · Exchange</div>
+      <div class="btn-row">
+        <sp-button id="btn-shorts-out" size="s">Out → Claude 📋</sp-button>
+        <sp-button id="btn-shorts-open-html" size="s" variant="secondary">Open Review HTML</sp-button>
+      </div>
+
+      <div class="validation-panel" id="shorts-validation"></div>
+    </div>
+
+    <!-- ═══════════ TAB: FOOTAGE REVIEW (отсмотр) ═══════════ -->
+    <div class="tab-content" id="tab-footage">
+      <div class="status-row">
+        <span class="status-dot waiting" id="footage-status-dot"></span>
+        <span id="footage-status-text">Insert a card or open a project, then Build review.</span>
+      </div>
+
+      <div class="info-text">Quick screening of what you shot. Finds video on inserted cards (Sony FX3 <code>M4ROOT/CLIP</code>, DCIM) or in the open project's <code>01_Source/Video</code>, lays every clip back-to-back on one timeline, and copies viewing LUTs into the project's <code>LUT/</code> folder. No project picker — uses the open project. Imported in place (instant). For grading, add one <b>Adjustment Layer</b> over the clips and drop a LUT onto it (the UXP API can't create adjustment layers).</div>
+
+      <div class="btn-row" style="align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+        <label style="font-size:11px;color:var(--text-secondary)">Project name:</label>
+        <input id="footage-name" type="text" placeholder="auto (card name) — or type one"
+          style="flex:1;min-width:140px;font-size:11px;padding:5px 7px;background:#1e1e1e;color:var(--text-primary);border:1px solid #444;border-radius:5px">
+      </div>
+
+      <div class="btn-row" style="align-items:center;gap:12px;flex-wrap:wrap">
+        <sp-button id="btn-footage-build" variant="cta">🎬 Build review</sp-button>
+        <label style="font-size:11px;color:var(--text-primary)"><input type="checkbox" id="footage-lut" checked> Viewing LUT</label>
+        <sp-button id="btn-footage-log" variant="secondary" size="s" disabled>Copy log path</sp-button>
+      </div>
+
+      <div class="validation-panel" id="footage-validation"></div>
+    </div>
+
+    <!-- ═══════════ TAB: DOCTOR ═══════════ -->
+    <div class="tab-content" id="tab-doctor">
+      <div class="status-row">
+        <span class="status-dot waiting" id="doctor-status-dot"></span>
+        <span id="doctor-status-text">Open a project, then Analyze.</span>
+      </div>
+
+      <div class="info-text">What the project needs vs what's missing. <b>Action Required</b> = offline media used on the timeline — the list to request from the editor. Works at any stage.</div>
+
+      <div class="btn-row" style="align-items:center;gap:12px;flex-wrap:wrap">
+        <label style="font-size:11px;color:var(--text-secondary)">Scope:</label>
+        <label style="font-size:11px;color:var(--text-primary)"><input type="radio" name="doctor-scope" value="active" checked> Active sequence</label>
+        <label style="font-size:11px;color:var(--text-primary)"><input type="radio" name="doctor-scope" value="all"> All sequences</label>
+      </div>
+
+      <div class="progress-bar" id="doctor-progress-bar"><div class="progress-fill" id="doctor-progress-fill"></div></div>
+      <div class="progress-text" id="doctor-progress-text"></div>
+
+      <div class="btn-row">
+        <sp-button id="btn-doctor-analyze" variant="cta">Analyze Project</sp-button>
+        <sp-button id="btn-doctor-open" variant="secondary" size="s" disabled>Open Last Report</sp-button>
+        <sp-button id="btn-doctor-debug" variant="secondary" size="s" disabled>Open Debug Log</sp-button>
+      </div>
+
+      <div class="btn-row" style="align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <sp-button id="btn-doctor-relink" variant="secondary">🔗 Find &amp; Relink local</sp-button>
+        <sp-button id="btn-doctor-forcerefresh" variant="secondary">🩹 Force refresh</sp-button>
+        <sp-button id="btn-doctor-restore" variant="secondary">📦 Restore structure</sp-button>
+        <sp-button id="btn-doctor-selfcontain" variant="secondary">🧷 Make self-contained</sp-button>
+        <sp-button id="btn-doctor-hide-source-timelines" variant="secondary" title="Same as Ingest → Hide source timelines: every {CODE}_NN_Scene sequence at the project root → 00_Source_Timelines bin (verified move, never deletes)">📁 Hide source timelines</sp-button>
+        <label style="font-size:11px;color:var(--text-secondary)">also search:</label>
+        <input id="doctor-extra-root" type="text" placeholder="/Volumes/…/YTRF  (optional extra folder)"
+          style="flex:1;min-width:160px;font-size:11px;padding:5px 7px;background:#1e1e1e;color:var(--text-primary);border:1px solid #444;border-radius:5px">
+      </div>
+      <div class="btn-row" style="align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+        <label style="font-size:11px;color:var(--text-primary)"><input type="checkbox" id="doctor-force-blind"> blind sweep (only if Premiere exposes no offline flag — bounces every clip in scope)</label>
+      </div>
+      <div class="info-text" style="margin-top:4px"><b>🩹 Force refresh</b> = the file is present at exactly the path the project records, but Premiere still shows <b>Media offline</b> (SSD unplugged while the project was open, importer crash). Re-imports those clips in place — nothing to find, nothing to request. Respects <b>Scope</b> above; ⌘S after. Truly missing files stay for Relink.</div>
+      <div class="info-text" style="margin-top:4px"><b>Relink</b> = re-point offline clips to a same-name local file (best for regular media; one bin relink fixes every timeline use; ⌘S after). <b>Restore structure</b> = place same-name local copies at the exact paths the project records — fixes AE Dynamic-Link <code>.aep</code> comps &amp; wrong-folder/renamed files that Relink can't; <b>reopen the project</b> afterwards so Premiere relinks by path. Editor handoffs: run Relink, then Restore structure. <b>Not undoable.</b></div>
+
+      <div class="summary-panel" id="doctor-summary"></div>
+      <div class="validation-panel" id="doctor-validation"></div>
+    </div>
 
   </body>
 </html>

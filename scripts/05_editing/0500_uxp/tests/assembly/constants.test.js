@@ -8,7 +8,7 @@ const {
   MARKER_TYPE_CHAPTER,
   MARKER_TYPE_COMMENT,
   TICKS_PER_SECOND,
-  REVIEW_COLOR_MAP
+  DELETED_SCENE_COLOR_MAP
 } = require('../../src/shared/constants');
 const ppro = require('../mocks/premierepro');
 
@@ -79,8 +79,8 @@ describe('MARKER_COLOR_INDEX', () => {
     assert.equal(MARKER_COLOR_INDEX.Purple, MARKER_COLOR_INDEX.Magenta);
   });
 
-  it('does NOT have White (index 5 missing in real Premiere)', () => {
-    assert.equal(MARKER_COLOR_INDEX.White, undefined);
+  it('maps White to 5 (6th swatch in the marker dialog — added on purpose)', () => {
+    assert.equal(MARKER_COLOR_INDEX.White, 5);
   });
 
   it('all indices are in range 0-7', () => {
@@ -157,32 +157,32 @@ describe('Marker type URI constants', () => {
   });
 });
 
-// --- REVIEW_COLOR_MAP ---
+// --- DELETED_SCENE_COLOR_MAP ---
 
-describe('REVIEW_COLOR_MAP', () => {
+describe('DELETED_SCENE_COLOR_MAP', () => {
   it('has three categories: cut, alt, skip', () => {
-    assert.ok(REVIEW_COLOR_MAP.cut);
-    assert.ok(REVIEW_COLOR_MAP.alt);
-    assert.ok(REVIEW_COLOR_MAP.skip);
-    assert.equal(Object.keys(REVIEW_COLOR_MAP).length, 3);
+    assert.ok(DELETED_SCENE_COLOR_MAP.cut);
+    assert.ok(DELETED_SCENE_COLOR_MAP.alt);
+    assert.ok(DELETED_SCENE_COLOR_MAP.skip);
+    assert.equal(Object.keys(DELETED_SCENE_COLOR_MAP).length, 3);
   });
 
   it('cut uses Red label and Red marker', () => {
-    assert.equal(REVIEW_COLOR_MAP.cut.label, 'Red');
-    assert.equal(REVIEW_COLOR_MAP.cut.labelIdx, LABEL_COLOR_INDEX.Red);
-    assert.equal(REVIEW_COLOR_MAP.cut.markerIdx, MARKER_COLOR_INDEX.Red);
+    assert.equal(DELETED_SCENE_COLOR_MAP.cut.label, 'Red');
+    assert.equal(DELETED_SCENE_COLOR_MAP.cut.labelIdx, LABEL_COLOR_INDEX.Red);
+    assert.equal(DELETED_SCENE_COLOR_MAP.cut.markerIdx, MARKER_COLOR_INDEX.Red);
   });
 
   it('alt uses Yellow label and Yellow marker', () => {
-    assert.equal(REVIEW_COLOR_MAP.alt.label, 'Yellow');
-    assert.equal(REVIEW_COLOR_MAP.alt.labelIdx, LABEL_COLOR_INDEX.Yellow);
-    assert.equal(REVIEW_COLOR_MAP.alt.markerIdx, MARKER_COLOR_INDEX.Yellow);
+    assert.equal(DELETED_SCENE_COLOR_MAP.alt.label, 'Yellow');
+    assert.equal(DELETED_SCENE_COLOR_MAP.alt.labelIdx, LABEL_COLOR_INDEX.Yellow);
+    assert.equal(DELETED_SCENE_COLOR_MAP.alt.markerIdx, MARKER_COLOR_INDEX.Yellow);
   });
 
   it('skip uses Purple label and Magenta marker', () => {
-    assert.equal(REVIEW_COLOR_MAP.skip.label, 'Purple');
-    assert.equal(REVIEW_COLOR_MAP.skip.labelIdx, LABEL_COLOR_INDEX.Purple);
-    assert.equal(REVIEW_COLOR_MAP.skip.markerIdx, MARKER_COLOR_INDEX.Magenta);
+    assert.equal(DELETED_SCENE_COLOR_MAP.skip.label, 'Purple');
+    assert.equal(DELETED_SCENE_COLOR_MAP.skip.labelIdx, LABEL_COLOR_INDEX.Purple);
+    assert.equal(DELETED_SCENE_COLOR_MAP.skip.markerIdx, MARKER_COLOR_INDEX.Magenta);
   });
 });
 

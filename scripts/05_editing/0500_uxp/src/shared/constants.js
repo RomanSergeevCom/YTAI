@@ -36,6 +36,7 @@ const MARKER_COLOR_INDEX = {
   Purple: 2,    // Same as Magenta — Premiere has no separate Purple marker color
   Orange: 3,    // Confirmed: ppro ORANGE=3
   Yellow: 4,    // Confirmed: ppro YELLOW=4
+  White: 5,     // 6th swatch in marker dialog (для бриллиантов)
   Blue: 6,      // Confirmed: ppro BLUE=6
   Cyan: 7       // Confirmed: ppro CYAN=7
 };
@@ -51,21 +52,21 @@ const MARKER_TYPE_CHAPTER = 'com.adobe.premiereMarkers.chapter';
 const MARKER_TYPE_COMMENT = 'com.adobe.premiereMarkers.comment';
 const MARKER_TYPE_SEGMENTATION = 'com.adobe.premiereMarkers.segmentation';
 
-// Review sequence color scheme — by exclusion category
-// Used by reviewBuilder.js for _3_Review sequence
-const REVIEW_COLOR_MAP = {
+// Deleted Scene sequence color scheme — by exclusion category
+// Used by deletedSceneBuilder.js for _3_DeletedScene sequence
+const DELETED_SCENE_COLOR_MAP = {
   cut:  { label: 'Red',    labelIdx: 6,  markerIdx: 1 },  // block=99, explicitly cut
   alt:  { label: 'Yellow', labelIdx: 15, markerIdx: 4 },  // priority=2, alternative take
-  skip: { label: 'Purple', labelIdx: 8,  markerIdx: 2 }   // use=FALSE, review candidate
+  skip: { label: 'Purple', labelIdx: 8,  markerIdx: 2 }   // use=FALSE, deleted scene candidate
 };
 
-// Review producer color — segments where producer/interviewer speaks (context only)
+// Deleted Scene producer color — segments where producer/interviewer speaks (context only)
 // Lavender (label index 3) — visually distinct, not used by any block color
-const REVIEW_PRODUCER_COLOR = { label: 'Lavender', labelIdx: 3 };
+const DELETED_SCENE_PRODUCER_COLOR = { label: 'Lavender', labelIdx: 3 };
 
-// Review expert color — segments where expert/talent on camera speaks
+// Deleted Scene expert color — segments where expert/talent on camera speaks
 // Teal (label index 10) — vivid, easy to find on timeline
-const REVIEW_EXPERT_COLOR = { label: 'Teal', labelIdx: 10 };
+const DELETED_SCENE_EXPERT_COLOR = { label: 'Teal', labelIdx: 10 };
 
 // Screen Cues color scheme — V2 track + Comment markers
 // Used by screenBuilder.js for Production Cues on Assembly sequence
@@ -94,6 +95,13 @@ const SCREEN_REQUIRED_FIELDS = {
 // Tick conversion
 const TICKS_PER_SECOND = 254016000000;
 
+// Source timelines bin (2026-09-15, Roman / Premiere 26.x): ingest scene sequences
+// {CODE}_{NN}_{Scene} (TWO-digit scene index, e.g. YTUVI02_01_Studio) live here instead
+// of cluttering the project root. Top-level bin — NEVER inside 00_Source (cleanBeforeBuild
+// empties 00_Source children, projectScanner.buildClipMap maps 00_Source). Single-digit
+// stage timelines ({CODE}_5_Review_*, {CODE}_1_Ingest), _part_*, shorts stay where they are.
+const SOURCE_TIMELINES_BIN = '00_Source_Timelines';
+
 module.exports = {
   LABEL_COLOR_INDEX,
   MARKER_COLOR_INDEX,
@@ -103,9 +111,10 @@ module.exports = {
   MARKER_TYPE_COMMENT,
   MARKER_TYPE_SEGMENTATION,
   TICKS_PER_SECOND,
-  REVIEW_COLOR_MAP,
-  REVIEW_PRODUCER_COLOR,
-  REVIEW_EXPERT_COLOR,
+  SOURCE_TIMELINES_BIN,
+  DELETED_SCENE_COLOR_MAP,
+  DELETED_SCENE_PRODUCER_COLOR,
+  DELETED_SCENE_EXPERT_COLOR,
   SCREEN_CUE_COLOR,
   SCREEN_TYPES,
   SCREEN_REQUIRED_FIELDS

@@ -18,8 +18,8 @@
       "domains": "all"
     },
     "launchProcess": {
-      "schemes": ["file"],
-      "extensions": [".command"]
+      "schemes": ["file", "https"],
+      "extensions": ["", ".command", ".html", ".json"]
     }
   },
   "entrypoints": [

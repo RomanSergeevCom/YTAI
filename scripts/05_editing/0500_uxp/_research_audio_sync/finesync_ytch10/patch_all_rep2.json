@@ -1,0 +1,637 @@
+{
+  "scenes": {
+    "01_Drive_To_Abramovo": {
+      "sources": {
+        "RYA-FX3-0706": {
+          "kind": "video",
+          "corr": -2.2968
+        },
+        "RYA-FX3-0707": {
+          "kind": "video",
+          "corr": 0.6713
+        },
+        "RYA-FX3-0708": {
+          "kind": "video",
+          "corr": 0.5548
+        },
+        "RYA-FX3-0709": {
+          "kind": "video",
+          "corr": 0.5346
+        },
+        "RYA-FX3-0710": {
+          "kind": "video",
+          "corr": 0.5361
+        },
+        "TX01_MIC035_20260717_130650_orig__S01.wav": {
+          "kind": "tx",
+          "corr": -1.5563
+        },
+        "TX01_MIC036_20260717_133650_orig__S01.wav": {
+          "kind": "tx",
+          "corr": -1.5968
+        },
+        "TX01_MIC037_20260717_140650_orig__S02.wav": {
+          "kind": "tx",
+          "corr": 1.4586
+        },
+        "TX02_MIC031_20260717_130729_orig__S01.wav": {
+          "kind": "tx",
+          "corr": -2.1718
+        },
+        "TX02_MIC032_20260717_133729_orig__S01.wav": {
+          "kind": "tx",
+          "corr": 0.6819
+        },
+        "TX02_MIC033_20260717_140729_orig__S02.wav": {
+          "kind": "tx",
+          "corr": 0.5411
+        }
+      },
+      "resid_rms": 0.0025,
+      "resid_max": 0.0065,
+      "n_meas": 30,
+      "n_rejected": 4,
+      "n_components": 1,
+      "n_bridges": 0,
+      "dof": 20
+    },
+    "02_House_And_Kitchen_Talk": {
+      "sources": {
+        "RYA-FX3-0711": {
+          "kind": "video",
+          "corr": -0.1876
+        },
+        "RYA-FX3-0715": {
+          "kind": "video",
+          "corr": 0.0427
+        },
+        "RYA-FX3-0716": {
+          "kind": "video",
+          "corr": -1.3348
+        },
+        "RYA-FX3-0721": {
+          "kind": "video",
+          "corr": -0.1994
+        },
+        "RYA-FX3-0722": {
+          "kind": "video",
+          "corr": -0.2041
+        },
+        "RYA-FX3-0726": {
+          "kind": "video",
+          "corr": -0.2038
+        },
+        "RYA-FX3-0727": {
+          "kind": "video",
+          "corr": 0.024
+        },
+        "RYA-FX3-0728": {
+          "kind": "video",
+          "corr": -0.2053
+        },
+        "RYA-FX3-0729": {
+          "kind": "video",
+          "corr": -0.1239
+        },
+        "RYA-FX3-0730": {
+          "kind": "video",
+          "corr": -0.0234
+        },
+        "RYA-FX3-0731": {
+          "kind": "video",
+          "corr": 0.287
+        },
+        "RYA-FX3-0732": {
+          "kind": "video",
+          "corr": 0.28
+        },
+        "RYA-FX3-0733": {
+          "kind": "video",
+          "corr": 0.2833
+        },
+        "RYA-FX3-0736": {
+          "kind": "video",
+          "corr": 0.2854
+        },
+        "RYA-FX3-0737": {
+          "kind": "video",
+          "corr": 0.2662
+        },
+        "RYA-FX3-0738": {
+          "kind": "video",
+          "corr": 0.2847
+        },
+        "RYA-FX3-0740": {
+          "kind": "video",
+          "corr": -0.0259
+        },
+        "RYA-FX3-0741": {
+          "kind": "video",
+          "corr": 0.2756
+        },
+        "RYA-FX3-0742": {
+          "kind": "video",
+          "corr": -0.0226
+        },
+        "RYA-FX3-0744": {
+          "kind": "video",
+          "corr": 0.285
+        },
+        "RYA-FX3-0745": {
+          "kind": "video",
+          "corr": 0.2167
+        },
+        "TX01_MIC038_20260717_143649_orig__S04.wav": {
+          "kind": "tx",
+          "corr": -0.1956
+        },
+        "TX01_MIC039_20260717_150650_orig__S05.wav": {
+          "kind": "tx",
+          "corr": -0.0301
+        },
+        "TX01_MIC040_20260717_153649_orig__S05.wav": {
+          "kind": "tx",
+          "corr": 0.1383
+        },
+        "TX02_MIC034_20260717_143729_orig__S04.wav": {
+          "kind": "tx",
+          "corr": 0.0307
+        },
+        "TX02_MIC035_20260717_150730_orig__S05.wav": {
+          "kind": "tx",
+          "corr": 0.2816
+        },
+        "TX02_MIC036_20260717_153729_orig__S05.wav": {
+          "kind": "tx",
+          "corr": -0.6097
+        }
+      },
+      "resid_rms": 0.0012,
+      "resid_max": 0.0037,
+      "n_meas": 100,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 0,
+      "dof": 74
+    },
+    "03_Yulia_Interview": {
+      "sources": {
+        "RYA-FX3-0746": {
+          "kind": "video",
+          "corr": 0.0007
+        },
+        "RYA-FX3-0747": {
+          "kind": "video",
+          "corr": 0.0
+        },
+        "RYA-FX3-0748": {
+          "kind": "video",
+          "corr": -0.0002
+        },
+        "RYA-FX3-0749": {
+          "kind": "video",
+          "corr": -0.0006
+        },
+        "RYA-FX3-0750": {
+          "kind": "video",
+          "corr": 0.0
+        },
+        "RYA-FX3-0751": {
+          "kind": "video",
+          "corr": -0.0123
+        },
+        "RYA-FX3-0752": {
+          "kind": "video",
+          "corr": -0.0225
+        },
+        "RYA-FX3-0753": {
+          "kind": "video",
+          "corr": -0.1926
+        },
+        "RYA-FX3-0754": {
+          "kind": "video",
+          "corr": 0.2274
+        },
+        "TX02_MIC039_20260717_161455_orig__S06.wav": {
+          "kind": "tx",
+          "corr": -0.0053
+        },
+        "TX02_MIC041_20260717_164720_orig__S09.wav": {
+          "kind": "tx",
+          "corr": 0.0055
+        },
+        "TX02_MIC042_20260717_171720_orig__S10.wav": {
+          "kind": "tx",
+          "corr": -0.0207
+        },
+        "TX02_MIC043_20260717_174720_orig__S10.wav": {
+          "kind": "tx",
+          "corr": -0.3756
+        }
+      },
+      "resid_rms": 0.0002,
+      "resid_max": 0.0004,
+      "n_meas": 20,
+      "n_rejected": 0,
+      "n_components": 3,
+      "n_bridges": 0,
+      "dof": 10
+    },
+    "04_Caregiver_Interview": {
+      "sources": {
+        "RYA-FX3-0755": {
+          "kind": "video",
+          "corr": 0.1576
+        },
+        "RYA-FX3-0756": {
+          "kind": "video",
+          "corr": 0.1575
+        },
+        "RYA-FX3-0758": {
+          "kind": "video",
+          "corr": 0.1575
+        },
+        "RYA-FX3-0759": {
+          "kind": "video",
+          "corr": 0.1573
+        },
+        "RYA-FX3-0760": {
+          "kind": "video",
+          "corr": 0.0173
+        },
+        "RYA-FX3-0761": {
+          "kind": "video",
+          "corr": -0.1227
+        },
+        "RYA-FX3-0762": {
+          "kind": "video",
+          "corr": -0.1228
+        },
+        "RYA-FX3-0763": {
+          "kind": "video",
+          "corr": -0.1229
+        },
+        "RYA-FX3-0764": {
+          "kind": "video",
+          "corr": -0.1232
+        },
+        "RYA-FX3-0765": {
+          "kind": "video",
+          "corr": -0.0927
+        },
+        "RYA-FX3-0766": {
+          "kind": "video",
+          "corr": -0.0629
+        },
+        "TX01_MIC042_20260717_205511_orig__S13.wav": {
+          "kind": "tx",
+          "corr": 0.1605
+        },
+        "TX01_MIC043_20260717_212512_orig__S14.wav": {
+          "kind": "tx",
+          "corr": -0.1244
+        },
+        "TX01_MIC044_20260717_215512_orig__S15.wav": {
+          "kind": "tx",
+          "corr": -0.0692
+        }
+      },
+      "resid_rms": 0.0001,
+      "resid_max": 0.0002,
+      "n_meas": 26,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 0,
+      "dof": 13
+    },
+    "05_Drive_Bogoyavlenie_To_Abramovo": {
+      "sources": {
+        "RYA-ZVE1-1885": {
+          "kind": "video",
+          "corr": -0.2351
+        },
+        "RYA-ZVE1-1886": {
+          "kind": "video",
+          "corr": 0.2535
+        },
+        "RYA-ZVE1-1887": {
+          "kind": "video",
+          "corr": -0.0781
+        },
+        "RYA-ZVE1-1889": {
+          "kind": "video",
+          "corr": 0.0596
+        },
+        "TX01_MIC005_20260720_103233_orig__S16.wav": {
+          "kind": "tx",
+          "corr": -0.2345
+        },
+        "TX01_MIC006_20260720_110233_orig__S16.wav": {
+          "kind": "tx",
+          "corr": -0.0855
+        },
+        "TX01_MIC007_20260720_113234_orig__S16.wav": {
+          "kind": "tx",
+          "corr": 0.0663
+        },
+        "TX02_MIC004_20260720_103429_orig__S16.wav": {
+          "kind": "tx",
+          "corr": 0.2448
+        },
+        "TX02_MIC005_20260720_110428_orig__S16.wav": {
+          "kind": "tx",
+          "corr": -0.5429
+        },
+        "TX02_MIC006_20260720_113429_orig__S16.wav": {
+          "kind": "tx",
+          "corr": 0.3314
+        }
+      },
+      "resid_rms": 0.0012,
+      "resid_max": 0.0028,
+      "n_meas": 27,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 1,
+      "dof": 18
+    },
+    "06_Village_Walk": {
+      "sources": {
+        "RYA-FX3-0933": {
+          "kind": "video",
+          "corr": -0.0872
+        },
+        "RYA-FX3-0934": {
+          "kind": "video",
+          "corr": 0.3029
+        },
+        "RYA-FX3-0935": {
+          "kind": "video",
+          "corr": -0.077
+        },
+        "RYA-FX3-0937": {
+          "kind": "video",
+          "corr": -0.0787
+        },
+        "RYA-FX3-0938": {
+          "kind": "video",
+          "corr": -0.0672
+        },
+        "RYA-FX3-0940": {
+          "kind": "video",
+          "corr": -0.086
+        },
+        "RYA-FX3-0944": {
+          "kind": "video",
+          "corr": -0.0668
+        },
+        "RYA-FX3-0951": {
+          "kind": "video",
+          "corr": 0.0801
+        },
+        "RYA-FX3-0952": {
+          "kind": "video",
+          "corr": 0.0799
+        },
+        "TX01_MIC008_20260720_131332_orig__S17.wav": {
+          "kind": "tx",
+          "corr": -0.0737
+        },
+        "TX01_MIC009_20260720_134332_orig__S19.wav": {
+          "kind": "tx",
+          "corr": 0.0875
+        },
+        "TX02_MIC008_20260720_131535_orig__S17.wav": {
+          "kind": "tx",
+          "corr": 0.3022
+        },
+        "TX02_MIC009_20260720_134535_orig__S19.wav": {
+          "kind": "tx",
+          "corr": -0.0345
+        }
+      },
+      "resid_rms": 0.0025,
+      "resid_max": 0.0099,
+      "n_meas": 42,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 0,
+      "dof": 30
+    },
+    "07_Swings_Interview_And_Lunch": {
+      "sources": {
+        "RYA-FX3-0955": {
+          "kind": "video",
+          "corr": 0.0017
+        },
+        "RYA-FX3-0956": {
+          "kind": "video",
+          "corr": -0.0014
+        },
+        "RYA-FX3-0957": {
+          "kind": "video",
+          "corr": -0.0002
+        },
+        "TX01_MIC011_20260720_142116_orig__S21.wav": {
+          "kind": "tx",
+          "corr": -0.0007
+        },
+        "TX02_MIC010_20260720_142357_orig__S21.wav": {
+          "kind": "tx",
+          "corr": -0.857
+        }
+      },
+      "resid_rms": 0.0007,
+      "resid_max": 0.0012,
+      "n_meas": 14,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 0,
+      "dof": 10
+    },
+    "08_Marevka_Spring": {
+      "sources": {
+        "RYA-FX3-0970": {
+          "kind": "video",
+          "corr": -0.1411
+        },
+        "RYA-FX3-0971": {
+          "kind": "video",
+          "corr": 0.1411
+        },
+        "TX01_MIC012_20260720_165945_orig__S23.wav": {
+          "kind": "tx",
+          "corr": -0.1495
+        },
+        "TX02_MIC011_20260720_170000_orig__S23.wav": {
+          "kind": "tx",
+          "corr": 0.1474
+        }
+      },
+      "resid_rms": 0.0022,
+      "resid_max": 0.0053,
+      "n_meas": 10,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 0,
+      "dof": 7
+    },
+    "09_Evening_Wrapup": {
+      "sources": {
+        "RYA-FX3-0986": {
+          "kind": "video",
+          "corr": 0.1199
+        },
+        "RYA-FX3-0987": {
+          "kind": "video",
+          "corr": -0.0399
+        },
+        "RYA-FX3-0988": {
+          "kind": "video",
+          "corr": -0.0401
+        },
+        "RYA-FX3-0989": {
+          "kind": "video",
+          "corr": -0.0399
+        },
+        "TX02_MIC012_20260720_192254_orig__S28.wav": {
+          "kind": "tx",
+          "corr": -0.0414
+        }
+      },
+      "resid_rms": 0.0001,
+      "resid_max": 0.0002,
+      "n_meas": 7,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 1,
+      "dof": 3
+    },
+    "10_Photo_Album_And_Phone": {
+      "sources": {
+        "RYA-FX3-0993": {
+          "kind": "video",
+          "corr": 0.027
+        },
+        "RYA-FX3-0995": {
+          "kind": "video",
+          "corr": 0.0069
+        },
+        "RYA-FX3-0996": {
+          "kind": "video",
+          "corr": -0.0131
+        },
+        "RYA-FX3-0997": {
+          "kind": "video",
+          "corr": 0.0066
+        },
+        "RYA-FX3-0998": {
+          "kind": "video",
+          "corr": 0.0065
+        },
+        "RYA-FX3-0999": {
+          "kind": "video",
+          "corr": 0.0066
+        },
+        "RYA-FX3-1000": {
+          "kind": "video",
+          "corr": 0.0065
+        },
+        "RYA-FX3-1004": {
+          "kind": "video",
+          "corr": 0.0065
+        },
+        "RYA-FX3-1005": {
+          "kind": "video",
+          "corr": 0.0168
+        },
+        "RYA-FX3-1007": {
+          "kind": "video",
+          "corr": 0.0167
+        },
+        "RYA-FX3-1008": {
+          "kind": "video",
+          "corr": 0.0163
+        },
+        "RYA-FX3-1009": {
+          "kind": "video",
+          "corr": -0.1033
+        },
+        "RYA-FX3-1012": {
+          "kind": "video",
+          "corr": 0.0003
+        },
+        "RYA-FX3-1013": {
+          "kind": "video",
+          "corr": -0.0001
+        },
+        "RYA-FX3-1014": {
+          "kind": "video",
+          "corr": -0.0001
+        },
+        "TX02_MIC004_20260721_142142_orig__S29.wav": {
+          "kind": "tx",
+          "corr": 0.0097
+        },
+        "TX02_MIC005_20260721_145142_orig__S34.wav": {
+          "kind": "tx",
+          "corr": -0.2349
+        },
+        "TX02_MIC007_20260721_145618_orig__S35.wav": {
+          "kind": "tx",
+          "corr": 0.0039
+        }
+      },
+      "resid_rms": 0.0001,
+      "resid_max": 0.0003,
+      "n_meas": 32,
+      "n_rejected": 0,
+      "n_components": 2,
+      "n_bridges": 0,
+      "dof": 16
+    },
+    "11_Curator_Gulya": {
+      "sources": {
+        "RYA-FX3-1098": {
+          "kind": "video",
+          "corr": -0.0
+        },
+        "TX02_MIC020_20260724_152624_orig__S37.wav": {
+          "kind": "tx",
+          "corr": -0.0066
+        }
+      },
+      "resid_rms": 0.0001,
+      "resid_max": 0.0001,
+      "n_meas": 2,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 0,
+      "dof": 1
+    },
+    "90_Channel_Donation_CTA": {
+      "sources": {
+        "RYA-FX3-1109": {
+          "kind": "video",
+          "corr": 0.0
+        },
+        "TX02_MIC023_20260724_163259_orig.wav": {
+          "kind": "tx",
+          "corr": 0.1717
+        },
+        "TX02_MIC024_20260724_170259_orig.wav": {
+          "kind": "tx",
+          "corr": -0.1633
+        }
+      },
+      "resid_rms": 0.0001,
+      "resid_max": 0.0001,
+      "n_meas": 4,
+      "n_rejected": 0,
+      "n_components": 1,
+      "n_bridges": 0,
+      "dof": 2
+    }
+  },
+  "generated_at": "2026-08-16T20:18:44"
+}

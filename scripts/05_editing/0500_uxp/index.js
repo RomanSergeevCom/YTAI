@@ -4,10 +4,10 @@
  * Four pipelines in one panel:
  *   INGEST:      loads ingest.json → imports clips, builds Ingest sequence
  *   ASSEMBLY:    loads pre_edit_brief.json → builds Assembly sequence from existing clips
- *   REVIEW:      builds Review sequence from unused segments
+ *   DELETED SCENE: builds Deleted Scene sequence from unused segments
  *   PRE-EDIT:    creates _4_PreEdit sequence (V1 Assembly copy + V2 PNG overlays + markers + SRT)
  *
- * INGEST, ASSEMBLY, REVIEW, and SCREEN CUES modules do NOT import each other.
+ * INGEST, ASSEMBLY, DELETED SCENE, and SCREEN CUES modules do NOT import each other.
  * The only connection is the 00_Source bin (created by INGEST, read by others).
  * Screen Cues is independent — creates its own sequence, does NOT need Assembly.
  */
@@ -26,14 +26,36 @@ const { createBinStructure, BIN_NAMES } = require('./src/ingest/binManager');
 const { buildIngestSequence, buildMultiSceneIngest, findProjectItemByName } = require('./src/ingest/timelineBuilder');
 const { importTranscripts } = require('./src/ingest/transcriptImporter');
 const { copyLutsToCreativeFolder, applyLumetriToClips } = require('./src/ingest/lutManager');
+const { addSceneMarkers, generatedMarkerNames } = require('./src/ingest/placement/sceneMarkers');
+
+// --- Module imports: FOOTAGE REVIEW (отсмотр) ---
+const { buildFootageReview, FOOTAGE_REVIEW_VERSION } = require('./src/footageReview/footageReviewBuilder');
+const { addAdjustmentOverSelection, addAdjustmentPerClipFromPlan, probeDonorClone,
+        buildLutDonorSequence, LUT_DONOR_SEQUENCE,
+        collectVideoClipItems } = require('./src/adjust/adjustmentBuilder');
+// Цвет из color_plan.json: параметр Lumetri адресуется по ИНДЕКСУ, а не по имени
+const colorApply = require('./src/adjust/colorApply');
 
 // --- Module imports: ASSEMBLY ---
 const { parseBrief } = require('./src/assembly/briefParser');
-const { validateIngestState } = require('./src/assembly/projectScanner');
+const { validateIngestState, findSourceBin, buildClipMap } = require('./src/assembly/projectScanner');
 const { buildAssemblySequence, ASSEMBLY_BUILDER_VERSION } = require('./src/assembly/assemblyBuilder');
+const { buildPartSequence, PARTS_BUILDER_VERSION } = require('./src/parts/partsBuilder');
 
-// --- Module imports: REVIEW ---
-const { buildReviewSequence, getReviewCategory } = require('./src/review/reviewBuilder');
+// --- Module imports: SHORTS ---
+const { buildPreviewSequence, buildShortSequence, planShort, validateShortsBrief, SHORTS_BUILDER_VERSION } = require('./src/shorts/shortsBuilder');
+const { snapToFrame } = require('./src/shared/frameSnap');
+// 00_Source_Timelines (2026-09-15): scene timelines {CODE}_{NN}_{Scene} out of the root
+const { SOURCE_TIMELINES_BIN } = require('./src/shared/constants');
+const { collectTakenNames, findRootBin } = require('./src/shared/binMove');
+const { hideSourceTimelines, formatHideReport, SOURCE_TIMELINES_VERSION } = require('./src/shared/sourceTimelines');
+
+// --- Module imports: DELETED SCENE ---
+const { buildDeletedSceneSequence, getDeletedSceneCategory } = require('./src/deletedScene/deletedSceneBuilder');
+
+// --- Module imports: REVIEW (new — external editor review) ---
+const { parseReviewBrief } = require('./src/review/reviewBriefParser');
+const { buildReviewSequence: buildNewReviewSequence, buildReviewDeletedScene, importEditedVideo } = require('./src/review/reviewAssembler');
 
 // --- Module imports: SCREENS ---
 const { parseScreens } = require('./src/screens/screenParser');
@@ -47,6 +69,18 @@ function extractProjectCode(name) {
   if (!name) return 'unknown';
   var match = name.match(/^(YT[A-Z]{2,4}\d+)_/);
   return match ? match[1] : name;
+}
+
+// --- Project compact/expand toggle ---
+function collapseProjectSection(code) {
+  var section = $('project-section');
+  $('project-compact-name').textContent = code;
+  section.classList.add('project-compact');
+}
+
+function toggleProjectExpand() {
+  var section = $('project-section');
+  section.classList.toggle('project-compact');
 }
 
 // --- State (separate for INGEST and ASSEMBLY) ---
@@ -66,12 +100,33 @@ let projectState = {
 // --- Separate loggers per pipeline ---
 const ingestLogger = new Logger('INGEST');
 const assemblyLogger = new Logger('ASSEMBLY');
-const reviewLogger = new Logger('REVIEW');
+const deletedSceneLogger = new Logger('DELETED_SCENE');
 const screensLogger = new Logger('SCREENS');
+const reviewLogger = new Logger('REVIEW');
+
+// --- State: REVIEW (external editor review) ---
+let reviewState = { data: null, filePath: null, building: false, editedVideoPath: null };
 
 // --- UI Helpers ---
 
+// ⚠️ Версия панели. Поднимать при КАЖДОЙ правке index.js/index.html: она уходит
+// в «Copy error report», и это единственный способ понять, перезагрузил ли
+// человек панель в UXP Developer Tool или смотрит на старый код.
+// ⚠️ ОДИН источник версии панели. До 25.09.2026 их было три и все разные:
+// шапка index.html «v2.20.0», отчёт об ошибках «v2.17.1», строка лога
+// «Version 2.4.0». По такому набору невозможно ответить на главный вопрос
+// живой отладки — перезагрузил человек панель или смотрит на старый код.
+// Поднимать при КАЖДОЙ правке index.js / index.html / src/.
+var PANEL_VERSION = '2.20.2';
+
 function $(id) { return document.querySelector('#' + id); }
+
+/** Привязка, переживающая отсутствие кнопки в разметке. */
+function on(id, handler) {
+  var el = $(id);
+  if (el) el.addEventListener('click', handler);
+  return !!el;
+}
 
 function appendToPanel(panelId, entry, level, message) {
   const panel = $(panelId);
@@ -90,7 +145,7 @@ function appendToPanel(panelId, entry, level, message) {
     cls = 'log-step';
   } else if (msg.indexOf('Timing:') === 0) {
     cls = 'log-timing';
-  } else if (msg.indexOf('Result:') === 0 || msg.indexOf('Summary:') === 0 || msg.indexOf('Assembly:') === 0 || msg.indexOf('Review:') === 0) {
+  } else if (msg.indexOf('Result:') === 0 || msg.indexOf('Summary:') === 0 || msg.indexOf('Assembly:') === 0 || msg.indexOf('Deleted Scene:') === 0) {
     cls = 'log-result';
   } else {
     cls = level === 'ERROR' ? 'log-error'
@@ -103,10 +158,7 @@ function appendToPanel(panelId, entry, level, message) {
   panel.scrollTop = panel.scrollHeight;
 }
 
-ingestLogger.onLog = (entry, level, message) => { appendToPanel('ingest-log-panel', entry, level, message); };
-assemblyLogger.onLog = (entry, level, message) => { appendToPanel('assembly-log-panel', entry, level, message); };
-reviewLogger.onLog = (entry, level, message) => { appendToPanel('review-log-panel', entry, level, message); };
-screensLogger.onLog = (entry, level, message) => { appendToPanel('screens-log-panel', entry, level, message); };
+// Logs write to 99_Pipeline/logs/ only — no in-panel display
 
 // --- INGEST UI helpers ---
 
@@ -172,6 +224,58 @@ function setProjectStatus(text, type) {
   $('project-status-text').textContent = text;
 }
 
+/**
+ * Walk UP from a folder until the real project ROOT: a dir containing 00_Setup,
+ * or whose name matches YT{XX}{NN}_ . Editors keep .prproj inside 02_Edit/ —
+ * without this the panel roots at 02_Edit and every 00_Setup path misses.
+ * Max 4 levels; falls back to the start path unchanged.
+ */
+async function resolveProjectRoot(startPath) {
+  var p = String(startPath || '');
+  for (var i = 0; i < 4 && p && p !== '/'; i++) {
+    var base = p.split('/').pop() || '';
+    if (/^YT[A-Z]{2,4}\d+_/.test(base)) return p;
+    var hasSetup = false;
+    try { await uxpfs.getEntryWithUrl('file://' + p + '/00_Setup'); hasSetup = true; }
+    catch (e1) {
+      try { await uxpfs.getEntryWithUrl('file://' + encodeURI(p + '/00_Setup')); hasSetup = true; }
+      catch (e2) { /* not here */ }
+    }
+    if (hasSetup) return p;
+    var up = p.replace(/\/[^/]*$/, '');
+    if (!up || up === p) break;
+    p = up;
+  }
+  return startPath;
+}
+
+/**
+ * "⧉ Err" button: copy the last panel errors/warnings + context to the clipboard
+ * so Roman can paste them straight to Claude (Roman 2026-08-20).
+ */
+async function copyLastError() {
+  var g = (typeof globalThis !== 'undefined') ? globalThis : window;
+  var errs = (g.__ytaiErrors || []).slice(-12);
+  var lines = [
+    '=== YTAI Assembly panel — error report ===',
+    'panel: v' + PANEL_VERSION + ' · ' + new Date().toISOString(),
+    'project: ' + (projectState.projectName || '?') + ' @ ' + (projectState.folderPath || '?'),
+    '--- last errors / warnings (' + errs.length + ') ---'
+  ];
+  lines = lines.concat(errs.length ? errs : ['(no errors captured this session)']);
+  var report = lines.join('\n');
+  var copied = false;
+  try { require('uxp').clipboard.copyText(report); copied = true; } catch (eC1) { }
+  if (!copied) {
+    try { await navigator.clipboard.setContent({ 'text/plain': report }); copied = true; } catch (eC2) { }
+  }
+  if (!copied) {
+    try { await navigator.clipboard.writeText(report); copied = true; } catch (eC3) { }
+  }
+  setProjectStatus(copied ? ('Error report copied (' + errs.length + ' entries) — paste to Claude')
+    : 'Clipboard unavailable — see Debug log', copied ? 'ready' : 'error');
+}
+
 function showFallback(section) {
   var row = $(section + '-fallback-row');
   if (row) row.style.display = 'flex';
@@ -188,13 +292,14 @@ function resetAllPipelineStates() {
   // Reset state objects
   ingestState = { data: null, filePath: null, building: false };
   assemblyState = { data: null, segments: [], blocks: [], screens: [], projectName: '', filePath: null, building: false, clipMap: null };
+  reviewState = { data: null, filePath: null, building: false, editedVideoPath: null, pipelineResult: null };
 
   // Reset INGEST UI
   setIngestStatus('Detecting files...', 'waiting');
   $('ingest-summary').style.display = 'none';
   $('ingest-file-info').textContent = '';
   $('btn-build-ingest').setAttribute('disabled', 'true');
-  $('btn-audio-debug').setAttribute('disabled', 'true');
+  $('btn-export-audio-map').setAttribute('disabled', 'true');
   $('btn-export-markers').setAttribute('disabled', 'true');
   $('btn-debug-export').setAttribute('disabled', 'true');
   $('ingest-validation').style.display = 'none';
@@ -206,11 +311,28 @@ function resetAllPipelineStates() {
   $('assembly-file-info').textContent = '';
   $('btn-build-assembly').setAttribute('disabled', 'true');
   $('assembly-validation').style.display = 'none';
+  $('assembly-scenes').style.display = 'none';
+  $('assembly-scenes-list').innerHTML = '';
+  asmScenesState = { entries: [], peEntry: null };
+  $('btn-build-assembly-scenes').setAttribute('disabled', 'true');
+  $('btn-build-premontage').setAttribute('disabled', 'true');
   hideAssemblyProgress();
+
+  // Reset DELETED SCENE UI
+  setDeletedSceneStatus('Detecting files...', 'waiting');
+  $('btn-build-deleted-scene').setAttribute('disabled', 'true');
+  $('ds-validation').style.display = 'none';
+  hideDeletedSceneProgress();
 
   // Reset REVIEW UI
   setReviewStatus('Detecting files...', 'waiting');
+  $('btn-process-review').removeAttribute('disabled');
+  $('btn-load-review-brief').removeAttribute('disabled');
   $('btn-build-review').setAttribute('disabled', 'true');
+  $('btn-build-review-overlay').removeAttribute('disabled'); // self-scans latest render + inserts
+  $('btn-build-review-v3').removeAttribute('disabled'); // self-scans *_review_brief_v3.json
+  $('btn-export-sequence-json').removeAttribute('disabled'); // exports active sequence for Claude
+  $('btn-export-review-markers').setAttribute('disabled', 'true');
   $('review-validation').style.display = 'none';
   hideReviewProgress();
 
@@ -246,7 +368,7 @@ async function copyProjectPrompt() {
   // Determine next version: scan Assembly/ for latest _in.json version
   var nextVer = 1;
   try {
-    var assemblyDir = path + '/01_Media/Source/Setup/Assembly';
+    var assemblyDir = path + '/00_Setup/02_Assembly';
     var assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
     var files = await assemblyEntry.getEntries();
     var inRe = new RegExp('^' + code + '_Assembly_v(\\d+)_in\\.json$');
@@ -266,9 +388,9 @@ async function copyProjectPrompt() {
     + 'Resolve from project structure:\n'
     + '- Knowledge base: ~/YTAI/scripts/05_editing/0501_brief/ (INSTRUCTIONS.md, editing_rules.md, output_format.md)\n'
     + '- Channel profile: ~/YTAI/YTs/' + channel + '.md\n'
-    + '- Transcript: ' + path + '/01_Media/Source/Setup/' + code + '_Claude4_assembly.json\n'
-    + '- Output JSON: ' + path + '/01_Media/Source/Setup/Assembly/' + code + '_Assembly_v' + nextVer + '_in.json\n'
-    + '- Output HTML: ' + path + '/01_Media/Source/Setup/Assembly/' + code + '_review_v' + nextVer + '.html';
+    + '- Transcript: ' + path + '/00_Setup/' + code + '_Claude4_assembly.json\n'
+    + '- Output JSON: ' + path + '/00_Setup/02_Assembly/' + code + '_Assembly_v' + nextVer + '_in.json\n'
+    + '- Output HTML: ' + path + '/00_Setup/02_Assembly/' + code + '_review_v' + nextVer + '.html';
 
   try { await navigator.clipboard.writeText(prompt); } catch (err) { /* ignore */ }
 }
@@ -278,7 +400,7 @@ async function copyMarkersPrompt() {
   var code = extractProjectCode(projectState.projectName);
   var channel = code.replace(/\d+$/, '');
   var path = projectState.folderPath;
-  var assemblyDir = path + '/01_Media/Source/Setup/Assembly';
+  var assemblyDir = path + '/00_Setup/02_Assembly';
 
   // Scan Assembly/ for latest _out.json and latest _in.json
   var latestOut = 0, latestIn = 0, latestOutName = null;
@@ -346,8 +468,8 @@ async function copyLogPath(pipeline) {
  * Select project folder and auto-detect pipeline input files.
  *
  * Convention:
- *   {PROJECT_NAME}/01_Media/Source/{PROJECT_NAME}_ingest.json
- *   {PROJECT_NAME}/01_Media/Source/Setup/{CODE}_pre_edit_brief.json
+ *   {PROJECT_NAME}/00_Setup/01_Ingest/{CODE}_ingest.json
+ *   {PROJECT_NAME}/00_Setup/{CODE}_pre_edit_brief.json
  */
 async function selectProjectFolder() {
   try {
@@ -362,7 +484,9 @@ async function selectProjectFolder() {
     var folderPath = folder.nativePath;
     // Remove trailing slash for consistency
     if (folderPath.endsWith('/')) folderPath = folderPath.slice(0, -1);
-    var projectName = folder.name;
+    // Walk up if the user picked a subfolder (e.g. 02_Edit) instead of the project root.
+    folderPath = await resolveProjectRoot(folderPath);
+    var projectName = folderPath.split('/').pop() || folder.name;
 
     // Update project state
     projectState.folderPath = folderPath;
@@ -388,9 +512,79 @@ async function selectProjectFolder() {
     // Run auto-detection
     await autoDetectFiles(folderPath, projectName);
 
+    // Collapse to compact mode
+    collapseProjectSection(extractProjectCode(projectName));
+
   } catch (err) {
     ingestLogger.error('Project selection failed: ' + err.message);
     setProjectStatus('Selection failed: ' + err.message, 'error');
+  }
+}
+
+/**
+ * Auto-fill the project folder from the CURRENTLY OPEN Premiere project.
+ * Parity with the Footage stage: derives the folder from the active project's
+ * .prproj path instead of a manual picker, then runs the same auto-detection.
+ *
+ * An UNTITLED / unsaved project has NO path on disk (project.path is empty) — there
+ * is nothing to detect, so the user must Save it (⌘S) into its folder first.
+ *
+ * @param {Object} [opts] { silent } — silent=true (panel init) suppresses the
+ *                        "no open / unsaved project" statuses so load stays quiet.
+ */
+async function useOpenProjectFolder(opts) {
+  var silent = opts && opts.silent;
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) {
+      if (!silent) setProjectStatus('No open Premiere project — open one, then retry', 'error');
+      return;
+    }
+
+    // .prproj path — empty for an untitled/unsaved project.
+    var ppath = null;
+    try { ppath = project.path; } catch (e) { /* getter may throw */ }
+    if (!ppath) { try { ppath = await project.getPath(); } catch (e) { /* none */ } }
+    if (!ppath) {
+      ingestLogger.warn('useOpenProjectFolder: active project has empty path (untitled/unsaved)');
+      if (!silent) setProjectStatus('Project not saved yet — Save it (⌘S) into its folder, then "Use Open Project"', 'error');
+      return;
+    }
+
+    // Derive the project ROOT folder (strip the .prproj filename), then WALK UP:
+    // editors keep the .prproj in 02_Edit/ (canon feedback_prproj_latest_in_02edit),
+    // but the project root is the folder holding 00_Setup / matching YT{XX}{NN}_.
+    var folderPath = String(ppath).replace(/\\/g, '/').replace(/\/[^/]*$/, '');
+    if (folderPath.endsWith('/')) folderPath = folderPath.slice(0, -1);
+    folderPath = await resolveProjectRoot(folderPath);
+    var projectName = folderPath.split('/').pop() || '';
+
+    // Touch the folder so UXP grants access (manifest has fullAccess → no picker).
+    try { await uxpfs.getEntryWithUrl('file://' + folderPath); }
+    catch (e) { try { await uxpfs.getEntryWithUrl('file://' + encodeURI(folderPath)); } catch (e2) { /* autoDetect retries per-file */ } }
+
+    projectState.folderPath = folderPath;
+    projectState.projectName = projectName;
+    projectState.ingestPath = null;
+    projectState.briefPath = null;
+    projectState.ingestDetected = false;
+    projectState.briefDetected = false;
+
+    setProjectStatus('Project: ' + projectName + ' (open project)', 'ready');
+    $('btn-copy-project-prompt').removeAttribute('disabled');
+    $('project-path-info').textContent = folderPath;
+    $('project-checklist').innerHTML = '';
+    $('project-actions-row').style.display = 'none';
+
+    ingestLogger.info('Project folder from open project: ' + projectName + ' (' + folderPath + ')');
+
+    resetAllPipelineStates();
+    await autoDetectFiles(folderPath, projectName);
+    collapseProjectSection(extractProjectCode(projectName));
+
+  } catch (err) {
+    ingestLogger.error('Use-open-project failed: ' + err.message);
+    if (!silent) setProjectStatus('Use open project failed: ' + err.message, 'error');
   }
 }
 
@@ -408,9 +602,10 @@ async function autoDetectFiles(folderPath, projectName) {
 
   // --- Ingest --- (try CODE-based first, then legacy full-name)
   var ingestCandidates = [
-    folderPath + '/01_Media/Source/Setup/' + code + '_ingest.json',
-    folderPath + '/01_Media/Source/Setup/' + projectName + '_ingest.json',  // legacy
-    folderPath + '/01_Media/Source/' + projectName + '_ingest.json',        // legacy
+    folderPath + '/00_Setup/01_Ingest/' + code + '_ingest.json',
+    folderPath + '/00_Setup/01_Ingest/' + projectName + '_ingest.json',  // legacy
+    folderPath + '/00_Setup/' + code + '_ingest.json',                   // legacy (pre-v4.1)
+    folderPath + '/01_Source/' + projectName + '_ingest.json',           // legacy
   ];
   var ingestFound = false;
   for (var i = 0; i < ingestCandidates.length; i++) {
@@ -430,18 +625,18 @@ async function autoDetectFiles(folderPath, projectName) {
   if (!ingestFound) {
     projectState.ingestDetected = false;
     checklistHtml += checkItem(false, code + '_ingest.json',
-      'Expected: 01_Media/Source/Setup/' + code + '_ingest.json');
+      'Expected: 00_Setup/01_Ingest/' + code + '_ingest.json');
     ingestLogger.warn('Ingest not found at: ' + ingestCandidates.join(', '));
     setIngestStatus('Ingest JSON not found. Load manually.', 'waiting');
     showFallback('ingest');
   }
 
-  // --- Brief --- (search order: Assembly/ → Setup/ legacy)
+  // --- Brief --- (search order: 02_Assembly/ → 00_Setup/ legacy)
   var briefFound = false;
   var inRe = new RegExp('^' + code + '_Assembly_v(\\d+)_in\\.json$');
 
-  // Scan Assembly/ folder for latest _in.json by version number
-  var assemblyDir = folderPath + '/01_Media/Source/Setup/Assembly';
+  // Scan 02_Assembly/ folder for latest _in.json by version number
+  var assemblyDir = folderPath + '/00_Setup/02_Assembly';
   try {
     var assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
     var assemblyFiles = await assemblyEntry.getEntries();
@@ -463,19 +658,19 @@ async function autoDetectFiles(folderPath, projectName) {
       projectState.briefDetected = true;
       briefFound = true;
       checklistHtml += checkItem(true, latestName + ' (v' + latestVer + ')');
-      assemblyLogger.info('Auto-detected brief from Assembly/: ' + latestName);
+      assemblyLogger.info('Auto-detected brief from 02_Assembly/: ' + latestName);
       await loadBriefFromPath(latestPath);
     }
   } catch (e) {
-    // Assembly/ folder not found — try legacy paths
+    // 02_Assembly/ folder not found — try legacy paths
   }
 
-  // 3. Fallback: try legacy pre_edit_brief paths in Setup/
+  // 3. Fallback: try legacy pre_edit_brief paths in 00_Setup/
   if (!briefFound) {
     var briefCandidates = [
-      folderPath + '/01_Media/Source/Setup/' + code + '_pre_edit_brief.json',
-      folderPath + '/01_Media/Source/Setup/' + projectName + '_pre_edit_brief.json',  // legacy
-      folderPath + '/01_Media/Source/Setup/' + projectName + '_edit_brief.json',       // legacy
+      folderPath + '/00_Setup/' + code + '_pre_edit_brief.json',
+      folderPath + '/00_Setup/' + projectName + '_pre_edit_brief.json',  // legacy
+      folderPath + '/00_Setup/' + projectName + '_edit_brief.json',       // legacy
     ];
     for (var bi = 0; bi < briefCandidates.length; bi++) {
       try {
@@ -496,17 +691,17 @@ async function autoDetectFiles(folderPath, projectName) {
   if (!briefFound) {
     projectState.briefDetected = false;
     checklistHtml += checkItem(false, code + '_Assembly_v*_in.json',
-      'Not found in Assembly/, ~/Downloads/, or Setup/');
-    assemblyLogger.warn('No brief found in Assembly/, ~/Downloads/, or Setup/');
+      'Not found in 02_Assembly/, ~/Downloads/, or 00_Setup/');
+    assemblyLogger.warn('No brief found in 02_Assembly/, ~/Downloads/, or 00_Setup/');
     setAssemblyStatus('Pre-edit brief not found. Load manually.', 'waiting');
-    setReviewStatus('Pre-edit brief not found.', 'waiting');
+    setDeletedSceneStatus('Pre-edit brief not found.', 'waiting');
     setScreensStatus('Pre-edit brief not found.', 'waiting');
     showFallback('assembly');
   }
 
   // Check for saved Pre-Edit state (enable Reload Last button)
   try {
-    var setupDir = folderPath + '/01_Media/Source/Setup';
+    var setupDir = folderPath + '/00_Setup';
     var versionsDir = setupDir + '/pre-edit_versions';
     var savedState = await loadState(versionsDir, screensLogger);
     if (savedState && savedState.briefPath) {
@@ -518,13 +713,113 @@ async function autoDetectFiles(folderPath, projectName) {
 
   $('project-checklist').innerHTML = checklistHtml;
   $('project-actions-row').style.display = 'flex';
-  $('btn-audio-debug').removeAttribute('disabled');
+  $('btn-debug-dump').removeAttribute('disabled');
+  $('btn-export-audio-map').removeAttribute('disabled');
   $('btn-export-markers').removeAttribute('disabled');
   $('btn-debug-export').removeAttribute('disabled');
   $('btn-export-pre-edit-doc').removeAttribute('disabled');
   $('btn-copy-pre-edit-prompt').removeAttribute('disabled');
   $('btn-import-pre-edit').removeAttribute('disabled');
   ingestLogger.info('Auto-detection complete: ingest=' + projectState.ingestDetected + ', brief=' + projectState.briefDetected);
+
+  // Auto-detect Assembly scene bundles (00_Setup/02_Assembly/scenes/) — non-fatal
+  try { await refreshAssemblyScenes(); } catch (e) { ingestLogger.debug('Assembly scenes scan: ' + e.message); }
+
+  // Auto-detect Review files (00_Setup/05_Review/ + 03_Exports/)
+  try {
+    var reviewDir = folderPath + '/00_Setup/05_Review';
+    var exportsDir = folderPath + '/03_Exports';
+
+    // Find latest video in 03_Exports/
+    var latestVideo = null;
+    try {
+      var expFolder = await uxpfs.getEntryWithUrl('file://' + exportsDir);
+      var expEntries = await expFolder.getEntries();
+      var videoFiles = expEntries.filter(function(e) {
+        var n = e.name.toLowerCase();
+        return n.endsWith('.mp4') || n.endsWith('.mov');
+      });
+      if (videoFiles.length > 0) {
+        videoFiles.sort(function(a, b) { return b.name.localeCompare(a.name); });
+        latestVideo = videoFiles[0];
+      }
+    } catch (e) { }
+
+    // Find latest transcript + SRT files in Review/ and Transcription/
+    var latestTranscript = null;
+    var captionsSrt = null;
+    var transcriptSrt = null;
+    try {
+      var revFolder = await uxpfs.getEntryWithUrl('file://' + reviewDir);
+      var revEntries = await revFolder.getEntries();
+      var transcripts = revEntries.filter(function(e) {
+        return e.name.endsWith('_review_transcript.json');
+      });
+      if (transcripts.length > 0) {
+        transcripts.sort(function(a, b) { return b.name.localeCompare(a.name); });
+        latestTranscript = transcripts[0];
+      }
+      // Find SRT files in Review/ folder
+      for (var ri = 0; ri < revEntries.length; ri++) {
+        var reName = revEntries[ri].name;
+        if (reName.endsWith('_captions.srt') && !captionsSrt) captionsSrt = revEntries[ri];
+        if (reName.endsWith('_transcript.srt') && !reName.includes('review_transcript') && !transcriptSrt) transcriptSrt = revEntries[ri];
+      }
+    } catch (e) { }
+    // Also check Transcription/captions/ and Transcription/transcripts/
+    if (!captionsSrt || !transcriptSrt) {
+      try {
+        var txBase = folderPath + '/01_Source/Transcription';
+        if (!captionsSrt) {
+          var capDir = await uxpfs.getEntryWithUrl('file://' + txBase + '/captions');
+          var capFiles = await capDir.getEntries();
+          for (var ci = 0; ci < capFiles.length; ci++) {
+            if (capFiles[ci].name.includes('Review') && capFiles[ci].name.endsWith('_captions.srt')) {
+              captionsSrt = capFiles[ci]; break;
+            }
+          }
+        }
+        if (!transcriptSrt) {
+          var trDir = await uxpfs.getEntryWithUrl('file://' + txBase + '/transcripts');
+          var trFiles = await trDir.getEntries();
+          for (var tri = 0; tri < trFiles.length; tri++) {
+            if (trFiles[tri].name.includes('Review') && trFiles[tri].name.endsWith('_transcript.srt')) {
+              transcriptSrt = trFiles[tri]; break;
+            }
+          }
+        }
+      } catch (e) { /* Transcription dirs may not exist */ }
+    }
+
+    // Find latest brief
+    var latestBrief = null;
+    if (projectState.briefDetected && projectState.briefPath) {
+      latestBrief = projectState.briefPath;
+    }
+
+    if (latestVideo && latestTranscript) {
+      // Review files exist — populate pipelineResult and enable Build Review
+      reviewState.pipelineResult = {
+        video: latestVideo.nativePath,
+        transcript: latestTranscript.nativePath,
+        captions_srt: captionsSrt ? captionsSrt.nativePath : '',
+        transcript_srt: transcriptSrt ? transcriptSrt.nativePath : '',
+        brief: latestBrief || '',
+        status: 'ok'
+      };
+      $('btn-build-review').removeAttribute('disabled');
+      $('btn-export-review-markers').removeAttribute('disabled');
+      setReviewStatus('Review files found. Build Review or Process Review.', 'ready');
+      reviewLogger.info('Auto-detected review: video=' + latestVideo.name + ', transcript=' + latestTranscript.name);
+      if (captionsSrt) reviewLogger.info('Auto-detected captions SRT: ' + captionsSrt.name);
+      if (transcriptSrt) reviewLogger.info('Auto-detected transcript SRT: ' + transcriptSrt.name);
+    } else if (latestVideo) {
+      setReviewStatus('Video found in 03_Exports/. Press Process Review.', 'ready');
+      reviewLogger.info('Auto-detected video: ' + latestVideo.name + ' (no transcript yet)');
+    }
+  } catch (revDetectErr) {
+    // Non-fatal
+  }
 }
 
 /**
@@ -554,6 +849,7 @@ async function refreshProject() {
   resetAllPipelineStates();
   $('project-checklist').innerHTML = '';
   await autoDetectFiles(projectState.folderPath, projectState.projectName);
+  collapseProjectSection(extractProjectCode(projectState.projectName));
 }
 
 
@@ -576,8 +872,16 @@ async function loadIngestFromPath(filePath) {
   $('ingest-summary').style.display = 'block';
   $('ingest-file-info').textContent = 'File: ' + filePath;
   $('btn-build-ingest').removeAttribute('disabled');
+  $('btn-verify-ingest').removeAttribute('disabled');
+  $('btn-sync-audio').removeAttribute('disabled');
 
   ingestLogger.info('Ingest loaded: ' + ingest.clips.length + ' clips, project "' + ingest.project_name + '" (code: ' + ingest.project_code + ')');
+
+  $('btn-finesync').removeAttribute('disabled');
+  $('btn-sync-spread').removeAttribute('disabled');
+  $('btn-sync-select').removeAttribute('disabled');
+  $('btn-sync-clean').removeAttribute('disabled');
+  $('btn-sync-collect').removeAttribute('disabled');
 
   // Check if sequences already exist in the Premiere project
   var existingSeqs = await detectExistingSequences(ingest);
@@ -588,6 +892,715 @@ async function loadIngestFromPath(filePath) {
   } else {
     setIngestStatus('Ingest loaded. Ready to build.', 'ready');
   }
+  warnIfNoFineSync(ingest);
+  await renderIngestSceneList(ingest, existingSeqs);
+}
+
+/**
+ * Warn when a wall-clock ingest was never fine-synced.
+ *
+ * The builder places everything from wall_offset, so a coarse ingest yields a
+ * coarse timeline with nothing on screen to show it — the lav just sits 15-20
+ * frames off the lips. Say it out loud before the build, not after.
+ */
+function warnIfNoFineSync(ingest) {
+  if (!ingest || ingest.layout_mode !== 'wallclock') return;
+  if (ingest.fine_sync && ingest.fine_sync.applied_at) return;
+  ingestLogger.warn('No fine sync in this ingest — clips sit at speech accuracy (±0.6-0.9 s = 15-20 frames). '
+    + 'Press "Fine Sync" before building if you intend to cut on the lav.');
+}
+
+/**
+ * Fine Sync — точный синхрон по звуку перед сборкой.
+ *
+ * Внутри UXP это сделать нельзя: нужен ffmpeg и разбор сотен гигабайт медиа.
+ * Поэтому панель передаёт путь к ingest через /tmp и запускает .command в
+ * Терминале — тот же приём, что у Screen Cues PNG и Pre-Edit .docx. Скрипт
+ * правит wall_offset прямо в ingest (с бэкапом), панель дожидается этого,
+ * перечитывает файл и сама обновляет сводку.
+ *
+ * Ничего в Premiere при этом не меняется: поправки живут в ingest, поэтому
+ * после них секвенции надо ПЕРЕСОБРАТЬ.
+ */
+async function runFineSync() {
+  if (!ingestState.filePath) {
+    setIngestStatus('Load ingest first', 'error');
+    return;
+  }
+  var target = ingestState.filePath;
+  var before = (ingestState.data && ingestState.data.fine_sync && ingestState.data.fine_sync.applied_at) || '';
+  var homePath = require('os').homedir();
+  var toolDir = homePath + '/YTAI/scripts/999_extra/audio_finesync';
+
+  ingestLogger.info('=== FINE SYNC (audio cross-correlation) ===');
+  ingestLogger.info('Target: ' + target);
+  setIngestStatus('Fine sync running in Terminal — watch that window', 'waiting');
+  $('btn-finesync').setAttribute('disabled', 'true');
+
+  try {
+    var tmpDir = await uxpfs.getEntryWithUrl('file:///tmp');
+    var tmpFile = await tmpDir.createFile('ytai_finesync_target.txt', { overwrite: true });
+    await tmpFile.write(target);
+    ingestLogger.debug('Target written to /tmp/ytai_finesync_target.txt');
+  } catch (tmpErr) {
+    ingestLogger.error('Cannot write /tmp/ytai_finesync_target.txt: ' + tmpErr.message);
+    setIngestStatus('Cannot write temp file', 'error');
+    $('btn-finesync').removeAttribute('disabled');
+    return;
+  }
+
+  try {
+    await require('uxp').shell.openPath(toolDir + '/finesync.command');
+    ingestLogger.info('Launched finesync.command');
+  } catch (shellErr) {
+    ingestLogger.warn('shell.openPath failed: ' + shellErr.message);
+    var manual = 'python3 "' + toolDir + '/finesync_run.py" "' + target + '" --apply';
+    try { await navigator.clipboard.writeText(manual); } catch (e) { /* clipboard optional */ }
+    ingestLogger.info('Manual: ' + manual);
+    setIngestStatus('Launch failed — command copied to clipboard, run it in Terminal', 'error');
+    $('btn-finesync').removeAttribute('disabled');
+    return;
+  }
+
+  // Ждём, пока Терминал допишет поправки, и перечитываем ingest сами.
+  var waitedSec = 0;
+  var poll = setInterval(async function () {
+    waitedSec += 5;
+    if (waitedSec > 30 * 60) {
+      clearInterval(poll);
+      ingestLogger.warn('Fine sync: gave up waiting after 30 min — reload the ingest manually');
+      $('btn-finesync').removeAttribute('disabled');
+      return;
+    }
+    try {
+      var entry = await uxpfs.getEntryWithUrl('file://' + target);
+      var raw = await entry.read();
+      var appliedAt = ((JSON.parse(raw) || {}).fine_sync || {}).applied_at || '';
+      if (!appliedAt || appliedAt === before) return;
+      clearInterval(poll);
+      await loadIngestFromPath(target);
+      $('btn-finesync').removeAttribute('disabled');
+      setIngestStatus('Fine sync applied — REBUILD the sequences to get it', 'ready');
+      ingestLogger.info('Fine sync applied ' + appliedAt + ' — ingest reloaded. Rebuild sequences.');
+    } catch (readErr) {
+      // файл может быть в процессе записи — просто ждём следующего тика
+    }
+  }, 5000);
+}
+
+// ── Premiere-native fine sync (Spread → Clip > Synchronize → Collect) ──────
+//
+// The pure math lives in src/ingest/syncSpread.js (unit-tested). Here is only
+// the Premiere plumbing: build the disposable *_SYNC sequence, then read the
+// post-Synchronize positions back and fold them into the ingest.
+
+const syncSpread = require('./src/ingest/syncSpread');
+// sceneLayout здесь больше не нужен: выбор образца секвенции ушёл вместе с сидом —
+// стенд рождается из пресета, наследовать формат не от чего.
+const sequenceFactoryMod = require('./src/ingest/placement/sequenceFactory');
+const sequencePresetMod = require('./src/ingest/placement/sequencePreset');
+const syncSelectionMod = require('./src/ingest/placement/syncSelection');
+const clipPlacerMod = require('./src/ingest/placement/clipPlacer');
+const { SEQUENCE_DEFAULTS } = require('./src/shared/mediaSettings');
+
+/**
+ * Resolve which scene the active sequence shows: "{code}_{scene}[_SYNC]".
+ * Returns null (with a status message) when it cannot.
+ */
+async function resolveActiveScene(project) {
+  const seq = await project.getActiveSequence();
+  if (!seq) { setIngestStatus('Open a scene sequence first', 'error'); return null; }
+  const code = ingestState.data.project_code || '';
+  let name = seq.name.replace(/_SYNC$/, '');
+  if (code && name.indexOf(code + '_') === 0) name = name.slice(code.length + 1);
+  const known = getIngestSceneNames(ingestState.data).map(function (s) { return s.name; });
+  if (known.indexOf(name) === -1) {
+    setIngestStatus('Active sequence "' + seq.name + '" is not a scene of this ingest', 'error');
+    return null;
+  }
+  return { seq: seq, scene: name };
+}
+
+/** Manifest file path for a scene's spread session. */
+function syncSessionPath(scene) {
+  const dir = ingestState.filePath.replace(/[/\\][^/\\]+$/, '');
+  return dir + '/finesync/sync_session_' + scene + '.json';
+}
+
+/** Записать файл в 01_Ingest/finesync/ и вернуть его путь. */
+async function writeFinesyncFile(name, text) {
+  const dir = ingestState.filePath.replace(/[/\\][^/\\]+$/, '');
+  let fsDir;
+  try { fsDir = await uxpfs.getEntryWithUrl('file://' + dir + '/finesync'); }
+  catch (e) {
+    const parent = await uxpfs.getEntryWithUrl('file://' + dir);
+    fsDir = await parent.createFolder('finesync');
+  }
+  const f = await fsDir.createFile(name, { overwrite: true });
+  await f.write(text);
+  return dir + '/finesync/' + name;
+}
+
+/**
+ * SPREAD: lay every source of the active scene on its own track pair at raw
+ * wall-clock positions (whole lav files, no slicing, 30 s preroll), so the
+ * human can select all and run Clip → Synchronize. One clip per track is the
+ * configuration Synchronize requires — with several on one track it greys out.
+ */
+async function spreadForSync() {
+  if (!ingestState.data) { setIngestStatus('Load ingest first', 'error'); return; }
+  const project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+  const at = await resolveActiveScene(project);
+  if (!at) return;
+  const scene = at.scene;
+
+  $('btn-sync-spread').setAttribute('disabled', 'true');
+  ingestLogger.info('=== SYNC SPREAD: ' + scene + ' ===');
+  try {
+    const ingest = ingestState.data;
+    const sceneClips = ingest.clips.filter(function (c) { return c.scene === scene; });
+
+    // ⚠️ В стенд идёт tx_strips_source, а не tx_strips.
+    // После 0113_frame_align.py tx_strips — это РЕНДЕР под текущую раскладку
+    // блоков, и поправка уже запечена в сам звук: wall_offset там 0. Любая
+    // дельта, снятая с такого файла, бессмысленна, а записать её — значит
+    // обесценить рендер (звук-то останется на месте).
+    // tx_strips_source — это НЕ записи рекордера, а срезы урока от lavcut.py
+    // (`{CODE}_{урок}_TX01_timeline.wav`); у них ЕСТЬ измеренный wall_offset
+    // (0,1386 с на YTUVIE01) — именно его Synchronize и может поправить.
+    const txSource = (ingest.tx_strips_source && ingest.tx_strips_source[scene]) || null;
+    const txStrips = txSource || (ingest.tx_strips && ingest.tx_strips[scene]) || [];
+    if (!txSource && txStrips.length) {
+      ingestLogger.warn('spread: tx_strips_source нет — беру tx_strips. Если 0113 уже '
+        + 'отработал, в стенде окажется рендер с wall_offset 0: двигать его нечем');
+    }
+
+    const fps = (ingest.scene_fps && ingest.scene_fps[scene])
+      || (ingest.media && ingest.media.fps) || 25;
+    // Звуковой стенд: всё audio-only, по источнику на дорожку, позиции на
+    // кадровой сетке. Экран и ролики-примеры в раскладку не идут — их место
+    // не измеряется по студийному звуку (см. planSpread, инвариант L6).
+    const planned = syncSpread.planSpread(sceneClips, txStrips, { mode: 'bench', fps: fps });
+    if (!planned.manifest) throw new Error('Scene has no placeable sources');
+    planned.warnings.forEach(function (w) { ingestLogger.warn('spread: ' + JSON.stringify(w)); });
+    // Контракт проверяем ДО любого обращения к Premiere: дешевле отказаться
+    // на числах, чем оставить в проекте полусобранную секвенцию.
+    syncSpread.assertSpreadContract(planned.manifest);
+
+    // Resolve ProjectItems.
+    // ⚠️ Часть источников стенда в проекте ОТСУТСТВУЕТ, и это нормально: сборка
+    // сцены импортирует петличку-рендер (`TX01_{сцена}_timeline.wav`), а стенду
+    // нужен её предок из `tx_strips_source` (`{CODE}_{урок}_TX01_timeline.wav`) —
+    // его на таймлайн никто не кладёт, и в проект он не попадал. Файл на диске
+    // есть, поэтому недостающее импортируем сами, а не требуем «build first».
+    const itemByFilename = {};
+    const toImport = [];
+    for (const p of planned.placements) {
+      if (itemByFilename[p.filename] !== undefined) continue;
+      itemByFilename[p.filename] = await findProjectItemByName(project, p.filename, ingestLogger);
+      if (!itemByFilename[p.filename]) {
+        if (!p.path) {
+          throw new Error('Media not in project and no path in ingest: ' + p.filename);
+        }
+        toImport.push(p.path);
+      }
+    }
+    if (toImport.length) {
+      ingestLogger.info('spread: импортирую в проект ' + toImport.length + ' файл(ов): '
+        + toImport.map(function (x) { return x.replace(/^.*[/\\]/, ''); }).join(', '));
+      try {
+        await project.importFiles(toImport, true, null, false);
+      } catch (impErr) {
+        // по одному: один битый файл не должен уронить весь импорт
+        ingestLogger.warn('spread: пакетный импорт не прошёл (' + impErr.message + ') — по одному');
+        for (const f of toImport) {
+          try { await project.importFiles([f], true, null, false); }
+          catch (e2) { ingestLogger.error('spread: не импортировался ' + f + ' — ' + e2.message); }
+        }
+      }
+      for (const p of planned.placements) {
+        if (itemByFilename[p.filename]) continue;
+        itemByFilename[p.filename] = await findProjectItemByName(project, p.filename, ingestLogger);
+        if (!itemByFilename[p.filename]) {
+          throw new Error('Media not in project after import: ' + p.filename
+            + ' (' + p.path + ') — проверь, что файл на месте');
+        }
+      }
+    }
+
+    const seqName = (ingest.project_code || 'YT') + '_' + scene + '_SYNC';
+    setIngestStatus('Spreading ' + planned.placements.length + ' sources → ' + seqName + '...', 'waiting');
+    // ⚠️ Снести ТЁЗОК до создания. Premiere разрешает одноимённые секвенции, и
+    // это не теория: автосейв YTUVIE01 от 21:36 нёс ДВЕ штуки `…_SYNC`, обе
+    // пустые. Брошенная раскладка перехватывала бы поиск по имени.
+    try {
+      const stale = {}; stale[seqName] = true;
+      await deleteSequencesByName(project, stale);
+    } catch (e) {
+      ingestLogger.warn(`spread: снос старой ${seqName} не удался (${e.message}) — продолжаю`);
+    }
+
+    // ── Секвенция рождается ИЗ ПРЕСЕТА ────────────────────────────────────
+    // Пресет создаёт нужное число дорожек сам: ни сида, ни преднагрева, а
+    // значит и ни одного огрызка. И только пресет умеет включить ЦЕЛИ
+    // аудиодорожек (`mTargeted`) — API таргетинга в UXP нет, а без целей
+    // Clip → Synchronize, по всем признакам, остаётся серым.
+    const media = Object.assign({}, ingest.media || {});
+    const aNeeded = planned.manifest.nAudioTracks;
+    // ⚠️ Видеодорожек нужно столько же, сколько камерных клипов: каждому своя,
+    // иначе Premiere свалит всё видео на V1 и Synchronize снова погаснет.
+    const vNeeded = Math.max(1, planned.manifest.nVideoTracks);
+    let sequence = null;
+    try {
+      let stockXml = null;
+      try {
+        const stock = await uxpfs.getEntryWithUrl('file://' + SEQUENCE_DEFAULTS.presetPath);
+        stockXml = await stock.read();
+      } catch (e) {
+        ingestLogger.warn(`spread: стоковый пресет не прочитан (${e.message}) — беру встроенный`);
+      }
+      const xml = sequencePresetMod.buildPresetXml(stockXml, {
+        aTracks: aNeeded, vTracks: vNeeded, targeted: true, syncLock: false, locked: false,
+        fps: fps, width: media.width, height: media.height,
+        sampleRate: media.sample_rate, name: seqName,
+      });
+      const presetPath = await writeFinesyncFile(seqName + '.sqpreset', xml);
+      ingestLogger.info(`spread: пресет на V${vNeeded}/A${aNeeded} → ${presetPath}`);
+      sequence = await sequenceFactoryMod.createFromPreset(project, seqName, presetPath,
+        { vTracks: vNeeded, aTracks: aNeeded }, ingestLogger);
+    } catch (e) {
+      ingestLogger.warn(`spread: путь через пресет не вышел (${e.message})`);
+    }
+
+    // Откат на прежний путь: сид + преднагрев. Он оставит огрызки, но выделение
+    // ставит панель, а не ⌘A, поэтому мусор в выделение всё равно не попадёт.
+    let seqEditor;
+    if (!sequence) {
+      ingestLogger.warn('spread: откат на create()+ensureTracks — будут огрызки преднагрева');
+      const seedItem = itemByFilename[planned.placements[0].filename];
+      sequence = await sequenceFactoryMod.create(project, seqName, media, ingestLogger, seedItem);
+      seqEditor = ppro.SequenceEditor.getEditor(sequence);
+      const tracks = await sequenceFactoryMod.ensureTracks(project, sequence, seqEditor, seedItem,
+        vNeeded, aNeeded, ingestLogger, { coverAtSec: null });
+      if (tracks && (tracks.aCount < aNeeded || tracks.vCount < vNeeded)) {
+        throw new Error('Pre-warm gave V' + tracks.vCount + '/A' + tracks.aCount
+          + ' of needed V' + vNeeded + '/A' + aNeeded
+          + ' — spread aborted (delete ' + seqName + ' and retry, or use Fine Sync)');
+      }
+    } else {
+      seqEditor = ppro.SequenceEditor.getEditor(sequence);
+    }
+
+    // ── Укладка: ПО ОДНОЙ ТРАНЗАКЦИИ НА ИСТОЧНИК, по возрастанию времени ──
+    // ⚠️ Пакетный компаунд выполняет действия В ОБРАТНОМ порядке (замерено
+    // YTCH13 16.08.2026, см. wallClockBuilder.js). Прежний Spread складывал все
+    // перезаписи в одну транзакцию — единственное такое место в репозитории, —
+    // и секвенция `_SYNC` на YTUVIE01 осталась вообще без настоящих клипов.
+    //
+    // ⚠️ Камерный клип кладём ПЕРЕЗАПИСЬЮ на свою пару V/A. Вставка с `-1`
+    // (audio-only) на A/V-клипе НЕ работает: проверено на YTUVIE01 24.09 —
+    // Premiere всё равно положила видео, и всё на V1, а рипл растолкал куски на
+    // 2100+ с; вышло 19 айтемов на одной дорожке и серый Synchronize.
+    // Перезапись ничего не двигает и не создаёт дорожек — они уже есть из пресета.
+    // Петличка — настоящий WAV, для неё `-1` работает как надо.
+    const ordered = planned.placements.slice()
+      .sort(function (a, b) { return a.offsetSec - b.offsetSec; });
+    for (const p of ordered) {
+      const t = ppro.TickTime.createWithSeconds(p.offsetSec);
+      await project.lockedAccess(async function () {
+        await project.executeTransaction(function (ca) {
+          ca.addAction(p.vIdx >= 0
+            ? seqEditor.createOverwriteItemAction(itemByFilename[p.filename], t, p.vIdx, p.aIdx)
+            : seqEditor.createInsertProjectItemAction(itemByFilename[p.filename], t, -1, p.aIdx, true));
+        }, 'Sync bench ' + p.filename);
+      });
+    }
+
+    // Проверяем, что легло, а не верим, что легло.
+    const placedItems = await syncSelectionMod.readSequenceItems(sequence);
+    const placedReal = placedItems.filter(function (a) {
+      return typeof a.durationSec !== 'number' || a.durationSec >= syncSpread.MIN_SYNC_ITEM_SEC;
+    });
+    if (placedReal.length < planned.manifest.items.length) {
+      throw new Error('на таймлайне ' + placedReal.length + ' источников из '
+        + planned.manifest.items.length + ' — раскладка не легла; запусти sync_ready.py');
+    }
+
+    // Persist the manifest — Collect may happen after a panel reload.
+    // ⚠️ `source` обязателен: в тот же файл пишет и spread_fcpxml.py, и панельный
+    // прогон уже затирал скриптовый (YTUVIE01, 21:57 поверх 21:37). Без пометки
+    // Collect прочитает чужой манифест и отчитается «не нашлись на таймлайне».
+    planned.manifest.source = 'panel:spreadForSync';
+    try {
+      await writeFinesyncFile('sync_session_' + scene + '.json',
+        JSON.stringify(planned.manifest, null, 2));
+    } catch (mfErr) {
+      ingestLogger.warn('Manifest not persisted (' + mfErr.message + ') — Collect must run in this panel session');
+    }
+    ingestState.syncSession = { scene: scene, manifest: planned.manifest };
+
+    // Выделение ставит панель, а не человек: ⌘A ловит однокадровый мусор, и на
+    // дорожке оказывается два выделенных айтема — ровно та конфигурация, при
+    // которой Premiere гасит Clip → Synchronize.
+    let sel = null;
+    try {
+      await project.setActiveSequence(sequence);
+    } catch (e) {
+      ingestLogger.debug('setActiveSequence: ' + e.message);
+    }
+    try {
+      sel = await syncSelectionMod.selectForSync(project, sequence, planned.manifest, ingestLogger);
+    } catch (selErr) {
+      ingestLogger.error('Выделение не поставлено: ' + selErr.message);
+    }
+
+    const nSel = sel ? sel.selected : 0;
+    const nTracks = sel ? Object.keys(sel.perTrack).length : planned.manifest.nAudioTracks;
+    setIngestStatus(sel
+      ? ('Стенд готов: ' + nSel + ' источников на ' + nTracks + ' аудиодорожках, выделение стоит. '
+         + 'Щёлкни по таймлайну и жми Clip > Synchronize → Audio')
+      : ('Стенд собран, но выделение не встало — нажми Select for Sync'),
+      sel ? 'ready' : 'error');
+    ingestLogger.info('Spread: ' + planned.placements.length + ' источников audio-only в ' + seqName
+      + (sel ? ', выделено ' + nSel : '') + '. Дальше: Clip > Synchronize, потом Collect.');
+  } catch (err) {
+    ingestLogger.error('Sync spread failed: ' + err.message);
+    setIngestStatus('Spread failed: ' + err.message, 'error');
+  } finally {
+    $('btn-sync-spread').removeAttribute('disabled');
+  }
+}
+
+/**
+ * Положить в буфер готовую просьбу проверить синхрон — чтобы Роман просто
+ * вставил её в чат, а не собирал путь руками.
+ *
+ * ⚠️ В блоке ТОЛЬКО полезная нагрузка: фраза и путь. Ни заголовков, ни рамок —
+ * их потом вычищать руками. Фраза по-английски: это производственный артефакт.
+ */
+async function copyCheckSyncRequest() {
+  // ingestState.filePath = {проект}/00_Setup/01_Ingest/{CODE}_ingest.json
+  const projectRoot = (ingestState.filePath || '').replace(/\/00_Setup\/.*$/, '');
+  const payload = 'check all syncs\n' + projectRoot;
+  let copied = false;
+  try { require('uxp').clipboard.copyText(payload); copied = true; } catch (e) { }
+  if (!copied) {
+    try { await navigator.clipboard.setContent({ 'text/plain': payload }); copied = true; } catch (e) { }
+  }
+  if (!copied) ingestLogger.warn('Буфер недоступен, скопируй вручную:\n' + payload);
+  return copied;
+}
+
+/** Манифест раскладки сцены: из памяти панели, иначе с диска. */
+async function loadSyncManifest(scene) {
+  if (ingestState.syncSession && ingestState.syncSession.scene === scene) {
+    return ingestState.syncSession.manifest;
+  }
+  const entry = await uxpfs.getEntryWithUrl('file://' + syncSessionPath(scene));
+  return JSON.parse(await entry.read());
+}
+
+/**
+ * SELECT FOR SYNC: выделить ровно источники манифеста.
+ *
+ * Отдельной кнопкой — потому что выделение живёт не дольше одного щелчка по
+ * таймлайну, а Spread мог быть сделан в прошлой сессии панели.
+ */
+async function selectForSyncClick() {
+  if (!ingestState.data) { setIngestStatus('Load ingest first', 'error'); return; }
+  const project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+  const seq = await project.getActiveSequence();
+  if (!seq || !/_SYNC$/.test(seq.name)) {
+    setIngestStatus('Открой секвенцию *_SYNC — выделять нужно в ней', 'error');
+    return;
+  }
+  const at = await resolveActiveScene(project);
+  if (!at) return;
+
+  $('btn-sync-select').setAttribute('disabled', 'true');
+  try {
+    const manifest = await loadSyncManifest(at.scene);
+    const r = await syncSelectionMod.selectForSync(project, seq, manifest, ingestLogger);
+    let msg = 'Выделено ' + r.selected + ' на ' + Object.keys(r.perTrack).length
+      + ' дорожках. Щёлкни по таймлайну и жми Clip > Synchronize → Audio';
+    if (r.missing.length) msg += ' · не найдено: ' + r.missing.length;
+    if (r.skippedShort) msg += ' · огрызков пропущено: ' + r.skippedShort;
+    setIngestStatus(msg, 'ready');
+    if (r.strays.length) {
+      ingestLogger.warn('Огрызки на дорожках: '
+        + r.strays.map(function (s) { return s.track; }).join(', ')
+        + ' — кнопка Clean их выделит');
+    }
+  } catch (err) {
+    ingestLogger.error('Select for Sync: ' + err.message);
+    setIngestStatus('Выделение не встало: ' + err.message, 'error');
+  } finally {
+    $('btn-sync-select').removeAttribute('disabled');
+  }
+}
+
+/**
+ * CLEAN: выделить весь однокадровый мусор преднагрева.
+ *
+ * Сносить его API в живом Premiere отказывается (removeAllItemsOnTrack
+ * отрабатывает вхолостую), поэтому честный результат — оставить выделенным:
+ * человек жмёт ⌫ и мусора больше нет.
+ */
+async function cleanStraysClick() {
+  const project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+  const seq = await project.getActiveSequence();
+  if (!seq) { setIngestStatus('Открой секвенцию', 'error'); return; }
+
+  $('btn-sync-clean').setAttribute('disabled', 'true');
+  try {
+    const r = await syncSelectionMod.selectStrays(project, seq, ingestLogger);
+    if (!r.found) {
+      setIngestStatus('Огрызков нет — чистить нечего', 'ready');
+    } else {
+      setIngestStatus('Огрызков ' + r.found + ' выделено ('
+        + r.list.map(function (x) { return x.track; }).join(', ') + ') — нажми ⌫', 'ready');
+    }
+  } catch (err) {
+    ingestLogger.error('Clean: ' + err.message);
+    setIngestStatus('Чистка не вышла: ' + err.message, 'error');
+  } finally {
+    $('btn-sync-clean').removeAttribute('disabled');
+  }
+}
+
+/**
+ * COLLECT: read the post-Synchronize positions from the *_SYNC sequence,
+ * diff against the spread manifest, fold the deltas into the ingest on disk
+ * (with a backup), reload it, and tell the human to rebuild the scene.
+ */
+async function collectFromSync() {
+  if (!ingestState.data) { setIngestStatus('Load ingest first', 'error'); return; }
+  const project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+  const seq = await project.getActiveSequence();
+  if (!seq || !/_SYNC$/.test(seq.name)) {
+    setIngestStatus('Open the *_SYNC sequence first (its positions are the corrections)', 'error');
+    return;
+  }
+  const at = await resolveActiveScene(project);
+  if (!at) return;
+  const scene = at.scene;
+
+  $('btn-sync-collect').setAttribute('disabled', 'true');
+  ingestLogger.info('=== SYNC COLLECT: ' + scene + ' ===');
+  try {
+    // Manifest: panel state, else the persisted file
+    let manifest = ingestState.syncSession && ingestState.syncSession.scene === scene
+      ? ingestState.syncSession.manifest : null;
+    if (!manifest) {
+      const entry = await uxpfs.getEntryWithUrl('file://' + syncSessionPath(scene));
+      manifest = JSON.parse(await entry.read());
+    }
+
+    setIngestStatus('Reading positions from ' + seq.name + '...', 'waiting');
+    const actual = await syncSelectionMod.readSequenceItems(seq);
+    const deltas = syncSpread.collectDeltas(manifest, actual);
+    if (deltas.missing.length) {
+      ingestLogger.warn('Missing on timeline (deleted?): ' + deltas.missing.join(', '));
+    }
+    // ⚠️ В sync_session_{scene}.json пишут ДВОЕ — панель и spread_fcpxml.py, — и
+    // панельный прогон уже затирал скриптовый (YTUVIE01, 21:57 поверх 21:37).
+    // У них разная раскладка (аудио против видео), поэтому чужой манифест даёт
+    // «не нашлось всё» — и это надо сказать словами, а не молча собрать нули.
+    if (deltas.missing.length === manifest.items.length) {
+      throw new Error('ни один источник манифеста не найден на таймлайне. Манифест от "'
+        + (manifest.source || 'неизвестно') + '", раскладка в ' + seq.name
+        + ' построена не им. Пересобери Spread тем же путём, что и манифест');
+    }
+
+    // ── Сначала ОТЧЁТ, запись потом ──────────────────────────────────────
+    // ⚠️ Вставка округляет позицию до ближайшего кадра, и наши собственные
+    // позиции тоже квантованы. Значит разрешение этой петли — кадр (40 мс при
+    // 25p), а численный синхрон уже держит 13,2 мс. Молча писать сюда поверх
+    // значит менять хорошее на худшее.
+    const collectFps = manifest.fps || (ingestState.data.media && ingestState.data.media.fps) || 25;
+    const frameSec = 1 / collectFps;
+    const rows = Object.keys(deltas.clips).map(function (id) {
+      return { id: id, resid: deltas.clips[id], raw: deltas.raw[id] };
+    }).sort(function (a, b) { return Math.abs(b.resid) - Math.abs(a.resid); });
+    ingestLogger.info('Collect: общий сдвиг (base) ' + (deltas.base * 1000).toFixed(1)
+      + ' мс — сам по себе он синхронно пуст и вычтен');
+    rows.forEach(function (r) {
+      ingestLogger.info('   ' + r.id + '  остаток ' + (r.resid * 1000).toFixed(1) + ' мс ('
+        + (r.resid / frameSec).toFixed(2) + ' кадра)');
+    });
+    Object.keys(deltas.txFiles).forEach(function (f) {
+      ingestLogger.info('   петличка ' + f + '  остаток '
+        + (deltas.txFiles[f] * 1000).toFixed(1) + ' мс — в ингест НЕ пишется (рендер 0113)');
+    });
+
+    // Вердикт снят — кладём в буфер просьбу проверить, чтобы её осталось вставить.
+    const copied = await copyCheckSyncRequest();
+    const tail = copied ? ' · «check all syncs» + путь скопированы в буфер' : '';
+
+    if (deltas.moved === 0) {
+      setIngestStatus('Ничего не сдвинулось — либо Clip > Synchronize не запускали, '
+        + 'либо Premiere согласен с нашим синхроном' + tail, 'ready');
+      return;
+    }
+    // ⚠️ Порог — СОВЕТ, а не запрет. Остаток меньше кадра означает «Premiere не
+    // умеет измерить точнее, чем у нас уже есть», и писать обычно не надо. Но
+    // решает человек: запрет лишил бы его возможности собрать второй вариант и
+    // сравнить глазами, а это единственный способ разрешить спор двух приборов.
+    const below = deltas.maxAbsSec < frameSec;
+    if (!(ingestState.collectArmed && ingestState.collectArmed.scene === scene)) {
+      ingestState.collectArmed = { scene: scene };
+      setIngestStatus(below
+        ? ('Premiere согласен: худший остаток ' + (deltas.maxAbsSec * 1000).toFixed(1)
+           + ' мс — меньше кадра, писать НЕ НУЖНО. Таблица в логе. Если всё же хочешь '
+           + 'собрать второй вариант — нажми Collect ещё раз' + tail)
+        : ('Худший остаток ' + (deltas.maxAbsSec * 1000).toFixed(1) + ' мс ('
+           + (deltas.maxAbsSec / frameSec).toFixed(2) + ' кадра) по ' + deltas.moved
+           + ' источникам. Таблица в логе. Нажми Collect ЕЩЁ РАЗ, чтобы записать в ингест'
+           + tail),
+        below ? 'ready' : 'waiting');
+      return;
+    }
+    ingestState.collectArmed = null;
+    ingestLogger.warn('Collect: пишу в ингест по второму щелчку'
+      + (below ? ' — хотя остаток меньше кадра и Premiere с нами согласна' : ''));
+
+    // Anti-stale: the deltas are RELATIVE (post-Synchronize − placed), so they
+    // fold safely into whatever is on disk NOW — but only if we merge into the
+    // fresh file, not the memory copy from folder-select time. Same guard as
+    // buildIngest; without it Collect would silently revert e.g. a wordsync
+    // re-run that happened after Spread.
+    await loadIngestFromPath(ingestState.filePath);
+
+    // ...and only if the scene's offsets still match what Spread laid out.
+    // If something (finesync, wordsync re-run) already moved them, folding the
+    // deltas on top would DOUBLE the correction — abort and ask to re-Spread.
+    var driftCount = 0;
+    for (const want of manifest.items) {
+      if (want.kind !== 'clip') continue;
+      const clip = ingestState.data.clips.find(function (c) {
+        return c.scene === scene && (c.clip_id === want.id || c.filename === want.filename);
+      });
+      if (!clip || typeof clip.wall_offset !== 'number') continue;
+      const expectedWall = want.placedSec - manifest.preroll + manifest.t0Wall;
+      if (Math.abs(clip.wall_offset - expectedWall) > 0.001) driftCount++;
+    }
+    if (driftCount > 0) {
+      throw new Error('Ingest changed since Spread (' + driftCount + ' clip(s) moved on disk) — delete ' + seq.name + ', re-Spread and re-Synchronize');
+    }
+
+    const nowIso = new Date().toISOString().slice(0, 19);
+    // Порог записи не ставим: человек уже подтвердил вторым щелчком, и глушить
+    // после этого часть поправок значило бы собрать вариант, которого он не просил.
+    const result = syncSpread.applyDeltasToIngest(ingestState.data, scene, deltas, nowIso);
+
+    // Backup + write the ingest
+    const target = ingestState.filePath;
+    const dir = target.replace(/[/\\][^/\\]+$/, '');
+    const base = target.slice(dir.length + 1).replace(/\.json$/, '');
+    const stamp = nowIso.replace(/[-:T]/g, '').slice(0, 14);
+    const dirEntry = await uxpfs.getEntryWithUrl('file://' + dir);
+    const oldEntry = await uxpfs.getEntryWithUrl('file://' + target);
+    const backup = await dirEntry.createFile(base + '_backup_syncspread_' + stamp + '.json', { overwrite: true });
+    await backup.write(await oldEntry.read());
+    const mainFile = await dirEntry.createFile(base + '.json', { overwrite: true });
+    await mainFile.write(JSON.stringify(result.ingest, null, 2));
+
+    await loadIngestFromPath(target);
+    const ms = Math.round(result.maxAbsSec * 1000);
+    setIngestStatus('Collected ' + result.applied + ' correction(s), max ' + ms + ' ms — now REBUILD scene ' + scene, 'ready');
+    ingestLogger.info('Collected ' + result.applied + ' corrections (max ' + ms + ' ms, scene shift +' + result.normalizedShift.toFixed(3) + 's). Backup: ' + base + '_backup_syncspread_' + stamp + '.json');
+    ingestLogger.info('The *_SYNC sequence is disposable — delete it after the rebuild.');
+  } catch (err) {
+    ingestLogger.error('Sync collect failed: ' + err.message);
+    setIngestStatus('Collect failed: ' + err.message, 'error');
+  } finally {
+    $('btn-sync-collect').removeAttribute('disabled');
+  }
+}
+
+/**
+ * Scene list of a multi-scene ingest: [{name, clips}] sorted by name.
+ */
+function getIngestSceneNames(ingest) {
+  var counts = {};
+  (ingest.clips || []).forEach(function (c) {
+    if (c.scene) counts[c.scene] = (counts[c.scene] || 0) + 1;
+  });
+  return Object.keys(counts).sort().map(function (n) { return { name: n, clips: counts[n] }; });
+}
+
+/**
+ * Render per-scene checkbox list in the Ingest tab (like Parts selections).
+ * Built scenes (sequence {code}_{scene} exists) are unchecked by default —
+ * so the default action builds ONLY the new/missing timelines.
+ * @param {Object} ingest
+ * @param {string[]|null} existingSeqs - pre-detected sequence names (optional)
+ */
+async function renderIngestSceneList(ingest, existingSeqs) {
+  var panel = $('ingest-scenes');
+  var list = $('ingest-scenes-list');
+  var scenes = getIngestSceneNames(ingest);
+  if (!scenes.length) { panel.style.display = 'none'; list.innerHTML = ''; return; }
+
+  if (!existingSeqs) existingSeqs = await detectExistingSequences(ingest);
+  var built = {};
+  existingSeqs.forEach(function (n) { built[n] = true; });
+  var code = ingest.project_code || extractProjectCode(ingest.project_name);
+
+  // One compact line per scene: [cb] name · N clips · badge. All inline flow —
+  // styles live in index.html's <style> (css/styles.css is NOT loaded by the panel).
+  list.innerHTML = scenes.map(function (s) {
+    var isBuilt = !!(built[code + '_' + s.name] || built[s.name]);
+    return '<div class="scene-row">' +
+      '<label class="scene-pick">' +
+      '<input type="checkbox" class="ingest-scene-cb" value="' + escapeHtml(s.name) + '"' + (isBuilt ? '' : ' checked') + '>' +
+      '<span class="scene-name">' + escapeHtml(s.name) + '</span>' +
+      '</label>' +
+      '<span class="scene-meta">' + s.clips + ' clips</span>' +
+      '<span class="scene-badge' + (isBuilt ? ' built' : '') + '">' + (isBuilt ? 'built ✓' : 'new') + '</span>' +
+      '</div>';
+  }).join('');
+  panel.style.display = 'block';
+}
+
+function getSelectedIngestScenes() {
+  return Array.prototype.slice.call(document.querySelectorAll('.ingest-scene-cb'))
+    .filter(function (cb) { return cb.checked; })
+    .map(function (cb) { return cb.value; });
+}
+
+function setIngestSceneChecks(mode) {
+  Array.prototype.slice.call(document.querySelectorAll('.ingest-scene-cb')).forEach(function (cb) {
+    var row = cb.closest('.scene-row');
+    var isBuilt = row && row.querySelector('.scene-badge.built');
+    if (mode === 'all') cb.checked = true;
+    else if (mode === 'none') cb.checked = false;
+    else cb.checked = !isBuilt; // 'new'
+  });
+}
+
+/**
+ * Shallow copy of the ingest restricted to the given scenes.
+ * clips / tx_strips / cam_layers are filtered; everything else shared.
+ */
+function filterIngestScenes(ingest, scenes) {
+  var keep = {};
+  scenes.forEach(function (s) { keep[s] = true; });
+  var out = Object.assign({}, ingest);
+  out.clips = (ingest.clips || []).filter(function (c) { return keep[c.scene]; });
+  if (ingest.tx_strips) {
+    out.tx_strips = {};
+    Object.keys(ingest.tx_strips).forEach(function (s) { if (keep[s]) out.tx_strips[s] = ingest.tx_strips[s]; });
+  }
+  if (ingest.cam_layers) {
+    out.cam_layers = {};
+    Object.keys(ingest.cam_layers).forEach(function (s) { if (keep[s]) out.cam_layers[s] = ingest.cam_layers[s]; });
+  }
+  return out;
 }
 
 /**
@@ -596,32 +1609,38 @@ async function loadIngestFromPath(filePath) {
  * Single: looks for {code}_1_Ingest.
  * @returns {string[]} names of existing sequences
  */
+/**
+ * Expected sequence names for an ingest: {code}_{scene} per scene (multi-scene)
+ * or {code}_1_Ingest (single). Bare legacy names are included too — older builds
+ * named scene sequences without the code prefix.
+ */
+function expectedIngestSequenceNames(ingest) {
+  var code = ingest.project_code || extractProjectCode(ingest.project_name);
+  var expected = {};
+  var hasScenes = ingest.clips.some(function (c) { return c.scene; });
+  if (hasScenes) {
+    ingest.clips.forEach(function (c) {
+      if (!c.scene) return;
+      expected[code + '_' + c.scene] = true;
+      expected[c.scene] = true;              // legacy bare name
+    });
+  } else {
+    expected[code + '_1_Ingest'] = true;
+    expected[ingest.project_name + '_1_Ingest'] = true;
+  }
+  return expected;
+}
+
 async function detectExistingSequences(ingest) {
   var found = [];
   try {
     var project = await ppro.Project.getActiveProject();
     if (!project) return found;
-
-    var rootItem = await project.getRootItem();
-    var allItems = await rootItem.getItems();
-    var code = ingest.project_code || extractProjectCode(ingest.project_name);
-    var hasScenes = ingest.clips.some(function(c) { return c.scene; });
-
-    // Build set of expected sequence names
-    var expected = {};
-    if (hasScenes) {
-      var scenes = {};
-      ingest.clips.forEach(function(c) { if (c.scene) scenes[c.scene] = true; });
-      Object.keys(scenes).forEach(function(s) { expected[code + '_' + s] = true; });
-    } else {
-      expected[code + '_1_Ingest'] = true;
-    }
-
-    for (var i = 0; i < allItems.length; i++) {
-      if (expected[allItems[i].name]) {
-        found.push(allItems[i].name);
-      }
-    }
+    // Match against REAL sequences only. Root items can share a sequence's name
+    // without being one (offline master-clip stubs from importing another project);
+    // a bare name scan of rootItem.getItems() marks those scenes "built ✓".
+    var byName = await findSequencesByName(project, expectedIngestSequenceNames(ingest));
+    found = Object.keys(byName);
   } catch (e) {
     ingestLogger.debug('Sequence detection failed: ' + e.message);
   }
@@ -646,29 +1665,188 @@ async function loadIngest() {
     $('ingest-summary').style.display = 'block';
     $('ingest-file-info').textContent = 'File: ' + ingestState.filePath;
     $('btn-build-ingest').removeAttribute('disabled');
+    $('btn-finesync').removeAttribute('disabled');
+    $('btn-verify-ingest').removeAttribute('disabled');
+    $('btn-sync-audio').removeAttribute('disabled');
 
     setIngestStatus('Ingest loaded. Ready to build.', 'ready');
     ingestLogger.info('Ingest loaded: ' + ingest.clips.length + ' clips, project "' + ingest.project_name + '" (code: ' + ingest.project_code + ')');
+    warnIfNoFineSync(ingest);
+    await renderIngestSceneList(ingest);
   } catch (err) {
     ingestLogger.error('Failed to load ingest: ' + err.message);
     setIngestStatus('Error: ' + err.message, 'error');
   }
 }
 
+/**
+ * Every REAL sequence in the project as [{name, seq}], deduped by guid (name when
+ * guid is unavailable). project.getSequences() first — the reliable enumerator
+ * (ppro.Sequence.cast can return null / throw for real sequences in some Premiere
+ * builds, see doctorCollectUsage) — then Sequence.cast over root items as a
+ * supplement for builds where getSequences under-reports. Bare name matches of
+ * root items are never trusted: offline master-clip stubs from importing another
+ * project can carry a sequence's name (proven by the YTUVI05 dump).
+ */
+async function listProjectSequences(project, logger) {
+  var out = [];
+  var seenGuid = {};
+  var seenName = {};
+  function add(s) {
+    var n = ''; try { n = s.name || (s.getName && s.getName()) || ''; } catch (e) { }
+    if (!n) return;
+    var g = ''; try { g = s.guid ? String(s.guid) : ''; } catch (e) { }
+    if (g) { if (seenGuid[g]) return; seenGuid[g] = true; }
+    else if (seenName[n]) return;
+    seenName[n] = true;
+    out.push({ name: n, seq: s });
+  }
+  var allSeq = [];
+  try { allSeq = await project.getSequences(); }
+  catch (e) { if (logger) logger.debug('getSequences threw: ' + e.message); }
+  (allSeq || []).forEach(add);
+  try {
+    // root + 00_Source_Timelines: scene timelines are filed there (2026-09-15) and this
+    // supplement exists exactly for builds where getSequences under-reports.
+    var rootItems = await rootAndSourceTimelineItems(project);
+    for (var i = 0; i < rootItems.length; i++) {
+      var casted = null; try { casted = ppro.Sequence.cast(rootItems[i]); } catch (e) { }
+      if (casted) add(casted);
+    }
+  } catch (e) { if (logger) logger.debug('Root sequence scan failed: ' + e.message); }
+  return out;
+}
+
+/** Root items followed by the items of the top-level 00_Source_Timelines bin (if any). */
+async function rootAndSourceTimelineItems(project) {
+  var items = (await (await project.getRootItem()).getItems()) || [];
+  try {
+    var stBin = await findRootBin(project, SOURCE_TIMELINES_BIN);
+    if (stBin) items = items.concat((await stBin.getItems()) || []);
+  } catch (e) { /* no bin — root only */ }
+  return items;
+}
+
+/**
+ * Project code for "Hide source timelines": the OPEN Premiere project first (that is the
+ * project being changed — name, then path segments), then the panel's project folder /
+ * loaded ingest. Accepts "YTUVI02_Ruby…" and a bare code "YTUVI02".
+ */
+// 2–5 letters: YTCR01 … YTUVI02 … YTRSCEN01 (same width as sourceTimelines' fallback regex)
+var OPEN_PROJECT_CODE_RE = /^(YT[A-Z]{2,5}\d+)(?:_|\.|$)/;
+function resolveOpenProjectCode(project) {
+  var re = OPEN_PROJECT_CODE_RE;
+  var cands = [];
+  if (project) {
+    cands.push(String(project.name || ''));
+    String(project.path || '').replace(/\\/g, '/').split('/').filter(Boolean).reverse()
+      .forEach(function (seg) { cands.push(seg); });
+  }
+  cands.push(projectState.projectName || '');
+  if (ingestState.data) cands.push(ingestState.data.project_code || '', ingestState.data.project_name || '');
+  cands.push(assemblyState.projectCode || '');
+  for (var i = 0; i < cands.length; i++) {
+    var m = String(cands[i] || '').match(re);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+/**
+ * 📁 Hide source timelines (Ingest + Doctor tabs): every sequence of the OPEN project named
+ * ^{CODE}_\d{2}_ (scene timelines) that is still at project ROOT → 00_Source_Timelines.
+ * Verified moves (shared/binMove), idempotent, never deletes; stops after an unverified
+ * first move or a duplicate-guard trip. Status: "moved N · already in bin M · failed K".
+ */
+var hideSourceTimelinesBusy = false;
+async function onHideSourceTimelines(setStatus) {
+  var btnIds = ['btn-hide-source-timelines', 'btn-doctor-hide-source-timelines'];
+  function setBtns(disabled) {
+    btnIds.forEach(function (id) {
+      try { if (disabled) $(id).setAttribute('disabled', 'true'); else $(id).removeAttribute('disabled'); } catch (e) { }
+    });
+  }
+  if (hideSourceTimelinesBusy) return;
+  if (ingestState.building) {
+    setStatus('Hide source timelines: Build Ingest is running — try again when it finishes', 'error');
+    return;
+  }
+  // Claim the guard synchronously, BEFORE any await — a double-click or Ingest+Doctor
+  // clicks must not start two batches (two createBinAction → "00_Source_Timelines 01").
+  hideSourceTimelinesBusy = true;
+  setBtns(true);
+  try {
+    var project = null;
+    try { project = await ppro.Project.getActiveProject(); } catch (e) { project = null; }
+    if (!project) { setStatus('Hide source timelines: open a Premiere project first', 'error'); return; }
+    var code = resolveOpenProjectCode(project);
+    if (!code) {
+      setStatus('Hide source timelines: no project code (need a YT…NN_ project name)', 'error');
+      return;
+    }
+    var panelMatch = String(projectState.projectName || '').match(OPEN_PROJECT_CODE_RE);
+    var panelCode = panelMatch ? panelMatch[1] : null;
+    if (panelCode && panelCode !== code) {
+      ingestLogger.warn('Hide source timelines: open project is ' + code + ' but the panel folder is ' + panelCode + ' — using the OPEN project ' + code);
+    }
+    setStatus('Hiding ' + code + '_NN_* source timelines → ' + SOURCE_TIMELINES_BIN + '...', 'waiting');
+    ingestLogger.info('=== HIDE SOURCE TIMELINES (' + code + ', sourceTimelines v' + SOURCE_TIMELINES_VERSION + ') ===');
+    var report = await hideSourceTimelines(project, code, ingestLogger, { listSequences: listProjectSequences });
+    if (!report.total) {
+      setStatus('Hide source timelines: no ' + code + '_NN_* sequences in this project', report.stopped ? 'error' : 'ready');
+    } else {
+      setStatus('Source timelines → ' + SOURCE_TIMELINES_BIN + ': ' + formatHideReport(report),
+        (report.failed || report.stopped) ? 'error' : 'ready');
+    }
+    if (report.names.failed.length) ingestLogger.warn('Left in root: ' + report.names.failed.join(', '));
+    if (report.names.skipped.length) ingestLogger.info('Skipped: ' + report.names.skipped.join(', '));
+  } catch (err) {
+    ingestLogger.error('Hide source timelines failed: ' + err.message);
+    setStatus('Hide source timelines: ' + err.message, 'error');
+  } finally {
+    hideSourceTimelinesBusy = false;
+    setBtns(false);
+  }
+}
+
+/**
+ * Resolve wanted names to REAL Sequence objects.
+ * @returns {Object} {name: [Sequence, ...]} — arrays, because Premiere allows
+ * duplicate sequence names (e.g. a local build next to an imported copy) and a
+ * rebuild must remove ALL of them, not just the first.
+ */
+async function findSequencesByName(project, wantedNames) {
+  var byName = {};
+  var all = await listProjectSequences(project, ingestLogger);
+  all.forEach(function (e) {
+    if (wantedNames[e.name]) (byName[e.name] = byName[e.name] || []).push(e.seq);
+  });
+  return byName;
+}
+
+async function deleteSequencesByName(project, wantedNames) {
+  var seqs = await findSequencesByName(project, wantedNames);
+  for (var name in seqs) {
+    for (var i = 0; i < seqs[name].length; i++) {
+      try { await project.deleteSequence(seqs[name][i]); ingestLogger.info('Deleted old sequence: "' + name + '"'); }
+      catch (e) { ingestLogger.debug('Cannot delete sequence "' + name + '": ' + e.message); }
+    }
+  }
+}
+
 async function cleanBeforeBuild(project, ingest) {
   var shortCode = ingest.project_code || extractProjectCode(ingest.project_name);
-  var sequenceNameShort = shortCode + '_1_Ingest';
-  var sequenceNameFull = ingest.project_name + '_1_Ingest';
+  var wanted = {};
+  wanted[shortCode + '_1_Ingest'] = true;
+  wanted[ingest.project_name + '_1_Ingest'] = true;
   ingestLogger.info('=== Clean before build ===');
+
+  await deleteSequencesByName(project, wanted);
 
   const rootItem = await project.getRootItem();
   const allItems = await rootItem.getItems();
 
   for (const item of allItems) {
-    if ((item.name === sequenceNameShort || item.name === sequenceNameFull) && item.type !== 2) {
-      try { await project.deleteSequence(item); ingestLogger.info('Deleted old sequence: "' + item.name + '"'); }
-      catch (e) { ingestLogger.debug('Cannot delete sequence: ' + e.message); }
-    }
     try {
       const folder = ppro.FolderItem.cast(item);
       if (folder && [BIN_NAMES.SOURCE, BIN_NAMES.TRANSCRIPTS].includes(item.name)) {
@@ -688,9 +1866,81 @@ async function cleanBeforeBuild(project, ingest) {
   ingestLogger.info('Clean complete');
 }
 
+/**
+ * Selective clean for multi-scene builds: touches ONLY the given scenes.
+ * Deletes their sequences ({code}_{scene}) and their per-scene bins under
+ * 00_Source ({code}_{scene} and {code}_{scene}_transcripts). Other scenes'
+ * sequences, bins and project items stay intact.
+ */
+async function cleanScenesBeforeBuild(project, ingest, scenes) {
+  var code = ingest.project_code || extractProjectCode(ingest.project_name);
+  ingestLogger.info('=== Clean before build (scenes: ' + scenes.join(', ') + ') ===');
+  var names = {};
+  scenes.forEach(function (s) {
+    names[code + '_' + s] = true;
+    names[s] = true;                       // legacy bare-named scene sequences
+  });
+
+  await deleteSequencesByName(project, names);
+
+  const rootItem = await project.getRootItem();
+  const allItems = await rootItem.getItems();
+
+  for (const item of allItems) {
+    try {
+      const folder = ppro.FolderItem.cast(item);
+      if (!folder || item.name !== BIN_NAMES.SOURCE) continue;
+      const children = await folder.getItems();
+      for (const child of children) {
+        var base = child.name.replace(/_transcripts$/, '');
+        if (!names[base]) continue;
+        try {
+          project.lockedAccess(() => {
+            project.executeTransaction((ca) => {
+              ca.addAction(folder.createRemoveItemAction(child));
+            }, 'Remove ' + child.name);
+          });
+          ingestLogger.info('Removed bin: ' + child.name);
+        } catch (e) { ingestLogger.debug('Cannot remove bin ' + child.name + ': ' + e.message); }
+      }
+    } catch (e) { }
+  }
+  ingestLogger.info('Clean complete (selective)');
+}
+
 async function buildIngest() {
   if (!ingestState.data) { ingestLogger.error('No ingest loaded'); return; }
   if (ingestState.building) { ingestLogger.warn('Build already in progress'); return; }
+
+  // Anti-stale guard: the ingest on disk may be newer than the copy loaded at
+  // folder-select time (fine sync, wordsync re-run, manual edit). Building
+  // from a stale in-memory copy silently produces a timeline with the OLD
+  // offsets — re-read the file every time; it is ~100 KB, the cost is nothing.
+  if (ingestState.filePath) {
+    try {
+      const keepTicked = getSelectedIngestScenes();  // reload re-renders the list
+      // Remember which scenes EXISTED before the reload: a scene that is new
+      // on disk (wordsync re-run added it) must keep its freshly-rendered
+      // default tick, not be force-unchecked by the restore below.
+      const preExisting = Array.prototype.map.call(
+        document.querySelectorAll('.ingest-scene-cb'), function (cb) { return cb.value; });
+      const before = ingestState.data && ingestState.data.fine_sync && ingestState.data.fine_sync.applied_at;
+      await loadIngestFromPath(ingestState.filePath);
+      const after = ingestState.data && ingestState.data.fine_sync && ingestState.data.fine_sync.applied_at;
+      if (before !== after) {
+        ingestLogger.info('Ingest re-read from disk: fine_sync changed (' + before + ' → ' + after + ')');
+      }
+      // Restore the user's tick selection — but only for scenes that already
+      // existed; new-on-disk scenes keep their rendered default.
+      document.querySelectorAll('.ingest-scene-cb').forEach(function (cb) {
+        if (preExisting.indexOf(cb.value) !== -1) {
+          cb.checked = keepTicked.indexOf(cb.value) !== -1;
+        }
+      });
+    } catch (reloadErr) {
+      ingestLogger.warn('Could not re-read ingest from disk, building from memory: ' + reloadErr.message);
+    }
+  }
 
   ingestState.building = true;
   $('btn-build-ingest').setAttribute('disabled', 'true');
@@ -702,7 +1952,26 @@ async function buildIngest() {
     if (!project) throw new Error('No active Premiere Pro project');
     ingestLogger.setProjectInfo(project.name, project.path);
 
-    const ingest = ingestState.data;
+    const ingestFull = ingestState.data;
+    // Multi-scene: build ONLY the scenes ticked in the scene list (Parts-style,
+    // add timelines one by one; already-built ones stay untouched).
+    const isMultiScene = ingestFull.clips.some(c => c.scene);
+    let selectedScenes = null;
+    let ingest = ingestFull;
+    if (isMultiScene) {
+      const allScenes = getIngestSceneNames(ingestFull).map(s => s.name);
+      selectedScenes = getSelectedIngestScenes();
+      if (selectedScenes.length === 0) {
+        setIngestStatus('No sequences selected — tick at least one scene', 'error');
+        ingestState.building = false;
+        $('btn-build-ingest').removeAttribute('disabled');
+        return;
+      }
+      if (selectedScenes.length < allScenes.length) {
+        ingest = filterIngestScenes(ingestFull, selectedScenes);
+        ingestLogger.info('Selective build: ' + selectedScenes.join(', ') + ' (' + ingest.clips.length + '/' + ingestFull.clips.length + ' clips)');
+      }
+    }
     const totalSteps = 6;
     let step = 0;
     const startTime = Date.now();
@@ -714,11 +1983,12 @@ async function buildIngest() {
     var stepTimings = [];
     var stepStart;
 
-    // Step 1: Clean
+    // Step 1: Clean (selective in multi-scene mode — other scenes untouched)
     step++;
     stepStart = Date.now();
     setIngestProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Cleaning...');
-    await cleanBeforeBuild(project, ingest);
+    if (isMultiScene) await cleanScenesBeforeBuild(project, ingestFull, selectedScenes);
+    else await cleanBeforeBuild(project, ingest);
     stepTimings.push('clean ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 2: Create bins
@@ -767,7 +2037,7 @@ async function buildIngest() {
       var ingestProjectCode = ingest.project_code || '';
 
       if ((txSrtPath || capSrtPath) && ingestProjectCode && projectState.folderPath) {
-        var ingestSourceDir = projectState.folderPath + '/01_Media/Source';
+        var ingestSourceDir = projectState.folderPath + '/01_Source';
         var ingestTxEntry = await uxpfs.getEntryWithUrl('file://' + ingestSourceDir + '/Transcription');
         var ingestTxFolder = await ensureSubfolder(ingestTxEntry, 'transcripts', ingestLogger);
         var ingestCapFolder = await ensureSubfolder(ingestTxEntry, 'captions', ingestLogger);
@@ -793,7 +2063,7 @@ async function buildIngest() {
         }
 
         // Import into 01_Transcripts/{CODE}_1_Ingest/ bin
-        var ingestSetupPath = ingestSourceDir + '/Setup';
+        var ingestSetupPath = projectState.folderPath + '/00_Setup';
         await importCaptionsSrt(project, ingestSetupPath, ingestProjectCode, '1_Ingest', 'Ingest Captions', ingestLogger);
         await importCaptionsSrt(project, ingestSetupPath, ingestProjectCode, '1_Ingest', 'Ingest Transcript', ingestLogger, 'transcript');
         ingestLogger.info('Ingest SRTs copied + imported → 01_Transcripts/' + ingestProjectCode + '_1_Ingest');
@@ -847,6 +2117,11 @@ async function buildIngest() {
     // Save logs + project
     await saveIngestLogs(project);
     setIngestStatus('Build verified', 'ready');
+
+    // Refresh scene list badges (newly built scenes → "built ✓", unticked)
+    if (isMultiScene) {
+      try { await renderIngestSceneList(ingestFull); } catch (e) { }
+    }
 
   } catch (err) {
     ingestLogger.error('INGEST BUILD FAILED: ' + err.message);
@@ -904,6 +2179,268 @@ async function validateIngestBuild(sequence, ingest, br) {
   ingestLogger.info('Validation ' + (allOk ? 'PASSED' : 'has WARNINGS'));
 }
 
+/**
+ * Verify Ingest — standalone check of all built sequences against ingest JSON.
+ * Works for both single-sequence and multi-scene ingest.
+ * Can be run any time after Build Ingest.
+ */
+async function verifyIngest() {
+  if (!ingestState.data) { ingestLogger.error('No ingest loaded'); return; }
+
+  const project = await ppro.Project.getActiveProject();
+  if (!project) { ingestLogger.error('No active Premiere Pro project'); return; }
+
+  const ingest = ingestState.data;
+  const panel = $('ingest-validation');
+  const lines = [];
+  let allOk = true;
+  let totalIssues = 0;
+
+  function ok(text)   { lines.push('<div class="val-line"><span style="color:var(--success)">\u25CF</span> ' + escapeHtml(text) + '</div>'); }
+  function info(text)  { lines.push('<div class="val-line"><span style="color:var(--text-secondary)">\u25CB</span> ' + escapeHtml(text) + '</div>'); }
+  function warn(text)  { lines.push('<div class="val-line"><span style="color:var(--warning)">\u25CF</span> ' + escapeHtml(text) + '</div>'); allOk = false; totalIssues++; }
+  function fail(text)  { lines.push('<div class="val-line"><span style="color:var(--error)">\u25CF</span> ' + escapeHtml(text) + '</div>'); allOk = false; totalIssues++; }
+  function heading(text) { lines.push('<div style="margin-top:6px;font-weight:700;color:var(--accent);font-size:11px">' + escapeHtml(text) + '</div>'); }
+
+  ingestLogger.info('=== VERIFY INGEST START ===');
+  setIngestStatus('Verifying...', 'waiting');
+
+  // Group clips by scene
+  const hasScenes = ingest.clips.some(c => c.scene);
+  const sceneMap = {};
+  for (const clip of ingest.clips) {
+    const scene = clip.scene || '_single';
+    if (!sceneMap[scene]) sceneMap[scene] = [];
+    sceneMap[scene].push(clip);
+  }
+  const sceneNames = Object.keys(sceneMap).sort();
+  const projectCode = ingest.project_code || ingest.project_name;
+
+  // Find all sequences in the project — getSequences() is the reliable enumerator
+  // (Sequence.cast can return null for real sequences in some builds, and a root
+  // item can carry a sequence's name without being one — imported stubs).
+  // Cast of root items kept as a fallback.
+  const projectSequences = {};
+  try {
+    const allSeqList = await project.getSequences();
+    for (const s of (allSeqList || [])) {
+      let sn = ''; try { sn = s.name || (s.getName && s.getName()) || ''; } catch (e) { }
+      if (sn && !projectSequences[sn]) projectSequences[sn] = s;
+    }
+  } catch (e) { /* fall back to cast below */ }
+  // Fallback cast over root + 00_Source_Timelines (scene timelines are filed there).
+  const rootItems = await rootAndSourceTimelineItems(project);
+  for (const item of rootItems) {
+    if (projectSequences[item.name]) continue;
+    try {
+      const seq = ppro.Sequence.cast(item);
+      if (seq) projectSequences[item.name] = seq;
+    } catch (e) { /* not a sequence */ }
+  }
+
+  heading('Sequences');
+
+  for (const sceneName of sceneNames) {
+    const sceneClips = sceneMap[sceneName];
+    // Sequences are named {code}_{scene} (see buildScene/detectExistingSequences);
+    // legacy ingests may have bare scene names — accept both.
+    const seqName = hasScenes ? (projectCode + '_' + sceneName) : projectCode + '_1_Ingest';
+    const sequence = projectSequences[seqName] || (hasScenes ? projectSequences[sceneName] : null);
+
+    if (!sequence) {
+      // Incremental flow: a scene that was never built is not an error —
+      // it's just not added yet (build it via the scene list above).
+      if (hasScenes) info(seqName + ': not built yet');
+      else fail(seqName + ': sequence not found');
+      continue;
+    }
+
+    // Check V1 clip count
+    let v1Count = 0;
+    let v1Duration = 0;
+    try {
+      const v1 = await sequence.getVideoTrack(0);
+      const items = await v1.getTrackItems(ppro.Constants.TrackItemType.CLIP, false);
+      v1Count = items.length;
+      // Calculate total duration from last clip end
+      if (items.length > 0) {
+        const lastItem = items[items.length - 1];
+        const endTime = await lastItem.getEndTime();
+        v1Duration = endTime.seconds;
+      }
+    } catch (e) { warn(seqName + ': cannot read V1 track'); }
+
+    const expectedClips = sceneClips.length;
+    const expectedDuration = sceneClips.reduce((s, c) => s + c.duration, 0);
+
+    if (v1Count === expectedClips) {
+      ok(seqName + ': ' + v1Count + ' clips');
+    } else {
+      warn(seqName + ': V1 has ' + v1Count + '/' + expectedClips + ' clips');
+    }
+
+    // Check duration (allow 2s tolerance per clip for rounding)
+    const durTolerance = expectedClips * 0.5;
+    if (Math.abs(v1Duration - expectedDuration) <= durTolerance) {
+      ok(seqName + ': duration ' + Math.round(v1Duration) + 's');
+    } else if (v1Duration > 0) {
+      warn(seqName + ': duration ' + Math.round(v1Duration) + 's (expected ~' + Math.round(expectedDuration) + 's)');
+    }
+
+    // Check DJI audio tracks
+    const expectedDji = sceneClips.reduce((s, c) => s + (c.dji_audio ? c.dji_audio.length : 0), 0);
+    if (expectedDji > 0) {
+      let djiCount = 0;
+      try {
+        // Check A2 and A3 for DJI audio
+        const aTrackCount = await sequence.getAudioTrackCount();
+        for (let t = 1; t < Math.min(aTrackCount, 4); t++) {
+          const aTrack = await sequence.getAudioTrack(t);
+          const aItems = await aTrack.getTrackItems(ppro.Constants.TrackItemType.CLIP, false);
+          djiCount += aItems.length;
+        }
+      } catch (e) { /* ignore */ }
+
+      if (djiCount >= expectedDji) {
+        ok(seqName + ': DJI ' + djiCount + ' audio clips on A2/A3');
+      } else if (djiCount > 0) {
+        warn(seqName + ': DJI ' + djiCount + '/' + expectedDji + ' audio clips');
+      } else {
+        warn(seqName + ': no DJI audio found');
+      }
+    }
+
+    ingestLogger.info('Verify ' + seqName + ': V1=' + v1Count + '/' + expectedClips + ', dur=' + Math.round(v1Duration) + 's, DJI=' + expectedDji);
+  }
+
+  // Summary
+  heading('Summary');
+  ok('Scenes: ' + sceneNames.length + ', Total clips: ' + ingest.clips.length);
+  const totalDji = ingest.clips.reduce((s, c) => s + (c.dji_audio ? c.dji_audio.length : 0), 0);
+  if (totalDji > 0) ok('Total DJI audio: ' + totalDji);
+
+  if (allOk) {
+    ok('All checks passed');
+    setIngestStatus('Verification passed', 'ready');
+  } else {
+    warn(totalIssues + ' issue(s) found');
+    setIngestStatus('Verification: ' + totalIssues + ' issue(s)', 'waiting');
+  }
+
+  panel.innerHTML = lines.join('');
+  panel.style.display = 'block';
+  ingestLogger.info('=== VERIFY INGEST COMPLETE: ' + (allOk ? 'PASSED' : totalIssues + ' issues') + ' ===');
+}
+
+/**
+ * Sync Audio — shift all DJI audio clips on A2/A3 by user-specified offset.
+ * Works on ALL sequences in the project that match ingest scene names.
+ * Positive offset = audio moves right (later), negative = left (earlier).
+ */
+async function syncAudio() {
+  var offsetStr = $('sync-offset-input').value;
+  var offsetSec = parseFloat(offsetStr);
+  if (isNaN(offsetSec) || offsetSec === 0) {
+    ingestLogger.warn('Sync Audio: enter non-zero offset in seconds');
+    setIngestStatus('Enter offset (e.g. -3.0)', 'waiting');
+    return;
+  }
+
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { ingestLogger.error('No active project'); return; }
+
+  ingestLogger.info('=== SYNC AUDIO: offset=' + offsetSec + 's ===');
+  setIngestStatus('Syncing audio (' + offsetSec + 's)...', 'waiting');
+
+  var panel = $('ingest-validation');
+  var lines = [];
+  var totalMoved = 0;
+  var totalSkipped = 0;
+
+  // Find all sequences in the project (getSequences-first: root-only cast scans
+  // under-report in some builds and miss sequences organized into bins)
+  var seqEntries = await listProjectSequences(project, ingestLogger);
+  var sequences = seqEntries.map(function (e) { return { name: e.name, sequence: e.seq }; });
+
+  if (sequences.length === 0) {
+    ingestLogger.warn('No sequences found');
+    setIngestStatus('No sequences found', 'error');
+    return;
+  }
+
+  var tickOffset = ppro.TickTime.createWithSeconds(Math.abs(offsetSec));
+
+  for (var si = 0; si < sequences.length; si++) {
+    var seqInfo = sequences[si];
+    var seq = seqInfo.sequence;
+    var seqName = seqInfo.name;
+    var seqMoved = 0;
+
+    // Get audio track count
+    var aTrackCount = await seq.getAudioTrackCount();
+
+    // Process A2 (index 1) and A3 (index 2) — DJI tracks
+    for (var trackIdx = 1; trackIdx < Math.min(aTrackCount, 4); trackIdx++) {
+      var aTrack = await seq.getAudioTrack(trackIdx);
+      var trackItems;
+      try {
+        trackItems = await aTrack.getTrackItems(ppro.Constants.TrackItemType.CLIP, false);
+      } catch (e) {
+        try { trackItems = await aTrack.getTrackItems(); } catch (e2) { continue; }
+      }
+      if (!trackItems || trackItems.length === 0) continue;
+
+      for (var ci = 0; ci < trackItems.length; ci++) {
+        var ti = trackItems[ci];
+        try {
+          var currentStart = await ti.getStartTime();
+          var currentSec = currentStart.seconds;
+
+          // Calculate new position
+          var newSec = currentSec + offsetSec;
+          if (newSec < 0) {
+            ingestLogger.warn(seqName + ' A' + (trackIdx + 1) + ' clip ' + ci + ': would go negative, skipping');
+            totalSkipped++;
+            continue;
+          }
+
+          var newStart = ppro.TickTime.createWithSeconds(newSec);
+          await ti.setStartTime(newStart);
+          seqMoved++;
+        } catch (moveErr) {
+          ingestLogger.warn(seqName + ' A' + (trackIdx + 1) + ' clip ' + ci + ': move failed: ' + moveErr.message);
+          totalSkipped++;
+        }
+      }
+    }
+
+    totalMoved += seqMoved;
+    if (seqMoved > 0) {
+      lines.push('<div class="val-line"><span style="color:var(--success)">\u25CF</span> ' +
+        escapeHtml(seqName) + ': ' + seqMoved + ' clips shifted ' + offsetSec + 's</div>');
+      ingestLogger.info(seqName + ': ' + seqMoved + ' DJI clips shifted by ' + offsetSec + 's');
+    }
+  }
+
+  // Summary
+  if (totalMoved > 0) {
+    lines.push('<div style="margin-top:4px;font-weight:700;color:var(--accent)">' +
+      totalMoved + ' clips shifted by ' + offsetSec + 's' +
+      (totalSkipped > 0 ? ' (' + totalSkipped + ' skipped)' : '') + '</div>');
+    setIngestStatus('Synced: ' + totalMoved + ' clips shifted ' + offsetSec + 's', 'ready');
+  } else {
+    lines.push('<div class="val-line"><span style="color:var(--warning)">\u25CF</span> No DJI audio clips found on A2/A3</div>');
+    setIngestStatus('No clips to sync', 'waiting');
+  }
+
+  panel.innerHTML = lines.join('');
+  panel.style.display = 'block';
+
+  // Save project
+  try { await project.save(); } catch (e) { }
+  ingestLogger.info('=== SYNC AUDIO COMPLETE: ' + totalMoved + ' moved, ' + totalSkipped + ' skipped ===');
+}
+
 async function saveIngestLogs(project) {
   try {
     if (project) { try { await project.save(); ingestLogger.info('Project saved'); } catch (e) { } }
@@ -939,22 +2476,23 @@ async function loadBriefFromPath(filePath) {
   const contents = await fileEntry.read();
   var result = loadBriefFromString(contents, filePath);
 
-  // Check if Assembly/Review sequences already exist
+  // Check if Assembly/Deleted Scene sequences already exist
   var code = result.projectCode || extractProjectCode(result.projectName);
   var existingStages = [];
   try {
     var project = await ppro.Project.getActiveProject();
     if (project) {
-      var rootItem = await project.getRootItem();
-      var allItems = await rootItem.getItems();
       var stageNames = {
         '_2_Assembly': 'Assembly',
-        '_3_Review': 'Review',
+        '_3_DeletedScene': 'DeletedScene',
         '_4_PreEdit': 'PreEdit',
       };
-      for (var i = 0; i < allItems.length; i++) {
+      // REAL sequences only — a root item can carry a stage sequence's name
+      // without being one (imported stubs flipped the UI into "Rebuild" state).
+      var stageSeqEntries = await listProjectSequences(project, assemblyLogger);
+      for (var i = 0; i < stageSeqEntries.length; i++) {
         for (var suffix in stageNames) {
-          if (allItems[i].name === code + suffix) {
+          if (stageSeqEntries[i].name === code + suffix) {
             existingStages.push(stageNames[suffix]);
           }
         }
@@ -968,9 +2506,9 @@ async function loadBriefFromPath(filePath) {
       setAssemblyStatus('Assembly exists. Rebuild if needed.', 'ready');
       $('btn-build-assembly').textContent = 'Rebuild Assembly';
     }
-    if (existingStages.indexOf('Review') >= 0) {
-      setReviewStatus('Review exists. Rebuild if needed.', 'ready');
-      $('btn-build-review').textContent = 'Rebuild Review';
+    if (existingStages.indexOf('DeletedScene') >= 0) {
+      setDeletedSceneStatus('Deleted Scene exists. Rebuild if needed.', 'ready');
+      $('btn-build-deleted-scene').textContent = 'Rebuild Deleted Scene';
     }
   }
 
@@ -1019,11 +2557,11 @@ function loadBriefFromString(jsonString, filePath) {
   $('assembly-summary').style.display = 'block';
   $('assembly-file-info').textContent = 'File: ' + (filePath || 'unknown');
   $('btn-build-assembly').removeAttribute('disabled');
-  $('btn-build-review').removeAttribute('disabled');
+  $('btn-build-deleted-scene').removeAttribute('disabled');
 
-  // Update review status when brief is loaded
-  const reviewSegs = result.segments.filter(s => !s.use || s.block === 99);
-  setReviewStatus('Brief loaded. ' + reviewSegs.length + ' unused segments.', 'ready');
+  // Update deleted scene status when brief is loaded
+  const deletedSceneSegs = result.segments.filter(s => !s.use || s.block === 99);
+  setDeletedSceneStatus('Brief loaded. ' + deletedSceneSegs.length + ' unused segments.', 'ready');
 
   // Update Screen Cues status — enabled immediately (no Assembly dependency)
   if (assemblyState.screens.length > 0) {
@@ -1069,16 +2607,16 @@ async function loadBrief() {
     const contents = await file.read();
     var sourcePath = file.nativePath || file.name || 'unknown';
 
-    // Auto-copy to Setup/Assembly/ with version
+    // Auto-copy to 00_Setup/02_Assembly/ with version
     if (projectState.folderPath) {
       try {
-        var assemblyDir = projectState.folderPath + '/01_Media/Source/Setup/Assembly';
+        var assemblyDir = projectState.folderPath + '/00_Setup/02_Assembly';
         var assemblyEntry;
         try {
           assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
         } catch (e) {
-          var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/01_Media/Source/Setup');
-          assemblyEntry = await ensureSubfolder(setupEntry, 'Assembly', assemblyLogger);
+          var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup');
+          assemblyEntry = await ensureSubfolder(setupEntry, '02_Assembly', assemblyLogger);
         }
 
         // Find next version (shared counter across _in and _out)
@@ -1099,12 +2637,12 @@ async function loadBrief() {
         var outFile = await assemblyEntry.createFile(versionedName, { overwrite: true });
         await outFile.write(contents);
         var savedPath = assemblyDir + '/' + versionedName;
-        assemblyLogger.info('Brief saved: Setup/Assembly/' + versionedName + ' (v' + version + ')');
+        assemblyLogger.info('Brief saved: 00_Setup/02_Assembly/' + versionedName + ' (v' + version + ')');
 
         // Load from the saved location
         sourcePath = savedPath;
       } catch (copyErr) {
-        assemblyLogger.debug('Brief copy to Assembly/ skipped: ' + copyErr.message);
+        assemblyLogger.debug('Brief copy to 02_Assembly/ skipped: ' + copyErr.message);
       }
     }
 
@@ -1112,6 +2650,1855 @@ async function loadBrief() {
   } catch (err) {
     assemblyLogger.error('Failed to load brief: ' + err.message);
     setAssemblyStatus('Error: ' + err.message, 'error');
+  }
+}
+
+// ══════════════════════════ PARTS (build-by-part stage) ══════════════════════════
+// Build the film one part at a time. Each part = a colour/block as its own sequence
+// with 2V+2A, placed by ABSOLUTE timeline_in (voice below + shown B-roll above,
+// audio kept on both). Additive — does NOT touch the Assembly path.
+let partsState = { part: null, segments: [], bundle: null, filePath: null, building: false };
+
+function setPartsStatus(text, type) {
+  var dot = $('parts-status-dot');
+  var txt = $('parts-status-text');
+  if (txt) txt.textContent = text;
+  if (dot) dot.className = 'status-dot ' + (type || 'waiting');
+}
+
+function setPartsValidation(html) {
+  var el = $('parts-validation');
+  if (el) { el.innerHTML = html; el.style.display = 'block'; }
+}
+
+// === LUT-слои: блок кнопок внизу вкладки Ingest (не отдельная вкладка) ===
+
+/**
+ * Записать в кольцевой буфер кнопки «Copy error report».
+ *
+ * ⚠️ Буфер наполнялся ТОЛЬКО через logger.warn/error (src/shared/logger.js).
+ * Ошибка, показанная в статус-строке мимо логгера, в отчёт не попадала:
+ * 25.09.2026 «Color failed: vclip.getComponentChain is not a function» висел
+ * на экране, а отчёт про него молчал. Обещание кнопки — «здесь то, что
+ * сломалось», поэтому любой статус уровня error теперь регистрируется.
+ */
+function recordPanelError(text, pipeline) {
+  try {
+    var g = (typeof globalThis !== 'undefined') ? globalThis : window;
+    if (!g.__ytaiErrors) g.__ytaiErrors = [];
+    var ts = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    var line = '[' + ts + '] [ERROR] ' + text + (pipeline ? '  [' + pipeline + ']' : '');
+    if (g.__ytaiErrors[g.__ytaiErrors.length - 1] !== line) g.__ytaiErrors.push(line);
+    if (g.__ytaiErrors.length > 30) g.__ytaiErrors.shift();
+  } catch (e) { /* не фатально */ }
+}
+
+function setAdjustStatus(text, type) {
+  var dot = $('adjust-status-dot');
+  var txt = $('adjust-status-text');
+  if (txt) txt.textContent = text;
+  if (dot) dot.className = 'status-dot ' + (type || 'waiting');
+  if (type === 'error') recordPanelError(text, 'adjust');
+}
+
+var ADJUST_REASON_TEXT = {
+  'no-sequence': 'No active sequence — open one in the timeline',
+  'no-selection': 'Nothing selected — select clip(s) on the timeline first',
+  'no-donor': 'No donor item — create once: New Item > Adjustment Layer, rename to YTAI_ADJ',
+  'place-failed': 'Placement failed — see log',
+};
+
+async function runAdjustOverSelection(opts) {
+  var adjustLogger = new Logger('adjust');
+  setAdjustStatus('Adding adjustment layer...', 'working');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) { setAdjustStatus('No open Premiere project', 'error'); return; }
+    opts = opts || {};
+    // Auto-donor: when the project lacks a YTAI_ADJ item, import the donor
+    // .prproj shipped into the project folder (00_Setup/YTAI_ADJ_donor.prproj).
+    // Projects created from the master template have the item already — the
+    // donor file is only touched when the by-name lookup fails.
+    if (!opts.donorPrproj) {
+      var folder = projectState.folderPath;
+      if (!folder) {
+        var ppath = null;
+        try { ppath = project.path; } catch (e) { /* getter may throw */ }
+        if (!ppath) { try { ppath = await project.getPath(); } catch (e) { /* none */ } }
+        if (ppath) folder = String(ppath).replace(/\\/g, '/').replace(/\/[^/]*$/, '');
+      }
+      if (folder) opts.donorPrproj = folder + '/00_Setup/YTAI_ADJ_donor.prproj';
+    }
+    var r = await addAdjustmentOverSelection(project, opts, adjustLogger);
+    if (!r.ok) {
+      setAdjustStatus(ADJUST_REASON_TEXT[r.reason] || ('Failed: ' + r.reason), 'error');
+      return;
+    }
+    var msg = 'Added continuous adjustment layer: ' + r.count + ' clip(s), '
+      + r.startSec.toFixed(2) + 's–' + r.endSec.toFixed(2) + 's → V' + (r.vIdx + 1);
+    if (r.transform) {
+      msg += r.transform.applied
+        ? (r.transform.paramSet ? ' + Transform 101' : ' + Transform (set Scale by hand)')
+        : ' (Transform failed — see log)';
+    }
+    setAdjustStatus(msg, 'ready');
+  } catch (err) {
+    adjustLogger.error('runAdjustOverSelection: ' + err.message);
+    setAdjustStatus('Error: ' + err.message, 'error');
+  }
+}
+
+/** Persist the adjust log into the project so failures are inspectable offline. */
+async function saveAdjustLog(folder, adjustLogger) {
+  var text = adjustLogger._buffer.join('\n');
+  var targets = ['/99_Pipeline/logs', '/00_Setup/logs'];
+  for (var i = 0; i < targets.length; i++) {
+    try {
+      var dir = await uxpfs.getEntryWithUrl('file://' + folder + targets[i]);
+      var f = await dir.createFile('adjust_last.log', { overwrite: true });
+      await f.write(text, { format: uxp.storage.formats.utf8 });
+      return;
+    } catch (e) { /* try next target */ }
+  }
+}
+
+/**
+ * Layer manifest — persistent record of clone placements (the Creative Look
+ * cannot be read back via the param API, so this file IS the health record).
+ * {seqName: {clipName: {lut, startSec, endSec}}}
+ */
+var ADJUST_MANIFEST_REL = '/99_Pipeline/lut_layers_manifest.json';
+
+async function loadLayerManifest(folder) {
+  try {
+    var entry = await uxpfs.getEntryWithUrl('file://' + folder + ADJUST_MANIFEST_REL);
+    return JSON.parse(await entry.read()) || {};
+  } catch (e) { return {}; }
+}
+
+async function saveLayerManifest(folder, manifest) {
+  try {
+    var dir = await uxpfs.getEntryWithUrl('file://' + folder + '/99_Pipeline');
+    var f = await dir.createFile('lut_layers_manifest.json', { overwrite: true });
+    await f.write(JSON.stringify(manifest, null, 2), { format: uxp.storage.formats.utf8 });
+  } catch (e) { /* best effort — next run just re-places clones */ }
+}
+
+/** Resolve the project folder like the Adjust donor path does. */
+async function adjustProjectFolder(project) {
+  var folder = projectState.folderPath;
+  if (!folder) {
+    var ppath = null;
+    try { ppath = project.path; } catch (e) { /* getter may throw */ }
+    if (!ppath) { try { ppath = await project.getPath(); } catch (e) { /* none */ } }
+    if (ppath) folder = String(ppath).replace(/\\/g, '/').replace(/\/[^/]*$/, '');
+  }
+  return folder || null;
+}
+
+/**
+ * PIPELINE MODE — adjustment layer over EVERY clip, LUT by {CODE}_lut_plan.json
+ * (00_Setup/01_Ingest/). allSequences=true → walks every sequence in the project.
+ */
+/**
+ * Положить цвет из {CODE}_color_plan.json прямо на клипы: Input LUT + Exposure
+ * + Look в ОДИН Lumetri на клипе. Порядок внутри Lumetri фиксирован
+ * (Basic Correction → Creative), поэтому получается ровно та цепочка, что
+ * считала витрина: проявка → экспозиция → покраска.
+ *
+ * ⚠️ Это НЕ старый lut_plan.json. Там значением было имя клипа-донора строкой,
+ * и панель клала его прямо в имя слоя; здесь значение — объект
+ * {develop, exposure, look}. Перепутать форматы = «[object Object]» на таймлайне.
+ */
+async function runColorFromPlan(allSequences) {
+  var log = new Logger('color');
+  setAdjustStatus('Color: reading plan…', 'working');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) { setAdjustStatus('No open project', 'error'); return; }
+    var folder = await adjustProjectFolder(project);
+    if (!folder) { setAdjustStatus('Save the project (⌘S) first', 'error'); return; }
+
+    var code = extractProjectCode(folder.split('/').pop() || '');
+    var planPath = folder + '/01_Source/00_LUT/_build/' + code + '_color_plan.json';
+    var doc;
+    try {
+      var entry = await uxpfs.getEntryWithUrl('file://' + planPath);
+      doc = JSON.parse(await entry.read());
+    } catch (e) {
+      setAdjustStatus('No color_plan — run color_apply.py: ' + planPath, 'error');
+      return;
+    }
+    if (doc.schema !== 'color-plan-v1') {
+      setAdjustStatus('Wrong schema: ' + doc.schema + ' (need color-plan-v1)', 'error');
+      return;
+    }
+
+    // ключ плана — «сцена/клип.MP4», таймлайн матчится по basename
+    var byClip = {};
+    var plan = doc.plan || {};
+    Object.keys(plan).forEach(function (k) { byClip[k.split('/').pop()] = plan[k]; });
+
+    var inputDir = (doc.install && doc.install.input_dir) || '';
+    var creativeDir = (doc.install && doc.install.creative_dir) || '';
+    // формы значения перебираются по убыванию конкретности — какую примет
+    // Lumetri, до сих пор никем не проверено
+    function developForms(id) {
+      var d = (doc.develops || {})[id];
+      if (!d) return null;
+      var n = d.install_name;
+      return [inputDir + '/' + n, n, n.replace(/\.cube$/i, '')];
+    }
+    var lookForms = null;
+    if (doc.look && doc.look.install_name) {
+      var ln = doc.look.install_name;
+      lookForms = [ln.replace(/\.cube$/i, ''), ln, creativeDir + '/' + ln];
+    }
+
+    var seqs = allSequences ? await project.getSequences()
+      : (await project.getActiveSequence() ? [await project.getActiveSequence()] : []);
+    if (!seqs || !seqs.length) { setAdjustStatus('No sequences', 'error'); return; }
+
+    var done = 0, miss = 0, fail = 0, expOk = 0, donorNeeded = 0, firstDump = null;
+    var failures = [];
+    for (var si = 0; si < seqs.length; si++) {
+      var seq = seqs[si];
+      var seqName = '';
+      try { seqName = String(await seq.getName()); } catch (e) { seqName = String(seq.name || ''); }
+      if (seqName === LUT_DONOR_SEQUENCE) continue;
+      setAdjustStatus('Color: ' + (si + 1) + '/' + seqs.length + ' ' + seqName, 'working');
+      var items = await collectVideoClipItems(seq, log);
+      for (var ci = 0; ci < items.length; ci++) {
+        var it = items[ci];
+        var nm = String((it && it.name) || '');
+        var spec = byClip[nm];
+        if (!spec) { miss++; continue; }
+        var res = await colorApply.applyColorToClip(project, it, {
+          developPath: developForms(spec.develop),
+          exposure: (typeof spec.exposure === 'number') ? spec.exposure : undefined,
+          lookName: lookForms,
+        }, log);
+        if (!firstDump && res.dump && res.dump.length) {
+          firstDump = res.dump;
+          log.info('ДАМП ПАРАМЕТРОВ LUMETRI (' + nm + '):\n' + colorApply.formatDump(res.dump));
+        }
+        // ⚠️ Три слота — три разные судьбы, и мешать их в одно «failed» нельзя.
+        // Замерено 25.09.2026 дампом: Input LUT (индексы 6, 7) и Look (34, 35)
+        // — ЧИСЛОВЫЕ меню, сам куб лежит в бинарном параметре Blob. Строкой
+        // туда не положить никогда и ничем: это не сбой прогона, а предел API,
+        // и лечится он только донор-клоном. Exposure (19) числом ставится.
+        var bad = [], needDonor = false;
+        if (res.error) bad.push(res.error);
+        ['develop', 'look'].forEach(function (k) {
+          if (res[k] && res[k].ok === false) {
+            if ((res[k].tried || []).some(function (t) { return t.res && t.res.numericSlot; })) needDonor = true;
+            else bad.push(k + ': ' + res[k].why);
+          }
+        });
+        if (res.exposure && res.exposure.ok === false) bad.push('exposure: ' + res.exposure.why);
+        if (res.exposure && res.exposure.ok) expOk++;
+        if (needDonor) donorNeeded++;
+        if (bad.length) { fail++; failures.push(nm + ' — ' + bad.join('; ')); }
+        else done++;
+      }
+    }
+    await saveAdjustLog(folder, log);
+
+    if (!done && !fail) {
+      setAdjustStatus('No timeline clip matches the plan (' + miss + ' skipped)', 'error');
+      return;
+    }
+    var msg = 'Color: exposure on ' + expOk + '/' + (expOk + fail) + ' clips'
+      + (donorNeeded ? ' · LUT+Look need donor (' + donorNeeded + ')' : '')
+      + (fail ? ' · failed ' + fail : '')
+      + ' · not in plan ' + miss;
+    if (donorNeeded && !fail) {
+      log.warn('color: Input LUT и Look — числовые меню Lumetri, куб живёт в Blob;'
+        + ' значением они не ставятся ни в какой форме. Нужен донор-клон.');
+    }
+    if (fail) {
+      log.warn('НЕ ЛЁГЛО:\n' + failures.slice(0, 20).join('\n'));
+      setAdjustStatus(msg + ' — see adjust_last.log', 'error');
+    } else {
+      setAdjustStatus(msg, 'ok');
+    }
+  } catch (e) {
+    // статус короткий, лог подробный: без стека такую ошибку не найти
+    try { log.error('color: упало — ' + (e && e.message ? e.message : e)); } catch (e2) {}
+    try { if (e && e.stack) log.debug(e.stack); } catch (e2) {}
+    try { await saveAdjustLog(folder, log); } catch (e2) {}
+    setAdjustStatus('Color failed: ' + (e && e.message ? e.message : e), 'error');
+  }
+}
+
+async function runAdjustPerClipFromPlan(allSequences) {
+  var adjustLogger = new Logger('adjust');
+  setAdjustStatus('AL per clip: reading lut_plan...', 'working');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) { setAdjustStatus('No open Premiere project', 'error'); return; }
+    var folder = await adjustProjectFolder(project);
+    if (!folder) { setAdjustStatus('Project not saved (⌘S) — cannot find lut_plan', 'error'); return; }
+
+    var code = extractProjectCode(folder.split('/').pop() || '');
+    var planPath = folder + '/00_Setup/01_Ingest/' + code + '_lut_plan.json';
+    var planRaw;
+    try {
+      var entry = await uxpfs.getEntryWithUrl('file://' + planPath);
+      planRaw = JSON.parse(await entry.read());
+    } catch (e) {
+      setAdjustStatus('No lut_plan: ' + planPath + ' — run lut_face_score.py first', 'error');
+      return;
+    }
+    // plan keys are "scene/clip.MP4" — the timeline matches by basename
+    var planByClip = {};
+    var plan = planRaw.plan || {};
+    Object.keys(plan).forEach(function (k) {
+      planByClip[k.split('/').pop()] = plan[k];
+    });
+
+    var sequences;
+    if (allSequences) {
+      sequences = await project.getSequences();
+    } else {
+      var act = await project.getActiveSequence();
+      sequences = act ? [act] : [];
+    }
+    if (!sequences || !sequences.length) { setAdjustStatus('No sequence(s) to process', 'error'); return; }
+
+    var opts = { donorPrproj: [
+      folder + '/00_Setup/YTAI_ADJ_donor.prproj',
+      '/Users/romansergeev/YTAI/scripts/01_prepare/0101_init_folders/RYA_example.prproj',
+    ] };
+    var placed = 0, total = 0, already = 0, lookSet = 0, lumetri = 0, seqDone = 0, noDonor = false;
+    var mode = null;
+    var manifestAll = await loadLayerManifest(folder);
+    for (var si = 0; si < sequences.length; si++) {
+      var seq = sequences[si];
+      var seqName = '';
+      try { seqName = String(await seq.getName()); } catch (e) { try { seqName = String(seq.name || ''); } catch (e2) {} }
+      // The LUT-donor template sequence is tooling, not content — never layer it.
+      if (seqName === LUT_DONOR_SEQUENCE) continue;
+      setAdjustStatus('AL per clip: ' + (si + 1) + '/' + sequences.length + ' ' + seqName, 'working');
+      opts.layerManifest = manifestAll[seqName] || {};
+      var r = await addAdjustmentPerClipFromPlan(project, seq, planByClip, opts, adjustLogger);
+      if (r.mode) mode = r.mode;
+      if (r.mode === 'clone' && r.layerManifest) manifestAll[seqName] = r.layerManifest;
+      adjustLogger.info('Seq ' + seqName + ': placed ' + r.placed + '/' + r.total
+        + ', already ' + (r.already || 0)
+        + (r.reason ? ' (' + r.reason + ')' : '') + ', lumetri ' + r.lumetriApplied + ', look ' + r.lookSet);
+      if (r.reason === 'no-donor') { noDonor = true; break; }
+      if (r.total > 0) seqDone++;
+      placed += r.placed; total += r.total; already += (r.already || 0);
+      lookSet += r.lookSet; lumetri += r.lumetriApplied;
+    }
+    await saveAdjustLog(folder, adjustLogger);
+    if (mode === 'clone') await saveLayerManifest(folder, manifestAll);
+    if (noDonor) {
+      setAdjustStatus(ADJUST_REASON_TEXT['no-donor'], 'error');
+      return;
+    }
+    if (total === 0) {
+      setAdjustStatus('No timeline clip matches the plan — check lut_plan', 'error');
+      return;
+    }
+    var msg = 'LUT layers'
+      + (mode === 'clone' ? ' (donor clones)' : (mode === 'legacy' ? ' (legacy — no donor seq!)' : ''))
+      + ': +' + placed + ' new, ' + already + ' existing, '
+      + total + ' clip(s) in ' + seqDone + ' sequence(s)'
+      + ' · Lumetri ' + lumetri
+      + ' · Look ' + lookSet
+      + (mode === 'legacy' && placed > 0 ? ' — pick Look by layer name (or Build LUT Donor in template)' : '');
+    setAdjustStatus(msg, (placed + already) === total ? 'ready' : 'error');
+  } catch (err) {
+    adjustLogger.error('runAdjustPerClipFromPlan: ' + err.message + (err.stack ? '\n' + err.stack : ''));
+    try {
+      var f2 = await adjustProjectFolder(await ppro.Project.getActiveProject());
+      if (f2) await saveAdjustLog(f2, adjustLogger);
+    } catch (e2) { /* best effort */ }
+    setAdjustStatus('Error: ' + err.message, 'error');
+  }
+}
+
+/**
+ * PLAN-B DONOR BUILDER — programmatically build/repair the YTAI_LUT_DONOR
+ * sequence in the CURRENTLY OPEN project (run it with the master template
+ * open): sequence + 3 named AL clips + Lumetri, Look set automatically when
+ * the API allows. Whatever the API could not set is listed for hand-picking.
+ */
+async function runAdjustBuildDonor() {
+  var adjustLogger = new Logger('adjust');
+  setAdjustStatus('Building ' + LUT_DONOR_SEQUENCE + '...', 'working');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) { setAdjustStatus('No open Premiere project', 'error'); return; }
+    var folder = await adjustProjectFolder(project);
+    var opts = {};
+    if (folder) {
+      opts.donorPrproj = [
+        folder + '/00_Setup/YTAI_ADJ_donor.prproj',
+        '/Users/romansergeev/YTAI/scripts/01_prepare/0101_init_folders/RYA_example.prproj',
+      ];
+    }
+    var r = await buildLutDonorSequence(project, opts, adjustLogger);
+    if (folder) await saveAdjustLog(folder, adjustLogger);
+    if (!r.ok) {
+      if (r.reason === 'no-donor') {
+        setAdjustStatus(ADJUST_REASON_TEXT['no-donor'], 'error');
+      } else {
+        setAdjustStatus('Donor build failed: ' + r.reason
+          + (folder ? ' — see adjust_last.log' : ' — save the project (⌘S) to get a log file'), 'error');
+      }
+      return;
+    }
+    var msg = LUT_DONOR_SEQUENCE + ': ' + (r.created ? 'created' : (r.rebuilt ? 'REBUILT (v2 layout)' : 'existed'))
+      + ', +' + r.placed + ' clip(s), Lumetri ' + r.lumetri;
+    if (r.needLook && r.needLook.length) {
+      msg += ' — pick Look by hand: ' + r.needLook.join(', ') + ', then ⌘S';
+      setAdjustStatus(msg, 'error');
+    } else {
+      msg += ' — done, ⌘S to save';
+      setAdjustStatus(msg, 'ready');
+    }
+  } catch (err) {
+    adjustLogger.error('runAdjustBuildDonor: ' + err.message + (err.stack ? '\n' + err.stack : ''));
+    try {
+      var f2 = await adjustProjectFolder(await ppro.Project.getActiveProject());
+      if (f2) await saveAdjustLog(f2, adjustLogger);
+    } catch (e2) { /* best effort */ }
+    setAdjustStatus('Error: ' + err.message, 'error');
+  }
+}
+
+/**
+ * PLAN-B PROBE — clone one AL from the YTAI_LUT_DONOR template sequence into
+ * the active sequence (fresh track above content). Answers «does
+ * createCloneTrackItemAction work across sequences?» — see HANDOFF_adjust_lut.
+ */
+async function runAdjustProbeClone() {
+  var adjustLogger = new Logger('adjust');
+  setAdjustStatus('Probe: cloning donor AL...', 'working');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) { setAdjustStatus('No open Premiere project', 'error'); return; }
+    var folder = await adjustProjectFolder(project);
+    var opts = {};
+    if (folder) {
+      opts.donorPrproj = [
+        folder + '/00_Setup/YTAI_ADJ_donor.prproj',
+        '/Users/romansergeev/YTAI/scripts/01_prepare/0101_init_folders/RYA_example.prproj',
+      ];
+    }
+    var r = await probeDonorClone(project, opts, adjustLogger);
+    if (folder) await saveAdjustLog(folder, adjustLogger);
+    if (r.ok) {
+      setAdjustStatus('Clone OK → V' + (r.landedTrack + 1) + ' @ ' + r.landedSec.toFixed(2)
+        + 's, Lumetri: ' + r.lumetriKept + ' — check Look, ⌘Z to remove', 'ready');
+    } else if (r.reason === 'no-donor-sequence') {
+      setAdjustStatus('No "YTAI_LUT_DONOR" sequence — add it to the template first (see log)', 'error');
+    } else if (r.reason === 'clobbered-content') {
+      setAdjustStatus('⚠️ Clone hit existing clips — press ⌘Z NOW (see adjust_last.log)', 'error');
+    } else {
+      setAdjustStatus('Probe failed: ' + r.reason
+        + (folder ? ' — see adjust_last.log' : ' — save the project (⌘S) to get a log file'), 'error');
+    }
+  } catch (err) {
+    adjustLogger.error('runAdjustProbeClone: ' + err.message + (err.stack ? '\n' + err.stack : ''));
+    try {
+      var f2 = await adjustProjectFolder(await ppro.Project.getActiveProject());
+      if (f2) await saveAdjustLog(f2, adjustLogger);
+    } catch (e2) { /* best effort */ }
+    setAdjustStatus('Error: ' + err.message, 'error');
+  }
+}
+
+async function loadPart(auto) {
+  try {
+    // Auto-find the newest part JSON in {project}/00_Setup/02_Assembly/parts — no picker needed
+    // (parity with Review v3 auto-detect). Falls back to the file picker if the dir is empty/absent.
+    // auto=true (tab open): NEVER pop the picker — quiet status instead.
+    var file = null;
+    if (projectState.folderPath) {
+      try {
+        var pDir = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup/02_Assembly/parts');
+        var pEntries = await pDir.getEntries();
+        var pCands = [];
+        for (var pe = 0; pe < pEntries.length; pe++) {
+          if (pEntries[pe].isFile && /_part_.*\.json$/i.test(pEntries[pe].name)) pCands.push(pEntries[pe]);
+        }
+        if (pCands.length) {
+          // newest by dateModified when available, else by name (higher version sorts later)
+          var pBest = pCands[0], pBestT = 0;
+          for (var pb = 0; pb < pCands.length; pb++) {
+            var pT = 0;
+            try { var pMeta = await pCands[pb].getMetadata(); pT = pMeta && pMeta.dateModified ? new Date(pMeta.dateModified).getTime() : 0; } catch (eMt) { }
+            if (pT > pBestT || (pT === pBestT && pCands[pb].name.localeCompare(pBest.name) > 0)) { pBest = pCands[pb]; pBestT = pT; }
+          }
+          file = pBest;
+          assemblyLogger.info('Part auto-detected: ' + file.name + ' (of ' + pCands.length + ' in 02_Assembly/parts/)');
+        }
+      } catch (eAd) { assemblyLogger.debug('parts auto-detect: ' + eAd.message); }
+    }
+    if (!file && auto) {
+      setPartsStatus('No part JSON in 02_Assembly/parts/ — ask Claude to build one', 'waiting');
+      return;
+    }
+    if (!file) {
+      assemblyLogger.info('No part JSON auto-detected — opening file picker...');
+      file = await uxpfs.getFileForOpening({ types: ['json'], allowMultiple: false });
+    }
+    if (!file) { assemblyLogger.warn('Part selection cancelled'); return; }
+    const contents = await file.read();
+    var data = JSON.parse(contents);
+    // Bundle: one JSON → many sequences ({schema:'ytai-parts-bundle-v1', parts:[{part,segments},...]})
+    if (data.schema === 'ytai-parts-bundle-v1' && Array.isArray(data.parts) && data.parts.length) {
+      partsState.bundle = data.parts;
+      partsState.part = data.parts[0].part;
+      partsState.segments = data.parts[0].segments;
+      partsState.filePath = file.nativePath || file.name || 'unknown';
+      var names = data.parts.map(function (x) { return (x.part && x.part.sequence_name) || '?'; });
+      setPartsStatus('Bundle loaded: ' + data.parts.length + ' timelines', 'ready');
+      setPartsValidation('<div class="val-line"><b>BUNDLE</b> — ' + data.parts.length + ' sequences:</div>' +
+        names.map(function (n) { return '<div class="val-line">· ' + escapeHtml(n) + '</div>'; }).join(''));
+      $('btn-build-part').removeAttribute('disabled');
+      assemblyLogger.info('Parts bundle loaded: ' + names.join(', '));
+      return;
+    }
+    partsState.bundle = null;
+    if (data.schema !== 'ytai-part-v1' || !data.part || !Array.isArray(data.segments)) {
+      throw new Error('Not a ytai-part-v1 file (need schema=ytai-part-v1, part{}, segments[])');
+    }
+    partsState.part = data.part;
+    partsState.segments = data.segments;
+    partsState.filePath = file.nativePath || file.name || 'unknown';
+    var seqName = data.part.sequence_name || ((data.part.code || 'PART') + '_part_' + (data.part.name || 'Untitled'));
+    var v2 = data.segments.filter(function (s) { return /2/.test(String(s.track || '')); }).length;
+    // Which timeline will be built + which version comes next (Roman: видеть до сборки).
+    var willVersion = (data.part.auto_version != null) ? !!data.part.auto_version : !!data.part.base_clip;
+    var nextName = seqName;
+    if (willVersion) {
+      try {
+        // same "taken" set as partsBuilder auto-version: ALL sequences (any bin) ∪ root names
+        var taken = await collectTakenNames(await ppro.Project.getActiveProject(), assemblyLogger);
+        var bn = seqName.replace(/_v\d+$/, ''), vn = 1;
+        while (taken[bn + '_v' + vn]) vn++;
+        nextName = bn + '_v' + vn;
+      } catch (eNv) { nextName = seqName + '_v1'; }
+    }
+    var lastEnd = 0;
+    for (var le = 0; le < data.segments.length; le++) {
+      var so2 = data.segments[le].timeline_out_sec;
+      if (so2 == null && data.segments[le].timeline_out) so2 = tcToSecPanel(data.segments[le].timeline_out);
+      if (so2 != null && so2 > lastEnd) lastEnd = so2;
+    }
+    var bsegs2 = (data.part.base_segments || []);
+    for (var be = 0; be < bsegs2.length; be++) if (bsegs2[be].timeline_out_sec > lastEnd) lastEnd = bsegs2[be].timeline_out_sec;
+    var durTxt = Math.floor(lastEnd / 60) + ':' + (Math.round(lastEnd % 60) < 10 ? '0' : '') + Math.round(lastEnd % 60);
+    var chapN = (data.part.chapter_markers || []).length;
+    setPartsStatus('Ready → ' + nextName + ' · ' + data.segments.length + ' segments · ' + durTxt, 'ready');
+    setPartsValidation(
+      '<div class="val-line">Will build: <b>' + escapeHtml(nextName) + '</b>' +
+        (willVersion ? ' <span style="opacity:.6">(new version each build)</span>' : '') + '</div>' +
+      '<div class="val-line">Source JSON: ' + escapeHtml(String(file.name || '')) + '</div>' +
+      '<div class="val-line">Segments: ' + data.segments.length + ' — ' + (data.segments.length - v2) + ' on V1, ' + v2 + ' on V2+' +
+        (bsegs2.length ? ' · V1 base: ' + bsegs2.length + ' piece(s)' : '') + '</div>' +
+      '<div class="val-line">Length: ' + durTxt + (chapN ? ' · chapters: ' + chapN : '') + '</div>' +
+      '<div class="val-line">Model: ' + escapeHtml(data.part.build_model || 'absolute') + ' · keep_audio per segment</div>');
+    $('btn-build-part').removeAttribute('disabled');
+    assemblyLogger.info('Part loaded: ' + (data.part.name || '?') + ', ' + data.segments.length + ' segments → ' + seqName);
+  } catch (err) {
+    setPartsStatus('Error: ' + err.message, 'error');
+    assemblyLogger.error('Load part failed: ' + err.message);
+  }
+}
+
+// Optional explicitBundle ([{part, segments}, ...]) builds that list instead of
+// partsState (Assembly scenes path); return value is additive — old callers ignore it.
+async function buildParts(explicitBundle, ui) {
+  // ui: optional { status, validation } — Assembly-tab builds route progress to their
+  // own tab; default = the Parts-tab writers (invisible when another tab drives).
+  var status = (ui && ui.status) || setPartsStatus;
+  var validation = (ui && ui.validation) || setPartsValidation;
+  var bundleList = explicitBundle && explicitBundle.length ? explicitBundle
+    : (partsState.bundle && partsState.bundle.length ? partsState.bundle
+      : [{ part: partsState.part, segments: partsState.segments }]);
+  var firstPart = (bundleList[0] && bundleList[0].part) || null;
+  // review parts (base_clip) may carry ZERO inserts — a watch-only timeline of the
+  // render + chapter markers is valid; partsBuilder itself allows it in reviewMode.
+  if (!firstPart || (!(bundleList[0].segments || []).length && !firstPart.base_clip)) { status('No part loaded', 'error'); return { ok: false, builtNames: [], error: 'No part loaded' }; }
+  if (partsState.building) { assemblyLogger.warn('Part build already in progress'); return { ok: false, builtNames: [], error: 'Build already in progress' }; }
+  partsState.building = true;
+  $('btn-build-part').setAttribute('disabled', 'true');
+  status('Building part "' + (firstPart.name || '?') + '"...', 'waiting');
+  var builtNames = [];
+  try {
+    const project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere Pro project');
+    assemblyLogger.info('=== PART BUILD START: ' + (firstPart.name || '?') + ' (partsBuilder v' + PARTS_BUILDER_VERSION + ') ===');
+    try { await project.save(); } catch (e) { }
+    // clipMap WITHOUT throwing on missing — partsBuilder skips clips not in project.
+    var sourceBin = await findSourceBin(project);
+    if (!sourceBin) {
+      // Editor's own project (e.g. Aymen's) has no 00_Source bin — create it instead of
+      // failing; the auto-import below lands every missing clip into _Part_media anyway.
+      assemblyLogger.warn('00_Source bin not found — creating an empty one (clips auto-import to _Part_media)');
+      try {
+        var sbRoot = await project.getRootItem();
+        project.lockedAccess(function () {
+          project.executeTransaction(function (ca) { ca.addAction(sbRoot.createBinAction('00_Source', true)); }, 'Create 00_Source bin');
+        });
+        sourceBin = await findProjectItemByName(project, '00_Source', assemblyLogger);
+      } catch (eSB) { assemblyLogger.warn('00_Source create failed: ' + eSB.message); }
+    }
+    var clipMap = sourceBin ? await buildClipMap(sourceBin, assemblyLogger) : {};
+    // Auto-import media missing from the project by segment.source_path (parity with Review v3):
+    // photos/renders referenced by the part JSON need no manual File>Import — they land in _Part_media.
+    var pMissing = [], pSeen = {};
+    var pAllSegs = bundleList.reduce(function (acc, x) { return acc.concat(x.segments || []); }, []);
+    for (var pi = 0; pi < pAllSegs.length; pi++) {
+      var pSf = pAllSegs[pi].source_file, pSp = pAllSegs[pi].source_path;
+      if (!pSf || !pSp) continue;
+      if (clipMap[pSf] || clipMap[pSf.replace(/\.[^.]+$/, '')]) continue;
+      var pFound = await findProjectItemByName(project, pSf, assemblyLogger);
+      if (pFound) { clipMap[pSf] = pFound; clipMap[pSf.replace(/\.[^.]+$/, '')] = pFound; continue; }
+      if (pSeen[pSp]) continue; pSeen[pSp] = 1;
+      pMissing.push({ sf: pSf, sp: pSp });
+    }
+    if (pMissing.length) {
+      assemblyLogger.info('Parts auto-import: ' + pMissing.length + ' missing clip(s) → _Part_media...');
+      status('Importing ' + pMissing.length + ' missing clip(s)...', 'waiting');
+      var pBinCast = null;
+      try {
+        var pBin = await findProjectItemByName(project, '_Part_media', assemblyLogger);
+        if (!pBin) {
+          var pRoot = await project.getRootItem();
+          project.lockedAccess(function () {
+            project.executeTransaction(function (ca) { ca.addAction(pRoot.createBinAction('_Part_media', true)); }, 'Create _Part_media bin');
+          });
+          pBin = await findProjectItemByName(project, '_Part_media', assemblyLogger);
+        }
+        pBinCast = pBin ? ppro.FolderItem.cast(pBin) : null;
+      } catch (ePB) { assemblyLogger.warn('_Part_media bin skipped: ' + ePB.message); }
+      var pPaths = pMissing.map(function (x) { return x.sp; });
+      try {
+        if (pBinCast) await project.importFiles(pPaths, true, pBinCast, false); else await project.importFiles(pPaths);
+      } catch (ePImp) {
+        assemblyLogger.warn('batch import failed (' + ePImp.message + ') — one-by-one');
+        for (var pj = 0; pj < pPaths.length; pj++) {
+          try { if (pBinCast) await project.importFiles([pPaths[pj]], true, pBinCast, false); else await project.importFiles([pPaths[pj]]); } catch (e2) { }
+        }
+      }
+      var pGot = 0;
+      for (var pk = 0; pk < pMissing.length; pk++) {
+        var pIt = await findProjectItemByName(project, pMissing[pk].sf, assemblyLogger);
+        if (pIt) { clipMap[pMissing[pk].sf] = pIt; clipMap[pMissing[pk].sf.replace(/\.[^.]+$/, '')] = pIt; pGot++; }
+      }
+      assemblyLogger.info('Parts auto-import: ' + pGot + '/' + pMissing.length + ' resolved.');
+    }
+    var result = null;
+    for (var bx = 0; bx < bundleList.length; bx++) {
+      if (!(bundleList[bx].segments || []).length && !(bundleList[bx].part && bundleList[bx].part.base_clip)) {
+        // e.g. a __DeletedScene part of a scene with zero cuts — nothing to build.
+        // Review parts (base_clip) build fine with ZERO inserts: base + chapter markers.
+        assemblyLogger.info('Skip empty part: ' + ((bundleList[bx].part && bundleList[bx].part.sequence_name) || '?'));
+        continue;
+      }
+      if (bundleList.length > 1) status('Building ' + (bx + 1) + '/' + bundleList.length + ': ' + (bundleList[bx].part.sequence_name || '?'), 'waiting');
+      result = await buildPartSequence(project, clipMap, bundleList[bx].part, bundleList[bx].segments, assemblyLogger, assemblyState.projectSettings);
+      builtNames.push(result.seqName + ' (' + result.placed + ')');
+      try { await project.save(); } catch (e) { }
+    }
+    if (!result) {
+      status('Nothing to build — all parts empty', 'warning');
+      return { ok: false, builtNames: [], error: 'all parts empty' };
+    }
+    if (bundleList.length > 1) {
+      status('Bundle built: ' + builtNames.length + ' timelines', 'ready');
+      validation(builtNames.map(function (n) { return '<div class="val-line">✓ ' + escapeHtml(n) + '</div>'; }).join(''));
+      assemblyLogger.info('=== BUNDLE DONE: ' + builtNames.join(' | ') + ' ===');
+      return { ok: true, builtNames: builtNames };
+    }
+    var msg = 'Part built: ' + result.seqName + ' — ' + result.placed + ' placed' +
+      (result.skipped ? ', ' + result.skipped + ' skipped (not imported)' : '') + ' · V' + result.tracks.v + '/A' + result.tracks.a;
+    status(msg, result.skipped ? 'warning' : 'ready');
+    validation(
+      '<div class="val-line"><b>' + escapeHtml(result.seqName) + '</b></div>' +
+      '<div class="val-line">Placed: ' + result.placed + ' / ' + (result.placed + result.skipped) +
+      (result.skipped ? ' — ' + result.skipped + ' clip(s) not in project (run INGEST for scenes 09/10)' : '') + '</div>' +
+      '<div class="val-line">Tracks: V' + result.tracks.v + ' / A' + result.tracks.a + ' (voice→V1/A1, B-roll→V2/A2)</div>');
+    assemblyLogger.info('=== PART BUILD DONE: ' + result.seqName + ' (' + result.placed + ' placed, ' + result.skipped + ' skipped) ===');
+    return { ok: true, builtNames: builtNames };
+  } catch (err) {
+    status('Build error: ' + err.message, 'error');
+    assemblyLogger.error('Part build failed: ' + err.message);
+    return { ok: false, builtNames: builtNames, error: err.message };
+  } finally {
+    partsState.building = false;
+    $('btn-build-part').removeAttribute('disabled');
+  }
+}
+
+// ══════════════════════════ PARTS: SELECTIONS (подборки) ══════════════════════════
+// Thematic digest reels built by Claude on request, one JSON per topic, living in
+// 00_Setup/02_Assembly/parts/selections/. Additive to the Parts flow: checkboxes pick
+// which reels to (re)build; stale ones move to selections/archive/ (panel ignores it).
+// Build reuses the ENTIRE buildParts() path (clipMap, auto-import, bundle loop) by
+// loading the checked files into partsState as a bundle.
+let selState = { entries: [] }; // [{name, path, entry, seq, segs, dur, error}]
+
+function selDir() {
+  if (!projectState.folderPath) throw new Error('Select project folder first (Project tab)');
+  return projectState.folderPath + '/00_Setup/02_Assembly/parts/selections';
+}
+
+async function selRefresh() {
+  var box = $('sel-list');
+  try {
+    var dir = await uxpfs.getEntryWithUrl('file://' + selDir());
+    var entries = await dir.getEntries();
+    selState.entries = [];
+    for (var i = 0; i < entries.length; i++) {
+      var en = entries[i];
+      if (!en.isFile || !/\.json$/i.test(en.name) || /_summary/i.test(en.name)) continue;
+      var row = { name: en.name, entry: en, seq: '?', segs: 0, dur: 0, mtime: 0, error: null };
+      try {
+        var enMeta = await en.getMetadata();
+        if (enMeta && enMeta.dateModified) row.mtime = new Date(enMeta.dateModified).getTime();
+      } catch (eMt) { }
+      try {
+        var d = JSON.parse(await en.read());
+        if (d.schema !== 'ytai-part-v1' || !d.part || !Array.isArray(d.segments)) throw new Error('not ytai-part-v1');
+        row.seq = d.part.sequence_name || ((d.part.code || 'PART') + '_part_' + (d.part.name || '?'));
+        row.segs = d.segments.length;
+        var dEnd = 0;
+        for (var s = 0; s < d.segments.length; s++) {
+          var so = d.segments[s].timeline_out_sec;
+          if (so == null && d.segments[s].timeline_out) so = tcToSecPanel(d.segments[s].timeline_out);
+          if (so != null && so > dEnd) dEnd = so;
+        }
+        row.dur = dEnd;
+      } catch (eR) { row.error = eR.message; }
+      selState.entries.push(row);
+    }
+    // freshest first (Roman: свежие подборки сверху), name as tiebreaker
+    selState.entries.sort(function (a, b) { return (b.mtime - a.mtime) || a.name.localeCompare(b.name); });
+    if (!selState.entries.length) {
+      box.innerHTML = '<div class="val-line">selections/ пуста — попроси Claude собрать подборку</div>';
+      box.style.display = 'block';
+      $('btn-sel-build').setAttribute('disabled', 'true');
+      $('btn-sel-archive').setAttribute('disabled', 'true');
+      return;
+    }
+    var html = '';
+    for (var j = 0; j < selState.entries.length; j++) {
+      var r = selState.entries[j];
+      var mm = Math.floor(r.dur / 60), ss = Math.round(r.dur % 60);
+      var when = '';
+      if (r.mtime) {
+        var dt = new Date(r.mtime);
+        var p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+        when = ' <span style="opacity:.55">' + p2(dt.getDate()) + '.' + p2(dt.getMonth() + 1) + ' ' + p2(dt.getHours()) + ':' + p2(dt.getMinutes()) + '</span>';
+      }
+      var info = r.error ? ('<span style="color:#e66">' + escapeHtml(r.error) + '</span>')
+        : (r.segs + ' seg · ' + mm + ':' + (ss < 10 ? '0' : '') + ss + ' → ' + escapeHtml(r.seq));
+      html += '<div class="val-line"><label><input type="checkbox" class="sel-check" data-idx="' + j + '"' +
+        (r.error ? ' disabled' : '') + '> <b>' + escapeHtml(r.name) + '</b>' + when + ' — ' + info + '</label></div>';
+    }
+    box.innerHTML = html;
+    box.style.display = 'block';
+    $('btn-sel-build').removeAttribute('disabled');
+    $('btn-sel-archive').removeAttribute('disabled');
+    assemblyLogger.info('Selections: ' + selState.entries.length + ' file(s) in selections/');
+  } catch (err) {
+    // Missing selections/ dir is NOT an error — the folder is optional per project.
+    if (/Could not find an entry/i.test(err.message || '')) {
+      box.innerHTML = '<div class="val-line">selections/ нет в проекте — попроси Claude собрать подборку (папка появится сама)</div>';
+      box.style.display = 'block';
+      $('btn-sel-build').setAttribute('disabled', 'true');
+      $('btn-sel-archive').setAttribute('disabled', 'true');
+      return;
+    }
+    assemblyLogger.error('Selections refresh: ' + err.message + ' (dir: ' + (projectState.folderPath || '?') + '/00_Setup/02_Assembly/parts/selections)');
+    box.innerHTML = '<div class="val-line">' + escapeHtml(err.message) + '</div>';
+    box.style.display = 'block';
+    $('btn-sel-build').setAttribute('disabled', 'true');
+    $('btn-sel-archive').setAttribute('disabled', 'true');
+  }
+}
+
+/** "MM:SS.mmm" → seconds (panel-side duplicate of partsBuilder.tcToSec for list preview). */
+function tcToSecPanel(tc) {
+  if (tc == null) return 0;
+  if (typeof tc === 'number') return tc;
+  var m = String(tc).match(/(\d+):(\d+(?:\.\d+)?)/);
+  return m ? parseInt(m[1], 10) * 60 + parseFloat(m[2]) : parseFloat(tc) || 0;
+}
+
+function selChecked() {
+  var out = [];
+  var boxes = document.querySelectorAll('.sel-check');
+  for (var i = 0; i < boxes.length; i++) {
+    if (boxes[i].checked) out.push(selState.entries[parseInt(boxes[i].getAttribute('data-idx'), 10)]);
+  }
+  return out;
+}
+
+async function selBuild() {
+  var picked = selChecked();
+  if (!picked.length) { setPartsStatus('Selections: nothing checked', 'error'); return; }
+  var bundle = [];
+  for (var i = 0; i < picked.length; i++) {
+    var d = JSON.parse(await picked[i].entry.read());
+    bundle.push({ part: d.part, segments: d.segments });
+  }
+  partsState.bundle = bundle;
+  partsState.part = bundle[0].part;
+  partsState.segments = bundle[0].segments;
+  partsState.filePath = 'selections (' + picked.length + ' checked)';
+  assemblyLogger.info('Selections build: ' + picked.map(function (p) { return p.name; }).join(', '));
+  await buildParts();
+}
+
+async function selArchive() {
+  var picked = selChecked();
+  if (!picked.length) { setPartsStatus('Selections: nothing checked', 'error'); return; }
+  try {
+    var dir = await uxpfs.getEntryWithUrl('file://' + selDir());
+    var arch = null;
+    try { arch = await uxpfs.getEntryWithUrl('file://' + selDir() + '/archive'); }
+    catch (eA) { arch = await dir.createFolder('archive'); }
+    var moved = 0;
+    for (var i = 0; i < picked.length; i++) {
+      try { await picked[i].entry.moveTo(arch, { overwrite: true }); moved++; }
+      catch (eM) { assemblyLogger.warn('archive failed ' + picked[i].name + ': ' + eM.message); }
+    }
+    setPartsStatus('Archived ' + moved + '/' + picked.length + ' selection(s)', moved === picked.length ? 'ready' : 'warning');
+    await selRefresh();
+  } catch (err) {
+    setPartsStatus('Archive error: ' + err.message, 'error');
+    assemblyLogger.error('Selections archive failed: ' + err.message);
+  }
+}
+
+// ══════════════════════════ SHORTS (моменты → 9:16 секвенции) ══════════════════════════
+// Claude finds candidate moments in the finished render and writes
+// 00_Setup/07_Shorts/{CODE}_Shorts_v{N}_in.json (+ review HTML). The panel shows the
+// candidates, builds a marker-preview timeline, reads edited markers back, builds one
+// 9:16 sequence per approved candidate (tick grid + 2ms verify gate) and exports the
+// panel state as {CODE}_Shorts_v{N}_out.json for the Claude round-trip.
+// Engine: src/shorts/shortsBuilder.js · Spec: docs/shorts/SHORTS_SPEC.md.
+const shortsLogger = new Logger('SHORTS');
+var SHORTS_TPS = 254016000000;
+
+let shortsState = {
+  brief: null,           // parsed ytai-shorts-v1 _in.json
+  filePath: null,
+  fileName: null,
+  building: false,
+  statuses: {},          // {short_id: proposed|approved|rejected|built}
+  editorNotes: {},       // {short_id: ''} — no notes UI in MVP-1, exported as empty strings
+  markerReadback: {},    // {short_id: {tc_in:{sec,ticks}, tc_out:{sec,ticks}, moved:true}}
+  buildReports: [],      // verify-gate results per built short
+  b03Issues: [],         // media-offline issues (refresh-time disk check)
+  issues: []             // current validation result (pure W01/O01/S01/B01 + B03 [+B02 after build])
+};
+
+function setShortsStatus(text, type) {
+  var dot = $('shorts-status-dot');
+  var txt = $('shorts-status-text');
+  if (txt) txt.textContent = text;
+  if (dot) dot.className = 'status-dot ' + (type || 'waiting');
+}
+
+function setShortsValidation(html) {
+  var el = $('shorts-validation');
+  if (el) { el.innerHTML = html; el.style.display = 'block'; }
+}
+
+function shortsDir() {
+  if (!projectState.folderPath) throw new Error('Select project folder first (Project tab)');
+  return projectState.folderPath + '/00_Setup/07_Shorts';
+}
+
+function shortsRenderValidation() {
+  var issues = shortsState.issues || [];
+  if (!issues.length) {
+    setShortsValidation('<div class="val-line" style="color:var(--success)">✓ validation clean (W01/O01/S01/B01/B03)</div>');
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < issues.length; i++) {
+    var it = issues[i];
+    var col = it.severity === 'error' ? 'var(--error)' : 'var(--warning)';
+    html += '<div class="val-line"><span style="color:' + col + ';font-weight:700">' + escapeHtml(it.code || '?') + '</span> ' +
+      escapeHtml(it.msg || '') + '</div>';
+  }
+  setShortsValidation(html);
+}
+
+function shortsRunValidation() {
+  var brief = shortsState.brief;
+  if (!brief) return;
+  shortsState.issues = validateShortsBrief(brief, shortsState.statuses).concat(shortsState.b03Issues || []);
+  shortsRenderValidation();
+}
+
+/** B03 — source paths missing on disk (guarded uxpfs existence probe, dedup by path). */
+async function shortsCheckMediaOffline(brief) {
+  var issues = [];
+  var checked = {};
+  async function probe(path, file, sid) {
+    if (!path || checked[path]) return;
+    checked[path] = 1;
+    try {
+      await uxpfs.getEntryWithUrl('file://' + path);
+    } catch (e) {
+      issues.push({ code: 'B03', short_id: sid || null, severity: 'warn', msg: 'media offline: ' + (file || path) + ' not found at ' + path });
+    }
+  }
+  try {
+    if (brief.project && brief.project.source) await probe(brief.project.source.path, brief.project.source.file, null);
+    var cands = brief.candidates || [];
+    for (var i = 0; i < cands.length; i++) {
+      var blocks = cands[i].blocks || [];
+      for (var j = 0; j < blocks.length; j++) {
+        var src = blocks[j].source || {};
+        await probe(src.path, src.file, cands[i].short_id);
+      }
+    }
+  } catch (e) { shortsLogger.debug('B03 check: ' + e.message); }
+  return issues;
+}
+
+/** Live candidate duration in seconds — tick-exact via planShort (honours readback overrides). */
+function shortsCandDurationSec(cand) {
+  try {
+    var entries = planShort(cand, shortsState.brief, { markerReadback: shortsState.markerReadback[cand.short_id] });
+    if (entries.length) return entries[entries.length - 1].timelineOutTicks / SHORTS_TPS;
+  } catch (e) { /* fall through to declared duration */ }
+  return cand.duration_sec != null ? cand.duration_sec : 0;
+}
+
+/** Candidate's current source range in seconds (min tc_in .. max tc_out over blocks). */
+function shortsCandidateRangeSec(cand) {
+  var lo = null, hi = null;
+  var blocks = cand.blocks || [];
+  for (var i = 0; i < blocks.length; i++) {
+    var bIn = blocks[i].tc_in, bOut = blocks[i].tc_out;
+    var s0 = bIn ? (bIn.sec != null ? bIn.sec : (bIn.ticks != null ? Number(bIn.ticks) / SHORTS_TPS : null)) : null;
+    var s1 = bOut ? (bOut.sec != null ? bOut.sec : (bOut.ticks != null ? Number(bOut.ticks) / SHORTS_TPS : null)) : null;
+    if (s0 != null && (lo == null || s0 < lo)) lo = s0;
+    if (s1 != null && (hi == null || s1 > hi)) hi = s1;
+  }
+  return (lo != null && hi != null) ? { inSec: lo, outSec: hi } : null;
+}
+
+function shortsHeaderStatus() {
+  var brief = shortsState.brief;
+  if (!brief) return;
+  var n = (brief.candidates || []).length;
+  var appr = 0, built = 0;
+  for (var k in shortsState.statuses) {
+    if (shortsState.statuses[k] === 'approved') appr++;
+    if (shortsState.statuses[k] === 'built') built++;
+  }
+  setShortsStatus('v' + brief.version + ' loaded · ' + n + ' candidates (' + appr + ' approved' + (built ? ', ' + built + ' built' : '') + ')', 'ready');
+}
+
+function shortsSetCandStatus(sid, st) {
+  shortsState.statuses[sid] = st;
+  shortsRunValidation();       // O01 respects panel statuses (rejecting one side clears the gate)
+  shortsRenderCandidates();
+  shortsHeaderStatus();
+}
+
+function shortsRenderCandidates() {
+  var box = $('shorts-candidates');
+  if (!box) return;
+  var brief = shortsState.brief;
+  if (!brief) {
+    box.innerHTML = '<div class="val-line">No shorts brief loaded — hit Refresh.</div>';
+    return;
+  }
+  var cands = brief.candidates || [];
+  if (!cands.length) {
+    box.innerHTML = '<div class="val-line">Brief has no candidates.</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < cands.length; i++) {
+    var c = cands[i];
+    var sid = c.short_id || ('S' + (i + 1));
+    var st = shortsState.statuses[sid] || 'proposed';
+    var checked = (st === 'approved' || st === 'built') ? ' checked' : '';
+    var total = (c.score && c.score.total != null) ? c.score.total : '—';
+    var rb = shortsState.markerReadback[sid];
+    var dur = fmtTime(shortsCandDurationSec(c)) + (rb && rb.moved ? '*' : '');
+    var sc = c.score || {};
+    var factors = [];
+    if (sc.hook != null) factors.push('Hook ' + sc.hook);
+    if (sc.flow != null) factors.push('Flow ' + sc.flow);
+    if (sc.value != null) factors.push('Value ' + sc.value);
+    if (sc.emotion != null) factors.push('Emo ' + sc.emotion);
+    var sub = factors.join(' · ') + (c.why ? (factors.length ? ' — ' : '') + '“' + c.why + '”' : '');
+    html += '<div class="shorts-cand' + (st === 'rejected' ? ' rejected' : '') + '" data-sid="' + escapeHtml(sid) + '">' +
+      '<div class="shorts-cand-main">' +
+      '<input type="checkbox" class="shorts-approve" data-sid="' + escapeHtml(sid) + '"' + checked + (st === 'built' ? ' disabled' : '') + '>' +
+      '<span class="shorts-sid">' + escapeHtml(sid) + '</span>' +
+      '<span class="shorts-score">' + escapeHtml(String(total)) + '</span>' +
+      '<span class="shorts-dur">' + escapeHtml(dur) + '</span>' +
+      '<span class="shorts-hook">«' + escapeHtml(c.hook_text || '') + '»</span>' +
+      '<span class="shorts-st' + ((st === 'approved' || st === 'built') ? ' on-ok' : '') + '" data-sid="' + escapeHtml(sid) + '" data-act="approve" title="approve">✓</span>' +
+      '<span class="shorts-st' + (st === 'rejected' ? ' on-no' : '') + '" data-sid="' + escapeHtml(sid) + '" data-act="reject" title="reject">✗</span>' +
+      '<span class="shorts-badge' + (st === 'built' ? ' built' : '') + '">' + escapeHtml(st) + '</span>' +
+      '</div>' +
+      '<div class="shorts-cand-sub">' + escapeHtml(sub) + '</div>' +
+      '</div>';
+  }
+  box.innerHTML = html;
+  // Listeners wired DIRECTLY on elements — sp-button Shadow DOM breaks closest(),
+  // and delegation is fragile in UXP; the list is small, re-render is cheap.
+  box.querySelectorAll('input.shorts-approve').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      var sid = this.getAttribute('data-sid');
+      if (shortsState.statuses[sid] === 'built') return;
+      shortsSetCandStatus(sid, this.checked ? 'approved' : 'proposed');
+    });
+  });
+  box.querySelectorAll('.shorts-st').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var sid = this.getAttribute('data-sid');
+      var act = this.getAttribute('data-act');
+      shortsSetCandStatus(sid, act === 'approve' ? 'approved' : 'rejected');
+    });
+  });
+}
+
+/** Load the newest {CODE}_Shorts_v{N}_in.json from 00_Setup/07_Shorts/ (loadPart pattern). */
+async function shortsRefresh() {
+  try {
+    setShortsStatus('Scanning 00_Setup/07_Shorts/...', 'waiting');
+    var dir;
+    try {
+      dir = await uxpfs.getEntryWithUrl('file://' + shortsDir());
+    } catch (eDir) {
+      setShortsStatus('No 00_Setup/07_Shorts/ — ask Claude to generate a shorts brief', 'error');
+      return;
+    }
+    var entries = await dir.getEntries();
+    var cands = [];
+    for (var i = 0; i < entries.length; i++) {
+      if (entries[i].isFile && /_in\.json$/i.test(entries[i].name)) cands.push(entries[i]);
+    }
+    if (!cands.length) {
+      setShortsStatus('No *_in.json in 00_Setup/07_Shorts/ — ask Claude to generate one', 'error');
+      return;
+    }
+    // newest by dateModified when available, else by name (higher version sorts later)
+    var best = cands[0], bestT = 0;
+    for (var b = 0; b < cands.length; b++) {
+      var t = 0;
+      try {
+        var meta = await cands[b].getMetadata();
+        t = meta && meta.dateModified ? new Date(meta.dateModified).getTime() : 0;
+      } catch (eMt) { /* no metadata */ }
+      if (t > bestT || (t === bestT && cands[b].name.localeCompare(best.name) > 0)) { best = cands[b]; bestT = t; }
+    }
+    var data = JSON.parse(await best.read());
+    if (data.schema !== 'ytai-shorts-v1') {
+      throw new Error('Not a ytai-shorts-v1 file: ' + best.name + ' (schema=' + (data.schema || '?') + ')');
+    }
+    shortsState.brief = data;
+    shortsState.filePath = shortsDir() + '/' + best.name;
+    shortsState.fileName = best.name;
+    shortsState.statuses = {};
+    shortsState.editorNotes = {};
+    shortsState.markerReadback = {};
+    shortsState.buildReports = [];
+    var list = data.candidates || [];
+    for (var c = 0; c < list.length; c++) {
+      var sid = list[c].short_id || ('S' + (c + 1));
+      shortsState.statuses[sid] = list[c].status || 'proposed';
+      shortsState.editorNotes[sid] = '';
+    }
+    shortsState.b03Issues = await shortsCheckMediaOffline(data);
+    shortsRunValidation();
+    shortsRenderCandidates();
+    var modeEl = $('shorts-mode');
+    if (modeEl) modeEl.textContent = (data.project && data.project.mode) || 'finished';
+    var infoEl = $('shorts-file-info');
+    if (infoEl) {
+      infoEl.textContent = best.name + ' · ' + list.length + ' candidates · fps ' +
+        ((data.project && data.project.fps) || 25) + ' · source ' +
+        ((data.project && data.project.source && data.project.source.file) || '?') +
+        ' · shortsBuilder v' + SHORTS_BUILDER_VERSION;
+    }
+    shortsHeaderStatus();
+    shortsLogger.info('Shorts brief loaded: ' + best.name + ' (' + list.length + ' candidates, ' +
+      shortsState.issues.length + ' issue(s))');
+  } catch (err) {
+    setShortsStatus('Error: ' + err.message, 'error');
+    shortsLogger.error('Shorts refresh failed: ' + err.message);
+  }
+}
+
+/** Build {CODE}_Shorts_Preview_v{N} — source on V1 + range marker per non-rejected candidate. */
+async function shortsBuildPreview() {
+  try {
+    var brief = shortsState.brief;
+    if (!brief) { setShortsStatus('No shorts brief loaded — Refresh first', 'error'); return; }
+    // O01 = blocking gate (Firecut pattern): no preview over unresolved overlaps.
+    var overlaps = (shortsState.issues || []).filter(function (i) { return i.code === 'O01'; });
+    if (overlaps.length) {
+      setShortsStatus('Overlapping candidates (O01) — reject one side first', 'error');
+      return;
+    }
+    setShortsStatus('Building preview sequence...', 'waiting');
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere Pro project');
+    var r = await buildPreviewSequence(project, brief, { logger: shortsLogger, statuses: shortsState.statuses });
+    try { await project.save(); } catch (eS) { /* non-fatal */ }
+    setShortsStatus('Preview built: ' + r.seqName + ' — ' + r.markers + '/' + r.candidates + ' markers. Drag markers to fix boundaries, then Read Back.', 'ready');
+  } catch (err) {
+    setShortsStatus('Preview error: ' + err.message, 'error');
+    shortsLogger.error('Shorts preview failed: ' + err.message);
+  }
+}
+
+/** Read S{NN} markers from the ACTIVE sequence back into candidate boundaries. */
+async function shortsReadBackMarkers() {
+  try {
+    var brief = shortsState.brief;
+    if (!brief) { setShortsStatus('No shorts brief loaded — Refresh first', 'error'); return; }
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere Pro project');
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence — open the Shorts preview sequence first');
+    var fps = (brief.project && brief.project.fps) || 25;
+    var halfFrame = 0.5 / fps;
+    // Marker read API varies by build — guard both forms (exportMarkers pattern).
+    var owner = null;
+    try { if (ppro.Markers && ppro.Markers.getMarkers) owner = await ppro.Markers.getMarkers(seq); } catch (e) { /* next */ }
+    if (!owner) { try { if (typeof seq.getMarkers === 'function') owner = await seq.getMarkers(); } catch (e) { /* none */ } }
+    var list = null;
+    if (owner) {
+      try { list = (typeof owner.getMarkers === 'function') ? await owner.getMarkers() : (Array.isArray(owner) ? owner : null); } catch (e) { /* none */ }
+    }
+    if (!list || !list.length) { setShortsStatus('No markers on the active sequence (' + (seq.name || '?') + ')', 'error'); return; }
+    var byId = {};
+    (brief.candidates || []).forEach(function (c) { if (c.short_id) byId[c.short_id] = c; });
+    var matched = 0, moved = 0;
+    for (var mi = 0; mi < list.length; mi++) {
+      var m = list[mi];
+      var name = '';
+      try { name = m.name || (m.getName ? m.getName() : '') || ''; } catch (e) { /* skip */ }
+      var idm = String(name).match(/^(S\d+)/);
+      if (!idm) continue;
+      var cand = byId[idm[1]];
+      if (!cand) continue;
+      matched++;
+      var startTT = null, durTT = null;
+      try { startTT = m.getStart ? m.getStart() : null; } catch (e) { /* next */ }
+      if (!startTT) { try { startTT = m.startTime || m.start; } catch (e) { /* none */ } }
+      try { durTT = m.getDuration ? m.getDuration() : null; } catch (e) { /* next */ }
+      if (!durTT) { try { durTT = m.duration; } catch (e) { /* none */ } }
+      var mIn = tickSec(startTT);
+      if (mIn < 0) continue;
+      var mDur = durTT ? tickSec(durTT) : 0;
+      if (!(mDur > 0)) continue; // point markers carry no range edit
+      var mOut = mIn + mDur;
+      var cur = shortsCandidateRangeSec(cand);
+      if (!cur) continue;
+      if (Math.abs(mIn - cur.inSec) > halfFrame || Math.abs(mOut - cur.outSec) > halfFrame) {
+        // Snap the read-back range: in → floor, out → ceil on the frame grid.
+        var inSnap = snapToFrame(mIn, fps, 'floor');
+        var outSnap = snapToFrame(mOut, fps, 'ceil');
+        shortsState.markerReadback[idm[1]] = {
+          tc_in: { sec: inSnap, ticks: Math.round(inSnap * SHORTS_TPS) },
+          tc_out: { sec: outSnap, ticks: Math.round(outSnap * SHORTS_TPS) },
+          moved: true
+        };
+        moved++;
+        shortsLogger.info('Read back ' + idm[1] + ': ' + inSnap.toFixed(3) + '–' + outSnap.toFixed(3) +
+          's (was ' + cur.inSec.toFixed(3) + '–' + cur.outSec.toFixed(3) + 's)');
+      }
+    }
+    shortsRenderCandidates();
+    setShortsStatus('Read back: ' + matched + ' marker(s) matched, ' + moved + ' boundary edit(s) — durations updated', 'ready');
+  } catch (err) {
+    setShortsStatus('Read back error: ' + err.message, 'error');
+    shortsLogger.error('Shorts read-back failed: ' + err.message);
+  }
+}
+
+/** Build one 9:16 sequence per approved candidate; collect verify-gate reports. */
+async function shortsBuildApproved() {
+  var brief = shortsState.brief;
+  if (!brief) { setShortsStatus('No shorts brief loaded — Refresh first', 'error'); return; }
+  if (shortsState.building) { shortsLogger.warn('Shorts build already in progress'); return; }
+  var picked = (brief.candidates || []).filter(function (c) {
+    return shortsState.statuses[c.short_id] === 'approved';
+  });
+  if (!picked.length) { setShortsStatus('No approved candidates — tick ✓ first', 'error'); return; }
+  shortsState.building = true;
+  $('btn-shorts-build').setAttribute('disabled', 'true');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere Pro project');
+    shortsLogger.info('=== SHORTS BUILD START: ' + picked.length + ' approved (shortsBuilder v' + SHORTS_BUILDER_VERSION + ') ===');
+    try { await project.save(); } catch (e) { /* non-fatal */ }
+    var reports = [];
+    for (var i = 0; i < picked.length; i++) {
+      var cand = picked[i];
+      setShortsStatus('Building ' + (i + 1) + '/' + picked.length + ': ' + cand.short_id + '...', 'waiting');
+      try {
+        var r = await buildShortSequence(project, cand, brief, {
+          logger: shortsLogger,
+          markerReadback: shortsState.markerReadback[cand.short_id]
+        });
+        // Strip the live seq handle before persisting into panel state / _out.json.
+        var clean = {
+          short_id: r.short_id, sequence: r.sequence, built_at: r.built_at,
+          drift_ms: r.drift_ms, ok: r.ok, clips: r.clips, spike_s1: r.spike_s1,
+          placed: r.placed, skipped: r.skipped
+        };
+        if (r.verify_error) clean.verify_error = r.verify_error;
+        reports.push(clean);
+        if (r.ok) shortsState.statuses[cand.short_id] = 'built';
+      } catch (eB) {
+        shortsLogger.error(cand.short_id + ' build failed: ' + eB.message);
+        reports.push({ short_id: cand.short_id, sequence: null, built_at: new Date().toISOString(), drift_ms: null, ok: false, error: eB.message, clips: [] });
+      }
+      try { await project.save(); } catch (e) { /* non-fatal */ }
+    }
+    // Merge into buildReports by short_id (rebuilds replace their old report).
+    var byId = {};
+    shortsState.buildReports.forEach(function (r) { byId[r.short_id] = r; });
+    reports.forEach(function (r) { byId[r.short_id] = r; });
+    shortsState.buildReports = Object.keys(byId).map(function (k) { return byId[k]; });
+    // B02 — drift over 2ms after build (spec §5.2).
+    shortsState.issues = (shortsState.issues || []).filter(function (i) { return i.code !== 'B02'; });
+    reports.forEach(function (r) {
+      if (!r.ok && r.drift_ms != null && r.drift_ms > 2) {
+        shortsState.issues.push({ code: 'B02', short_id: r.short_id, severity: 'error', msg: r.short_id + ': drift ' + r.drift_ms + 'ms > 2ms after build' });
+      }
+    });
+    var okN = reports.filter(function (r) { return r.ok; }).length;
+    var lines = reports.map(function (r) {
+      return '<div class="val-line">' + (r.ok ? '<span style="color:var(--success)">✓</span>' : '<span style="color:var(--error)">✗</span>') +
+        ' <b>' + escapeHtml(r.short_id) + '</b>' +
+        (r.sequence ? ' ' + escapeHtml(r.sequence) : '') +
+        (r.drift_ms != null ? ' — drift ' + r.drift_ms + 'ms' : '') +
+        (r.error ? ' — ' + escapeHtml(r.error) : '') +
+        (r.verify_error ? ' — ' + escapeHtml(r.verify_error) : '') + '</div>';
+    });
+    if (reports.length && reports[0].spike_s1) {
+      lines.push('<div class="val-line" style="color:var(--text-secondary)">' + escapeHtml(reports[0].spike_s1) + '</div>');
+    }
+    setShortsValidation(lines.join(''));
+    setShortsStatus('Built ' + okN + '/' + reports.length + ' short(s)' + (okN === reports.length ? ' — all verified ≤2ms' : ' — see panel'), okN === reports.length ? 'ready' : 'error');
+    shortsRenderCandidates();
+    shortsLogger.info('=== SHORTS BUILD DONE: ' + okN + '/' + reports.length + ' ok ===');
+  } catch (err) {
+    setShortsStatus('Build error: ' + err.message, 'error');
+    shortsLogger.error('Shorts build failed: ' + err.message);
+  } finally {
+    shortsState.building = false;
+    $('btn-shorts-build').removeAttribute('disabled');
+  }
+}
+
+/** Write {CODE}_Shorts_v{N}_out.json (spec §5.2) and copy its path to the clipboard. */
+async function shortsExportOut() {
+  try {
+    var brief = shortsState.brief;
+    if (!brief) { setShortsStatus('No shorts brief loaded — Refresh first', 'error'); return; }
+    setShortsStatus('Exporting _out.json...', 'waiting');
+    var code = (brief.project && brief.project.code) || extractProjectCode(projectState.projectName || '');
+    var version = brief.version != null ? brief.version : 1;
+    var fps = (brief.project && brief.project.fps) || 25;
+    var editorNotes = {};
+    (brief.candidates || []).forEach(function (c) {
+      if (c.short_id) editorNotes[c.short_id] = shortsState.editorNotes[c.short_id] || '';
+    });
+    var out = {
+      schema: 'ytai-shorts-v1',
+      direction: 'out',
+      version: version,
+      based_on_in: shortsState.fileName || null,
+      exported_at: new Date().toISOString(),
+      panel_state: {
+        statuses: shortsState.statuses,
+        editor_notes: editorNotes,
+        marker_readback: shortsState.markerReadback
+      },
+      build_report: shortsState.buildReports,
+      issues: shortsState.issues,
+      sequence_dumps: {}
+    };
+    // Full per-track dumps of every built sequence (dumpSequence — the proven extractor).
+    try {
+      var project = await ppro.Project.getActiveProject();
+      if (project && shortsState.buildReports.length) {
+        var all = await listProjectSequences(project, shortsLogger);
+        var byName = {};
+        all.forEach(function (e) { byName[e.name] = e.seq; });
+        for (var d = 0; d < shortsState.buildReports.length; d++) {
+          var rep = shortsState.buildReports[d];
+          if (!rep.sequence || !byName[rep.sequence]) continue;
+          try {
+            out.sequence_dumps[rep.short_id] = await dumpSequence(byName[rep.sequence], fps, null);
+          } catch (eDump) { shortsLogger.debug('dump ' + rep.sequence + ': ' + eDump.message); }
+        }
+      }
+    } catch (eSeqs) { shortsLogger.warn('sequence dumps skipped: ' + eSeqs.message); }
+    var fname = code + '_Shorts_v' + version + '_out.json';
+    var dir = await uxpfs.getEntryWithUrl('file://' + shortsDir());
+    var f = await dir.createFile(fname, { overwrite: true });
+    await f.write(JSON.stringify(out, null, 2));
+    var outPath = shortsDir() + '/' + fname;
+    var copied = false;
+    try { await navigator.clipboard.writeText(outPath); copied = true; } catch (eCb) { shortsLogger.debug('clipboard: ' + eCb.message); }
+    setShortsStatus('Out → ' + fname + (copied ? ' — путь скопирован 📋' : ''), 'ready');
+    setShortsValidation('<div class="val-line"><b>Exported for Claude</b>' + (copied ? ' · 📋 path copied' : '') + '</div>' +
+      '<div class="val-line">' + escapeHtml(outPath) + '</div>' +
+      '<div class="val-line">' + shortsState.buildReports.length + ' build report(s) · ' +
+      Object.keys(out.sequence_dumps).length + ' sequence dump(s) · ' + (shortsState.issues || []).length + ' issue(s)</div>');
+    shortsLogger.info('=== SHORTS OUT → ' + outPath + ' ===');
+  } catch (err) {
+    setShortsStatus('Export error: ' + err.message, 'error');
+    shortsLogger.error('Shorts export failed: ' + err.message);
+  }
+}
+
+/** Open the newest {CODE}_shorts_review_v{N}.html from 07_Shorts in the browser. */
+async function shortsOpenReviewHtml() {
+  try {
+    var dir = await uxpfs.getEntryWithUrl('file://' + shortsDir());
+    var entries = await dir.getEntries();
+    var best = null, bestV = -1;
+    for (var i = 0; i < entries.length; i++) {
+      if (!entries[i].isFile) continue;
+      var m = entries[i].name.match(/_shorts_review_v(\d+)\.html$/i);
+      if (!m) continue;
+      var v = parseInt(m[1], 10);
+      if (v > bestV) { best = entries[i]; bestV = v; }
+    }
+    if (!best) { setShortsStatus('No *_shorts_review_v{N}.html in 00_Setup/07_Shorts/', 'error'); return; }
+    var shell = require('uxp').shell;
+    await shell.openPath(best.nativePath || (shortsDir() + '/' + best.name));
+    setShortsStatus('Opened ' + best.name, 'ready');
+  } catch (err) {
+    setShortsStatus('Open HTML error: ' + err.message, 'error');
+    shortsLogger.error('Shorts open review HTML failed: ' + err.message);
+  }
+}
+
+// ══════════════════════════ ASSEMBLY: SCENE TIMELINES (two-step assembly) ══════════════════════════
+// Per-scene A-timelines + PE00 premontage generated by make_mcam_part.py --scene /
+// make_master_part.py --pe into 00_Setup/02_Assembly/scenes/. Checkbox list on the
+// Assembly tab (Ingest scene-list pattern); build reuses the ENTIRE buildParts() path
+// (clipMap, auto-import, bundle loop) — partsBuilder handles part.bin internally.
+let asmScenesState = { entries: [], peEntry: null }; // entries: [{name, entry, seqName, dsSeqName, parts, segs, error, built}]
+
+function asmScenesDir() {
+  if (!projectState.folderPath) throw new Error('Select project folder first (Project tab)');
+  return projectState.folderPath + '/00_Setup/02_Assembly/scenes';
+}
+
+async function refreshAssemblyScenes() {
+  var panel = $('assembly-scenes');
+  var list = $('assembly-scenes-list');
+  asmScenesState = { entries: [], peEntry: null };
+  var entries = [];
+  try {
+    var dir = await uxpfs.getEntryWithUrl('file://' + asmScenesDir());
+    entries = await dir.getEntries();
+  } catch (e) {
+    // no project selected / scenes dir absent — hide the block, non-fatal
+    panel.style.display = 'none';
+    list.innerHTML = '';
+    $('btn-build-assembly-scenes').setAttribute('disabled', 'true');
+    $('btn-build-premontage').setAttribute('disabled', 'true');
+    return;
+  }
+  var peCands = [];
+  for (var i = 0; i < entries.length; i++) {
+    var en = entries[i];
+    if (!en.isFile || !/\.json$/i.test(en.name)) continue;
+    if (/_PE00_/i.test(en.name)) { peCands.push(en); continue; }
+    var row = { name: en.name, entry: en, seqName: null, dsSeqName: null, parts: 0, segs: 0, error: null, built: false };
+    try {
+      var d = JSON.parse(await en.read());
+      if (d.schema === 'ytai-parts-bundle-v1' && Array.isArray(d.parts) && d.parts.length) {
+        // A-part = first part whose sequence_name does NOT end __DeletedScene (never by index)
+        for (var p = 0; p < d.parts.length; p++) {
+          var sq = String((d.parts[p].part && d.parts[p].part.sequence_name) || '');
+          if (/__DeletedScene$/.test(sq)) { if (!row.dsSeqName) row.dsSeqName = sq; }
+          else if (!row.seqName) row.seqName = sq;
+          row.segs += (d.parts[p].segments || []).length;
+        }
+        row.parts = d.parts.length;
+        if (!row.seqName) throw new Error('no A-part (all __DeletedScene)');
+      } else if (d.schema === 'ytai-part-v1' && d.part && Array.isArray(d.segments)) {
+        row.seqName = d.part.sequence_name || ((d.part.code || 'PART') + '_part_' + (d.part.name || '?'));
+        row.parts = 1;
+        row.segs = d.segments.length;
+      } else {
+        throw new Error('not ytai-part-v1 / ytai-parts-bundle-v1');
+      }
+    } catch (eR) { row.error = eR.message; }
+    asmScenesState.entries.push(row);
+  }
+  asmScenesState.entries.sort(function (a, b) { return a.name.localeCompare(b.name); }); // A01..A13
+  // Several *_PE00_* files (stale copy/rename) → take the newest by mtime, loudly.
+  if (peCands.length) {
+    var peBest = peCands[0], peBestT = 0;
+    for (var pc = 0; pc < peCands.length; pc++) {
+      var pcT = 0;
+      try { var pcM = await peCands[pc].getMetadata(); pcT = pcM && pcM.dateModified ? new Date(pcM.dateModified).getTime() : 0; } catch (e) { }
+      if (pcT > peBestT) { peBest = peCands[pc]; peBestT = pcT; }
+    }
+    asmScenesState.peEntry = peBest;
+    if (peCands.length > 1) assemblyLogger.warn('scenes/: ' + peCands.length + ' PE00 files — using newest: ' + peBest.name);
+  }
+  if (!asmScenesState.entries.length && !asmScenesState.peEntry) {
+    panel.style.display = 'none';
+    list.innerHTML = '';
+    $('btn-build-assembly-scenes').setAttribute('disabled', 'true');
+    $('btn-build-premontage').setAttribute('disabled', 'true');
+    return;
+  }
+  // Built = A-sequence exists as a REAL sequence (getSequences-backed; bare root-item
+  // name scans mark offline master-clip stubs "built ✓" — YTUVI05-proven).
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (project) {
+      var wanted = {};
+      asmScenesState.entries.forEach(function (r) {
+        if (r.seqName) wanted[r.seqName] = true;
+        if (r.dsSeqName) wanted[r.dsSeqName] = true;
+      });
+      var byName = await findSequencesByName(project, wanted);
+      // built = A-sequence AND (когда в бандле есть DeletedScene) её секвенция тоже
+      asmScenesState.entries.forEach(function (r) {
+        r.built = !!(r.seqName && byName[r.seqName]) && (!r.dsSeqName || !!byName[r.dsSeqName]);
+      });
+    }
+  } catch (eSeq) { assemblyLogger.debug('Assembly scenes sequence detection failed: ' + eSeq.message); }
+  var parseable = 0;
+  list.innerHTML = asmScenesState.entries.map(function (r, idx) {
+    if (!r.error) parseable++;
+    var meta = r.error ? '<span style="color:#e66">' + escapeHtml(r.error) + '</span>'
+      : (r.parts + ' parts · ' + r.segs + ' segs');
+    var badge = r.error ? 'error' : (r.built ? 'built ✓' : 'new');
+    return '<div class="scene-row">' +
+      '<label class="scene-pick">' +
+      '<input type="checkbox" class="asm-scene-cb" value="' + idx + '"' +
+      (r.error ? ' disabled' : (r.built ? '' : ' checked')) + '>' +
+      '<span class="scene-name">' + escapeHtml(r.name) + '</span>' +
+      '</label>' +
+      '<span class="scene-meta">' + meta + '</span>' +
+      '<span class="scene-badge' + (r.built ? ' built' : '') + '">' + badge + '</span>' +
+      '</div>';
+  }).join('');
+  panel.style.display = 'block';
+  if (parseable) $('btn-build-assembly-scenes').removeAttribute('disabled');
+  else $('btn-build-assembly-scenes').setAttribute('disabled', 'true');
+  if (asmScenesState.peEntry) {
+    $('btn-build-premontage').removeAttribute('disabled');
+    $('btn-build-premontage').setAttribute('title', asmScenesState.peEntry.name);
+  } else {
+    $('btn-build-premontage').setAttribute('disabled', 'true');
+    $('btn-build-premontage').setAttribute('title', 'No *_PE00_*.json in 02_Assembly/scenes/ — generate via make_master_part.py --pe');
+  }
+  assemblyLogger.info('Assembly scenes: ' + asmScenesState.entries.length + ' bundle(s)' +
+    (asmScenesState.peEntry ? ' + PE00 (' + asmScenesState.peEntry.name + ')' : '') + ' in scenes/');
+}
+
+function getSelectedAssemblyScenes() {
+  return Array.prototype.slice.call(document.querySelectorAll('.asm-scene-cb'))
+    .filter(function (cb) { return cb.checked && !cb.disabled; })
+    .map(function (cb) { return asmScenesState.entries[parseInt(cb.value, 10)]; })
+    .filter(function (r) { return !!r; });
+}
+
+function setAssemblySceneChecks(mode) {
+  Array.prototype.slice.call(document.querySelectorAll('.asm-scene-cb')).forEach(function (cb) {
+    if (cb.disabled) { cb.checked = false; return; }
+    var row = cb.closest('.scene-row');
+    var isBuilt = row && row.querySelector('.scene-badge.built');
+    if (mode === 'all') cb.checked = true;
+    else if (mode === 'none') cb.checked = false;
+    else cb.checked = !isBuilt; // 'new'
+  });
+}
+
+// Assembly-tab builds route progress into their own tab; the loaded Parts-tab state
+// is NOT touched (the bundle goes to buildParts explicitly).
+var asmScenesBuilding = false;
+var asmUi = {
+  status: setAssemblyStatus,
+  validation: function (html) {
+    var el = $('assembly-validation');
+    if (el) { el.innerHTML = html; el.style.display = 'block'; }
+  },
+};
+
+async function buildAssemblyScenes() {
+  if (asmScenesBuilding || partsState.building) { setAssemblyStatus('Build already in progress', 'error'); return; }
+  var picked = getSelectedAssemblyScenes();
+  if (!picked.length) { setAssemblyStatus('No timelines selected — tick at least one', 'error'); return; }
+  asmScenesBuilding = true;
+  $('btn-build-assembly-scenes').setAttribute('disabled', 'true');
+  $('btn-build-premontage').setAttribute('disabled', 'true');
+  var okNames = [], failed = [];
+  try {
+    for (var i = 0; i < picked.length; i++) {
+      var row = picked[i];
+      setAssemblyStatus('Building ' + (i + 1) + '/' + picked.length + ': ' + row.name + '...', 'waiting');
+      var bundle = [];
+      try {
+        // fresh read — the file may have been regenerated since the list was rendered
+        var d = JSON.parse(await row.entry.read());
+        if (d.schema === 'ytai-parts-bundle-v1' && Array.isArray(d.parts) && d.parts.length) {
+          d.parts.forEach(function (p) { bundle.push({ part: p.part, segments: p.segments }); });
+        } else if (d.schema === 'ytai-part-v1' && d.part && Array.isArray(d.segments)) {
+          bundle.push({ part: d.part, segments: d.segments });
+        } else {
+          throw new Error('not ytai-part-v1 / ytai-parts-bundle-v1');
+        }
+      } catch (eR) {
+        failed.push(row.name + ' (' + eR.message + ')');
+        assemblyLogger.error('Assembly scene read failed ' + row.name + ': ' + eR.message);
+        continue;
+      }
+      assemblyLogger.info('Assembly scenes build ' + (i + 1) + '/' + picked.length + ': ' + row.name);
+      var res = await buildParts(bundle, asmUi);
+      if (res && res.ok) okNames = okNames.concat(res.builtNames);
+      else failed.push(row.name + ((res && res.error) ? ' (' + res.error + ')' : ''));
+    }
+    if (!failed.length) setAssemblyStatus('Built: ' + okNames.join(', '), 'ready');
+    else setAssemblyStatus('Build failed: ' + failed.join(', ') + (okNames.length ? ' · built: ' + okNames.join(', ') : ''), 'error');
+  } finally {
+    asmScenesBuilding = false;
+    await refreshAssemblyScenes(); // re-enables the buttons per current state
+  }
+}
+
+async function buildPremontage() {
+  if (asmScenesBuilding || partsState.building) { setAssemblyStatus('Build already in progress', 'error'); return; }
+  if (!asmScenesState.peEntry) {
+    setAssemblyStatus('No PE00 file in 02_Assembly/scenes/ — generate via make_master_part.py --pe', 'error');
+    return;
+  }
+  asmScenesBuilding = true;
+  $('btn-build-assembly-scenes').setAttribute('disabled', 'true');
+  $('btn-build-premontage').setAttribute('disabled', 'true');
+  try {
+    var d = JSON.parse(await asmScenesState.peEntry.read());
+    var bundle = [];
+    if (d.schema === 'ytai-parts-bundle-v1' && Array.isArray(d.parts) && d.parts.length) bundle = d.parts;
+    else if (d.schema === 'ytai-part-v1' && d.part && Array.isArray(d.segments)) bundle = [{ part: d.part, segments: d.segments }];
+    else throw new Error(asmScenesState.peEntry.name + ': not ytai-part-v1 / ytai-parts-bundle-v1');
+    setAssemblyStatus('Building premontage: ' + (bundle[0].part.sequence_name || '?') + '...', 'waiting');
+    var res = await buildParts(bundle, asmUi);
+    setAssemblyStatus(res && res.ok ? 'Built: ' + res.builtNames.join(', ')
+      : 'Build failed: ' + ((res && res.error) || '?'), res && res.ok ? 'ready' : 'error');
+  } catch (err) {
+    setAssemblyStatus('Premontage: ' + err.message, 'error');
+    assemblyLogger.error('Premontage build failed: ' + err.message);
+  } finally {
+    asmScenesBuilding = false;
+    await refreshAssemblyScenes();
+  }
+}
+
+// ══════════════════════════ FOOTAGE REVIEW (отсмотр) ══════════════════════════
+// Lightweight screening path: scan inserted camera cards (or the open project's
+// 01_Source/Video) for clips, lay them back-to-back on a timeline, apply a viewing
+// LUT. No JSON brief, no project picker — uses the active project. Import in place.
+const footageLogger = new Logger('FOOTAGE');
+let footageState = { building: false };
+
+function setFootageStatus(text, type) {
+  var dot = $('footage-status-dot');
+  var txt = $('footage-status-text');
+  if (txt) txt.textContent = text;
+  if (dot) dot.className = 'status-dot ' + (type || 'waiting');
+}
+
+function setFootageValidation(html) {
+  var el = $('footage-validation');
+  if (el) { el.innerHTML = html; el.style.display = 'block'; }
+}
+
+var FOOTAGE_VIDEO_EXTS = ['.mp4', '.mov', '.m4v', '.mts', '.avi', '.mkv', '.mxf'];
+function footageIsVideo(name) {
+  var n = String(name).toLowerCase();
+  for (var i = 0; i < FOOTAGE_VIDEO_EXTS.length; i++) {
+    if (n.endsWith(FOOTAGE_VIDEO_EXTS[i])) return true;
+  }
+  return false;
+}
+
+// Walk a folder entry to `parts` (e.g. ['M4ROOT','CLIP']) — UXP getEntry takes one name.
+async function footageGetNested(folder, parts) {
+  var cur = folder;
+  for (var i = 0; i < parts.length; i++) {
+    try { cur = await cur.getEntry(parts[i]); } catch (e) { return null; }
+    if (!cur) return null;
+  }
+  return cur;
+}
+
+// Collect video nativePaths under a folder, recursing up to maxDepth subfolders.
+async function footageCollectVideos(folderEntry, maxDepth, out) {
+  var entries;
+  try { entries = await folderEntry.getEntries(); } catch (e) { return; }
+  for (var i = 0; i < entries.length; i++) {
+    var en = entries[i];
+    try {
+      if (en.isFile && footageIsVideo(en.name)) {
+        out.push(en.nativePath);
+      } else if (en.isFolder && maxDepth > 0 && String(en.name).charAt(0) !== '.') {
+        await footageCollectVideos(en, maxDepth - 1, out);
+      }
+    } catch (e) { /* skip unreadable entry */ }
+  }
+}
+
+// Scan mounted volumes for camera-card footage (Sony M4ROOT/CLIP, DCIM, loose CLIP).
+async function footageScanCards() {
+  var sources = [];
+  var volumesEntry;
+  try { volumesEntry = await uxpfs.getEntryWithUrl('file:///Volumes'); }
+  catch (e) { footageLogger.warn('Cannot read /Volumes: ' + e.message); return sources; }
+  var vols;
+  try { vols = await volumesEntry.getEntries(); } catch (e) { return sources; }
+  var cardRoots = [['M4ROOT', 'CLIP'], ['PRIVATE', 'M4ROOT', 'CLIP'], ['CLIP'], ['DCIM']];
+  for (var i = 0; i < vols.length; i++) {
+    var vol = vols[i];
+    if (!vol.isFolder) continue;
+    var files = [];
+    for (var c = 0; c < cardRoots.length; c++) {
+      var sub = await footageGetNested(vol, cardRoots[c]);
+      if (sub && sub.isFolder) {
+        // DCIM nests clips one level deeper (e.g. DCIM/100MSDCF/*)
+        var depth = (cardRoots[c][cardRoots[c].length - 1] === 'DCIM') ? 1 : 0;
+        await footageCollectVideos(sub, depth, files);
+      }
+    }
+    if (files.length > 0) {
+      files = Array.from(new Set(files)).sort();
+      sources.push({ label: vol.name, kind: 'card', files: files });
+      footageLogger.info('Card "' + vol.name + '": ' + files.length + ' clip(s)');
+    }
+  }
+  return sources;
+}
+
+// Fallback source: video in the open project's 01_Source/Video (or its root).
+async function footageScanProject(project) {
+  var ppath = null;
+  try { ppath = project.path; } catch (e) { /* getter may not exist */ }
+  if (!ppath) { try { ppath = await project.getPath(); } catch (e) { /* none */ } }
+  if (!ppath) return null;
+  var dir = String(ppath).replace(/\/[^/]*$/, ''); // strip .prproj filename
+  var root;
+  try { root = await footageResolveFolder(dir); } catch (e) { return null; }
+  var files = [];
+  var srcVideo = await footageGetNested(root, ['01_Source', 'Video']);
+  if (srcVideo && srcVideo.isFolder) await footageCollectVideos(srcVideo, 2, files);
+  if (files.length === 0) await footageCollectVideos(root, 1, files); // loose clips
+  if (files.length === 0) return null;
+  files = Array.from(new Set(files)).sort();
+  var label = String(dir).split('/').pop() || 'Project';
+  footageLogger.info('Project folder "' + label + '": ' + files.length + ' clip(s)');
+  return { label: label, kind: 'project', files: files };
+}
+
+async function footageGatherSources(project) {
+  var sources = await footageScanCards();
+  if (sources.length === 0) {
+    var proj = await footageScanProject(project);
+    if (proj) sources.push(proj);
+  }
+  return sources;
+}
+
+// English project name: ASCII letters/digits kept, spaces/other → hyphens (per Roman's
+// rule: English letters, multi-word → hyphens). Non-ASCII (Cyrillic) is dropped, so a
+// Russian entry collapses to '' and we fall back to the card label.
+function footageHyphenate(s) {
+  return String(s || '').trim().replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+// Common parent folder of the found clips (clips usually share one folder).
+function footageCommonFolder(files) {
+  if (!files || !files.length) return '';
+  return String(files[0]).replace(/\/[^/]*$/, '');
+}
+
+// Where to write logs/LUTs, in priority order:
+//   1. the folder picked via "Select Project Folder" (reliable, like the Ingest stage)
+//   2. the open project's folder (project.path — can be empty for an untitled project)
+//   3. the folder the clips were FOUND in (if files were found there, use that folder)
+//   4. '' → caller falls back to the plugin data folder.
+function footageTargetFolder(project) {
+  try { if (projectState && projectState.folderPath) return String(projectState.folderPath); } catch (e) { /* ignore */ }
+  try { if (project && project.path) return String(project.path).replace(/\/[^/]*$/, ''); } catch (e) { /* ignore */ }
+  if (footageState.lastSourceFolder) return footageState.lastSourceFolder;
+  return '';
+}
+
+// Active project's folder name (where the .prproj lives) — the default project name.
+async function footageProjectFolderName(project) {
+  try {
+    var p = project || (await ppro.Project.getActiveProject());
+    if (!p) return '';
+    var pp = null;
+    try { pp = p.path; } catch (e) { /* getter may throw */ }
+    if (!pp) { try { pp = await p.getPath(); } catch (e) { /* none */ } }
+    if (!pp) return '';
+    return String(pp).replace(/\/[^/]*$/, '').split('/').pop() || '';
+  } catch (e) { return ''; }
+}
+
+// Resolve a folder entry from a native path, trying multiple URL forms — different UXP
+// builds accept raw paths vs encoded ones. Raw first (matches the rest of the panel).
+async function footageResolveFolder(nativePath) {
+  var p = String(nativePath);
+  var forms = [
+    'file://' + p,
+    'file://' + encodeURI(p),
+    'file://' + p.split('/').map(function (s) { return encodeURIComponent(s); }).join('/')
+  ];
+  var lastErr = null;
+  for (var i = 0; i < forms.length; i++) {
+    try { return await uxpfs.getEntryWithUrl(forms[i]); } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('cannot resolve folder: ' + p);
+}
+
+async function footageEnsureSub(parent, name) {
+  try { return await parent.getEntry(name); } catch (e) { return await parent.createFolder(name); }
+}
+
+// Save the footage log. Primary: <projectFolder>/99_Pipeline/logs/ (same folder as the
+// project). If project.path is empty (unsaved) or that write fails, fall back to the plugin
+// data folder so a log ALWAYS exists. The reason is recorded in footageState.lastLogError.
+async function saveFootageLog(project) {
+  footageState.lastLogError = null;
+  var ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  var fname = 'FOOTAGE_' + ts + '.log';
+  var report;
+  try { report = footageLogger.getReport(); } catch (e) { report = 'log report unavailable'; }
+
+  // Diagnostic: raw project.path + the folder picked via "Select Project Folder".
+  var rawPath = '';
+  try { rawPath = project && project.path ? String(project.path) : ''; } catch (e) { rawPath = ''; }
+  footageState.lastProjectPath = rawPath;
+  var sel = (projectState && projectState.folderPath) || '';
+  footageLogger.info('project.path="' + rawPath + '" selectedFolder="' + sel + '" name="' + ((project && project.name) || '') + '"');
+
+  // 1. Preferred: <targetFolder>/99_Pipeline/logs/  (picked folder, else project folder)
+  var dir = footageTargetFolder(project);
+  if (dir) {
+    try {
+      var root = await footageResolveFolder(dir);
+      var pipe = await footageEnsureSub(root, '99_Pipeline');
+      var logsFolder = await footageEnsureSub(pipe, 'logs');
+      var f = await logsFolder.createFile(fname, { overwrite: true });
+      await f.write(report);
+      var path = (logsFolder.nativePath || (dir + '/99_Pipeline/logs')) + '/' + fname;
+      footageState.lastLogPath = path;
+      try { $('btn-footage-log').removeAttribute('disabled'); } catch (e) { /* ignore */ }
+      footageLogger.info('Log saved: ' + path);
+      return path;
+    } catch (e) {
+      footageState.lastLogError = 'folder write failed: ' + e.message;
+      footageLogger.warn(footageState.lastLogError);
+    }
+  } else {
+    footageState.lastLogError = 'no project folder — Save the project (⌘S) or click "Select Project Folder" at the top';
+  }
+
+  // 2. Fallback: plugin data folder (always writable).
+  try {
+    var dataFolder = await uxpfs.getDataFolder();
+    var f2 = await dataFolder.createFile(fname, { overwrite: true });
+    await f2.write(report);
+    var path2 = (dataFolder.nativePath || 'plugin data folder') + '/' + fname;
+    footageState.lastLogPath = path2;
+    try { $('btn-footage-log').removeAttribute('disabled'); } catch (e) { /* ignore */ }
+    footageLogger.info('Log saved (fallback, plugin data folder): ' + path2);
+    return path2;
+  } catch (e2) {
+    footageState.lastLogError = (footageState.lastLogError || '') + ' | data folder failed: ' + e2.message;
+    footageLogger.error('Log save failed entirely: ' + e2.message);
+    return null;
+  }
+}
+
+async function buildFootage() {
+  if (footageState.building) { footageLogger.warn('Footage build already in progress'); return; }
+  footageState.building = true;
+  $('btn-footage-build').setAttribute('disabled', 'true');
+  setFootageStatus('Scanning for clips…', 'waiting');
+  try {
+    const project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No open Premiere project — open one (RYA-Premiere-Project button)');
+
+    const sources = await footageGatherSources(project);
+    if (!sources.length) {
+      throw new Error('No video found: insert a card (Sony M4ROOT/CLIP, DCIM) or put clips in the project 01_Source/Video');
+    }
+    sources.sort(function (a, b) { return b.files.length - a.files.length; }); // most clips wins
+    const src = sources[0];
+    footageState.lastSourceFolder = footageCommonFolder(src.files); // anchor for logs/LUT when project.path is empty
+    const applyLut = $('footage-lut') ? $('footage-lut').checked : true;
+    // Project name: user field, else the PROJECT FOLDER name, else the card label.
+    var typedName = $('footage-name') ? footageHyphenate($('footage-name').value) : '';
+    var folderName = footageHyphenate(await footageProjectFolderName(project));
+    var projName = typedName || folderName || src.label;
+
+    setFootageStatus('Building: ' + projName + ' (' + src.files.length + ' clips)…', 'waiting');
+    footageLogger.info('=== FOOTAGE REVIEW v' + FOOTAGE_REVIEW_VERSION + ': ' + projName + ' — ' + src.files.length + ' clips from ' + src.label + ', LUT=' + applyLut + ' ===');
+    if (sources.length > 1) {
+      footageLogger.info('Sources: ' + sources.map(function (s) { return s.label + '(' + s.files.length + ')'; }).join(', ') + ' → using ' + src.label);
+    }
+    try { await project.save(); } catch (e) { /* ignore */ }
+
+    var projectFolder = footageTargetFolder(project);
+    const result = await buildFootageReview(project, src.files, { name: projName, applyLut: applyLut, projectFolder: projectFolder }, footageLogger);
+
+    var lutCount = (result.lutsCopied && result.lutsCopied.length) || 0;
+    var lutMsg = (applyLut && lutCount)
+      ? lutCount + ' LUT(s) copied to ' + (result.lutFolder || 'project') + ' — add an Adjustment Layer over the clips and drop a LUT onto it'
+      : applyLut ? 'LUT: copy skipped (project folder not found)'
+      : 'LUT: off';
+    var allOk = (result.placed === result.total);
+    var logPath = await saveFootageLog(project);
+    setFootageStatus('Done: ' + result.srcSeqName + ' — ' + result.placed + '/' + result.total + ' clips', allOk ? 'ready' : 'warning');
+    setFootageValidation(
+      '<div class="val-line"><b>' + escapeHtml(projName) + '</b> (' + escapeHtml(src.kind) + ' · ' + escapeHtml(src.label) + ') → ' + result.placed + '/' + result.total + ' clips on the timeline</div>' +
+      '<div class="val-line">Sequence: <b>' + escapeHtml(result.srcSeqName) + '</b></div>' +
+      '<div class="val-line" style="opacity:.7">Project file: ' + escapeHtml(footageState.lastProjectPath || projectFolder || '(empty — project not saved)') + '</div>' +
+      '<div class="val-line">' + escapeHtml(lutMsg) + '</div>' +
+      (sources.length > 1 ? '<div class="val-line">Also found: ' + escapeHtml(sources.slice(1).map(function (s) { return s.label + '(' + s.files.length + ')'; }).join(', ')) + '</div>' : '') +
+      (logPath
+        ? '<div class="val-line" style="opacity:.7">Log: ' + escapeHtml(logPath) + (footageState.lastLogError ? ' — ' + escapeHtml(footageState.lastLogError) : '') + '</div>'
+        : '<div class="val-line" style="color:#e88">Log NOT saved: ' + escapeHtml(footageState.lastLogError || 'unknown') + '</div>'));
+    footageLogger.info('=== FOOTAGE REVIEW DONE: ' + result.srcSeqName + ' (' + result.placed + '/' + result.total + ', luts=' + lutCount + ') ===');
+  } catch (err) {
+    setFootageStatus('Error: ' + err.message, 'error');
+    footageLogger.error('Footage review failed: ' + err.message);
+    if (err.stack) footageLogger.debug(err.stack);
+    try { await saveFootageLog(await ppro.Project.getActiveProject()); } catch (e) { /* ignore */ }
+  } finally {
+    footageState.building = false;
+    $('btn-footage-build').removeAttribute('disabled');
   }
 }
 
@@ -1209,24 +4596,24 @@ async function buildAssembly() {
     var projectCode = assemblyState.projectCode || assemblyState.projectName;
     var useSegsForSrt = assemblyState.segments.filter(function (s) { return s.use && s.block !== 99; });
 
-    // Derive sourceDir: strip /Setup/... from filePath, fallback to projectState.folderPath
-    var asmSourceDir = null;
+    // Derive project root: strip /00_Setup/... from filePath, fallback to projectState.folderPath
+    var asmProjectRoot = null;
     if (assemblyState.filePath) {
-      // Brief can be in Setup/, Setup/Assembly/, or Setup/Pre-Edit/ — strip from /Setup/ onwards
-      asmSourceDir = assemblyState.filePath.replace(/[/\\]Setup[/\\].*$/, '');
+      // Brief can be in 00_Setup/, 00_Setup/02_Assembly/, or 00_Setup/03_Pre-Edit/ — strip from /00_Setup/ onwards
+      asmProjectRoot = assemblyState.filePath.replace(/[/\\]00_Setup[/\\].*$/, '');
     } else if (projectState.folderPath) {
-      asmSourceDir = projectState.folderPath + '/01_Media/Source';
+      asmProjectRoot = projectState.folderPath;
     }
-    if (asmSourceDir) {
-      assemblyLogger.info('SRT sourceDir: ' + asmSourceDir);
+    if (asmProjectRoot) {
+      assemblyLogger.info('SRT projectRoot: ' + asmProjectRoot);
     }
 
     var asmSuffix = '2_Assembly' + (assemblyState.briefVersion ? '_v' + assemblyState.briefVersion : '');
 
-    if (useSegsForSrt.length > 0 && asmSourceDir) {
+    if (useSegsForSrt.length > 0 && asmProjectRoot) {
       try {
         // Ensure Transcription subdirs exist
-        var transcriptionEntry = await uxpfs.getEntryWithUrl('file://' + asmSourceDir + '/Transcription');
+        var transcriptionEntry = await uxpfs.getEntryWithUrl('file://' + asmProjectRoot + '/01_Source/Transcription');
         var transcriptsFolderEntry = await ensureSubfolder(transcriptionEntry, 'transcripts', assemblyLogger);
         var captionsFolderEntry = await ensureSubfolder(transcriptionEntry, 'captions', assemblyLogger);
 
@@ -1242,7 +4629,7 @@ async function buildAssembly() {
         // 2. Captions SRT (word-grouped, 2-line blocks for on-screen reading)
         // Only generate if Python pipeline hasn't already created one (Python has better word-level timing)
         var captionsFileName = projectCode + '_' + asmSuffix + '_captions.srt';
-        var captionsDirPath = asmSourceDir + '/Transcription/captions';
+        var captionsDirPath = asmProjectRoot + '/01_Source/Transcription/captions';
         var pythonCaptionsExist = false;
         try {
           await uxpfs.getEntryWithUrl('file://' + captionsDirPath + '/' + captionsFileName);
@@ -1266,7 +4653,7 @@ async function buildAssembly() {
     }
 
     // Import both SRTs to 02_Transcripts bin
-    var asmImportPath = assemblyState.filePath || (asmSourceDir ? asmSourceDir + '/Setup' : null);
+    var asmImportPath = assemblyState.filePath || (asmProjectRoot ? asmProjectRoot + '/00_Setup' : null);
     await importCaptionsSrt(project, asmImportPath, projectCode, asmSuffix, 'Assembly Captions', assemblyLogger);
     await importCaptionsSrt(project, asmImportPath, projectCode, asmSuffix, 'Assembly Transcript', assemblyLogger, 'transcript');
     stepTimings.push('captions ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
@@ -1283,20 +4670,20 @@ async function buildAssembly() {
       assemblyLogger.info('→ ' + assemblyState.screens.length + ' screens ready in brief. Click "Build Pre-Edit" to generate _4_PreEdit');
     }
 
-    setAssemblyStatus('Assembly built (' + result.clipCount + ' clips). Building Review...', 'ready');
+    setAssemblyStatus('Assembly built (' + result.clipCount + ' clips). Building Deleted Scene...', 'ready');
 
     await saveAssemblyLogs(project, clipMap, result);
 
-    // Auto-build Review after Assembly
-    assemblyLogger.info('=== Auto-building Review ===');
+    // Auto-build Deleted Scene after Assembly
+    assemblyLogger.info('=== Auto-building Deleted Scene ===');
     try {
-      await buildReview();
-      assemblyLogger.info('Review auto-build complete');
-    } catch (reviewErr) {
-      assemblyLogger.warn('Review auto-build failed (non-fatal): ' + reviewErr.message);
+      await buildDeletedScene();
+      assemblyLogger.info('Deleted Scene auto-build complete');
+    } catch (dsErr) {
+      assemblyLogger.warn('Deleted Scene auto-build failed (non-fatal): ' + dsErr.message);
     }
 
-    setAssemblyStatus('Assembly + Review built (' + result.clipCount + ' clips)', 'ready');
+    setAssemblyStatus('Assembly + Deleted Scene built (' + result.clipCount + ' clips)', 'ready');
 
   } catch (err) {
     assemblyLogger.error('ASSEMBLY BUILD FAILED: ' + err.message);
@@ -1318,7 +4705,7 @@ async function buildAssembly() {
  * @param {Object} project - Active Premiere Pro project
  * @param {string} briefPath - Path to the loaded pre_edit_brief.json
  * @param {string} projectName - Project name (e.g. "YTCG49")
- * @param {string} suffix - SRT file suffix: "2_Assembly", "3_Review", "4_ScreenCues"
+ * @param {string} suffix - SRT file suffix: "2_Assembly", "3_DeletedScene", "4_ScreenCues"
  * @param {string} label - Human label for logs
  * @param {Object} logger - Logger instance
  * @param {string} [srtType='captions'] - Type suffix: 'captions', 'transcript'
@@ -1329,14 +4716,14 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
     return;
   }
 
-  // briefPath is in Setup/ — derive Source/ from it
+  // briefPath is in 00_Setup/ — derive project root from it
   const briefDir = briefPath.replace(/[/\\][^/\\]+$/, '');
-  const sourceDir = briefDir.replace(/[/\\]Setup([/\\].*)?$/, '');
+  const projectRoot = briefDir.replace(/[/\\]00_Setup([/\\].*)?$/, '');
   const srtFileName = projectName + '_' + suffix + '_' + (srtType || 'captions') + '.srt';
-  // SRTs are in Transcription/captions/ (for captions) or Transcription/transcripts/ (for transcripts)
+  // SRTs are in 01_Source/Transcription/captions/ or 01_Source/Transcription/transcripts/
   var typeLabel = (srtType || 'captions');
   var srtSubdir = (typeLabel === 'transcript') ? 'transcripts' : 'captions';
-  var srtDir = sourceDir + '/Transcription/' + srtSubdir;
+  var srtDir = projectRoot + '/01_Source/Transcription/' + srtSubdir;
   var srtCandidates = [
     srtDir + '/' + srtFileName,
     briefDir + '/' + srtFileName,  // legacy: next to brief
@@ -1425,10 +4812,113 @@ async function importCaptionsSrt(project, briefPath, projectName, suffix, label,
 }
 
 /**
+ * Import SRT file directly by absolute path into 01_Transcripts/{projectCode}_{suffix}/ bin.
+ * Bypasses importCaptionsSrt() path derivation — used by Review where paths come from pipeline result.
+ */
+async function importSrtDirect(project, srtPath, projectCode, suffix, label, logger) {
+  if (!srtPath) {
+    logger.debug(label + ': no SRT path provided, skipping');
+    return;
+  }
+
+  // Check file exists
+  try {
+    await uxpfs.getEntryWithUrl('file://' + srtPath);
+  } catch (e) {
+    logger.info(label + ': SRT not found at ' + srtPath);
+    return;
+  }
+
+  var srtFileName = srtPath.split('/').pop();
+  logger.info('=== Import ' + label + ' (direct) ===');
+  logger.info('Path: ' + srtPath);
+
+  // Find or create 01_Transcripts bin
+  var transcriptsBin = null;
+  try {
+    var rootItem = await project.getRootItem();
+    var allItems = await rootItem.getItems();
+    for (var i = 0; i < allItems.length; i++) {
+      if (allItems[i].name === BIN_NAMES.TRANSCRIPTS) {
+        transcriptsBin = ppro.FolderItem.cast(allItems[i]);
+        break;
+      }
+    }
+    // Create 01_Transcripts if missing
+    if (!transcriptsBin) {
+      logger.info('Creating ' + BIN_NAMES.TRANSCRIPTS + ' bin');
+      project.lockedAccess(function() {
+        project.executeTransaction(function(ca) {
+          ca.addAction(ppro.FolderItem.createAddItemAction(BIN_NAMES.TRANSCRIPTS));
+        }, 'Create ' + BIN_NAMES.TRANSCRIPTS);
+      });
+      allItems = await rootItem.getItems();
+      for (var i2 = 0; i2 < allItems.length; i2++) {
+        if (allItems[i2].name === BIN_NAMES.TRANSCRIPTS) {
+          transcriptsBin = ppro.FolderItem.cast(allItems[i2]);
+          break;
+        }
+      }
+      if (transcriptsBin) logger.info(BIN_NAMES.TRANSCRIPTS + ' bin created');
+    }
+  } catch (e) {
+    logger.debug('Cannot find/create 01_Transcripts bin: ' + e.message);
+  }
+
+  // Create/find sub-bin
+  var targetBin = transcriptsBin;
+  if (transcriptsBin && suffix) {
+    var subBinName = projectCode + '_' + suffix;
+    try {
+      var existingItems = await transcriptsBin.getItems();
+      var found = false;
+      for (var ei = 0; ei < existingItems.length; ei++) {
+        if (existingItems[ei].name === subBinName) {
+          targetBin = ppro.FolderItem.cast(existingItems[ei]) || existingItems[ei];
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        project.lockedAccess(function() {
+          project.executeTransaction(function(ca) {
+            ca.addAction(transcriptsBin.createBinAction(subBinName, true));
+          }, 'Create ' + subBinName);
+        });
+        existingItems = await transcriptsBin.getItems();
+        var createdOk = false;
+        for (var ni = 0; ni < existingItems.length; ni++) {
+          if (existingItems[ni].name === subBinName) {
+            targetBin = ppro.FolderItem.cast(existingItems[ni]) || existingItems[ni];
+            createdOk = true;
+            break;
+          }
+        }
+        if (createdOk) {
+          logger.info('Created bin: 01_Transcripts/' + subBinName);
+        } else {
+          logger.warn('Sub-bin ' + subBinName + ' not found after create — SRT will import to 01_Transcripts');
+        }
+      }
+    } catch (binErr) {
+      logger.debug('Sub-bin creation failed: ' + binErr.message);
+    }
+  }
+
+  // Import
+  try {
+    await project.importFiles([srtPath], true, targetBin || null, false);
+    logger.info(label + ' imported: ' + srtFileName + ' → 01_Transcripts/' + (suffix ? projectCode + '_' + suffix : ''));
+  } catch (err) {
+    logger.warn(label + ' import failed (non-fatal): ' + err.message);
+  }
+}
+
+/**
  * Import all SRT files (transcripts + captions) for every timeline stage.
  *
  * Scans Transcription/transcripts/ and Transcription/captions/ for SRT files,
- * then imports each into the 02_Transcripts bin. Also checks Setup/ for legacy SRTs.
+ * then imports each into the 02_Transcripts bin. Also checks 00_Setup/ for legacy SRTs.
  *
  * Can be run standalone (button) — does not require Build Ingest/Assembly.
  */
@@ -1440,7 +4930,7 @@ async function importAllSrts() {
   ingestLogger.info('=== Import All SRTs ===');
   setIngestStatus('Importing SRTs...', 'waiting');
 
-  var sourceDir = projectState.folderPath + '/01_Media/Source';
+  var sourceDir = projectState.folderPath + '/01_Source';
   var imported = 0;
   var skipped = 0;
 
@@ -1475,7 +4965,7 @@ async function importAllSrts() {
   var searchDirs = [
     sourceDir + '/Transcription/transcripts',
     sourceDir + '/Transcription/captions',
-    sourceDir + '/Setup',
+    projectState.folderPath + '/00_Setup',
     sourceDir,
   ];
 
@@ -1549,7 +5039,7 @@ async function importAllSrts() {
  * Export markers from active sequence as JSON.
  *
  * Reads marker names and positions from the current sequence and writes
- * to Setup/{CODE}_{suffix}_markers.json. Marker names carry editor notes
+ * to 00_Setup/{CODE}_{suffix}_markers.json. Marker names carry editor notes
  * (UXP API cannot read marker comments, only names).
  */
 /**
@@ -1562,7 +5052,7 @@ async function importAllSrts() {
 /**
  * Export markers by reading .prproj file directly (gzip XML → DVAMarker JSON).
  * Everything runs inside UXP — no Terminal, no Python.
- * Writes to Setup/Assembly/{seq}_v{N}_out.json + ~/Downloads/.
+ * Writes to 00_Setup/02_Assembly/{seq}_v{N}_out.json + ~/Downloads/.
  */
 async function exportMarkers() {
   var project = await ppro.Project.getActiveProject();
@@ -1645,17 +5135,17 @@ async function exportMarkers() {
 
     // Step 3: Classify markers
     var assemblyMarkers = [];
-    var reviewMarkers = [];
+    var deletedSceneMarkers = [];
     for (var ci = 0; ci < markers.length; ci++) {
       var mName = markers[ci].name || '';
       var mCom = markers[ci].comment || '';
       if (mCom.startsWith('/')) {
         assemblyMarkers.push(markers[ci]);
       } else if (mName.indexOf('[CUT]') === 0 || mName.indexOf('[ALT]') === 0 || mName.indexOf('[SKIP]') === 0) {
-        reviewMarkers.push(markers[ci]);
+        deletedSceneMarkers.push(markers[ci]);
       } else if (mName.indexOf('Source:') === 0) {
         assemblyMarkers.push(markers[ci]);
-        reviewMarkers.push(markers[ci]);
+        deletedSceneMarkers.push(markers[ci]);
       } else {
         assemblyMarkers.push(markers[ci]);
       }
@@ -1663,7 +5153,7 @@ async function exportMarkers() {
     var assemblyChapters = assemblyMarkers.filter(function(m) { return m.is_chapter && (m.name || '').indexOf('Source:') !== 0; });
 
     assemblyLogger.info('Assembly: ' + assemblyMarkers.length + ' markers (' + assemblyChapters.length + ' chapters)');
-    assemblyLogger.info('Review: ' + reviewMarkers.length + ' markers');
+    assemblyLogger.info('Deleted Scene: ' + deletedSceneMarkers.length + ' markers');
 
     var slashComments = markers.filter(function(m) { return (m.comment || '').startsWith('/'); });
     assemblyLogger.info('User / comments: ' + slashComments.length);
@@ -1676,9 +5166,9 @@ async function exportMarkers() {
         chapters_count: assemblyChapters.length,
         markers: assemblyMarkers,
       },
-      review: {
-        markers_count: reviewMarkers.length,
-        markers: reviewMarkers,
+      deletedScene: {
+        markers_count: deletedSceneMarkers.length,
+        markers: deletedSceneMarkers,
       },
     };
 
@@ -1716,7 +5206,7 @@ async function exportMarkers() {
 
     // Step 7b: Match timeline clips with transcript_assembly.json for text
     try {
-      var txPath = projectState.folderPath + '/01_Media/Source/Transcription/' + projectState.projectName + '_transcript_assembly.json';
+      var txPath = projectState.folderPath + '/01_Source/Transcription/' + projectState.projectName + '_transcript_assembly.json';
       var txEntry = await uxpfs.getEntryWithUrl('file://' + txPath);
       var txRaw = await txEntry.read({ format: require('uxp').storage.formats.utf8 });
       var txData = JSON.parse(txRaw);
@@ -1766,15 +5256,15 @@ async function exportMarkers() {
 
     output.timeline_clips = timelineClips;
 
-    // Step 8: Find next version and write to Setup/Assembly/
+    // Step 8: Find next version and write to 00_Setup/02_Assembly/
     setAssemblyStatus('Writing files...', 'waiting');
-    var assemblyDir = projectState.folderPath + '/01_Media/Source/Setup/Assembly';
+    var assemblyDir = projectState.folderPath + '/00_Setup/02_Assembly';
     var assemblyEntry;
     try {
       assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
     } catch (e) {
-      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/01_Media/Source/Setup');
-      assemblyEntry = await ensureSubfolder(setupEntry, 'Assembly', assemblyLogger);
+      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup');
+      assemblyEntry = await ensureSubfolder(setupEntry, '02_Assembly', assemblyLogger);
     }
 
     // Strip _v{N} suffix from seqName to avoid double versioning
@@ -1948,10 +5438,10 @@ async function exportMarkers() {
     var fileName = baseSeqName + '_v' + version + '_out.json';
     var jsonContent = JSON.stringify(output, null, 2);
 
-    // Write to Setup/Assembly/
+    // Write to 00_Setup/02_Assembly/
     var outFile = await assemblyEntry.createFile(fileName, { overwrite: true });
     await outFile.write(jsonContent);
-    assemblyLogger.info('Written: Setup/Assembly/' + fileName);
+    assemblyLogger.info('Written: 00_Setup/02_Assembly/' + fileName);
 
     // Write to ~/Downloads/
     try {
@@ -1970,7 +5460,7 @@ async function exportMarkers() {
       var htmlContent = generateExportReviewHtml(output, version, seqName);
       var htmlFile = await assemblyEntry.createFile(htmlName, { overwrite: true });
       await htmlFile.write(htmlContent);
-      assemblyLogger.info('Written: Setup/Assembly/' + htmlName);
+      assemblyLogger.info('Written: 00_Setup/02_Assembly/' + htmlName);
 
       // Open in browser
       try {
@@ -2001,7 +5491,7 @@ async function exportMarkers() {
  * Debug Export — separate button for comparing Premiere actual vs brief.
  * Reads V1 clips from active sequence, matches with brief segments,
  * reads Claude4_assembly.json for word-level comparison.
- * Writes {CODE}_debug.json to Assembly/ folder.
+ * Writes {CODE}_debug.json to 02_Assembly/ folder.
  */
 async function debugExport() {
   var DEBUG_VERSION = '1.0.0';
@@ -2095,7 +5585,7 @@ async function debugExport() {
 
     // Read Claude4_assembly.json for word data
     try {
-      var c4Path = projectState.folderPath + '/01_Media/Source/Setup/' +
+      var c4Path = projectState.folderPath + '/00_Setup/' +
         (projectState.projectCode || 'UNKNOWN') + '_Claude4_assembly.json';
       var c4Entry = await uxpfs.getEntryWithUrl('file://' + c4Path);
       var c4Raw = await c4Entry.read({ format: require('uxp').storage.formats.utf8 });
@@ -2203,14 +5693,14 @@ async function debugExport() {
       }
     };
 
-    // Write to Assembly/
-    var assemblyDir = projectState.folderPath + '/01_Media/Source/Setup/Assembly';
+    // Write to 02_Assembly/
+    var assemblyDir = projectState.folderPath + '/00_Setup/02_Assembly';
     var assemblyEntry;
     try {
       assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
     } catch (e) {
-      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/01_Media/Source/Setup');
-      assemblyEntry = await ensureSubfolder(setupEntry, 'Assembly', assemblyLogger);
+      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup');
+      assemblyEntry = await ensureSubfolder(setupEntry, '02_Assembly', assemblyLogger);
     }
 
     var debugFileName = seqName.replace(/[^a-zA-Z0-9_-]/g, '_') + '_debug.json';
@@ -2304,7 +5794,16 @@ async function audioDebug() {
     var seq = await project.getActiveSequence();
     if (!seq) throw new Error('No active sequence — open a timeline first');
     var seqName = seq.name;
-    var fps = projectState.projectSettings ? (projectState.projectSettings.fps || 29.97) : 29.97;
+    // fps from the REAL sequence timebase. The old code read the never-populated
+    // projectState.projectSettings and always fell back to 29.97 — YTCH13's
+    // audio_map claimed 29.97 on a 25p project (found 16.08.2026).
+    var fps = 25;
+    try {
+      var tbTicks = await seq.getTimebase(); // ticks per frame, e.g. "10160640000" @25p
+      if (tbTicks) fps = Math.round((254016000000 / Number(tbTicks)) * 1000) / 1000; // 25 / 29.97 / 23.976
+    } catch (eTb) {
+      ingestLogger.warn('getTimebase failed (' + eTb.message + ') — fps fallback 25');
+    }
     ingestLogger.info('Sequence: ' + seqName + ', fps=' + fps);
 
     // Read markers
@@ -2452,14 +5951,14 @@ async function audioDebug() {
       all_clips: allClips
     };
 
-    // Write to Setup/Assembly/
-    var assemblyDir = projectState.folderPath + '/01_Media/Source/Setup/Assembly';
+    // Write to 00_Setup/02_Assembly/
+    var assemblyDir = projectState.folderPath + '/00_Setup/02_Assembly';
     var assemblyEntry;
     try {
       assemblyEntry = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
     } catch (e) {
-      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/01_Media/Source/Setup');
-      assemblyEntry = await ensureSubfolder(setupEntry, 'Assembly', ingestLogger);
+      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup');
+      assemblyEntry = await ensureSubfolder(setupEntry, '02_Assembly', ingestLogger);
     }
     var outFileName = seqName.replace(/[^a-zA-Z0-9_-]/g, '_') + '_audio_debug.json';
     var outFile = await assemblyEntry.createFile(outFileName, { overwrite: true });
@@ -2482,6 +5981,1002 @@ async function audioDebug() {
   }
 
   $('btn-audio-debug').removeAttribute('disabled');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Chapter markers → ACTIVE sequence (no rebuild)
+// ingest.markers[scene] = [{ offset_sec, duration_sec?, name, comment?, color? }]
+// Lets a scene timeline that already exists get its chapter map without being
+// rebuilt from scratch — the same list the builders place on a fresh ingest.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function applyChapterMarkersToActive() {
+  if (!ingestState.data) { setIngestStatus('Load ingest JSON first', 'error'); return; }
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+
+  var found = await resolveActiveScene(project);   // reports its own errors
+  if (!found) return;
+
+  var all = ingestState.data.markers || {};
+  var list = all[found.scene];
+  if (!list || !list.length) {
+    var have = Object.keys(all);
+    setIngestStatus('No chapter markers for "' + found.scene + '"' +
+      (have.length ? ' (ingest has: ' + have.join(', ') + ')' : ' — ingest.markers is empty'), 'error');
+    return;
+  }
+
+  ingestLogger.info('=== Chapter markers → ' + found.seq.name + ' (' + list.length + ') ===');
+  setIngestStatus('Replacing chapter markers (' + list.length + ')...', 'waiting');
+  try {
+    // replace (default): previously generated chapter markers are swept first, so
+    // pressing this twice re-syncs the sequence instead of doubling every marker.
+    var added = await addSceneMarkers(project, found.seq, list, ingestLogger);
+    setIngestStatus('Chapters: ' + added + '/' + list.length + ' → ' + found.seq.name +
+      ' (old ones replaced)', added ? 'ready' : 'error');
+  } catch (err) {
+    ingestLogger.error('Chapter markers failed: ' + err.message);
+    setIngestStatus('Chapter markers failed: ' + err.message, 'error');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PARTS PICKER — список part-JSON с галочками, как «Sequences to build» в Ingest.
+// Роман: «в parts и review должно быть как в ingest — выбор галочкой что собираем».
+// Раньше панель молча брала САМЫЙ СВЕЖИЙ файл, и собрать второй вариант можно было
+// только через Load вручную; теперь видно всё, что лежит в 02_Assembly/parts/.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Два списка на одном движке: в Review — сборки поверх рендера/мастера (у них есть
+// part.base_clip), в Parts — всё остальное (сцены, подборки). Так вкладка Review больше
+// НЕ угадывает файл скорингом (из-за него она стабильно брала не тот JSON) — выбор явный.
+/** «01:00» для сегодняшних файлов, «20.08 23:41» для остальных — чтобы свежесть читалась. */
+function fmtWhen(ms) {
+  if (!ms) return '';
+  var d = new Date(ms), now = new Date();
+  var hh = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  var sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+    && d.getDate() === now.getDate();
+  if (sameDay) return hh;
+  return ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + ' ' + hh;
+}
+
+const PICKERS = {
+  parts: { panel: 'parts-pick', list: 'parts-pick-list', btn: 'btn-parts-pick-build',
+           status: function (m, s) { setPartsStatus(m, s); },
+           want: function (isReview) { return !isReview; }, items: [] },
+  review: { panel: 'review-pick', list: 'review-pick-list', btn: 'btn-review-pick-build',
+            status: function (m, s) { setReviewStatus(m, s); },
+            want: function (isReview) { return isReview; }, items: [] },
+};
+
+async function refreshPick(kind) {
+  var P = PICKERS[kind];
+  var panel = $(P.panel), list = $(P.list);
+  if (!projectState.folderPath) { panel.style.display = 'none'; return; }
+
+  // Review-сборки живут в 05_Review (Роман 07.09: «всё должно быть в review»),
+  // прочие части — по-прежнему в 02_Assembly/parts. Сканируем оба; вкладку решает
+  // base_clip внутри JSON (ниже), а не каталог.
+  var scanDirs = [
+    { dir: projectState.folderPath + '/00_Setup/05_Review', re: /_review_.*\.json$/i },
+    { dir: projectState.folderPath + '/00_Setup/02_Assembly/parts', re: /_(part|review)_.*\.json$/i },
+  ];
+  var files = [];
+  var seenNames = {};
+  for (var sd = 0; sd < scanDirs.length; sd++) {
+    try {
+      var dEntry = await uxpfs.getEntryWithUrl('file://' + scanDirs[sd].dir);
+      var entries = await dEntry.getEntries();
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].isFile && scanDirs[sd].re.test(entries[i].name) && !seenNames[entries[i].name]) {
+          seenNames[entries[i].name] = 1;
+          files.push(entries[i]);
+        }
+      }
+    } catch (e) { assemblyLogger.debug(kind + ' pick (' + scanDirs[sd].dir + '): ' + e.message); }
+  }
+  var dir = scanDirs[1].dir;   // фолбэк для nativePath ниже
+
+  var existing = {};
+  try {
+    (await listProjectSequences(await ppro.Project.getActiveProject(), assemblyLogger))
+      .forEach(function (s) { existing[s.name] = true; });
+  } catch (e) { /* проект может быть не открыт — просто без бейджей */ }
+
+  P.items = [];
+  for (var f = 0; f < files.length; f++) {
+    try {
+      var data = JSON.parse(await files[f].read());
+      var head = (data.parts && data.parts.length) ? data.parts[0].part : data.part;
+      var segs = (data.parts && data.parts.length) ? data.parts[0].segments : data.segments;
+      if (!head) continue;
+      var isReview = !!head.base_clip;
+      if (!P.want(isReview)) continue;
+      var mtime = 0, ctime = 0;
+      try {
+        var meta = await files[f].getMetadata();
+        mtime = meta && meta.dateModified ? new Date(meta.dateModified).getTime() : 0;
+        ctime = meta && meta.dateCreated ? new Date(meta.dateCreated).getTime() : 0;
+      } catch (eMt) { /* без времени — просто уедет вниз списка */ }
+      // дата создания: авторитетно из JSON (part.created, пишут генераторы), иначе FS
+      if (head.created) {
+        var pc = Date.parse(head.created);
+        if (!isNaN(pc)) ctime = pc;
+      }
+      var seqName = head.sequence_name || head.name || files[f].name;
+      var isBuilt = !!existing[seqName];
+      if (!isBuilt) {                       // auto_version строит "<name>_vN"
+        for (var k in existing) {
+          if (k.indexOf(seqName + '_v') === 0) { isBuilt = true; break; }
+        }
+      }
+      P.items.push({
+        name: files[f].name, path: files[f].nativePath || (dir + '/' + files[f].name),
+        partName: head.name || '?', seqName: seqName, base: head.base_clip || '',
+        model: head.build_model || '', segments: (segs || []).length,
+        baseSegs: (head.base_segments || []).length,
+        markers: (head.chapter_markers || []).length, built: isBuilt, mtime: mtime,
+        created: ctime,
+      });
+    } catch (e) { assemblyLogger.debug(kind + ' pick read ' + files[f].name + ': ' + e.message); }
+  }
+  if (!P.items.length) { panel.style.display = 'none'; list.innerHTML = ''; return; }
+  // свежие сверху — по этому списку Роман и решает, что собирать
+  P.items.sort(function (a, b) { return (b.mtime - a.mtime) || a.name.localeCompare(b.name); });
+  var newest = P.items.length ? P.items[0].mtime : 0;
+
+  list.innerHTML = P.items.map(function (p, i) {
+    // review_cut: rebuilt V1 (base_segments) + inserts — shown as "31+23 seg"
+    var segTxt = (p.baseSegs ? p.baseSegs + '+' + p.segments : p.segments) + ' seg';
+    var meta = (p.created ? 'created ' + fmtWhen(p.created) + ' · ' : '') +
+      segTxt + (p.markers ? ' · ' + p.markers + ' parts' : '') +
+      (p.base ? ' · ' + escapeHtml(p.base) : '');
+    var isFresh = p.mtime && p.mtime === newest;
+    // Two-line row: head (checkbox + name + badge) / sub (dates + meta) — keeps the
+    // layout intact at any panel width instead of one overflowing nowrap line.
+    return '<div class="scene-row">' +
+      '<div class="scene-head">' +
+      '<label class="scene-pick">' +
+      '<input type="checkbox" class="' + kind + '-pick-cb" value="' + i + '"' + (p.built ? '' : ' checked') + '>' +
+      '<span class="scene-name">' + escapeHtml(p.partName) + '</span>' +
+      '</label>' +
+      '<span class="scene-badge' + (p.built ? ' built' : '') + '">' +
+      (p.built ? 'built ✓' : 'new') + '</span>' +
+      '</div>' +
+      '<div class="scene-sub">' +
+      '<span class="scene-when' + (isFresh ? ' fresh' : '') + '">mod ' + fmtWhen(p.mtime) +
+      (isFresh ? ' ← newest' : '') + '</span>' +
+      '<span class="scene-meta">' + meta + '</span>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+  panel.style.display = 'block';
+  $(P.btn).removeAttribute('disabled');
+  assemblyLogger.info(kind + ' pick: ' + P.items.length + ' part JSON(s)');
+}
+
+function setPickChecks(kind, mode) {
+  Array.prototype.slice.call(document.querySelectorAll('.' + kind + '-pick-cb')).forEach(function (cb) {
+    var row = cb.closest('.scene-row');
+    var isBuilt = row && row.querySelector('.scene-badge.built');
+    if (mode === 'all') cb.checked = true;
+    else if (mode === 'none') cb.checked = false;
+    else cb.checked = !isBuilt;
+  });
+}
+
+/** Build every ticked JSON, one after another. One failure never stops the rest. */
+async function buildPicked(kind) {
+  var P = PICKERS[kind];
+  var picked = Array.prototype.slice.call(document.querySelectorAll('.' + kind + '-pick-cb'))
+    .filter(function (cb) { return cb.checked; })
+    .map(function (cb) { return P.items[parseInt(cb.value, 10)]; })
+    .filter(Boolean);
+  if (!picked.length) { P.status('Nothing ticked', 'error'); return; }
+
+  var okN = 0, madeAll = [], failed = [];
+  for (var i = 0; i < picked.length; i++) {
+    var p = picked[i];
+    P.status('Building ' + (i + 1) + '/' + picked.length + ': ' + p.partName + '…', 'waiting');
+    try {
+      var entry = await uxpfs.getEntryWithUrl('file://' + p.path);
+      var data = JSON.parse(await entry.read());
+      var bundle = (data.parts && data.parts.length) ? data.parts
+        : [{ part: data.part, segments: data.segments }];
+      partsState.bundle = (data.parts && data.parts.length) ? data.parts : null;
+      partsState.part = bundle[0].part;
+      partsState.segments = bundle[0].segments;
+      partsState.filePath = p.path;
+      var res = await buildParts(bundle);
+      if (res && res.ok) { okN++; madeAll = madeAll.concat(res.builtNames || []); }
+      else failed.push(p.partName + ' (' + ((res && res.error) || 'failed') + ')');
+    } catch (e) {
+      failed.push(p.partName + ' (' + (e && e.message ? e.message : e) + ')');
+      assemblyLogger.error('Build ' + p.partName + ': ' + (e && e.message));
+    }
+  }
+  var msg = 'Built ' + okN + '/' + picked.length + (madeAll.length ? ' → ' + madeAll.join(', ') : '');
+  if (failed.length) msg += ' · failed: ' + failed.join('; ');
+  P.status(msg, okN ? 'ready' : 'error');
+  assemblyLogger.info(kind + ' pick build: ' + msg);
+  await refreshPick(kind);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REVIEW NOTES — marker @ playhead + queued JSON row for the notes Sheet.
+// Панель делает МИНИМУМ: маркер на активной секвенции + файл в
+// {project}/00_Setup/05_Review/notes/. Остальное (v1-TC, выдержка транскрипта,
+// пуш в Google Sheet, подбор материала) — notes_sync.py + Claude локально.
+// Имя маркера «RS#hhmmss» НЕ матчится GENERATED_MARKER_RE — chapter-ресинк его не сметёт.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function notesDir() {
+  if (!projectState.folderPath) throw new Error('No project folder');
+  var revDir = projectState.folderPath + '/00_Setup/05_Review';
+  try {
+    return await uxpfs.getEntryWithUrl('file://' + revDir + '/notes');
+  } catch (eD) {
+    var parent = await uxpfs.getEntryWithUrl('file://' + revDir);
+    return await parent.createFolder('notes');
+  }
+}
+
+async function readNotes(dEntry) {
+  var out = [];
+  var entries = await dEntry.getEntries();
+  for (var i = 0; i < entries.length; i++) {
+    var nm = entries[i].name;
+    if (entries[i].isFile && /^(note_\d+|RS_\d+)\.json$/.test(nm)) {
+      try { out.push(JSON.parse(await entries[i].read())); } catch (e) { }
+    }
+  }
+  out.sort(function (a, b) { return (a.ts || '').localeCompare(b.ts || ''); });
+  return out;
+}
+
+async function notesSheetBase(dEntry) {
+  // notes_sync.py пишет sheet_link.txt (…edit#gid=N) — без него ссылки просто нет
+  try {
+    var entries = await dEntry.getEntries();
+    for (var i = 0; i < entries.length; i++) {
+      if (entries[i].isFile && entries[i].name === 'sheet_link.txt') {
+        return (await entries[i].read()).trim();
+      }
+    }
+  } catch (e) { }
+  return null;
+}
+
+async function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.setContent) {
+      await navigator.clipboard.setContent({ 'text/plain': text });
+      return true;
+    }
+  } catch (e) { }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (e) { }
+  return false;
+}
+
+function noteLink(base, rowIndex) {
+  // строка листа: 1 шапка + N заметок в хронологии (push держит тот же порядок)
+  return base ? base + '&range=A' + rowIndex : null;
+}
+
+async function addReviewNote() {
+  var st = $('note-status');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere project');
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence');
+    var sec = null;
+    try {
+      var tt = seq.getPlayerPosition ? await seq.getPlayerPosition() : null;
+      if (tt && typeof tt.seconds === 'number') sec = tt.seconds;
+      else if (tt && typeof tt.seconds === 'function') sec = tt.seconds();
+      else if (tt && tt.ticks !== undefined) sec = Number(tt.ticks) / 254016000000;
+    } catch (eP) { assemblyLogger.debug('getPlayerPosition: ' + eP.message); }
+    if (sec === null || isNaN(sec)) throw new Error('Player position unavailable on this build (getPlayerPosition)');
+
+    var dEntry = await notesDir();
+    var existing = await readNotes(dEntry);
+    var maxN = 0;
+    existing.forEach(function (n) {
+      var m = /^(\d+)$/.exec(String(n.id || ''));
+      if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
+    });
+    var id = ('00' + (maxN + 1)).slice(-3);          // сквозная нумерация: 001, 002…
+    var mm = Math.floor(sec / 60), ss = Math.floor(sec % 60);
+    function p2(n) { return ('0' + n).slice(-2); }
+    var comment = (($('note-comment') && $('note-comment').value) || '').trim();
+
+    // Magenta = «специальный цвет» заметок: главы Green/Red/Yellow, S{NN} дефолтные —
+    // на линейке маркеров magenta читается сразу. no_chapter_type: остаётся Comment.
+    await addSceneMarkers(project, seq, [{
+      offset_sec: sec, name: id, comment: comment,
+      color: 'Magenta', no_chapter_type: true,
+    }], assemblyLogger, { replace: false });
+
+    var f = await dEntry.createFile('note_' + id + '.json', { overwrite: true });
+    await f.write(JSON.stringify({
+      id: id, ts: new Date().toISOString(), sequence: seq.name,
+      tc_sec: Math.round(sec * 100) / 100, tc: mm + ':' + p2(ss),
+      comment: comment, marker: id,
+    }, null, 1));
+    if ($('note-comment')) $('note-comment').value = '';
+
+    var base = await notesSheetBase(dEntry);
+    var link = noteLink(base, existing.length + 2);   // после записи заметок N+1, +1 шапка
+    var copied = false;
+    if (link) copied = await copyToClipboard(link);
+    else copied = await copyToClipboard(id + ' @ ' + mm + ':' + p2(ss) + (comment ? ' · ' + comment : ''));
+
+    st.textContent = '📌 ' + id + ' @ ' + mm + ':' + p2(ss) + ' — magenta marker' +
+      (copied ? (link ? ' · Sheet link copied' : ' · text copied (Sheet link появится после первого push)') : '') +
+      (comment ? '' : ' · no comment yet — add in the Sheet');
+    assemblyLogger.info('Review note ' + id + ' @ ' + sec.toFixed(2) + 's on "' + seq.name + '"' +
+      (copied ? ' (link copied)' : ''));
+  } catch (err) {
+    if (st) st.textContent = 'Note failed: ' + err.message;
+    assemblyLogger.error('Review note failed: ' + (err && err.message));
+  }
+}
+
+async function openNotesSheet() {
+  var st = $('note-status');
+  try {
+    var dEntry = await notesDir();
+    var base = await notesSheetBase(dEntry);
+    if (!base) { st.textContent = 'No Sheet yet — run notes_sync.py push first'; return; }
+    try {
+      await require('uxp').shell.openExternal(base);
+      st.textContent = 'Opened notes Sheet in browser';
+    } catch (eO) {
+      // манифест без https-схемы (панель не перезагружена после апдейта) — хотя бы в буфер
+      var copied = await copyToClipboard(base);
+      st.textContent = copied ? 'Browser open blocked — Sheet link copied instead'
+        : 'Open failed: ' + eO.message;
+      assemblyLogger.warn('openExternal failed (' + eO.message + '), reload plugin to pick up manifest https scheme');
+    }
+  } catch (err) {
+    if (st) st.textContent = 'Open Sheet failed: ' + err.message;
+    assemblyLogger.error('Open notes Sheet failed: ' + (err && err.message));
+  }
+}
+
+async function playheadSeconds(seq) {
+  var sec = null;
+  try {
+    var tt = seq.getPlayerPosition ? await seq.getPlayerPosition() : null;
+    if (tt && typeof tt.seconds === 'number') sec = tt.seconds;
+    else if (tt && typeof tt.seconds === 'function') sec = tt.seconds();
+    else if (tt && tt.ticks !== undefined) sec = Number(tt.ticks) / 254016000000;
+  } catch (eP) { assemblyLogger.debug('getPlayerPosition: ' + eP.message); }
+  if (sec === null || isNaN(sec)) throw new Error('Player position unavailable on this build (getPlayerPosition)');
+  return sec;
+}
+
+/**
+ * v2.17.0 «Copy ТЗ @ playhead» (Роман 07.09: текст ТЗ должен копироваться с таймлайна;
+ * clip-маркер мастер-клипа на 25.x приходит без имени/коммента → надёжный путь — панель).
+ * Ищет review-JSON, чей part.sequence_name — префикс активной секвенции (без _v{N}),
+ * берёт ближайший сегмент с item_marker (плашка ТЗ на V4) к плейхеду и кладёт в буфер
+ * ПОЛНЫЙ текст ТЗ + ссылки на материалы (item_marker.links + папка Review_materials).
+ */
+async function copyTzAtPlayhead() {
+  var st = $('note-status');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere project');
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence');
+    var sec = await playheadSeconds(seq);
+    if (!projectState.folderPath) throw new Error('No project folder');
+    var revDir = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup/05_Review');
+    var entries = await revDir.getEntries();
+    var seqBase = String(seq.name || '').replace(/_v\d+$/, '');
+    var best = null, bestMod = -1, fallback = null, fbMod = -1;
+    for (var i = 0; i < entries.length; i++) {
+      var en = entries[i];
+      if (!en.isFile || !/_review_.*\.json$/i.test(en.name)) continue;
+      var part;
+      try { part = JSON.parse(await en.read()); } catch (eJ) { continue; }
+      var segsIm = (part.segments || []).filter(function (s) { return s.item_marker; });
+      if (!segsIm.length) continue;
+      var mod = 0;
+      try { var md = await en.getMetadata(); mod = md && md.dateModified ? new Date(md.dateModified).getTime() : 0; } catch (eM) { }
+      var sn = String((part.part || {}).sequence_name || '');
+      if (sn && seqBase.indexOf(sn) === 0 && mod > bestMod) { best = part; bestMod = mod; }
+      if (mod > fbMod) { fallback = part; fbMod = mod; }
+    }
+    var part2 = best || fallback;
+    if (!part2) throw new Error('No review JSON with ТЗ (item_marker) in 05_Review');
+    var cand = part2.segments.filter(function (s) { return s.item_marker; });
+    var hit = null, hitD = Infinity;
+    cand.forEach(function (s) {
+      var a = Number(s.timeline_in_sec), b = Number(s.timeline_out_sec);
+      var d = (sec >= a && sec <= b) ? 0 : Math.min(Math.abs(sec - a), Math.abs(sec - b));
+      if (d < hitD) { hitD = d; hit = s; }
+    });
+    if (!hit) throw new Error('No ТЗ segments in ' + ((part2.part || {}).name || 'review JSON'));
+    var im = hit.item_marker;
+    var mm = Math.floor(sec / 60), ss = Math.floor(sec % 60);
+    function p2(n) { return ('0' + n).slice(-2); }
+    var lines = [String(im.name || hit.segment_id), '', String(im.comment || '').trim()];
+    var links = Array.isArray(im.links) ? im.links : [];
+    if (links.length) { lines.push(''); lines.push('🔗 Материалы:'); links.forEach(function (l) { lines.push('  ' + l); }); }
+    var note = String((part2.part || {}).note || '');
+    var mFolder = /https:\/\/drive\.google\.com\/drive\/folders\/[A-Za-z0-9_-]+/.exec(note);
+    if (mFolder) lines.push((links.length ? '' : '\n') + '📁 Review_materials: ' + mFolder[0]);
+    lines.push('', '⏱ playhead ' + mm + ':' + p2(ss) + ' · ' + seq.name + (hitD > 0 ? ' · ближайшее ТЗ в ' + Math.round(hitD) + ' с' : ''));
+    var ok = await copyToClipboard(lines.join('\n'));
+    st.textContent = ok ? ('📋 ' + String(im.name || hit.segment_id).slice(0, 48) + (hitD > 0 ? ' (в ' + Math.round(hitD) + ' с)' : '') + ' — copied')
+      : 'Clipboard unavailable — see Err log';
+    assemblyLogger.info('Copy ТЗ @ ' + sec.toFixed(2) + 's → ' + (im.name || hit.segment_id) + ' from ' + ((part2.part || {}).name || '?'));
+  } catch (err) {
+    if (st) st.textContent = 'Copy ТЗ failed: ' + err.message;
+    assemblyLogger.error('Copy ТЗ failed: ' + (err && err.message));
+  }
+}
+
+async function copyAllReviewNotes() {
+  var st = $('note-status');
+  try {
+    var dEntry = await notesDir();
+    var notes = await readNotes(dEntry);
+    if (!notes.length) { st.textContent = 'No notes yet'; return; }
+    var base = await notesSheetBase(dEntry);
+    var lines = [(projectState.projectName || 'Project') + ' review notes (' + notes.length + '):'];
+    if (base) lines.push(base);
+    notes.forEach(function (n, i) {
+      var l = n.id + ' · ' + n.tc + ' · ' + n.sequence + (n.comment ? ' — ' + n.comment : '');
+      var link = noteLink(base, i + 2);
+      if (link) l += ' · ' + link;
+      lines.push(l);
+    });
+    var ok = await copyToClipboard(lines.join('\n'));
+    st.textContent = ok ? ('Copied ' + notes.length + ' note(s) to clipboard')
+      : 'Clipboard unavailable — see Err log';
+    if (!ok) assemblyLogger.error('Copy all notes: clipboard API unavailable');
+  } catch (err) {
+    if (st) st.textContent = 'Copy all failed: ' + err.message;
+    assemblyLogger.error('Copy all notes failed: ' + (err && err.message));
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JOB QUEUE — «сделай это сам», очередь заданий из терминала.
+//
+// Панель уже умеет ходить наружу (finesync: пишет файл → ждёт правок). Здесь тот же
+// приём в обратную сторону: снаружи кладут задание в
+//   {project}/00_Setup/pipeline/ytai_job.json   → {"action": "...", "part": "...", "id": "..."}
+// панель раз в 3 с проверяет файл, выполняет, пишет рядом ytai_job_result.json и удаляет
+// задание. Ничего не выполняется, пока панель не открыта — это НЕ демон, а «руки»
+// открытой панели. Действия ровно те же функции, что и у кнопок, — никакой второй логики.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const JOB_ACTIONS = {
+  'chapters_all': async function () {
+    await applyChapterMarkersToAll();
+    return 'chapters placed on every scene sequence';
+  },
+  'chapters_active': async function () {
+    await applyChapterMarkersToActive();
+    return 'chapters placed on the active sequence';
+  },
+  'build_part': async function (job) {
+    if (!job.part) throw new Error('build_part needs "part": absolute path to the part JSON');
+    var entry = await uxpfs.getEntryWithUrl('file://' + job.part);
+    var data = JSON.parse(await entry.read());
+    var bundle = data.parts && data.parts.length
+      ? data.parts
+      : [{ part: data.part, segments: data.segments }];
+    partsState.bundle = data.parts && data.parts.length ? data.parts : null;
+    partsState.part = bundle[0].part;
+    partsState.segments = bundle[0].segments;
+    partsState.filePath = job.part;
+    var res = await buildParts(bundle);
+    if (!res || !res.ok) throw new Error((res && res.error) || 'build failed');
+    return 'built: ' + (res.builtNames || []).join(', ');
+  },
+};
+
+let jobState = { busy: false, lastId: null };
+
+async function jobTick() {
+  if (jobState.busy || !projectState.folderPath) return;
+  var dir = projectState.folderPath + '/00_Setup/pipeline';
+  var jobPath = dir + '/ytai_job.json';
+  var job = null;
+  try {
+    var e = await uxpfs.getEntryWithUrl('file://' + jobPath);
+    job = JSON.parse(await e.read());
+  } catch (err) {
+    return;                       // нет файла — обычное состояние, молчим
+  }
+  if (!job || !job.action || (job.id && job.id === jobState.lastId)) return;
+
+  jobState.busy = true;
+  jobState.lastId = job.id || null;
+  var started = new Date().toISOString();
+  var out = { id: job.id || null, action: job.action, started: started, ok: false };
+  assemblyLogger.info('=== JOB from terminal: ' + job.action + ' ' + (job.part || '') + ' ===');
+  try {
+    var fn = JOB_ACTIONS[job.action];
+    if (!fn) throw new Error('unknown action "' + job.action + '" (have: ' +
+      Object.keys(JOB_ACTIONS).join(', ') + ')');
+    out.result = await fn(job);
+    out.ok = true;
+    assemblyLogger.info('JOB ok: ' + out.result);
+  } catch (err) {
+    out.error = err && err.message ? err.message : String(err);
+    assemblyLogger.error('JOB failed: ' + out.error);
+  }
+  out.finished = new Date().toISOString();
+  // сначала пишем результат, только потом убираем задание — иначе гонка на стороне CLI
+  try {
+    var dEntry = await uxpfs.getEntryWithUrl('file://' + dir);
+    var rf = await dEntry.createFile('ytai_job_result.json', { overwrite: true });
+    await rf.write(JSON.stringify(out, null, 1));
+  } catch (eW) { assemblyLogger.warn('job result write failed: ' + eW.message); }
+  try {
+    var jf = await uxpfs.getEntryWithUrl('file://' + jobPath);
+    await jf.delete();
+  } catch (eD) { assemblyLogger.warn('job file delete failed: ' + eD.message); }
+  jobState.busy = false;
+}
+
+/**
+ * Chapter markers → EVERY scene sequence in the project, in one pass.
+ * Nothing has to be opened: we walk ingest.markers, find each scene's sequence by
+ * name ("{code}_{scene}" or a bare "{scene}" — the editor renames them) and replace
+ * its generated markers. Per-scene failures never stop the run.
+ */
+async function applyChapterMarkersToAll() {
+  if (!ingestState.data) { setIngestStatus('Load ingest JSON first', 'error'); return; }
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+
+  var all = ingestState.data.markers || {};
+  var scenes = Object.keys(all).filter(function (s) { return (all[s] || []).length; });
+  if (!scenes.length) { setIngestStatus('ingest.markers is empty — nothing to place', 'error'); return; }
+
+  var code = ingestState.data.project_code || '';
+  var found = await listProjectSequences(project, ingestLogger);
+  var byName = {};
+  found.forEach(function (f) { byName[f.name] = byName[f.name] || f.seq; });
+
+  ingestLogger.info('=== Chapter markers → ALL scenes (' + scenes.length + ') ===');
+  setIngestStatus('Chapters → all scenes: 0/' + scenes.length + '…', 'waiting');
+
+  // ⚠️ Premiere падал, когда все 433 маркера клались одним прогоном без передышек
+  // (Роман, 21.08: «выкидывает премьер после Chapters → ALL»). Теперь строго по одному
+  // таймлайну: пауза между сценами, сохранение после каждой и ПРОПУСК уже сделанных —
+  // так повторное нажатие после падения продолжает с места обрыва, а не начинает заново.
+  var okScenes = 0, totalPlaced = 0, missing = [], skipped = 0;
+  function pause(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  for (var i = 0; i < scenes.length; i++) {
+    var scene = scenes[i];
+    var want = all[scene];
+    var seq = byName[code + '_' + scene] || byName[scene] || byName[code + '_' + scene + '_SYNC'];
+    if (!seq) { missing.push(scene); continue; }
+
+    setIngestStatus('Chapters ' + (i + 1) + '/' + scenes.length + ': ' + scene + '…', 'waiting');
+
+    // уже разложено ровно то, что нужно? — не трогаем Premiere вообще
+    try {
+      var have = await generatedMarkerNames(seq, ingestLogger);
+      if (have && have.length === want.length) {
+        var wn = want.map(function (m) { return m.name; }).sort().join('\u0000');
+        if (have.slice().sort().join('\u0000') === wn) {
+          skipped++;
+          ingestLogger.info('  ' + scene + ': уже актуально (' + have.length + ') — пропуск');
+          continue;
+        }
+      }
+    } catch (e) { /* не смогли посмотреть — просто раскладываем */ }
+
+    try {
+      var n = await addSceneMarkers(project, seq, want, ingestLogger);
+      totalPlaced += n;
+      if (n) okScenes++;
+      ingestLogger.info('  ' + scene + ': ' + n + '/' + want.length);
+    } catch (err) {
+      ingestLogger.error('  ' + scene + ' failed: ' + err.message);
+      missing.push(scene + ' (error)');
+    }
+
+    // сохраняем после КАЖДОЙ сцены: если Premiere всё же упадёт, сделанное не пропадёт
+    try { await project.save(); } catch (e) { ingestLogger.debug('save: ' + e.message); }
+    await pause(400);
+  }
+
+  var msg = 'Chapters → ' + okScenes + '/' + scenes.length + ' sequences, ' + totalPlaced + ' markers';
+  if (skipped) msg += ' · ' + skipped + ' already up to date';
+  if (missing.length) msg += ' · no sequence for: ' + missing.join(', ');
+  ingestLogger.info(msg);
+  setIngestStatus(msg, (okScenes || skipped) ? 'ready' : 'error');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Export Audio Map — complete video→audio track mapping for DJI sync analysis
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function exportAudioMap() {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+  if (!projectState.folderPath) { setIngestStatus('Select project folder first', 'error'); return; }
+
+  ingestLogger.info('=== Export Audio Map ===');
+  setIngestStatus('Exporting Audio Map...', 'waiting');
+  $('btn-export-audio-map').setAttribute('disabled', 'true');
+
+  function parseTxMic(filename) {
+    var txm = filename.match(/(?:^|_)TX(\d+)/);
+    var micm = filename.match(/(?:^|_)(MIC\d+)/);
+    return { tx: txm ? 'TX' + txm[1] : null, mic: micm ? micm[1] : null };
+  }
+
+  function parseScene(videoPath, seqName) {
+    if (videoPath) {
+      var parts = videoPath.replace(/\\/g, '/').split('/');
+      for (var i = 0; i < parts.length - 1; i++) {
+        if (parts[i] === 'Video' || parts[i] === 'Source') {
+          if (i + 1 < parts.length - 1) return parts[i + 1];
+        }
+      }
+    }
+    // Fallback: parse scene from sequence name (e.g. "YTFP03_02_Kids_Session" → "02_Kids_Session")
+    var seqMatch = seqName.match(/^YT\w+\d+_(.+?)(?:_\d+_Ingest)?$/);
+    if (seqMatch) return seqMatch[1];
+    return '_unknown';
+  }
+
+  async function readTrackItems(seq, trackType, trackIndex) {
+    var items = [];
+    try {
+      var track = trackType === 'video'
+        ? await seq.getVideoTrack(trackIndex)
+        : await seq.getAudioTrack(trackIndex);
+      if (!track) return items;
+      var tis = null;
+      try { tis = track.getTrackItems(1, false); } catch (ex) {}
+      if (!tis) try { tis = track.getTrackItems(); } catch (ex) {}
+      if (!tis) return items;
+      for (var i = 0; i < tis.length; i++) {
+        var ti = tis[i];
+        var pi = await ti.getProjectItem();
+        var name = pi ? pi.name : '';
+        var path = '';
+        try { path = pi ? pi.getMediaPath() : ''; } catch (e) {}
+        // Keep the raw TickTimes: ticks are the ground truth (sub-frame
+        // diagnostics are impossible from 0.04-quantized seconds alone).
+        var st = await ti.getStartTime(), ip = await ti.getInPoint(),
+            op = await ti.getOutPoint(), du = await ti.getDuration();
+        items.push({
+          filename: name,
+          path: path || '',
+          timeline_start_sec: Math.round(tickSec(st) * 1000000) / 1000000,
+          source_in_sec: Math.round(tickSec(ip) * 1000000) / 1000000,
+          source_out_sec: Math.round(tickSec(op) * 1000000) / 1000000,
+          duration_sec: Math.round(tickSec(du) * 1000000) / 1000000,
+          timeline_start_ticks: String((st && st.ticks) || ''),
+          source_in_ticks: String((ip && ip.ticks) || ''),
+          source_out_ticks: String((op && op.ticks) || ''),
+          duration_ticks: String((du && du.ticks) || '')
+        });
+      }
+    } catch (e) {
+      ingestLogger.warn('Track ' + trackType + '[' + trackIndex + ']: ' + e.message);
+    }
+    return items;
+  }
+
+  function findClipAtPos(trackItems, posSec) {
+    for (var i = 0; i < trackItems.length; i++) {
+      var c = trackItems[i];
+      var end = c.timeline_start_sec + c.duration_sec;
+      if (posSec >= c.timeline_start_sec && posSec < end) return c;
+    }
+    return null;
+  }
+
+  function classifyAudio(audioClip, videoFilename) {
+    if (!audioClip) return null;
+    var base = {
+      source_in_sec: audioClip.source_in_sec,
+      source_out_sec: audioClip.source_out_sec,
+      timeline_start_sec: audioClip.timeline_start_sec,
+      source_in_ticks: audioClip.source_in_ticks,
+      source_out_ticks: audioClip.source_out_ticks,
+      timeline_start_ticks: audioClip.timeline_start_ticks
+    };
+    var tm = parseTxMic(audioClip.filename);
+    if (tm.tx) {
+      base.type = 'dji'; base.filename = audioClip.filename;
+      base.tx = tm.tx; base.mic = tm.mic; base.path = audioClip.path;
+      return base;
+    }
+    if (audioClip.filename === videoFilename || audioClip.filename.replace(/\.\w+$/, '') === videoFilename.replace(/\.\w+$/, '')) {
+      base.type = 'camera_embed'; base.filename = audioClip.filename;
+      return base;
+    }
+    base.type = 'external'; base.filename = audioClip.filename; base.path = audioClip.path;
+    return base;
+  }
+
+  try {
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence — open a timeline first');
+    var seqName = seq.name;
+    // fps from the REAL sequence timebase. The old code read the never-populated
+    // projectState.projectSettings and always fell back to 29.97 — YTCH13's
+    // audio_map claimed 29.97 on a 25p project (found 16.08.2026).
+    var fps = 25;
+    try {
+      var tbTicks = await seq.getTimebase(); // ticks per frame, e.g. "10160640000" @25p
+      if (tbTicks) fps = Math.round((254016000000 / Number(tbTicks)) * 1000) / 1000; // 25 / 29.97 / 23.976
+    } catch (eTb) {
+      ingestLogger.warn('getTimebase failed (' + eTb.message + ') — fps fallback 25');
+    }
+    ingestLogger.info('Sequence: ' + seqName + ', fps=' + fps);
+
+    // ⚠️ Читаем ВСЕ дорожки, а не V1 и A1..A3.
+    // Прежний код ходил только по первой видеодорожке и трём первым звуковым —
+    // раскладка YTUVIE01 (V1 FX3 · V2 ZV-E1 · V3 экран · V4 ролики, петличка на
+    // A5/A6) давала из-за этого карту на 6 клипов вместо 15, первой строкой
+    // однокадровый огрызок, а звук ВТОРОЙ камеры и звук ЭКРАНА объявляла
+    // «внешними» — то есть петличкой. Настоящую петличку на A5/A6 не видела вовсе.
+    ingestLogger.info('Reading tracks...');
+    var vCount = await seq.getVideoTrackCount();
+    var aCount = (typeof seq.getAudioTrackCount === 'function')
+      ? await seq.getAudioTrackCount() : 3;
+    var vTracks = [];
+    for (var vt = 0; vt < vCount; vt++) vTracks.push(await readTrackItems(seq, 'video', vt));
+    var aTracks = [];
+    for (var at = 0; at < aCount; at++) aTracks.push(await readTrackItems(seq, 'audio', at));
+    ingestLogger.info('дорожек: V' + vCount + '/A' + aCount + ' · айтемов V['
+      + vTracks.map(function (t) { return t.length; }).join(',') + '] A['
+      + aTracks.map(function (t) { return t.length; }).join(',') + ']');
+
+    // Однокадровый мусор преднагрева в карту не пускаем — именно он раньше
+    // становился первой строкой и ломал всё, что её читало.
+    var MIN_MAP_ITEM = 0.2;
+    var strayCount = 0;
+
+    var scenes = {};
+    var totalWithDji = 0;
+    var totalWithoutDji = 0;
+    var txSet = {};
+    var trackUsage = {};
+
+    for (var vIdx = 0; vIdx < vTracks.length; vIdx++) {
+      for (var vi = 0; vi < vTracks[vIdx].length; vi++) {
+        var vc = vTracks[vIdx][vi];
+        if (vc.duration_sec < MIN_MAP_ITEM) { strayCount++; continue; }
+        var scene = parseScene(vc.path, seqName);
+        if (!scenes[scene]) scenes[scene] = { clips: [] };
+
+        var mid = vc.timeline_start_sec + vc.duration_sec * 0.5;
+        var audio = {};
+        var hasDji = false;
+        for (var ai = 0; ai < aTracks.length; ai++) {
+          var m = findClipAtPos(aTracks[ai], mid);
+          if (!m || m.duration_sec < MIN_MAP_ITEM) continue;
+          var cls = classifyAudio(m, vc.filename);
+          if (!cls) continue;
+          // ⚠️ Звук ЧУЖОЙ камеры — не «внешний источник». Если имя совпало с
+          // видеоклипом, лежащим в этот же момент на другой видеодорожке, это
+          // её собственная дорожка, и петличкой её звать нельзя.
+          if (cls.type === 'external') {
+            for (var ov = 0; ov < vTracks.length; ov++) {
+              if (ov === vIdx) continue;
+              var other = findClipAtPos(vTracks[ov], mid);
+              if (other && other.filename === m.filename) {
+                cls.type = 'other_camera_embed';
+                cls.of_track = 'V' + (ov + 1);
+                break;
+              }
+            }
+          }
+          var label = 'A' + (ai + 1);
+          audio[label] = cls;
+          if (cls.type === 'dji') {
+            hasDji = true;
+            trackUsage[label] = (trackUsage[label] || 0) + 1;
+            txSet[cls.tx + (cls.mic ? '/' + cls.mic : '')] = true;
+          }
+        }
+        if (hasDji) totalWithDji++; else totalWithoutDji++;
+
+        var clipId = vc.filename.replace(/\.\w+$/, '');
+        scenes[scene].clips.push({
+          clip_id: clipId,
+          filename: vc.filename,
+          video_path: vc.path,
+          v_track: 'V' + (vIdx + 1),
+          timeline_start_sec: vc.timeline_start_sec,
+          duration_sec: vc.duration_sec,
+          timeline_start_ticks: vc.timeline_start_ticks,
+          duration_ticks: vc.duration_ticks,
+          audio: audio
+        });
+      }
+    }
+    if (strayCount) ingestLogger.warn('в карту не пущено однокадровых огрызков: ' + strayCount);
+    for (var scn in scenes) {
+      scenes[scn].clips.sort(function (a, b) {
+        return a.timeline_start_sec - b.timeline_start_sec
+          || a.v_track.localeCompare(b.v_track);
+      });
+    }
+
+    var mappedClips = 0;
+    for (var scnK in scenes) mappedClips += scenes[scnK].clips.length;
+
+    var output = {
+      // 1.2: все видео- и аудиодорожки, а не V1+A1..A3; звук ключуется меткой
+      // дорожки; добавлены v_track у клипа и тип other_camera_embed
+      version: '1.2',
+      type: 'audio_map',
+      sequence: seqName,
+      exported_at: new Date().toISOString(),
+      fps: fps,
+      ticks_per_second: 254016000000,
+      video_tracks: vCount,
+      audio_tracks: aCount,
+      project_folder: projectState.folderPath,
+      scenes: scenes,
+      summary: {
+        total_video_clips: mappedClips,
+        strays_skipped: strayCount,
+        clips_with_dji: totalWithDji,
+        clips_without_dji: totalWithoutDji,
+        tx_channels: Object.keys(txSet).sort(),
+        track_usage: trackUsage
+      }
+    };
+
+    // Write to 00_Setup/01_Ingest/
+    var ingestDir = projectState.folderPath + '/00_Setup/01_Ingest';
+    var ingestEntry;
+    try {
+      ingestEntry = await uxpfs.getEntryWithUrl('file://' + ingestDir);
+    } catch (e) {
+      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup');
+      ingestEntry = await ensureSubfolder(setupEntry, '01_Ingest', ingestLogger);
+    }
+    var code = projectState.projectCode || seqName.split('_')[0];
+    var outFileName = code + '_audio_map.json';
+    var outFile = await ingestEntry.createFile(outFileName, { overwrite: true });
+    await outFile.write(JSON.stringify(output, null, 2), { format: require('uxp').storage.formats.utf8 });
+
+    var fullPath = ingestDir + '/' + outFileName;
+    try { await navigator.clipboard.writeText(fullPath); } catch (e) {}
+    ingestLogger.info('Path copied: ' + fullPath);
+
+    var sceneNames = Object.keys(scenes);
+    // ⚠️ Здесь стояло v1Items.length — переменная из audioDebug(), в этой
+    // функции её нет. Файл уже записан строкой выше, поэтому падение выглядело
+    // как «Export Audio Map failed», хотя карта на диске полная и верная.
+    // Считаем то же, что ушло в JSON: сумму клипов по сценам.
+    var summary = mappedClips + ' clips, ' + sceneNames.length + ' scene(s), ' +
+      totalWithDji + ' with DJI → ' + outFileName;
+    ingestLogger.info('Audio Map: ' + summary);
+    setIngestStatus('Audio Map: ' + summary + ' (path copied)', 'ready');
+
+  } catch (err) {
+    ingestLogger.error('Export Audio Map failed: ' + err.message);
+    if (err.stack) ingestLogger.debug(err.stack);
+    setIngestStatus('Export Audio Map failed: ' + err.message, 'error');
+  }
+
+  $('btn-export-audio-map').removeAttribute('disabled');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Align A2/A3 — snap DJI audio clips to match V1 video start positions
+// For each V1 clip, finds matching A2/A3 clip and moves it to align.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function alignA2A3() {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+
+  ingestLogger.info('=== Align A2/A3 ===');
+  setIngestStatus('Aligning DJI tracks...', 'waiting');
+  $('btn-align-a2a3').setAttribute('disabled', 'true');
+
+  try {
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence');
+
+    // Read V1 track items (with raw TrackItem references for matching)
+    var v1Track = await seq.getVideoTrack(0);
+    var a2Track = await seq.getAudioTrack(1);
+    var a3Track = await seq.getAudioTrack(2);
+    if (!v1Track) throw new Error('No V1 track');
+
+    var v1Tis = null;
+    try { v1Tis = v1Track.getTrackItems(1, false); } catch (ex) {}
+    if (!v1Tis) try { v1Tis = v1Track.getTrackItems(); } catch (ex) {}
+    if (!v1Tis || v1Tis.length === 0) throw new Error('No clips on V1');
+
+    var aligned = 0;
+    var skipped = 0;
+    var already = 0;
+
+    for (var vi = 0; vi < v1Tis.length; vi++) {
+      var vTi = v1Tis[vi];
+      var vStart = await vTi.getStartTime();
+      var vStartSec = tickSec(vStart);
+      var vDur = tickSec(await vTi.getDuration());
+      var vMid = vStartSec + vDur * 0.5;
+
+      // For each audio track (A2, A3)
+      var tracks = [a2Track, a3Track];
+      var trackNames = ['A2', 'A3'];
+
+      for (var ti = 0; ti < tracks.length; ti++) {
+        var aTrack = tracks[ti];
+        if (!aTrack) continue;
+        var aTis = null;
+        try { aTis = aTrack.getTrackItems(1, false); } catch (ex) {}
+        if (!aTis) try { aTis = aTrack.getTrackItems(); } catch (ex) {}
+        if (!aTis) continue;
+
+        // Find audio clip at video midpoint
+        for (var ai = 0; ai < aTis.length; ai++) {
+          var aTi = aTis[ai];
+          var aStart = await aTi.getStartTime();
+          var aStartSec = tickSec(aStart);
+          var aDur = tickSec(await aTi.getDuration());
+          var aEnd = aStartSec + aDur;
+
+          if (aStartSec <= vMid && vMid < aEnd) {
+            // Found matching audio clip — check offset
+            var diff = vStartSec - aStartSec;
+            if (Math.abs(diff) < 0.0005) {
+              already++;
+            } else {
+              // Move audio clip to match video start
+              try {
+                await aTi.setStartTime(vStart);
+                aligned++;
+                var pi = await vTi.getProjectItem();
+                var clipName = pi ? pi.name : 'clip ' + vi;
+                ingestLogger.info(trackNames[ti] + ' ' + clipName + ': shifted ' +
+                  (diff * 1000).toFixed(1) + 'ms');
+              } catch (moveErr) {
+                ingestLogger.warn(trackNames[ti] + ' clip ' + vi + ': move failed: ' + moveErr.message);
+                skipped++;
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    var msg = aligned + ' aligned, ' + already + ' already OK, ' + skipped + ' skipped';
+    ingestLogger.info('Align A2/A3: ' + msg);
+    setIngestStatus('Align A2/A3: ' + msg, aligned > 0 ? 'ready' : 'ready');
+
+  } catch (err) {
+    ingestLogger.error('Align A2/A3 failed: ' + err.message);
+    setIngestStatus('Align A2/A3 failed: ' + err.message, 'error');
+  }
+
+  $('btn-align-a2a3').removeAttribute('disabled');
 }
 
 /**
@@ -3260,28 +7755,28 @@ async function saveAssemblyLogs(project, clipMap, result) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  REVIEW PIPELINE
+//  DELETED SCENE PIPELINE
 // ══════════════════════════════════════════════════════════════════
 
-function setReviewStatus(text, type) {
-  $('review-status-dot').className = 'status-dot ' + (type || 'waiting');
-  $('review-status-text').textContent = text;
+function setDeletedSceneStatus(text, type) {
+  $('ds-status-dot').className = 'status-dot ' + (type || 'waiting');
+  $('ds-status-text').textContent = text;
 }
 
-function setReviewProgress(percent, text) {
-  $('review-progress-bar').style.display = 'block';
-  $('review-progress-text').style.display = 'block';
-  $('review-progress-fill').style.width = percent + '%';
-  $('review-progress-text').textContent = text || '';
+function setDeletedSceneProgress(percent, text) {
+  $('ds-progress-bar').style.display = 'block';
+  $('ds-progress-text').style.display = 'block';
+  $('ds-progress-fill').style.width = percent + '%';
+  $('ds-progress-text').textContent = text || '';
 }
 
-function hideReviewProgress() {
-  $('review-progress-bar').style.display = 'none';
-  $('review-progress-text').style.display = 'none';
+function hideDeletedSceneProgress() {
+  $('ds-progress-bar').style.display = 'none';
+  $('ds-progress-text').style.display = 'none';
 }
 
 /**
- * Create markers for the Review sequence.
+ * Create markers for the Deleted Scene sequence.
  *
  * Two types of markers:
  * - Chapter markers at source file boundaries (groups clips)
@@ -3289,8 +7784,8 @@ function hideReviewProgress() {
  *
  * Uses same 4-transaction pattern as createAssemblyMarkers.
  */
-async function createReviewMarkers(project, result) {
-  const { MARKER_TYPE_CHAPTER, MARKER_COLOR_INDEX, REVIEW_COLOR_MAP } = require('./src/shared/constants');
+async function createDeletedSceneMarkers(project, result) {
+  const { MARKER_TYPE_CHAPTER, MARKER_COLOR_INDEX, DELETED_SCENE_COLOR_MAP } = require('./src/shared/constants');
   const seq = result.sequence;
   const segs = result.segments;
   const TIME_ZERO = ppro.TickTime.createWithSeconds(0);
@@ -3299,21 +7794,21 @@ async function createReviewMarkers(project, result) {
   try {
     markersOwner = await ppro.Markers.getMarkers(seq);
   } catch (ex) {
-    reviewLogger.warn('Cannot get sequence markers: ' + ex.message);
+    deletedSceneLogger.warn('Cannot get sequence markers: ' + ex.message);
     return { chapters: 0, comments: 0 };
   }
 
   if (!markersOwner) {
-    reviewLogger.warn('Markers object is null');
+    deletedSceneLogger.warn('Markers object is null');
     return { chapters: 0, comments: 0 };
   }
 
-  // Build marker list using absolute positions (_timelinePosition from buildReviewSequence)
+  // Build marker list using absolute positions (_timelinePosition from buildDeletedSceneSequence)
   const clipOffsets = result.clipOffsets || {};
   const markerList = [];
   let currentSource = '';
 
-  // Block-level chapter markers: group review segments by block, create marker at first occurrence
+  // Block-level chapter markers: group deleted scene segments by block, create marker at first occurrence
   // Only for blocks that have Assembly content (usedCount > 0)
   var blockFirstPos = {};  // { blockNum: { pos, name, color } }
   var blockLastPos = {};   // { blockNum: lastEndPos }
@@ -3346,16 +7841,16 @@ async function createReviewMarkers(project, result) {
       startSec: bdata.pos,
       durationSec: 0.2,
       comment: 'Block ' + bk + ' — unused segments',
-      markerColor: bColorIdx !== undefined ? bColorIdx : REVIEW_COLOR_MAP.skip.markerIdx
+      markerColor: bColorIdx !== undefined ? bColorIdx : DELETED_SCENE_COLOR_MAP.skip.markerIdx
     });
   }
   if (Object.keys(blockFirstPos).length > 0) {
-    reviewLogger.info('Block chapter markers: ' + Object.keys(blockFirstPos).length + ' blocks');
+    deletedSceneLogger.info('Block chapter markers: ' + Object.keys(blockFirstPos).length + ' blocks');
   }
 
   for (let i = 0; i < segs.length; i++) {
     const seg = segs[i];
-    const cat = getReviewCategory(seg);
+    const cat = getDeletedSceneCategory(seg);
     const catLabel = cat === 'cut' ? 'CUT' : cat === 'alt' ? 'ALT' : 'SKIP';
     const segPosition = seg._timelinePosition != null ? seg._timelinePosition : 0;
 
@@ -3370,7 +7865,7 @@ async function createReviewMarkers(project, result) {
         startSec: srcOffset,
         durationSec: 0.2,
         comment: '',
-        markerColor: REVIEW_COLOR_MAP[cat].markerIdx
+        markerColor: DELETED_SCENE_COLOR_MAP[cat].markerIdx
       });
     }
 
@@ -3390,12 +7885,12 @@ async function createReviewMarkers(project, result) {
         startSec: segPosition,
         durationSec: 0,
         comment: commentParts.substring(0, 200),
-        markerColor: REVIEW_COLOR_MAP[cat].markerIdx
+        markerColor: DELETED_SCENE_COLOR_MAP[cat].markerIdx
       });
     }
   }
 
-  reviewLogger.info('Creating ' + markerList.length + ' review markers...');
+  deletedSceneLogger.info('Creating ' + markerList.length + ' deleted scene markers...');
 
   // Transaction 1: Create all markers
   let chapterCount = 0;
@@ -3415,13 +7910,13 @@ async function createReviewMarkers(project, result) {
             ));
             chapterCount++;
           } catch (ex) {
-            reviewLogger.debug('Marker action failed: ' + mk.name + ' — ' + ex.message);
+            deletedSceneLogger.debug('Marker action failed: ' + mk.name + ' — ' + ex.message);
           }
         }
-      }, 'YTAI Review Markers');
+      }, 'YTAI Deleted Scene Markers');
     });
   } catch (batchErr) {
-    reviewLogger.warn('Batch markers failed: ' + batchErr.message + ', trying individually...');
+    deletedSceneLogger.warn('Batch markers failed: ' + batchErr.message + ', trying individually...');
     chapterCount = 0;
     for (const mk of markerList) {
       try {
@@ -3440,12 +7935,12 @@ async function createReviewMarkers(project, result) {
         });
         chapterCount++;
       } catch (ex) {
-        reviewLogger.debug('  Marker failed: ' + mk.name + ' — ' + ex.message);
+        deletedSceneLogger.debug('  Marker failed: ' + mk.name + ' — ' + ex.message);
       }
     }
   }
 
-  reviewLogger.info('Markers: ' + chapterCount + ' created');
+  deletedSceneLogger.info('Markers: ' + chapterCount + ' created');
 
   // Transaction 2: Set marker colors
   let coloredCount = 0;
@@ -3470,12 +7965,12 @@ async function createReviewMarkers(project, result) {
                 coloredCount++;
               }
             } catch (e) {
-              reviewLogger.debug('  Marker color failed: ' + e.message);
+              deletedSceneLogger.debug('  Marker color failed: ' + e.message);
             }
           }
-        }, 'YTAI Review Marker Colors');
+        }, 'YTAI Deleted Scene Marker Colors');
       });
-      reviewLogger.info('Marker colors: ' + coloredCount + '/' + allMarkers.length);
+      deletedSceneLogger.info('Marker colors: ' + coloredCount + '/' + allMarkers.length);
 
       // Transaction 3: Set marker type to Chapter
       let typedCount = 0;
@@ -3487,18 +7982,18 @@ async function createReviewMarkers(project, result) {
                 ca.addAction(marker.createSetTypeAction(MARKER_TYPE_CHAPTER));
                 typedCount++;
               } catch (e) {
-                reviewLogger.debug('  Marker type failed: ' + e.message);
+                deletedSceneLogger.debug('  Marker type failed: ' + e.message);
               }
             }
-          }, 'YTAI Review Marker Types');
+          }, 'YTAI Deleted Scene Marker Types');
         });
-        reviewLogger.info('Marker types: ' + typedCount + '/' + allMarkers.length + ' set to Chapter');
+        deletedSceneLogger.info('Marker types: ' + typedCount + '/' + allMarkers.length + ' set to Chapter');
       } catch (typeErr) {
-        reviewLogger.debug('Marker type change failed (non-fatal): ' + typeErr.message);
+        deletedSceneLogger.debug('Marker type change failed (non-fatal): ' + typeErr.message);
       }
     }
   } catch (colorErr) {
-    reviewLogger.debug('Marker colors/types failed (non-fatal): ' + colorErr.message);
+    deletedSceneLogger.debug('Marker colors/types failed (non-fatal): ' + colorErr.message);
   }
 
   return { chapters: chapterCount, comments: 0 };
@@ -3576,19 +8071,18 @@ function getClipDurationsFromBrief(segments) {
 }
 
 /**
- * Build Review sequence from loaded edit brief.
- * Uses complement approach: Review = Ingest minus Assembly.
+ * Build Deleted Scene sequence from loaded edit brief.
+ * Uses complement approach: Deleted Scene = Ingest minus Assembly.
  */
-async function buildReview() {
+async function buildDeletedScene() {
   if (assemblyState.segments.length === 0) {
-    reviewLogger.error('No brief loaded — load Edit Brief first');
+    deletedSceneLogger.error('No brief loaded — load Edit Brief first');
     return;
   }
 
-  reviewLogger.clear();
-  $('review-log-panel').innerHTML = '';
-  $('review-validation').style.display = 'none';
-  setReviewStatus('Building review...', 'waiting');
+  deletedSceneLogger.clear();
+  $('ds-validation').style.display = 'none';
+  setDeletedSceneStatus('Building deleted scene...', 'waiting');
 
   let clipMap = null;
   let result = null;
@@ -3601,8 +8095,8 @@ async function buildReview() {
     let step = 0;
     const startTime = Date.now();
 
-    reviewLogger.info('=== REVIEW BUILD START ===');
-    reviewLogger.info('Project: ' + assemblyState.projectName);
+    deletedSceneLogger.info('=== DELETED SCENE BUILD START ===');
+    deletedSceneLogger.info('Project: ' + assemblyState.projectName);
 
     var stepTimings = [];
     var stepStart;
@@ -3610,31 +8104,31 @@ async function buildReview() {
     // Step 1: Save backup
     step++;
     stepStart = Date.now();
-    setReviewProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Saving backup...');
-    try { await project.save(); reviewLogger.info('Project saved'); } catch (e) { }
+    setDeletedSceneProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Saving backup...');
+    try { await project.save(); deletedSceneLogger.info('Project saved'); } catch (e) { }
     stepTimings.push('save ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 2: Scan project for clips + get clip durations
     step++;
     stepStart = Date.now();
-    setReviewProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Scanning project clips...');
-    reviewLogger.info('=== Step 2: Scanning project for clips ===');
-    const scanResult = await validateIngestState(project, assemblyState.segments, reviewLogger);
+    setDeletedSceneProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Scanning project clips...');
+    deletedSceneLogger.info('=== Step 2: Scanning project for clips ===');
+    const scanResult = await validateIngestState(project, assemblyState.segments, deletedSceneLogger);
     clipMap = scanResult.clipMap;
 
-    let clipDurations = await getClipDurationsFromIngest(project, assemblyState.projectCode || assemblyState.projectName, reviewLogger);
+    let clipDurations = await getClipDurationsFromIngest(project, assemblyState.projectCode || assemblyState.projectName, deletedSceneLogger);
     if (!clipDurations || Object.keys(clipDurations).length === 0) {
       clipDurations = getClipDurationsFromBrief(assemblyState.segments);
-      reviewLogger.warn('Using brief-based durations (Ingest sequence not found)');
+      deletedSceneLogger.warn('Using brief-based durations (Ingest sequence not found)');
     }
     stepTimings.push('scan ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
-    // Step 3: Build Review sequence
+    // Step 3: Build Deleted Scene sequence
     step++;
     stepStart = Date.now();
-    setReviewProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Building Review sequence...');
-    reviewLogger.info('=== Step 3: Building Review sequence ===');
-    var reviewOpts = {
+    setDeletedSceneProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Building Deleted Scene sequence...');
+    deletedSceneLogger.info('=== Step 3: Building Deleted Scene sequence ===');
+    var deletedSceneOpts = {
       producerSpeaker: (assemblyState.data && assemblyState.data.producerSpeaker) || '',
       assemblyBlocks: assemblyState.blocks || [],
       fps: (assemblyState.projectSettings && assemblyState.projectSettings.fps) || 25
@@ -3650,36 +8144,36 @@ async function buildReview() {
           if (!sceneMap[scene]) sceneMap[scene] = [];
           sceneMap[scene].push(c.filename || (c.clip_id + '.MP4'));
         });
-        reviewLogger.info('Per-scene Review: ' + Object.keys(sceneMap).join(', '));
+        deletedSceneLogger.info('Per-scene Deleted Scene: ' + Object.keys(sceneMap).join(', '));
       }
     }
-    result = await buildReviewSequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, reviewLogger, clipDurations, reviewOpts, assemblyState.briefVersion, sceneMap);
+    result = await buildDeletedSceneSequence(project, clipMap, assemblyState.segments, assemblyState.projectCode || assemblyState.projectName, deletedSceneLogger, clipDurations, deletedSceneOpts, assemblyState.briefVersion, sceneMap);
 
     if (!result.sequence) {
-      reviewLogger.info('Review sequence not created (no unused segments)');
-      setReviewProgress(100, 'Complete — no unused segments');
-      setReviewStatus('No unused segments', 'ready');
+      deletedSceneLogger.info('Deleted Scene sequence not created (no unused segments)');
+      setDeletedSceneProgress(100, 'Complete — no unused segments');
+      setDeletedSceneStatus('No unused segments', 'ready');
       return;
     }
     stepTimings.push('build ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
-    // Step 4: Create review markers
+    // Step 4: Create deleted scene markers
     step++;
     stepStart = Date.now();
-    setReviewProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Markers...');
-    reviewLogger.info('=== Step 4: Review Markers ===');
+    setDeletedSceneProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Markers...');
+    deletedSceneLogger.info('=== Step 4: Deleted Scene Markers ===');
     let markerInfo = null;
     try {
-      markerInfo = await createReviewMarkers(project, result);
+      markerInfo = await createDeletedSceneMarkers(project, result);
     } catch (markerErr) {
-      reviewLogger.warn('Markers step failed (non-fatal): ' + markerErr.message);
+      deletedSceneLogger.warn('Markers step failed (non-fatal): ' + markerErr.message);
     }
     stepTimings.push('markers ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     // Step 5: Activate + save + validate
     step++;
     stepStart = Date.now();
-    setReviewProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Validating...');
+    setDeletedSceneProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Validating...');
     if (result.sequence) {
       await project.setActiveSequence(result.sequence);
       try { await project.openSequence(result.sequence.guid || result.sequence); } catch (e) { }
@@ -3687,91 +8181,91 @@ async function buildReview() {
     try { await project.save(); } catch (e) { }
 
     if (result.sequence) {
-      await validateReviewBuild(result.sequence, result, markerInfo);
+      await validateDeletedSceneBuild(result.sequence, result, markerInfo);
     }
     stepTimings.push('validate ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
-    // Step 6: Generate + import Review captions & transcript SRTs
+    // Step 6: Generate + import Deleted Scene captions & transcript SRTs
     step++;
     stepStart = Date.now();
-    setReviewProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Captions...');
-    reviewLogger.info('=== Step 6: Review Captions ===');
+    setDeletedSceneProgress((step / totalSteps) * 100, 'Step ' + step + '/' + totalSteps + ': Captions...');
+    deletedSceneLogger.info('=== Step 6: Deleted Scene Captions ===');
 
-    var reviewProjectCode = assemblyState.projectCode || assemblyState.projectName;
+    var dsProjectCode = assemblyState.projectCode || assemblyState.projectName;
 
-    // Derive sourceDir: strip /Setup/... from filePath, fallback to projectState.folderPath
-    var revSourceDir = null;
+    // Derive project root: strip /00_Setup/... from filePath, fallback to projectState.folderPath
+    var dsProjectRoot = null;
     if (assemblyState.filePath) {
-      revSourceDir = assemblyState.filePath.replace(/[/\\]Setup[/\\].*$/, '');
+      dsProjectRoot = assemblyState.filePath.replace(/[/\\]00_Setup[/\\].*$/, '');
     } else if (projectState.folderPath) {
-      revSourceDir = projectState.folderPath + '/01_Media/Source';
+      dsProjectRoot = projectState.folderPath;
     }
-    if (revSourceDir) {
-      reviewLogger.info('Review SRT sourceDir: ' + revSourceDir);
+    if (dsProjectRoot) {
+      deletedSceneLogger.info('Deleted Scene SRT projectRoot: ' + dsProjectRoot);
     }
 
-    var revSuffix = '3_Review' + (assemblyState.briefVersion ? '_v' + assemblyState.briefVersion : '');
+    var revSuffix = '3_DeletedScene' + (assemblyState.briefVersion ? '_v' + assemblyState.briefVersion : '');
 
-    if (result.segments && result.segments.length > 0 && revSourceDir) {
+    if (result.segments && result.segments.length > 0 && dsProjectRoot) {
       try {
         // Ensure Transcription subdirs exist
-        var reviewTranscriptionEntry = await uxpfs.getEntryWithUrl('file://' + revSourceDir + '/Transcription');
-        var reviewTranscriptsFolderEntry = await ensureSubfolder(reviewTranscriptionEntry, 'transcripts', reviewLogger);
-        var reviewCaptionsFolderEntry = await ensureSubfolder(reviewTranscriptionEntry, 'captions', reviewLogger);
+        var dsTranscriptionEntry = await uxpfs.getEntryWithUrl('file://' + dsProjectRoot + '/01_Source/Transcription');
+        var dsTranscriptsFolderEntry = await ensureSubfolder(dsTranscriptionEntry, 'transcripts', deletedSceneLogger);
+        var dsCaptionsFolderEntry = await ensureSubfolder(dsTranscriptionEntry, 'captions', deletedSceneLogger);
 
         // 1. Transcript SRT (absolute positioning matching Ingest layout)
-        var reviewTranscriptSrt = generateTranscriptSrt(result.segments, result.clipOffsets);
-        if (reviewTranscriptSrt) {
-          var reviewTrFileName = reviewProjectCode + '_' + revSuffix + '_transcript.srt';
-          var reviewTrFile = await reviewTranscriptsFolderEntry.createFile(reviewTrFileName, { overwrite: true });
-          await reviewTrFile.write("\uFEFF" + reviewTranscriptSrt);
-          reviewLogger.info('Transcript SRT written: Transcription/transcripts/' + reviewTrFileName);
+        var dsTranscriptSrt = generateTranscriptSrt(result.segments, result.clipOffsets);
+        if (dsTranscriptSrt) {
+          var dsTrFileName = dsProjectCode + '_' + revSuffix + '_transcript.srt';
+          var dsTrFile = await dsTranscriptsFolderEntry.createFile(dsTrFileName, { overwrite: true });
+          await dsTrFile.write("\uFEFF" + dsTranscriptSrt);
+          deletedSceneLogger.info('Transcript SRT written: Transcription/transcripts/' + dsTrFileName);
         }
 
         // 2. Captions SRT (word-grouped, absolute positioning)
-        var reviewCaptionsSrt = generateCaptionsSrt(result.segments, 6, result.clipOffsets);
-        if (reviewCaptionsSrt) {
-          var reviewCapFileName = reviewProjectCode + '_' + revSuffix + '_captions.srt';
-          var reviewCapFile = await reviewCaptionsFolderEntry.createFile(reviewCapFileName, { overwrite: true });
-          await reviewCapFile.write("\uFEFF" + reviewCaptionsSrt);
-          reviewLogger.info('Captions SRT written: Transcription/captions/' + reviewCapFileName);
+        var dsCaptionsSrt = generateCaptionsSrt(result.segments, 6, result.clipOffsets);
+        if (dsCaptionsSrt) {
+          var dsCapFileName = dsProjectCode + '_' + revSuffix + '_captions.srt';
+          var dsCapFile = await dsCaptionsFolderEntry.createFile(dsCapFileName, { overwrite: true });
+          await dsCapFile.write("\uFEFF" + dsCaptionsSrt);
+          deletedSceneLogger.info('Captions SRT written: Transcription/captions/' + dsCapFileName);
         }
-      } catch (reviewSrtErr) {
-        reviewLogger.warn('Review SRT write failed (non-fatal): ' + reviewSrtErr.message);
+      } catch (dsSrtErr) {
+        deletedSceneLogger.warn('Deleted Scene SRT write failed (non-fatal): ' + dsSrtErr.message);
       }
     } else {
-      reviewLogger.warn('Review SRT skipped: segs=' + (result.segments ? result.segments.length : 0) + ' filePath=' + !!assemblyState.filePath + ' folderPath=' + !!projectState.folderPath);
+      deletedSceneLogger.warn('Deleted Scene SRT skipped: segs=' + (result.segments ? result.segments.length : 0) + ' filePath=' + !!assemblyState.filePath + ' folderPath=' + !!projectState.folderPath);
     }
 
     // Import both SRTs to 02_Transcripts bin
-    var revImportPath = assemblyState.filePath || (revSourceDir ? revSourceDir + '/Setup' : null);
-    await importCaptionsSrt(project, revImportPath, reviewProjectCode, revSuffix, 'Review Captions', reviewLogger);
-    await importCaptionsSrt(project, revImportPath, reviewProjectCode, revSuffix, 'Review Transcript', reviewLogger, 'transcript');
+    var revImportPath = assemblyState.filePath || (dsProjectRoot ? dsProjectRoot + '/00_Setup' : null);
+    await importCaptionsSrt(project, revImportPath, dsProjectCode, revSuffix, 'Deleted Scene Captions', deletedSceneLogger);
+    await importCaptionsSrt(project, revImportPath, dsProjectCode, revSuffix, 'Deleted Scene Transcript', deletedSceneLogger, 'transcript');
     stepTimings.push('captions ' + ((Date.now() - stepStart) / 1000).toFixed(1) + 's');
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    setReviewProgress(100, 'Complete!');
-    reviewLogger.info('=== REVIEW BUILD COMPLETE (' + elapsed + 's) ===');
-    reviewLogger.info('Timing: ' + stepTimings.join(' | '));
-    reviewLogger.info('Review: ' + result.clipCount + ' clips on V1, total=' + (result.totalDuration || 0).toFixed(1) + 's');
-    $('btn-build-review').classList.add('btn-done');
+    setDeletedSceneProgress(100, 'Complete!');
+    deletedSceneLogger.info('=== DELETED SCENE BUILD COMPLETE (' + elapsed + 's) ===');
+    deletedSceneLogger.info('Timing: ' + stepTimings.join(' | '));
+    deletedSceneLogger.info('Deleted Scene: ' + result.clipCount + ' clips on V1, total=' + (result.totalDuration || 0).toFixed(1) + 's');
+    $('btn-build-deleted-scene').classList.add('btn-done');
 
-    setReviewStatus('Review built (' + result.clipCount + ' clips)', 'ready');
-    updateLogPath('review', reviewLogger.getLastSavedPath());
+    setDeletedSceneStatus('Deleted Scene built (' + result.clipCount + ' clips)', 'ready');
+    updateLogPath('ds', deletedSceneLogger.getLastSavedPath());
 
   } catch (err) {
-    reviewLogger.error('REVIEW BUILD FAILED: ' + err.message);
-    if (err.stack) reviewLogger.debug(err.stack);
-    setReviewStatus('Build failed: ' + err.message, 'error');
+    deletedSceneLogger.error('DELETED SCENE BUILD FAILED: ' + err.message);
+    if (err.stack) deletedSceneLogger.debug(err.stack);
+    setDeletedSceneStatus('Build failed: ' + err.message, 'error');
   }
 }
 
 /**
- * Post-build validation for Review sequence.
+ * Post-build validation for Deleted Scene sequence.
  */
-async function validateReviewBuild(sequence, result, markerInfo) {
-  reviewLogger.info('=== Post-build validation ===');
-  const panel = $('review-validation');
+async function validateDeletedSceneBuild(sequence, result, markerInfo) {
+  deletedSceneLogger.info('=== Post-build validation ===');
+  const panel = $('ds-validation');
   const lines = [];
 
   function ok(text) { lines.push('<div class="val-line"><span style="color:var(--success)">\u25CF</span> ' + escapeHtml(text) + '</div>'); }
@@ -3983,7 +8477,7 @@ async function generateScreenPngs() {
 /**
  * Organize project bins after Pre-Edit build.
  * Moves Ingest + Assembly sequences to "99_Archive" bin.
- * Keeps Review + Pre-Edit visible at root.
+ * Keeps Deleted Scene + Pre-Edit visible at root.
  */
 async function organizeBins(project, projectCode, logger) {
   try {
@@ -4337,10 +8831,10 @@ async function buildScreenCuesPipeline() {
 
     if (assemblyState.filePath) {
       var briefDir = assemblyState.filePath.replace(/[/\\][^/\\]+$/, '');
-      var screensSourceDir = briefDir.replace(/[/\\]Setup$/, '');
+      var screensProjectRoot = briefDir.replace(/[/\\]00_Setup$/, '');
       try {
         // Ensure Transcription subdirs exist
-        var screensTranscriptionEntry = await uxpfs.getEntryWithUrl('file://' + screensSourceDir + '/Transcription');
+        var screensTranscriptionEntry = await uxpfs.getEntryWithUrl('file://' + screensProjectRoot + '/01_Source/Transcription');
         var screensTranscriptsFolderEntry = await ensureSubfolder(screensTranscriptionEntry, 'transcripts', screensLogger);
         var screensCaptionsFolderEntry = await ensureSubfolder(screensTranscriptionEntry, 'captions', screensLogger);
 
@@ -4703,7 +9197,7 @@ async function createScreenCuesMarkers(project, screenResult) {
 
 /**
  * Export Pre-Edit Doc — reads active Premiere sequence (V1 clips + markers + transcript)
- * and writes a structured JSON to Setup/Pre-Edit/ for conversion to Google Docs .docx.
+ * and writes a structured JSON to 00_Setup/03_Pre-Edit/ for conversion to Google Docs .docx.
  *
  * Flow: UXP → _pre_edit_export.json → python export_to_gdoc.py → .docx → Google Docs
  *
@@ -4804,7 +9298,7 @@ async function exportPreEditDoc() {
     setScreensStatus('Matching transcript...', 'waiting');
     var txLookup = {};
     try {
-      var setupDir = projectState.folderPath + '/01_Media/Source/Setup';
+      var setupDir = projectState.folderPath + '/00_Setup';
       var projectCode = projectState.projectName.match(/^(YT[A-Z]{2,4}\d+)/);
       projectCode = projectCode ? projectCode[1] : projectState.projectName;
       var txPath = setupDir + '/' + projectCode + '_Claude4_assembly.json';
@@ -4894,8 +9388,8 @@ async function exportPreEditDoc() {
     var prevVisuals = {};
     var prevVersion = 0;
     try {
-      var peSetupPath = projectState.folderPath + '/01_Media/Source/Setup';
-      var peEntry = await uxpfs.getEntryWithUrl('file://' + peSetupPath + '/Pre-Edit');
+      var peSetupPath = projectState.folderPath + '/00_Setup';
+      var peEntry = await uxpfs.getEntryWithUrl('file://' + peSetupPath + '/03_Pre-Edit');
       var peEntries = await peEntry.getEntries();
       // Find latest version folder (v1, v2, ...)
       for (var pei = 0; pei < peEntries.length; pei++) {
@@ -4907,7 +9401,7 @@ async function exportPreEditDoc() {
       }
       if (prevVersion > 0) {
         // Read the latest pre_edit JSON
-        var pvFolder = await uxpfs.getEntryWithUrl('file://' + peSetupPath + '/Pre-Edit/v' + prevVersion);
+        var pvFolder = await uxpfs.getEntryWithUrl('file://' + peSetupPath + '/03_Pre-Edit/v' + prevVersion);
         var pvFiles = await pvFolder.getEntries();
         for (var pvfi = 0; pvfi < pvFiles.length; pvfi++) {
           if (pvFiles[pvfi].name.endsWith('.json')) {
@@ -5093,16 +9587,16 @@ async function exportPreEditDoc() {
       }
     }
 
-    // Step 7: Write JSON to Setup/Pre-Edit/
+    // Step 7: Write JSON to 00_Setup/03_Pre-Edit/
     setScreensStatus('Writing Pre-Edit export...', 'waiting');
-    var setupPath = projectState.folderPath + '/01_Media/Source/Setup';
+    var setupPath = projectState.folderPath + '/00_Setup';
     var setupEntry;
     try {
       setupEntry = await uxpfs.getEntryWithUrl('file://' + setupPath);
     } catch (e) {
-      throw new Error('Setup folder not found: ' + setupPath);
+      throw new Error('00_Setup folder not found: ' + setupPath);
     }
-    var preEditFolder = await ensureSubfolder(setupEntry, 'Pre-Edit', screensLogger);
+    var preEditFolder = await ensureSubfolder(setupEntry, '03_Pre-Edit', screensLogger);
 
     // Filename = full sequence name + _pre_edit_out (like Assembly _out.json)
     var jsonFileName = seqName + '_pre_edit_out.json';
@@ -5125,9 +9619,9 @@ async function exportPreEditDoc() {
     // Write JSON
     var jsonFile = await preEditFolder.createFile(jsonFileName, { overwrite: true });
     await jsonFile.write(JSON.stringify(exportData, null, 2));
-    var jsonPath = setupPath + '/Pre-Edit/' + jsonFileName;
-    var docxPath = setupPath + '/Pre-Edit/' + docxFileName;
-    screensLogger.info('Written: Setup/Pre-Edit/' + jsonFileName);
+    var jsonPath = setupPath + '/03_Pre-Edit/' + jsonFileName;
+    var docxPath = setupPath + '/03_Pre-Edit/' + docxFileName;
+    screensLogger.info('Written: 00_Setup/03_Pre-Edit/' + jsonFileName);
 
     // Generate .docx via pre-existing .command script (same pattern as 0504_screen_cues)
     setScreensStatus('Generating .docx...', 'waiting');
@@ -5187,8 +9681,8 @@ async function copyPreEditPrompt() {
   screensLogger.info('=== Copy Pre-Edit Prompt ===');
 
   try {
-    var setupPath = projectState.folderPath + '/01_Media/Source/Setup';
-    var preEditPath = setupPath + '/Pre-Edit';
+    var setupPath = projectState.folderPath + '/00_Setup';
+    var preEditPath = setupPath + '/03_Pre-Edit';
     var projectCode = projectState.projectName.match(/^(YT[A-Z]{2,4}\d+)/);
     var channelCode = projectCode ? projectCode[1].replace(/\d+$/, '') : '';
     projectCode = projectCode ? projectCode[1] : projectState.projectName;
@@ -5273,7 +9767,7 @@ async function copyPreEditPrompt() {
       prompt += '- Instructions: ~/YTAI/scripts/05_editing/0507_pre_edit/INSTRUCTIONS.md\n';
       prompt += '\n';
       prompt += 'Обработай документ, распознай /команды как задания для тебя.\n';
-      prompt += 'Сгенерируй визуалы в Setup/Pre-Edit/v' + nextVersion + '/\n';
+      prompt += 'Сгенерируй визуалы в 00_Setup/03_Pre-Edit/v' + nextVersion + '/\n';
     } else {
       // V2+ prompt (update)
       prompt = 'Pre-Edit обновление (v' + nextVersion + '):\n';
@@ -5289,7 +9783,7 @@ async function copyPreEditPrompt() {
           prompt += '  @' + cm.position_sec + 's: ' + cm.comment + '\n';
         }
       }
-      prompt += '\nПримени /comments, обнови визуалы → Pre-Edit/v' + nextVersion + '/\n';
+      prompt += '\nПримени /comments, обнови визуалы → 03_Pre-Edit/v' + nextVersion + '/\n';
     }
 
     // Copy to clipboard via UXP
@@ -5310,7 +9804,7 @@ async function copyPreEditPrompt() {
       try {
         var promptFile = await preEditEntry.createFile('_claude_prompt.txt', { overwrite: true });
         await promptFile.write(prompt);
-        screensLogger.info('Prompt saved to: Pre-Edit/_claude_prompt.txt');
+        screensLogger.info('Prompt saved to: 03_Pre-Edit/_claude_prompt.txt');
       } catch (writeErr) {
         screensLogger.debug('File write fallback failed: ' + writeErr.message);
       }
@@ -5323,7 +9817,7 @@ async function copyPreEditPrompt() {
 
     var statusMsg = copied
       ? 'Prompt v' + nextVersion + ' copied to clipboard → paste in Claude Code'
-      : 'Prompt v' + nextVersion + ' saved to Pre-Edit/_claude_prompt.txt';
+      : 'Prompt v' + nextVersion + ' saved to 03_Pre-Edit/_claude_prompt.txt';
     setScreensStatus(statusMsg, 'ready');
 
   } catch (err) {
@@ -5334,7 +9828,7 @@ async function copyPreEditPrompt() {
 
 /**
  * Export Pre-Edit — full timeline data (JSON + HTML review table) to project exports folder.
- * Creates Setup/exports/{code}_PreEdit_{timestamp}/ with timeline_data.json + timeline_review.html.
+ * Creates 00_Setup/exports/{code}_PreEdit_{timestamp}/ with timeline_data.json + timeline_review.html.
  * Opens folder in Finder after export.
  */
 async function exportPreEdit() {
@@ -5915,19 +10409,3063 @@ async function validateScreensBuild(sequence, screenResult, markerInfo) {
   screensLogger.info('Validation complete');
 }
 
+// ══════════════════════════════════════════════════════════════════
+//  REVIEW PIPELINE (external editor review)
+// ══════════════════════════════════════════════════════════════════
+
+/**
+ * Find latest .mp4/.mov in 03_Exports/ folder.
+ */
+async function findLatestExport(projectFolderPath) {
+  var exportsDir = projectFolderPath + '/03_Exports';
+  try {
+    var folder = await uxpfs.getEntryWithUrl('file://' + exportsDir);
+    var entries = await folder.getEntries();
+    var videos = entries.filter(function(e) {
+      var name = e.name.toLowerCase();
+      return name.endsWith('.mp4') || name.endsWith('.mov');
+    });
+    if (videos.length === 0) return null;
+    // Sort by name descending (latest version = highest name)
+    videos.sort(function(a, b) { return b.name.localeCompare(a.name); });
+    return videos[0];
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Find latest Assembly brief (_in.json) in 00_Setup/02_Assembly/.
+ */
+async function findLatestAssemblyBrief(projectFolderPath) {
+  var assemblyDir = projectFolderPath + '/00_Setup/02_Assembly';
+  try {
+    var folder = await uxpfs.getEntryWithUrl('file://' + assemblyDir);
+    var entries = await folder.getEntries();
+    var briefs = entries.filter(function(e) {
+      return e.name.endsWith('_in.json') && e.name.indexOf('Assembly') >= 0;
+    });
+    if (briefs.length === 0) return null;
+    briefs.sort(function(a, b) { return b.name.localeCompare(a.name); });
+    return briefs[0];
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Process Review — one-click pipeline:
+ * 1. Find latest .mp4 in 03_Exports/
+ * 2. Find latest Assembly brief
+ * 3. Launch run_review.command (transcribe + compare + HTML)
+ * 4. Poll for .done marker
+ * 5. Auto-load review_brief.json
+ * 6. Open HTML in browser
+ */
+async function processReview() {
+  if (!projectState.folderPath) {
+    reviewLogger.error('Select project folder first');
+    return;
+  }
+
+  reviewLogger.clear();
+  setReviewStatus('Processing review...', 'waiting');
+  $('btn-process-review').setAttribute('disabled', 'true');
+
+  try {
+    // Step 1: Find latest export video
+    setReviewProgress(5, 'Finding latest export...');
+    reviewLogger.info('=== PROCESS REVIEW START ===');
+
+    var latestVideo = await findLatestExport(projectState.folderPath);
+    if (!latestVideo) {
+      reviewLogger.error('No .mp4/.mov found in 03_Exports/');
+      setReviewStatus('No video in 03_Exports/', 'error');
+      $('btn-process-review').removeAttribute('disabled');
+      return;
+    }
+    reviewLogger.info('Latest export: ' + latestVideo.name);
+
+    // Step 2: Find latest Assembly brief
+    var latestBrief = await findLatestAssemblyBrief(projectState.folderPath);
+    if (!latestBrief) {
+      reviewLogger.error('No Assembly brief found in 00_Setup/02_Assembly/');
+      setReviewStatus('No Assembly brief found', 'error');
+      $('btn-process-review').removeAttribute('disabled');
+      return;
+    }
+    reviewLogger.info('Assembly brief: ' + latestBrief.name);
+
+    var videoPath = latestVideo.nativePath;
+    var briefPath = latestBrief.nativePath;
+    var outputDir = projectState.folderPath + '/00_Setup/05_Review';
+
+    // Step 3: Write params to /tmp/
+    setReviewProgress(10, 'Launching review pipeline...');
+    var params = JSON.stringify({
+      video: videoPath,
+      brief: briefPath,
+      output: outputDir,
+      language: 'en'
+    }, null, 2);
+
+    var tmpFolder = await uxpfs.getEntryWithUrl('file:///tmp');
+    var paramsFile = await tmpFolder.createFile('ytai_review_params.json', { overwrite: true });
+    await paramsFile.write(params);
+    reviewLogger.info('Params written to /tmp/ytai_review_params.json');
+
+    // Clean up old markers
+    try {
+      var oldDone = await uxpfs.getEntryWithUrl('file:///tmp/ytai_review.done');
+      await oldDone.delete();
+    } catch (e) { }
+    try {
+      var oldErr = await uxpfs.getEntryWithUrl('file:///tmp/ytai_review.error');
+      await oldErr.delete();
+    } catch (e) { }
+
+    // Step 4: Launch run_review.command
+    var pluginFolder = await uxpfs.getPluginFolder();
+    var pluginDir = pluginFolder.nativePath.replace(/\/$/, '');
+    var cmdPath = pluginDir + '/../0508_review/run_review.command';
+
+    try {
+      var uxpShell = require('uxp').shell;
+      await uxpShell.openPath(cmdPath);
+      reviewLogger.info('Launched run_review.command');
+    } catch (shellErr) {
+      reviewLogger.error('shell.openPath failed: ' + shellErr.message);
+      // Fallback: copy command to clipboard
+      var pyCmd = 'cd "' + pluginDir + '/../0508_review" && ./run_review.command';
+      try { await navigator.clipboard.writeText(pyCmd); } catch (e) { }
+      setReviewStatus('Launch failed — command copied to clipboard', 'error');
+      $('btn-process-review').removeAttribute('disabled');
+      return;
+    }
+
+    // Step 5: Poll for .done marker (5s interval, 5 min timeout for transcription)
+    reviewLogger.info('Waiting for pipeline to finish (polling, timeout 15min)...');
+    var donePath = '/tmp/ytai_review.done';
+    var errorPath = '/tmp/ytai_review.error';
+    var found = false;
+    var errored = false;
+
+    // Poll for .done marker (5s interval, 15 min timeout — transcription can take 10+ min)
+    for (var attempt = 0; attempt < 180; attempt++) {
+      await new Promise(function (resolve) { setTimeout(resolve, 5000); });
+
+      // Check for error
+      try {
+        var errEntry = await uxpfs.getEntryWithUrl('file://' + errorPath);
+        if (errEntry) {
+          var errContent = await errEntry.read();
+          reviewLogger.error('Pipeline failed: ' + errContent);
+          errored = true;
+          break;
+        }
+      } catch (e) { }
+
+      // Check for done
+      try {
+        var doneEntry = await uxpfs.getEntryWithUrl('file://' + donePath);
+        if (doneEntry) {
+          found = true;
+          break;
+        }
+      } catch (e) { }
+
+      var elapsed = (attempt + 1) * 5;
+      setReviewProgress(10 + (elapsed / 900 * 70), 'Processing... (' + elapsed + 's)');
+    }
+
+    if (errored) {
+      setReviewStatus('Pipeline failed — check Terminal', 'error');
+      $('btn-process-review').removeAttribute('disabled');
+      return;
+    }
+
+    if (!found) {
+      reviewLogger.warn('Timeout (15 min) — transcription may still be running');
+      setReviewStatus('Timeout — check Terminal', 'error');
+      $('btn-process-review').removeAttribute('disabled');
+      return;
+    }
+
+    // Step 6: Read .done result
+    setReviewProgress(85, 'Loading results...');
+    var doneFile = await uxpfs.getEntryWithUrl('file://' + donePath);
+    var doneContent = await doneFile.read();
+    var doneResult = JSON.parse(doneContent);
+    reviewLogger.info('Pipeline complete');
+    reviewLogger.info('Transcript: ' + (doneResult.transcript || ''));
+    reviewLogger.info('DOCX: ' + (doneResult.docx || ''));
+
+    // Step 7: Save results and enable Build Review button
+    reviewState.pipelineResult = doneResult;
+
+    // Open DOCX in default app
+    setReviewProgress(95, 'Opening DOCX...');
+    if (doneResult.docx) {
+      try {
+        var uxpShell2 = require('uxp').shell;
+        await uxpShell2.openPath(doneResult.docx);
+        reviewLogger.info('Opened DOCX: ' + doneResult.docx);
+      } catch (docxErr) {
+        reviewLogger.warn('Could not open DOCX: ' + docxErr.message);
+      }
+    }
+
+    setReviewProgress(100, 'Complete!');
+    $('btn-build-review').removeAttribute('disabled');
+    $('btn-export-review-markers').removeAttribute('disabled');
+    setReviewStatus('Ready — press Build Review to load into Premiere', 'ready');
+    updateLogPath('review', reviewLogger.getLastSavedPath());
+
+  } catch (err) {
+    reviewLogger.error('PROCESS REVIEW FAILED: ' + err.message);
+    if (err.stack) reviewLogger.debug(err.stack);
+    setReviewStatus('Failed: ' + err.message, 'error');
+  } finally {
+    $('btn-process-review').removeAttribute('disabled');
+  }
+}
+
+function setReviewStatus(text, type) {
+  $('review-status-dot').className = 'status-dot ' + (type || 'waiting');
+  $('review-status-text').textContent = text;
+}
+
+function setReviewProgress(percent, text) {
+  $('review-progress-bar').style.display = 'block';
+  $('review-progress-text').style.display = 'block';
+  $('review-progress-fill').style.width = percent + '%';
+  $('review-progress-text').textContent = text || '';
+}
+
+function hideReviewProgress() {
+  $('review-progress-bar').style.display = 'none';
+  $('review-progress-text').style.display = 'none';
+}
+
+/**
+ * Load review_brief.json via file picker.
+ */
+async function loadReviewBrief() {
+  try {
+    var briefFile = await uxpfs.getFileForOpening({ types: ['json'], allowMultiple: false });
+    if (!briefFile) return;
+
+    reviewLogger.info('Loading review brief: ' + (briefFile.nativePath || briefFile.name));
+    var content = await briefFile.read();
+    var parsed = parseReviewBrief(content, reviewLogger);
+
+    reviewState.data = parsed;
+    reviewState.filePath = briefFile.nativePath || null;
+
+    setReviewStatus('Review brief loaded. ' + parsed.timeline.length + ' edited + ' + parsed.insertions.length + ' insertions.', 'ready');
+    $('btn-build-review').removeAttribute('disabled');
+
+    reviewLogger.info('Review brief loaded successfully');
+  } catch (err) {
+    reviewLogger.error('Failed to load review brief: ' + err.message);
+    setReviewStatus('Load failed: ' + err.message, 'error');
+  }
+}
+
+/**
+ * Build Review — import video + create sequence + import captions/transcript SRT.
+ * Activated after Process Review completes (or via Load Review Brief).
+ */
+// Find the latest rendered export across 02_Exports / 03_Exports (newest version by name).
+async function findLatestRenderEntry(folderPath) {
+  var best = null;
+  var dirs = ['/02_Exports', '/03_Exports'];
+  for (var d = 0; d < dirs.length; d++) {
+    try {
+      var folder = await uxpfs.getEntryWithUrl('file://' + folderPath + dirs[d]);
+      var entries = await folder.getEntries();
+      for (var i = 0; i < entries.length; i++) {
+        var e = entries[i];
+        if (!e.isFile) continue;
+        var n = e.name.toLowerCase();
+        if ((n.endsWith('.mp4') || n.endsWith('.mov')) && (!best || e.name.localeCompare(best.name) > 0)) best = e;
+      }
+    } catch (er) { /* dir may not exist */ }
+  }
+  return best;
+}
+
+/**
+ * Build a REVIEW-OVERLAY sequence: latest render on V1/A1, recommendations on V2/V3 (+ markers).
+ * V1 stays a normal editable clip (cut / rearrange); the whole sequence transfers to the editor's
+ * project. One-click: uses the auto-detected latest render + the latest inserts JSON (or empty V2/V3).
+ */
+async function buildReviewOverlay() {
+  if (reviewState.building) { reviewLogger.warn('Review build already in progress'); return; }
+  reviewState.building = true;
+  $('btn-build-review-overlay').setAttribute('disabled', 'true');
+  setReviewStatus('Building review-overlay (render → V1, inserts → V2/V3)...', 'waiting');
+  try {
+    const project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere Pro project');
+    var folderPath = projectState.folderPath;
+    var code = assemblyState.projectCode || extractProjectCode(projectState.projectName || '');
+
+    // 1) Latest render: auto-detected pipelineResult.video, else newest in 02_Exports/03_Exports
+    var renderPath = (reviewState.pipelineResult && reviewState.pipelineResult.video) || null;
+    if (!renderPath) {
+      var rEntry = await findLatestRenderEntry(folderPath);
+      if (rEntry) renderPath = rEntry.nativePath;
+    }
+    if (!renderPath) throw new Error('No render found in 02_Exports/03_Exports — select project / Process Review first');
+    var renderName = renderPath.split('/').pop();
+    reviewLogger.info('Review-overlay base render: ' + renderName);
+
+    // 2) Inserts: pick the BEST parts JSON in 00_Setup/02_Assembly/parts/ — score by overlay format +
+    //    NUMERIC version (NB: lexicographic sort puts "v9" after "v10" — must parse the number).
+    var part = {};
+    var segments = [];
+    try {
+      var partsFolder = await uxpfs.getEntryWithUrl('file://' + folderPath + '/00_Setup/02_Assembly/parts');
+      var pents = await partsFolder.getEntries();
+      var jsons = pents.filter(function (e) { return e.isFile && e.name.toLowerCase().endsWith('.json'); });
+      var best = null, bestScore = -1, bestName = '';
+      for (var ji = 0; ji < jsons.length; ji++) {
+        try {
+          var pd = JSON.parse(await jsons[ji].read());
+          if (!pd || !Array.isArray(pd.segments) || !pd.segments.length) continue;
+          var vm = jsons[ji].name.match(/_v(\d+)/);
+          var vnum = vm ? parseInt(vm[1], 10) : 0;
+          var overlay = (pd.part && pd.part.build_model === 'overlay_on_base') ? 1 : 0;
+          var score = overlay * 100000 + vnum * 100 + pd.segments.length; // overlay > version > size
+          if (score > bestScore) { bestScore = score; best = pd; bestName = jsons[ji].name; }
+        } catch (e) { /* skip unreadable */ }
+      }
+      if (best) {
+        part = best.part || {}; segments = best.segments || [];
+        reviewLogger.info('Inserts: ' + bestName + ' (' + segments.length + ' segments, V3=' +
+          segments.filter(function (s) { return (s.track || '') === 'V3'; }).length + ')');
+      } else {
+        reviewLogger.info('No inserts JSON — scaffold render on V1 + empty V2/V3');
+      }
+    } catch (e) { reviewLogger.warn('No parts/ inserts found — empty V2/V3: ' + e.message); }
+    // Explicit override: a part loaded in the Parts tab wins ONLY if it is overlay-compatible.
+    if (partsState.part && partsState.segments && partsState.segments.length &&
+        partsState.part.build_model === 'overlay_on_base') {
+      part = partsState.part; segments = partsState.segments;
+      reviewLogger.info('Override: using overlay inserts loaded in Parts tab (' + segments.length + ' segments)');
+    }
+
+    // 3) Version + base override
+    var ver = 1;
+    try {
+      var rdir = await uxpfs.getEntryWithUrl('file://' + folderPath + '/00_Setup/05_Review');
+      var rents = await rdir.getEntries();
+      var re = new RegExp('_5_Review_v(\\d+)_overlay');
+      for (var vi = 0; vi < rents.length; vi++) { var m = rents[vi].name.match(re); if (m) { var n = parseInt(m[1], 10); if (n >= ver) ver = n + 1; } }
+    } catch (e) { /* no review dir yet */ }
+    part = Object.assign({}, part, {
+      code: code, name: 'Review_v' + ver + '_overlay',
+      sequence_name: code + '_5_Review_v' + ver + '_overlay',
+      build_model: 'overlay_on_base', base_clip: renderName, base_clip_path: renderPath
+    });
+
+    // 4) clipMap (don't throw on missing — base render still builds)
+    var clipMap = {};
+    try { var sb = await findSourceBin(project); if (sb) clipMap = await buildClipMap(sb, reviewLogger); }
+    catch (e) { reviewLogger.warn('clipMap unavailable (inserts may skip): ' + e.message); }
+
+    // 4b) Resolve the render with the PROVEN finder (casts into bins) and inject into clipMap so the
+    //     builder places it on V1. importFiles does NOT return items in this API — find by name after.
+    try {
+      var renderItem = await findProjectItemByName(project, renderName, reviewLogger);
+      if (!renderItem) {
+        try { await project.importFiles([renderPath]); } catch (ie) { reviewLogger.warn('render import: ' + ie.message); }
+        renderItem = await findProjectItemByName(project, renderName, reviewLogger);
+      }
+      if (renderItem) {
+        clipMap[renderName] = renderItem;
+        clipMap[renderName.replace(/\.[^.]+$/, '')] = renderItem;
+        reviewLogger.info('Render resolved → V1 base: ' + renderName);
+      } else {
+        reviewLogger.warn('Render NOT resolved — V1 will be empty: ' + renderName);
+      }
+    } catch (e) { reviewLogger.warn('render resolve failed: ' + e.message); }
+
+    // 4c) Auto-import insert media that isn't in the bin yet (so ALL inserts place), into _Review_inserts.
+    try {
+      var missing = [];
+      var seenP = {};
+      for (var qi = 0; qi < segments.length; qi++) {
+        var sf = segments[qi].source_file, sp = segments[qi].source_path;
+        if (!sf || !sp) continue;
+        if (clipMap[sf] || clipMap[sf.replace(/\.[^.]+$/, '')]) continue;
+        if (seenP[sp]) continue; seenP[sp] = 1;
+        missing.push({ sf: sf, sp: sp });
+      }
+      if (missing.length) {
+        reviewLogger.info('Auto-importing ' + missing.length + ' insert clip(s) → bin _Review_inserts...');
+        setReviewProgress(20, 'Importing ' + missing.length + ' insert clips...');
+        // Create/find the bin (best-effort, isolated — if it fails we still import to root).
+        var binCast = null;
+        try {
+          var binItem = await findProjectItemByName(project, '_Review_inserts', reviewLogger);
+          if (!binItem) {
+            var rootItem = await project.getRootItem();
+            project.lockedAccess(function () {
+              project.executeTransaction(function (ca) {
+                ca.addAction(rootItem.createBinAction('_Review_inserts', true));
+              }, 'Create _Review_inserts bin');
+            });
+            binItem = await findProjectItemByName(project, '_Review_inserts', reviewLogger);
+          }
+          binCast = binItem ? ppro.FolderItem.cast(binItem) : null;
+        } catch (eb) { reviewLogger.warn('bin create skipped (import to root): ' + eb.message); }
+        var paths = missing.map(function (x) { return x.sp; });
+        try {
+          if (binCast) await project.importFiles(paths, true, binCast, false);
+          else await project.importFiles(paths);
+        } catch (eImp) {
+          reviewLogger.warn('batch import failed (' + eImp.message + ') — one-by-one');
+          for (var pj = 0; pj < paths.length; pj++) {
+            try { if (binCast) await project.importFiles([paths[pj]], true, binCast, false); else await project.importFiles([paths[pj]]); } catch (e2) {}
+          }
+        }
+        var got = 0;
+        for (var ri = 0; ri < missing.length; ri++) {
+          var it = await findProjectItemByName(project, missing[ri].sf, reviewLogger);
+          if (it) { clipMap[missing[ri].sf] = it; clipMap[missing[ri].sf.replace(/\.[^.]+$/, '')] = it; got++; }
+        }
+        reviewLogger.info('Auto-import: ' + got + '/' + missing.length + ' insert clips resolved into clipMap.');
+      }
+    } catch (e) { reviewLogger.warn('auto-import inserts failed: ' + e.message); }
+
+    try { await project.save(); } catch (e) {}
+    setReviewProgress(30, 'Building ' + part.sequence_name + '...');
+    const result = await buildPartSequence(project, clipMap, part, segments, reviewLogger, assemblyState.projectSettings);
+    try { await project.save(); } catch (e) {}
+
+    var msg = 'Review-overlay: ' + result.seqName + ' — рендер V1 + ' + result.placed + ' вставок V2/V3' +
+      (result.skipped ? ' (' + result.skipped + ' пропущено — не в бине)' : '');
+    setReviewStatus(msg, result.skipped ? 'warning' : 'ready');
+    try {
+      var vp = $('review-validation');
+      vp.style.display = 'block';
+      vp.innerHTML = '<div class="val-line"><b>' + escapeHtml(result.seqName) + '</b></div>' +
+        '<div class="val-line">База: ' + escapeHtml(renderName) + ' → V1/A1 (редактируемо: режь/меняй местами)</div>' +
+        '<div class="val-line">Вставок: ' + result.placed + (result.skipped ? ' (+' + result.skipped + ' не в бине)' : '') + ' на V2/V3 + маркеры</div>' +
+        '<div class="val-line">Аниматору: подставить свой таймлайн на V1 ИЛИ перенести слой V2/V3 к себе</div>';
+    } catch (e) {}
+    hideReviewProgress();
+    reviewLogger.info('=== REVIEW-OVERLAY DONE: ' + result.seqName + ' (' + result.placed + ' placed, ' + result.skipped + ' skipped) ===');
+  } catch (err) {
+    setReviewStatus('Error: ' + err.message, 'error');
+    reviewLogger.error('Review-overlay failed: ' + err.message);
+    hideReviewProgress();
+  } finally {
+    reviewState.building = false;
+    $('btn-build-review-overlay').removeAttribute('disabled');
+  }
+}
+
+/**
+ * Build REVIEW v3 — CUTTABLE V1 + overlay enrichment (build_model: review_cut_overlay).
+ *
+ * Unlike Review-Overlay (render kept FULL on V1), v3 rebuilds V1 from the render's per-line
+ * keep-segments (base_segments[]) so V1 can be CUT (tech cleanup), then overlays the enrichment
+ * on V2/V3 (VO on A1 preserved). Cut render regions become a red DeletedScene.
+ *
+ * Input: 00_Setup/05_Review/YTCR01_review_brief_v3.json (schema ytai-review-v3), produced by
+ *        _analysis/ytcr01_review_v3_build.py. One-click: auto-finds the newest *_review_brief_v3.json.
+ */
+async function buildReviewV3() {
+  if (reviewState.building) { reviewLogger.warn('Review build already in progress'); return; }
+  reviewState.building = true;
+  $('btn-build-review-v3').setAttribute('disabled', 'true');
+  setReviewStatus('Building Review v3 (cuttable V1 + overlays)...', 'waiting');
+  try {
+    const project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere Pro project');
+    var folderPath = projectState.folderPath;
+    var code = assemblyState.projectCode || extractProjectCode(projectState.projectName || '');
+
+    // 1) Locate the v3 brief (newest *_review_brief_v3.json in 05_Review, else _analysis).
+    var briefData = null, briefName = '';
+    var searchDirs = [
+      folderPath + '/00_Setup/06_Enrichment',          // canonical enrichment stage
+      folderPath + '/00_Setup/02_Assembly/parts',       // UXP input mirror
+      folderPath + '/00_Setup/05_Review',
+      folderPath + '/01_Media/Source/Setup/Review/_analysis',
+    ];
+    for (var di = 0; di < searchDirs.length && !briefData; di++) {
+      try {
+        var dEntry = await uxpfs.getEntryWithUrl('file://' + searchDirs[di]);
+        var dFiles = await dEntry.getEntries();
+        var best = null;
+        for (var fi = 0; fi < dFiles.length; fi++) {
+          if (dFiles[fi].isFile && /review_brief_v3\.json$/i.test(dFiles[fi].name)) {
+            if (!best || dFiles[fi].name.localeCompare(best.name) > 0) best = dFiles[fi];
+          }
+        }
+        if (best) { briefData = JSON.parse(await best.read()); briefName = best.name; }
+      } catch (e) { /* dir may not exist */ }
+    }
+    if (!briefData) throw new Error('No *_review_brief_v3.json found — run ytcr01_review_v3_build.py --mode final');
+    if (!Array.isArray(briefData.overlays) || !briefData.overlays.length)
+      throw new Error('Brief has no overlays[] — wrong file?');
+    reviewLogger.info('Review v3 brief: ' + briefName + ' — full render V1, ' +
+      briefData.overlays.length + ' overlays, ' + (briefData.cut_suggestions || []).length + ' cut-suggestions');
+
+    var proj = briefData.project || {};
+    var renderName = proj.edited_video || 'YTCR1_v9_Arty_Dzis.mp4';
+    var renderPath = proj.edited_video_path || (folderPath + '/02_Exports/' + renderName);
+    var overlays = briefData.overlays || [];
+
+    // 2) clipMap (source bin) + render + overlay media (auto-import missing into _Review_inserts).
+    var clipMap = {};
+    try { var sb = await findSourceBin(project); if (sb) clipMap = await buildClipMap(sb, reviewLogger); }
+    catch (e) { reviewLogger.warn('clipMap unavailable: ' + e.message); }
+
+    // render
+    var renderItem = await findProjectItemByName(project, renderName, reviewLogger);
+    if (!renderItem) {
+      try { await project.importFiles([renderPath]); } catch (ie) { reviewLogger.warn('render import: ' + ie.message); }
+      renderItem = await findProjectItemByName(project, renderName, reviewLogger);
+    }
+    if (renderItem) { clipMap[renderName] = renderItem; clipMap[renderName.replace(/\.[^.]+$/, '')] = renderItem; }
+    else throw new Error('Render not resolvable for V1: ' + renderName);
+
+    // overlay media
+    setReviewProgress(20, 'Resolving insert media...');
+    var missing = [], seenP = {};
+    for (var qi = 0; qi < overlays.length; qi++) {
+      var sf = overlays[qi].source_file, sp = overlays[qi].source_path;
+      if (!sf || !sp) continue;
+      if (clipMap[sf] || clipMap[sf.replace(/\.[^.]+$/, '')]) continue;
+      if (seenP[sp]) continue; seenP[sp] = 1;
+      missing.push({ sf: sf, sp: sp });
+    }
+    if (missing.length) {
+      reviewLogger.info('Auto-importing ' + missing.length + ' insert clip(s) → _Review_inserts...');
+      var binCast = null;
+      try {
+        var binItem = await findProjectItemByName(project, '_Review_inserts', reviewLogger);
+        if (!binItem) {
+          var rootItem = await project.getRootItem();
+          project.lockedAccess(function () {
+            project.executeTransaction(function (ca) { ca.addAction(rootItem.createBinAction('_Review_inserts', true)); }, 'Create _Review_inserts bin');
+          });
+          binItem = await findProjectItemByName(project, '_Review_inserts', reviewLogger);
+        }
+        binCast = binItem ? ppro.FolderItem.cast(binItem) : null;
+      } catch (eb) { reviewLogger.warn('bin create skipped: ' + eb.message); }
+      var paths = missing.map(function (x) { return x.sp; });
+      try {
+        if (binCast) await project.importFiles(paths, true, binCast, false); else await project.importFiles(paths);
+      } catch (eImp) {
+        reviewLogger.warn('batch import failed (' + eImp.message + ') — one-by-one');
+        for (var pj = 0; pj < paths.length; pj++) { try { if (binCast) await project.importFiles([paths[pj]], true, binCast, false); else await project.importFiles([paths[pj]]); } catch (e2) {} }
+      }
+      var got = 0;
+      for (var ri = 0; ri < missing.length; ri++) {
+        var it = await findProjectItemByName(project, missing[ri].sf, reviewLogger);
+        if (it) { clipMap[missing[ri].sf] = it; clipMap[missing[ri].sf.replace(/\.[^.]+$/, '')] = it; got++; }
+      }
+      reviewLogger.info('Auto-import: ' + got + '/' + missing.length + ' insert clips resolved.');
+    }
+
+    // 3) Build the cuttable-V1 + overlay sequence via partsBuilder (review_cut_overlay).
+    var part = {
+      code: code, name: 'Review_v3', sequence_name: proj.sequence_name || (code + '_5_Review_v3'),
+      color: 'Mango', fps: proj.fps || 25,
+      build_model: 'overlay_on_base',           // FULL render on V1 (NOT cut) — proven path
+      base_clip: renderName, base_clip_path: renderPath,
+      markers: false,                            // NO markers (Roman: clutter; montage HTML is the ref)
+    };
+    try { await project.save(); } catch (e) {}
+    setReviewProgress(40, 'Building ' + part.sequence_name + ' (V1 cut + overlays)...');
+    const result = await buildPartSequence(project, clipMap, part, overlays, reviewLogger, assemblyState.projectSettings);
+    try { await project.save(); } catch (e) {}
+
+    // 4) No DeletedScene, NO markers — V1 is the full render; V2/V3 = visualization overlays.
+    var msg = 'Review v3: ' + result.seqName + ' — full render V1 + ' +
+      result.placed + ' overlays on V2/V3' + (result.skipped ? ' (' + result.skipped + ' skipped)' : '') + ' · no markers';
+    setReviewStatus(msg, result.skipped ? 'warning' : 'ready');
+    try {
+      var vp = $('review-validation'); vp.style.display = 'block';
+      vp.innerHTML =
+        '<div class="val-line"><b>' + escapeHtml(result.seqName) + '</b> (full render V1 + V2/V3 overlays)</div>' +
+        '<div class="val-line">V1/A1: full v9 render (NOT cut). VO intact.</div>' +
+        '<div class="val-line">V2/V3: ' + result.placed + (result.skipped ? ' (+' + result.skipped + ' not in bin)' : '') + ' visualization overlays (no markers)</div>' +
+        '<div class="val-line">Reference: YTCR01_v9_review_v3_montage.html</div>' +
+        '<div class="val-line">IMPORTANT: Relink media in Premiere after import.</div>';
+    } catch (e) {}
+    hideReviewProgress();
+    reviewLogger.info('=== REVIEW v3 DONE: ' + result.seqName + ' (full V1, ' + result.placed + ' overlays, no markers) ===');
+  } catch (err) {
+    setReviewStatus('Error: ' + err.message, 'error');
+    reviewLogger.error('Review v3 failed: ' + err.message);
+    hideReviewProgress();
+  } finally {
+    reviewState.building = false;
+    $('btn-build-review-v3').removeAttribute('disabled');
+  }
+}
+
+/**
+ * Export the ACTIVE sequence to a comprehensive JSON (for Claude round-trip).
+ * After the editor edits the timeline (cut / move / add / remove on any track), this writes the
+ * WHOLE reassembled sequence — every track, every clip with source file + media path + in/out +
+ * timeline position + duration, plus markers + sequence meta — to 00_Setup/05_Review/.
+ */
+async function exportSequenceJson() {
+  setReviewStatus('Exporting sequence → JSON...', 'waiting');
+  $('btn-export-sequence-json').setAttribute('disabled', 'true');
+  try {
+    const project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere Pro project');
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence — open the review sequence in the timeline first');
+    var fps = 25;
+    try { var tb = await seq.getTimebase(); fps = tb ? Math.round(254016000000 / Number(tb)) : 25; } catch (e) {}
+
+    // Full per-track / per-clip dump (reuses the proven dumpSequence extractor).
+    var data = await dumpSequence(seq, fps, {});
+    data.project_code = assemblyState.projectCode || extractProjectCode(projectState.projectName || '');
+    try { data.exported_at = new Date().toISOString(); } catch (e) { data.exported_at = ''; }
+
+    // Markers (best-effort — API varies by Premiere version).
+    data.markers = [];
+    try {
+      var mk = null;
+      try { if (ppro.Markers && ppro.Markers.getMarkers) mk = await ppro.Markers.getMarkers(seq); } catch (e) {}
+      if (!mk) { try { if (typeof seq.getMarkers === 'function') mk = await seq.getMarkers(); } catch (e) {} }
+      var list = null;
+      if (mk) { try { list = (typeof mk.getMarkers === 'function') ? await mk.getMarkers() : (Array.isArray(mk) ? mk : null); } catch (e) {} }
+      if (list && list.length) {
+        for (var mi = 0; mi < list.length; mi++) {
+          var m = list[mi];
+          try {
+            var st = m.start && (m.start.seconds != null ? m.start.seconds : (typeof m.start.ticks !== 'undefined' ? Number(m.start.ticks) / 254016000000 : undefined));
+            if (st === undefined && typeof m.getStart === 'function') {
+              try { var gs = await m.getStart(); st = gs && (gs.seconds != null ? gs.seconds : Number(gs.ticks) / 254016000000); } catch (e) {}
+            }
+            var mRec = { name: m.name || '', comment: (m.comments != null ? m.comments : (m.comment || '')), start_sec: st };
+            // Маркер-диапазон «вырезать/сократить»: длительность, цвет (MARKER_COLOR_INDEX: Red=1, White=5…), тип.
+            try { if (typeof m.getDuration === 'function') { var md = await m.getDuration(); mRec.duration_sec = md && (md.seconds != null ? md.seconds : Number(md.ticks) / 254016000000); } } catch (e) {}
+            try { if (typeof m.getColorIndex === 'function') mRec.color_index = await m.getColorIndex(); } catch (e) {}
+            try { if (typeof m.getType === 'function') mRec.type = await m.getType(); } catch (e) {}
+            try { if (!mRec.name && typeof m.getName === 'function') mRec.name = await m.getName(); } catch (e) {}
+            try { if (!mRec.comment && typeof m.getComments === 'function') mRec.comment = await m.getComments(); } catch (e) {}
+            data.markers.push(mRec);
+          } catch (e) {}
+        }
+      }
+    } catch (e) { reviewLogger.debug('markers read: ' + e.message); }
+
+    var nclips = 0, ndisabled = 0;
+    for (var tk in data.tracks) {
+      nclips += (data.tracks[tk] || []).length;
+      ndisabled += (data.tracks[tk] || []).filter(function (c) { return c && c.disabled; }).length;
+    }
+    data.disabled_clips = ndisabled;
+
+    var revFolder = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup/05_Review');
+    var ts;
+    try { ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19); } catch (e) { ts = 'export'; }
+    var fname = (seq.name || 'sequence') + '_export_' + ts + '.json';
+    var outFile = await revFolder.createFile(fname, { overwrite: true });
+    await outFile.write(JSON.stringify(data, null, 2));
+    var outPath = projectState.folderPath + '/00_Setup/05_Review/' + fname;
+
+    // Copy the file path to clipboard so it can be pasted straight to Claude.
+    var copied = false;
+    try { await navigator.clipboard.writeText(outPath); copied = true; } catch (e) { reviewLogger.debug('clipboard: ' + e.message); }
+
+    setReviewStatus('Exported: ' + fname + ' (' + nclips + ' clips, ' + (ndisabled ? ndisabled + ' disabled ✂, ' : '') + data.markers.length + ' markers)' + (copied ? ' — ссылка скопирована' : ''), 'ready');
+    reviewLogger.info('=== SEQUENCE EXPORTED → ' + outPath + ' (' + nclips + ' clips, ' + data.markers.length + ' markers, tracks ' + Object.keys(data.tracks).join(',') + ') ===');
+    try {
+      var vp = $('review-validation'); vp.style.display = 'block';
+      vp.innerHTML = '<div class="val-line"><b>Exported for Claude</b>' + (copied ? ' · 📋 ссылка скопирована' : '') + '</div>' +
+        '<div class="val-line">' + escapeHtml(outPath) + '</div>' +
+        '<div class="val-line">' + nclips + ' clips · ' + data.markers.length + ' markers · tracks ' + escapeHtml(Object.keys(data.tracks).join(', ')) + '</div>';
+    } catch (e) {}
+  } catch (err) {
+    setReviewStatus('Export error: ' + err.message, 'error');
+    reviewLogger.error('Export sequence failed: ' + err.message);
+  } finally {
+    var b = $('btn-export-sequence-json'); if (b) b.removeAttribute('disabled');
+  }
+}
+
+async function buildReview() {
+  if (reviewState.building) {
+    reviewLogger.warn('Review build already in progress');
+    return;
+  }
+
+  // Need either pipelineResult (from processReview) or manual data
+  var pipelineResult = reviewState.pipelineResult;
+  if (!pipelineResult || !pipelineResult.video) {
+    reviewLogger.error('No pipeline result — run Process Review first');
+    setReviewStatus('Run Process Review first', 'error');
+    return;
+  }
+
+  reviewState.building = true;
+  setReviewStatus('Building review...', 'waiting');
+  $('btn-build-review').setAttribute('disabled', 'true');
+
+  var startTime = Date.now();
+
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active Premiere project');
+
+    var reviewProjectCode = assemblyState.projectCode || extractProjectCode(projectState.projectName || '');
+
+    // Determine review version: scan 00_Setup/05_Review/ for existing _out.json and _in.json
+    var reviewVersion = 1;
+    try {
+      var revDetectDir = projectState.folderPath + '/00_Setup/05_Review';
+      var revDetectEntry = await uxpfs.getEntryWithUrl('file://' + revDetectDir);
+      var revDetectFiles = await revDetectEntry.getEntries();
+      var revVerRe = new RegExp('_5_Review_v(\\d+)');
+      for (var rvi = 0; rvi < revDetectFiles.length; rvi++) {
+        var rvm = revDetectFiles[rvi].name.match(revVerRe);
+        if (rvm) {
+          var rvn = parseInt(rvm[1], 10);
+          if (rvn > reviewVersion) reviewVersion = rvn;
+        }
+      }
+    } catch (e) { /* Review dir may not exist yet */ }
+    var reviewSeqName = reviewProjectCode + '_5_Review_v' + reviewVersion;
+
+    reviewLogger.info('=== REVIEW BUILD START ===');
+    reviewLogger.info('Project code: ' + reviewProjectCode);
+    reviewLogger.info('Video: ' + pipelineResult.video);
+
+    // Step 1: Save project
+    setReviewProgress(10, 'Saving backup...');
+    try { await project.save(); reviewLogger.info('Project saved'); } catch (e) { }
+
+    // Step 2: Import edited video
+    setReviewProgress(20, 'Importing edited video...');
+    var videoFileName = pipelineResult.video.split('/').pop();
+
+    // Search in project (BFS through all bins)
+    var editedVideoItem = await findProjectItemByName(project, videoFileName, reviewLogger);
+
+    // Import if not found — into 00_Source bin (create if missing)
+    if (!editedVideoItem) {
+      reviewLogger.info('Importing into 00_Source: ' + videoFileName);
+      try {
+        var rootItem = await project.getRootItem();
+        var rootItems = await rootItem.getItems();
+        var sourceBin = null;
+        for (var sbi = 0; sbi < rootItems.length; sbi++) {
+          if (rootItems[sbi].name === BIN_NAMES.SOURCE) {
+            sourceBin = ppro.FolderItem.cast(rootItems[sbi]);
+            break;
+          }
+        }
+        // Create 00_Source if it doesn't exist
+        if (!sourceBin) {
+          reviewLogger.info('Creating ' + BIN_NAMES.SOURCE + ' bin');
+          project.lockedAccess(function() {
+            project.executeTransaction(function(ca) {
+              ca.addAction(ppro.FolderItem.createAddItemAction(BIN_NAMES.SOURCE));
+            }, 'Create ' + BIN_NAMES.SOURCE);
+          });
+          rootItems = await rootItem.getItems();
+          for (var sbi2 = 0; sbi2 < rootItems.length; sbi2++) {
+            if (rootItems[sbi2].name === BIN_NAMES.SOURCE) {
+              sourceBin = ppro.FolderItem.cast(rootItems[sbi2]);
+              break;
+            }
+          }
+          if (sourceBin) reviewLogger.info(BIN_NAMES.SOURCE + ' bin created');
+        }
+        await project.importFiles([pipelineResult.video], true, sourceBin, false);
+        reviewLogger.info('importFiles completed, searching for item...');
+        editedVideoItem = await findProjectItemByName(project, videoFileName, reviewLogger);
+      } catch (importErr) {
+        throw new Error('Failed to import video: ' + importErr.message);
+      }
+    }
+
+    if (!editedVideoItem) {
+      throw new Error('Could not find or import video: ' + videoFileName);
+    }
+    reviewLogger.info('Video ready: ' + editedVideoItem.name);
+
+    // Step 3: Create sequence from video
+    setReviewProgress(50, 'Creating sequence...');
+
+    // Check if sequence already exists — REAL sequences only. findProjectItemByName
+    // matches any item type incl. stem matches (the render imported at Step 2 has
+    // the same stem as the sequence name), which skipped creation and left later
+    // insertions targeting whatever timeline happened to be active.
+    var existingSeq = null;
+    try {
+      var reviewSeqEntries = await listProjectSequences(project, reviewLogger);
+      for (var rse = 0; rse < reviewSeqEntries.length; rse++) {
+        if (reviewSeqEntries[rse].name === reviewSeqName) { existingSeq = reviewSeqEntries[rse].seq; break; }
+      }
+    } catch (e) { reviewLogger.debug('Sequence lookup failed: ' + e.message); }
+
+    if (!existingSeq) {
+      reviewLogger.info('Creating sequence: ' + reviewSeqName);
+      var castClip = ppro.ClipProjectItem.cast(editedVideoItem);
+      var clipForSeq = castClip || editedVideoItem;
+      var reviewSeq = null;
+      try {
+        reviewSeq = await project.createSequenceFromMedia(reviewSeqName, [clipForSeq]);
+      } catch (seqErr) {
+        reviewLogger.warn('createSequenceFromMedia failed: ' + seqErr.message);
+      }
+      if (!reviewSeq) {
+        // Fallback: create empty sequence then insert clip
+        reviewLogger.info('Fallback: createSequence + insert clip');
+        try {
+          reviewSeq = await project.createSequence(reviewSeqName);
+          if (reviewSeq) {
+            var seqEditor = ppro.SequenceEditor.getEditor(reviewSeq);
+            var insertTime = ppro.TickTime.createWithSeconds(0);
+            project.lockedAccess(function () {
+              project.executeTransaction(function (ca) {
+                ca.addAction(seqEditor.createInsertProjectItemAction(editedVideoItem, insertTime, 0, 0, true));
+              }, 'Review: insert video');
+            });
+            reviewLogger.info('Sequence created (fallback): ' + reviewSeqName);
+          }
+        } catch (fbErr) {
+          throw new Error('Failed to create Review sequence: ' + fbErr.message);
+        }
+      } else {
+        reviewLogger.info('Sequence created: ' + reviewSeqName);
+      }
+      if (!reviewSeq) {
+        throw new Error('Could not create Review sequence: ' + reviewSeqName);
+      }
+    } else {
+      reviewLogger.info('Sequence already exists: ' + reviewSeqName);
+      // Make it active so the caption/insert steps below target THIS sequence.
+      try { await project.setActiveSequence(existingSeq); } catch (e) { }
+    }
+
+    // Step 4: Import captions & transcript SRT (direct paths from pipeline)
+    setReviewProgress(70, 'Importing captions...');
+    var revSuffix = '5_Review_v' + reviewVersion;
+
+    if (pipelineResult.captions_srt) {
+      try {
+        await importSrtDirect(project, pipelineResult.captions_srt, reviewProjectCode, revSuffix, 'Review Captions', reviewLogger);
+      } catch (capErr) {
+        reviewLogger.warn('Captions import failed (non-fatal): ' + capErr.message);
+      }
+    } else {
+      reviewLogger.info('No captions SRT path in pipeline result — skipping');
+    }
+
+    if (pipelineResult.transcript_srt) {
+      try {
+        await importSrtDirect(project, pipelineResult.transcript_srt, reviewProjectCode, revSuffix, 'Review Transcript', reviewLogger);
+      } catch (trErr) {
+        reviewLogger.warn('Transcript import failed (non-fatal): ' + trErr.message);
+      }
+    } else {
+      reviewLogger.info('No transcript SRT path in pipeline result — skipping');
+    }
+
+    // Step 4b: Insert source clips on V1 from insertions in _in.json
+    setReviewProgress(80, 'Inserting clips on V1...');
+    var insertionCount = 0;
+    try {
+      // Load insertions from latest _in.json in 00_Setup/05_Review/
+      var insertions = [];
+      try {
+        var revBriefDir = projectState.folderPath + '/00_Setup/05_Review';
+        var revBriefEntry = await uxpfs.getEntryWithUrl('file://' + revBriefDir);
+        var revBriefFiles = await revBriefEntry.getEntries();
+        var latestIn = null;
+        var latestInVer = 0;
+        var inJsonRe = new RegExp('_Review_v(\\d+)_in\\.json$');
+        for (var rbi = 0; rbi < revBriefFiles.length; rbi++) {
+          var rbm = revBriefFiles[rbi].name.match(inJsonRe);
+          if (rbm) {
+            var rbv = parseInt(rbm[1], 10);
+            if (rbv > latestInVer) { latestInVer = rbv; latestIn = revBriefFiles[rbi]; }
+          }
+        }
+        if (latestIn) {
+          var inContent = await latestIn.read({ format: require('uxp').storage.formats.utf8 });
+          var inData = JSON.parse(inContent);
+          insertions = inData.insertions || [];
+          reviewLogger.info('Loaded insertions from ' + latestIn.name + ': ' + insertions.length + ' total');
+        }
+      } catch (loadErr) {
+        reviewLogger.debug('No insertions found: ' + loadErr.message);
+      }
+
+      var recommended = insertions.filter(function(ins) { return ins.recommended === true; });
+      reviewLogger.info('Recommended insertions: ' + recommended.length);
+
+      if (recommended.length > 0) {
+        var activeSeq = await project.getActiveSequence();
+        if (!activeSeq) activeSeq = await project.getActiveSequence();
+
+        if (activeSeq) {
+          // Anti-duplication: check if V1 already has multiple clips (inserts from prior run)
+          var skipInserts = false;
+          try {
+            var checkTrack = await activeSeq.getVideoTrack(0);
+            var checkItems = null;
+            try { checkItems = checkTrack.getTrackItems(1, false); } catch (ex) {}
+            if (!checkItems) try { checkItems = checkTrack.getTrackItems(); } catch (ex) {}
+            if (checkItems && checkItems.length > 1) {
+              reviewLogger.warn('V1 already has ' + checkItems.length + ' clips — skipping insertions to avoid duplicates. Delete sequence and rebuild if needed.');
+              skipInserts = true;
+            }
+          } catch (chkErr) {
+            reviewLogger.debug('V1 check failed: ' + chkErr.message);
+          }
+
+          if (skipInserts) {
+            reviewLogger.info('Insertions skipped (anti-duplication)');
+          } else {
+
+          var revSeqEditor = ppro.SequenceEditor.getEditor(activeSeq);
+
+          // Build clipMap from 00_Source bin (BFS)
+          var revClipMap = {};
+          try {
+            var revRootItem = await project.getRootItem();
+            var revRootItems = await revRootItem.getItems();
+            var revSourceBin = null;
+            for (var rsbi = 0; rsbi < revRootItems.length; rsbi++) {
+              if (revRootItems[rsbi].name === BIN_NAMES.SOURCE) {
+                revSourceBin = ppro.FolderItem.cast(revRootItems[rsbi]);
+                break;
+              }
+            }
+            if (revSourceBin) {
+              var scanQueue = [revSourceBin];
+              while (scanQueue.length > 0) {
+                var scanFolder = scanQueue.shift();
+                var scanItems = await scanFolder.getItems();
+                for (var sci = 0; sci < scanItems.length; sci++) {
+                  var scanItem = scanItems[sci];
+                  if (scanItem.name) {
+                    revClipMap[scanItem.name] = scanItem;
+                    var noExt = scanItem.name.replace(/\.[^.]+$/, '');
+                    if (noExt !== scanItem.name) revClipMap[noExt] = scanItem;
+                  }
+                  try {
+                    var subF = ppro.FolderItem.cast(scanItem);
+                    if (subF) scanQueue.push(subF);
+                  } catch (e) {}
+                }
+              }
+              reviewLogger.info('ClipMap: ' + Object.keys(revClipMap).length + ' items from 00_Source');
+            } else {
+              reviewLogger.warn('00_Source bin not found — cannot insert clips');
+            }
+          } catch (cmErr) {
+            reviewLogger.warn('ClipMap build failed: ' + cmErr.message);
+          }
+
+          function parseTcSec(tc) {
+            if (!tc) return 0;
+            var parts = tc.replace(',', '.').split(':');
+            if (parts.length === 2) return parseInt(parts[0]) * 60 + parseFloat(parts[1]);
+            if (parts.length === 3) return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2]);
+            return parseFloat(tc) || 0;
+          }
+
+          // Sort DESCENDING by insert position — insert from end to start
+          // to avoid offset shifts affecting earlier insertions.
+          // For same insert_at_tc: REVERSE array order so createInsertProjectItemAction
+          // (which pushes content right) produces the intended sequence.
+          var recOrigOrder = recommended.map(function(r, i) { r._origIdx = i; return r; });
+          recommended.sort(function(a, b) {
+            var diff = parseTcSec(b.insert_at_tc) - parseTcSec(a.insert_at_tc);
+            if (diff !== 0) return diff;
+            return b._origIdx - a._origIdx; // reverse array order for same tc
+          });
+
+          // Apply color to edited video (Cyan) before insertions
+          try {
+            var CYAN_IDX = 10; // ppro label color index for Cyan
+            project.lockedAccess(function() {
+              project.executeTransaction(function(ca) {
+                ca.addAction(editedVideoItem.createSetColorLabelAction(CYAN_IDX));
+              }, 'Review: color edited video Cyan');
+            });
+            reviewLogger.info('Edited video colored Cyan');
+          } catch (colErr) {
+            reviewLogger.debug('Color label failed: ' + colErr.message);
+          }
+
+          var GREEN_IDX = 4; // ppro label color index for Green
+
+          for (var ini = 0; ini < recommended.length; ini++) {
+            var ins = recommended[ini];
+            var rawItem = revClipMap[ins.source_file] || revClipMap[ins.source_file.replace(/\.[^.]+$/, '')];
+            if (!rawItem) {
+              reviewLogger.warn('[' + ins.insertion_id + '] Source not found: ' + ins.source_file);
+              continue;
+            }
+
+            // Color insertion clip Green
+            try {
+              project.lockedAccess(function() {
+                project.executeTransaction(function(ca) {
+                  ca.addAction(rawItem.createSetColorLabelAction(GREEN_IDX));
+                }, 'Color: ' + ins.insertion_id);
+              });
+            } catch (colErr2) {}
+
+            var castClip2 = ppro.ClipProjectItem.cast(rawItem);
+            var clipForTrim2 = castClip2 || rawItem;
+
+            // Set source in/out (trim)
+            var srcIn = ppro.TickTime.createWithSeconds(parseTcSec(ins.source_tc_in));
+            var srcOut = ppro.TickTime.createWithSeconds(parseTcSec(ins.source_tc_out));
+            try {
+              project.lockedAccess(function() {
+                project.executeTransaction(function(ca) {
+                  ca.addAction(clipForTrim2.createSetInOutPointsAction(srcIn, srcOut));
+                }, 'Trim: ' + ins.insertion_id);
+              });
+            } catch (trimErr) {
+              reviewLogger.debug('Trim failed: ' + ins.insertion_id + ': ' + trimErr.message);
+            }
+
+            // INSERT on V1 (videoTrack=0, audioTrack=0, limitShift=true)
+            // This splits existing content and pushes everything right.
+            // Sorted DESCENDING: later-timeline inserts go first, so their push
+            // doesn't affect earlier positions. No offset accumulation needed.
+            var tlPos = ppro.TickTime.createWithSeconds(parseTcSec(ins.insert_at_tc));
+            var insOk = false;
+            try {
+              project.lockedAccess(function() {
+                project.executeTransaction(function(ca) {
+                  ca.addAction(revSeqEditor.createInsertProjectItemAction(rawItem, tlPos, 0, 0, true));
+                }, 'Review V1 insert: ' + ins.insertion_id);
+              });
+              insOk = true;
+            } catch (insErr) {
+              reviewLogger.error('[' + ins.insertion_id + '] V1 insert failed: ' + insErr.message);
+            }
+
+            // Clear source in/out
+            try {
+              project.lockedAccess(function() {
+                project.executeTransaction(function(ca) {
+                  ca.addAction(clipForTrim2.createClearInOutPointsAction());
+                }, 'Clear: ' + ins.insertion_id);
+              });
+            } catch (clrErr) {}
+
+            if (insOk) {
+              insertionCount++;
+              reviewLogger.info('[' + ins.insertion_id + '] V1 @ ' + ins.insert_at_tc + ' ← ' + ins.source_file + ' ' + ins.source_tc_in + '-' + ins.source_tc_out + ' (' + ins.description + ')');
+            }
+          }
+
+          } // end skipInserts else
+        } else {
+          reviewLogger.warn('No active sequence for insertions');
+        }
+      }
+    } catch (insErr2) {
+      reviewLogger.warn('Clip insertion failed (non-fatal): ' + insErr2.message);
+    }
+    if (insertionCount > 0) {
+      reviewLogger.info('Inserted ' + insertionCount + ' clips on V1 (Green)');
+    }
+
+    // Step 4c: Build DeletedScene sequence from deleted_segments in _in.json
+    try {
+      var delSegments = [];
+      try {
+        var delBriefDir = projectState.folderPath + '/00_Setup/05_Review';
+        var delBriefEntry = await uxpfs.getEntryWithUrl('file://' + delBriefDir);
+        var delBriefFiles = await delBriefEntry.getEntries();
+        var delLatestIn = null;
+        var delLatestInVer = 0;
+        var delInRe = new RegExp('_Review_v(\\d+)_in\\.json$');
+        for (var dbi = 0; dbi < delBriefFiles.length; dbi++) {
+          var dbm = delBriefFiles[dbi].name.match(delInRe);
+          if (dbm) {
+            var dbv = parseInt(dbm[1], 10);
+            if (dbv > delLatestInVer) { delLatestInVer = dbv; delLatestIn = delBriefFiles[dbi]; }
+          }
+        }
+        if (delLatestIn) {
+          var delContent = await delLatestIn.read({ format: require('uxp').storage.formats.utf8 });
+          var delData = JSON.parse(delContent);
+          delSegments = delData.deleted_segments || [];
+        }
+      } catch (delLoadErr) {
+        reviewLogger.debug('No deleted_segments found: ' + delLoadErr.message);
+      }
+
+      if (Object.keys(revClipMap).length > 0) {
+        setReviewProgress(88, 'Building DeletedScene...');
+        var delParsed = delSegments.map(function(d) {
+          return {
+            segmentId: d.segment_id || '',
+            removedIn: d.removed_in || '',
+            reason: d.reason || '',
+            sourceFile: d.source_file || '',
+            sourceTcIn: d.source_tc_in || '',
+            sourceTcOut: d.source_tc_out || '',
+            durationSec: d.duration_sec || 0,
+            speaker: d.speaker || '',
+            transcript: d.transcript || ''
+          };
+        });
+        var delResult = await buildReviewDeletedScene(
+          project, revClipMap, delParsed, reviewProjectCode,
+          reviewVersion, 25, reviewLogger
+        );
+        if (delResult.clipCount > 0) {
+          reviewLogger.info('DeletedScene built: ' + delResult.seqName + ' (' + delResult.clipCount + ' clips)');
+        }
+      } else {
+        reviewLogger.info('No deleted segments — DeletedScene skipped');
+      }
+    } catch (delErr) {
+      reviewLogger.warn('DeletedScene build failed (non-fatal): ' + delErr.message);
+    }
+
+    // Step 5: Save project
+    setReviewProgress(95, 'Saving...');
+    try { await project.save(); } catch (e) { }
+
+    var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    setReviewProgress(100, 'Complete!');
+    reviewLogger.info('=== REVIEW BUILD COMPLETE (' + elapsed + 's) — ' + insertionCount + ' V2 insertions ===');
+    $('btn-build-review').classList.add('btn-done');
+    $('btn-export-review-markers').removeAttribute('disabled');
+    setReviewStatus('Review built! Sequence: ' + reviewSeqName, 'ready');
+    updateLogPath('review', reviewLogger.getLastSavedPath());
+
+  } catch (err) {
+    reviewLogger.error('REVIEW BUILD FAILED: ' + err.message);
+    if (err.stack) reviewLogger.debug(err.stack);
+    setReviewStatus('Build failed: ' + err.message, 'error');
+  } finally {
+    reviewState.building = false;
+    $('btn-build-review').removeAttribute('disabled');
+  }
+}
+
+/**
+ * Export Review Markers — reads markers from active _5_Review sequence,
+ * writes JSON + HTML to 00_Setup/05_Review/ with versioning (v{N}_out.json).
+ * Same structure as Assembly exportMarkers but output goes to Review folder.
+ */
+async function exportReviewMarkers() {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setReviewStatus('No active project', 'error'); return; }
+  if (!projectState.folderPath) { setReviewStatus('Select project folder first', 'error'); return; }
+
+  reviewLogger.info('=== Export Review Markers ===');
+  setReviewStatus('Reading markers...', 'waiting');
+  $('btn-export-review-markers').setAttribute('disabled', 'true');
+
+  try {
+    var seq = await project.getActiveSequence();
+    if (!seq) throw new Error('No active sequence — open Review sequence first');
+    var seqName = seq.name;
+    reviewLogger.info('Active sequence: ' + seqName);
+
+    // Read markers
+    var markersOwner = await ppro.Markers.getMarkers(seq);
+    if (!markersOwner) throw new Error('Cannot get markers from sequence');
+    var rawMarkers = markersOwner.getMarkers();
+    reviewLogger.info('Raw markers: ' + (rawMarkers ? rawMarkers.length : 0));
+
+    var markers = [];
+    if (rawMarkers && rawMarkers.length > 0) {
+      for (var mi = 0; mi < rawMarkers.length; mi++) {
+        var m = rawMarkers[mi];
+        var mStart = null;
+        try { mStart = m.getStart ? m.getStart() : m.startTime; } catch (e) {}
+        var mDur = null;
+        try { mDur = m.getDuration ? m.getDuration() : m.duration; } catch (e) {}
+        var mComment = '';
+        try { mComment = m.comments || (m.getComments ? m.getComments() : '') || m.comment || ''; } catch (e) {}
+        var mName = '';
+        try { mName = m.name || (m.getName ? m.getName() : '') || ''; } catch (e) {}
+        var posSec = mStart ? (typeof mStart === 'object' ? tickSec(mStart) : parseFloat(mStart)) : 0;
+        var durSec = mDur ? (typeof mDur === 'object' ? tickSec(mDur) : parseFloat(mDur)) : 0;
+        markers.push({
+          name: mName,
+          position_sec: Math.round(posSec * 100) / 100,
+          duration_sec: durSec > 0 ? Math.round(durSec * 100) / 100 : undefined,
+          is_chapter: durSec > 0,
+          comment: mComment
+        });
+      }
+    }
+    reviewLogger.info('Parsed markers: ' + markers.length);
+
+    // Read V1 timeline clips
+    var timelineClips = [];
+    try {
+      var v1Track = await seq.getVideoTrack(0);
+      var trackItems = null;
+      try { trackItems = v1Track.getTrackItems(1, false); } catch (ex) {}
+      if (!trackItems) try { trackItems = v1Track.getTrackItems(); } catch (ex) {}
+      if (trackItems && trackItems.length > 0) {
+        for (var ti = 0; ti < trackItems.length; ti++) {
+          var item = trackItems[ti];
+          var projItem = await item.getProjectItem();
+          var clipName = projItem ? projItem.name : '';
+          var clipStart = await item.getStartTime();
+          var clipDur = await item.getDuration();
+          var clipIn = await item.getInPoint();
+          var clipOut = await item.getOutPoint();
+          timelineClips.push({
+            index: ti,
+            source_file: clipName,
+            tc_in_sec: Math.round(tickSec(clipIn) * 100) / 100,
+            tc_out_sec: Math.round(tickSec(clipOut) * 100) / 100,
+            timeline_start_sec: Math.round(tickSec(clipStart) * 100) / 100,
+            duration_sec: Math.round(tickSec(clipDur) * 100) / 100,
+          });
+        }
+        reviewLogger.info('Timeline V1 clips: ' + timelineClips.length);
+      }
+    } catch (tlErr) {
+      reviewLogger.warn('Could not read V1 TrackItems: ' + tlErr.message);
+    }
+
+    // Match with review transcript for text
+    try {
+      var reviewDir = projectState.folderPath + '/00_Setup/05_Review';
+      var revDirEntry = await uxpfs.getEntryWithUrl('file://' + reviewDir);
+      var revFiles = await revDirEntry.getEntries();
+      var txFile = null;
+      for (var rf = 0; rf < revFiles.length; rf++) {
+        if (revFiles[rf].name.endsWith('_review_transcript.json')) {
+          txFile = revFiles[rf];
+          break;
+        }
+      }
+      if (txFile) {
+        var txRaw = await txFile.read({ format: require('uxp').storage.formats.utf8 });
+        var txData = JSON.parse(txRaw);
+        var txSegs = txData.segments || [];
+        // Match each timeline clip
+        for (var ci = 0; ci < timelineClips.length; ci++) {
+          var clip = timelineClips[ci];
+          var texts = [];
+          for (var si = 0; si < txSegs.length; si++) {
+            var sg = txSegs[si];
+            if (sg.start < (clip.timeline_start_sec + clip.duration_sec) && sg.end > clip.timeline_start_sec) {
+              texts.push(sg.text || '');
+            }
+          }
+          clip.transcript_text = texts.join(' ');
+        }
+        reviewLogger.info('Matched review transcript for clips');
+      }
+    } catch (txErr) {
+      reviewLogger.debug('Review transcript matching skipped: ' + txErr.message);
+    }
+
+    // Separate / markers (editor comments) from others
+    var editMarkers = markers.filter(function(m) { return (m.comment || '').indexOf('/') === 0; });
+    var otherMarkers = markers.filter(function(m) { return (m.comment || '').indexOf('/') !== 0; });
+
+    // Build output
+    function fmtMMSS(sec) {
+      var mm = Math.floor(sec / 60);
+      var ss = (sec % 60).toFixed(1);
+      return (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
+    }
+
+    var briefSegments = [];
+    for (var bsi = 0; bsi < timelineClips.length; bsi++) {
+      var tc = timelineClips[bsi];
+      briefSegments.push({
+        segment_id: 'seg_' + String(bsi + 1).padStart(3, '0'),
+        source_file: tc.source_file,
+        tc_in: fmtMMSS(tc.tc_in_sec),
+        tc_out: fmtMMSS(tc.tc_out_sec),
+        block: 1, block_name: '', segment_name: '',
+        speaker: tc.speaker || '',
+        transcript: (tc.transcript_text || '').substring(0, 500),
+        track: 'V1', color: 'Green', use: 'TRUE', priority: 1,
+        is_chapter: 'FALSE', broll_note: '', notes: ''
+      });
+    }
+
+    var output = {
+      sequence: seqName,
+      exported_at: new Date().toISOString(),
+      assembly: { markers_count: editMarkers.length, chapters_count: markers.filter(function(m){return m.is_chapter;}).length, markers: markers },
+      deletedScene: { markers_count: 0, markers: [] },
+      timeline_clips: timelineClips,
+      brief: {
+        segments: briefSegments,
+        project: {
+          project_name: projectState.projectName || seqName,
+          fps: 25, width: 3840, height: 2160, sample_rate: 48000,
+          create_assembly_sequence: true, cut_color: 'Red'
+        },
+        changelog: []
+      },
+      brief_source: 'generated_from_timeline'
+    };
+
+    // Version scan — scan 00_Setup/05_Review/ for existing _out.json
+    var reviewDirPath = projectState.folderPath + '/00_Setup/05_Review';
+    var reviewEntry;
+    try {
+      reviewEntry = await uxpfs.getEntryWithUrl('file://' + reviewDirPath);
+    } catch (e) {
+      var setupEntry = await uxpfs.getEntryWithUrl('file://' + projectState.folderPath + '/00_Setup');
+      reviewEntry = await ensureSubfolder(setupEntry, '05_Review', reviewLogger);
+    }
+
+    var baseSeqName = seqName.replace(/_v\d+$/, '');
+    var existingFiles = await reviewEntry.getEntries();
+    var maxVer = 0;
+    var verRe = new RegExp(baseSeqName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '_v(\\d+)');
+    for (var fi = 0; fi < existingFiles.length; fi++) {
+      var vm = existingFiles[fi].name.match(verRe);
+      if (vm) {
+        var vn = parseInt(vm[1], 10);
+        if (vn > maxVer) maxVer = vn;
+      }
+    }
+    // Also scan for _in.json from Claude
+    var projectCode = assemblyState.projectCode || extractProjectCode(projectState.projectName || '');
+    var inRe = new RegExp(projectCode + '_5_Review_v(\\d+)_in\\.json$');
+    for (var fi2 = 0; fi2 < existingFiles.length; fi2++) {
+      var im = existingFiles[fi2].name.match(inRe);
+      if (im) {
+        var ivn = parseInt(im[1], 10);
+        if (ivn > maxVer) maxVer = ivn;
+      }
+    }
+    var version = maxVer + 1;
+    output.version = version;
+    output.direction = 'out';
+    output.brief.changelog.push({ version: 'v' + version, date: new Date().toISOString().split('T')[0], source: 'premiere_export', summary: 'Generated from timeline ' + seqName });
+
+    var fileName = baseSeqName + '_v' + version + '_out.json';
+    var jsonContent = JSON.stringify(output, null, 2);
+
+    // Write to 00_Setup/05_Review/
+    var outFile = await reviewEntry.createFile(fileName, { overwrite: true });
+    await outFile.write(jsonContent);
+    reviewLogger.info('Written: 00_Setup/05_Review/' + fileName);
+
+    // Copy path to clipboard
+    try {
+      var fullPath = reviewEntry.nativePath + '/' + fileName;
+      await navigator.clipboard.writeText(fullPath);
+      reviewLogger.info('Copied to clipboard: ' + fullPath);
+    } catch (clipErr) {
+      reviewLogger.debug('Clipboard copy failed: ' + clipErr.message);
+    }
+
+    // Write to ~/Downloads/
+    try {
+      var homePath = require('os').homedir();
+      var dlEntry = await uxpfs.getEntryWithUrl('file://' + homePath + '/Downloads');
+      var dlFile = await dlEntry.createFile(fileName, { overwrite: true });
+      await dlFile.write(jsonContent);
+      reviewLogger.info('Copied: ~/Downloads/' + fileName);
+    } catch (dlErr) {
+      reviewLogger.debug('Downloads copy failed: ' + dlErr.message);
+    }
+
+    // Generate HTML review
+    try {
+      var htmlName = baseSeqName + '_v' + version + '_review.html';
+      var htmlContent = generateExportReviewHtml(output, version, seqName);
+      var htmlFile = await reviewEntry.createFile(htmlName, { overwrite: true });
+      await htmlFile.write(htmlContent);
+      reviewLogger.info('Written: 00_Setup/05_Review/' + htmlName);
+      try {
+        var shell = require('uxp').shell;
+        await shell.openPath(reviewEntry.nativePath + '/' + htmlName);
+      } catch (openErr) {
+        reviewLogger.debug('Could not auto-open HTML: ' + openErr.message);
+      }
+    } catch (htmlErr) {
+      reviewLogger.warn('HTML review generation failed: ' + htmlErr.message);
+    }
+
+    setReviewStatus('Exported v' + version + ' → clipboard: ' + fileName, 'ready');
+
+  } catch (err) {
+    reviewLogger.error('Review marker export failed: ' + err.message);
+    if (err.stack) reviewLogger.debug(err.stack);
+    setReviewStatus('Export failed: ' + err.message, 'error');
+  }
+
+  $('btn-export-review-markers').removeAttribute('disabled');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  DEBUG DUMP — full project state export
+// ══════════════════════════════════════════════════════════════════
+
+/**
+ * Convert TickTime to 3-format object: timecode, seconds, ticks string.
+ */
+function tickToFormats(tt, fps) {
+  if (!tt) return null;
+  var sec = tickSec(tt);
+  if (sec < 0) return null;
+  var tickStr = '';
+  try { tickStr = String(tt.ticks || ''); } catch (e) {}
+  // Build HH:MM:SS:FF timecode
+  var f = fps || 25;
+  var totalFrames = Math.round(sec * f);
+  var ff = totalFrames % f;
+  var totalSec = Math.floor(totalFrames / f);
+  var ss = totalSec % 60;
+  var totalMin = Math.floor(totalSec / 60);
+  var mm = totalMin % 60;
+  var hh = Math.floor(totalMin / 60);
+  var tc = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + ':' +
+           String(ss).padStart(2, '0') + ':' + String(ff).padStart(2, '0');
+  return { tc: tc, sec: Math.round(sec * 1000000) / 1000000, ticks: tickStr };
+}
+
+/**
+ * Read all clips from a single track.
+ */
+async function dumpTrackClips(track, trackLabel, fps, ingestByName) {
+  var clips = [];
+  var trackItems = null;
+  try { trackItems = track.getTrackItems(1, false); } catch (e) {}
+  if (!trackItems) try { trackItems = track.getTrackItems(); } catch (e) {}
+  if (!trackItems) return clips;
+
+  for (var i = 0; i < trackItems.length; i++) {
+    var item = trackItems[i];
+    var entry = { track: trackLabel, index: i };
+    try {
+      var pi = await item.getProjectItem();
+      entry.source = pi ? pi.name : '';
+      // media path — real API is getMediaFilePath(); fall back to getMediaPath()
+      entry.media_path = '';
+      if (pi) {
+        try { entry.media_path = await pi.getMediaFilePath(); } catch (e) {
+          try { entry.media_path = pi.getMediaPath(); } catch (e2) {}
+        }
+      }
+    } catch (e) { entry.source = ''; entry.media_path = ''; }
+    // Enrich with ingest wall-clock / sync truth (matched by source filename) so
+    // the dump shows timeline position NEXT TO clock/creation_time/sync — the key
+    // pairing for verifying multi-camera sync from the dump alone.
+    try {
+      if (ingestByName && entry.source) {
+        var key = String(entry.source).replace(/\.[^.]+$/, '');
+        var ic = ingestByName[entry.source] || ingestByName[key];
+        if (ic) {
+          entry.ingest = {
+            clip_id: ic.clip_id,
+            scene: ic.scene,
+            creation_time: ic.creation_time,
+            wall_offset: ic.wall_offset,
+            clock_offset: ic.clock_offset,           // present after sync engine writes it
+            probe_fps: ic.probe ? ic.probe.fps : undefined,
+            camera: ic.path ? String(ic.path).replace(/\\/g, '/').split('/').slice(-2)[0] : undefined,
+            sync: ic.sync || undefined               // present after 0116 sync engine
+          };
+        }
+      }
+    } catch (e) { /* enrichment best-effort */ }
+    try {
+      entry.timeline_start = tickToFormats(await item.getStartTime(), fps);
+      entry.duration = tickToFormats(await item.getDuration(), fps);
+      entry.source_in = tickToFormats(await item.getInPoint(), fps);
+      entry.source_out = tickToFormats(await item.getOutPoint(), fps);
+      // Compute timeline_end
+      if (entry.timeline_start && entry.duration) {
+        var endSec = entry.timeline_start.sec + entry.duration.sec;
+        var ef = fps || 25;
+        var etf = Math.round(endSec * ef);
+        var eff = etf % ef;
+        var ets = Math.floor(etf / ef);
+        var ess = ets % 60; var etm = Math.floor(ets / 60); var emm = etm % 60; var ehh = Math.floor(etm / 60);
+        entry.timeline_end = {
+          tc: String(ehh).padStart(2, '0') + ':' + String(emm).padStart(2, '0') + ':' + String(ess).padStart(2, '0') + ':' + String(eff).padStart(2, '0'),
+          sec: Math.round(endSec * 1000000) / 1000000
+        };
+      }
+    } catch (e) { entry.error = e.message; }
+    // Clip → Enable снят = Роман пометил кусок «вырезать» (тёмный клип на таймлайне).
+    // VideoClipTrackItem/AudioClipTrackItem.isDisabled() — API с 25.0; старые сборки просто без поля.
+    try { if (typeof item.isDisabled === 'function') entry.disabled = !!(await item.isDisabled()); } catch (e) { }
+    clips.push(entry);
+  }
+  return clips;
+}
+
+/**
+ * Analyze gaps and overlaps between consecutive clips on a track.
+ */
+function analyzeTrackGaps(clips, fps) {
+  var issues = [];
+  var frameDur = 1 / (fps || 25);
+  for (var i = 1; i < clips.length; i++) {
+    var prev = clips[i - 1];
+    var curr = clips[i];
+    if (!prev.timeline_end || !curr.timeline_start) continue;
+    var gap = curr.timeline_start.sec - prev.timeline_end.sec;
+    if (gap > frameDur * 1.5) {
+      issues.push({ type: 'gap', between: [i - 1, i], frames: Math.round(gap * (fps || 25)), sec: Math.round(gap * 1000000) / 1000000 });
+    } else if (gap < -frameDur * 0.5) {
+      issues.push({ type: 'overlap', between: [i - 1, i], frames: Math.round(-gap * (fps || 25)), sec: Math.round(-gap * 1000000) / 1000000 });
+    }
+  }
+  return issues;
+}
+
+/**
+ * Dump complete sequence data: all tracks, all clips, gap analysis.
+ */
+async function dumpSequence(seq, fps, ingestByName) {
+  var data = { name: seq.name };
+
+  // Settings
+  try {
+    var frameSize = await seq.getFrameSize();
+    data.width = frameSize.width || frameSize.right || 0;
+    data.height = frameSize.height || frameSize.bottom || 0;
+  } catch (e) {}
+  try {
+    var tb = await seq.getTimebase();
+    data.fps = tb ? Math.round(254016000000 / Number(tb)) : fps;
+  } catch (e) { data.fps = fps; }
+
+  var seqFps = data.fps || fps || 25;
+  data.tracks = {};
+  data.analysis = {};
+
+  // Video tracks
+  try {
+    var vCount = await seq.getVideoTrackCount();
+    for (var vi = 0; vi < vCount; vi++) {
+      var vTrack = await seq.getVideoTrack(vi);
+      var label = 'V' + (vi + 1);
+      var vClips = await dumpTrackClips(vTrack, label, seqFps, ingestByName);
+      if (vClips.length > 0) {
+        data.tracks[label] = vClips;
+        var vIssues = analyzeTrackGaps(vClips, seqFps);
+        if (vIssues.length > 0) data.analysis[label] = vIssues;
+      }
+    }
+  } catch (e) { data.video_error = e.message; }
+
+  // Audio tracks
+  try {
+    var aCount = await seq.getAudioTrackCount();
+    for (var ai = 0; ai < aCount; ai++) {
+      var aTrack = await seq.getAudioTrack(ai);
+      var aLabel = 'A' + (ai + 1);
+      var aClips = await dumpTrackClips(aTrack, aLabel, seqFps, ingestByName);
+      if (aClips.length > 0) {
+        data.tracks[aLabel] = aClips;
+        var aIssues = analyzeTrackGaps(aClips, seqFps);
+        if (aIssues.length > 0) data.analysis[aLabel] = aIssues;
+      }
+    }
+  } catch (e) { data.audio_error = e.message; }
+
+  // Cross-track alignment (V1 vs V2, V1 vs A3)
+  if (data.tracks['V1'] && data.tracks['V2']) {
+    var crossIssues = [];
+    var v1Clips = data.tracks['V1'];
+    var v2Clips = data.tracks['V2'];
+    for (var v2i = 0; v2i < v2Clips.length; v2i++) {
+      var v2c = v2Clips[v2i];
+      if (!v2c.timeline_start) continue;
+      // Find matching V1 clip at same position
+      var matched = false;
+      for (var v1i = 0; v1i < v1Clips.length; v1i++) {
+        if (!v1Clips[v1i].timeline_start) continue;
+        if (Math.abs(v1Clips[v1i].timeline_start.sec - v2c.timeline_start.sec) < 0.5) {
+          var drift = v2c.timeline_start.sec - v1Clips[v1i].timeline_start.sec;
+          if (Math.abs(drift) > 1 / (seqFps * 2)) {
+            crossIssues.push({ v2_clip: v2i, v1_clip: v1i, drift_frames: Math.round(drift * seqFps), drift_sec: drift });
+          }
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) crossIssues.push({ v2_clip: v2i, issue: 'no_matching_v1_clip', v2_start: v2c.timeline_start.sec });
+    }
+    if (crossIssues.length > 0) data.analysis['V1_vs_V2'] = crossIssues;
+  }
+
+  return data;
+}
+
+/**
+ * Recursively dump bin tree from a project item.
+ */
+async function dumpBinTree(item, depth) {
+  if (depth > 10) return null; // safety
+  var node = { name: item.name, type: item.type };
+  try {
+    var folder = ppro.FolderItem.cast(item);
+    if (folder) {
+      node.children = [];
+      var children = await folder.getItems();
+      for (var ci = 0; ci < children.length; ci++) {
+        var child = await dumpBinTree(children[ci], depth + 1);
+        if (child) node.children.push(child);
+      }
+    } else {
+      // Leaf item — get media path
+      try { node.media_path = item.getMediaPath(); } catch (e) {}
+    }
+  } catch (e) {}
+  return node;
+}
+
+/* ═══════════════════════════ PROJECT DOCTOR ═══════════════════════════ */
+var doctorState = { lastReportPath: null, lastDebugPath: null };
+var doctorLogFn = function () {};   // set by onDoctorAnalyze so analysis steps are captured
+
+function setDoctorStatus(text, type) {
+  $('doctor-status-dot').className = 'status-dot ' + (type || 'waiting');
+  $('doctor-status-text').textContent = text;
+}
+function setDoctorProgress(percent, text) {
+  $('doctor-progress-bar').style.display = 'block';
+  $('doctor-progress-text').style.display = 'block';
+  $('doctor-progress-fill').style.width = percent + '%';
+  if (text != null) $('doctor-progress-text').textContent = text;
+}
+function doctorProjectCode() {
+  var n = projectState.projectName || '';
+  var m = n.match(/^(YT[A-Z]{2,4}\d+)_/);
+  return m ? m[1] : (n || 'project');
+}
+function doctorTs() {
+  var d = new Date(), p = function (n) { return n < 10 ? '0' + n : '' + n; };
+  return '' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' +
+    p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+}
+async function doctorPathExists(path) {
+  if (!path) return false;
+  try { await uxpfs.getEntryWithUrl('file://' + path); return true; } catch (e) { return false; }
+}
+// mkdir -p for an absolute path: find deepest existing ancestor, then create down.
+async function doctorEnsureDir(dirPath) {
+  dirPath = dirPath.replace(/\/+$/, '');
+  try { return await uxpfs.getEntryWithUrl('file://' + dirPath); } catch (e) {}
+  var parts = dirPath.split('/');
+  var baseEntry = null, i = parts.length;
+  for (; i > 1; i--) {
+    try { baseEntry = await uxpfs.getEntryWithUrl('file://' + parts.slice(0, i).join('/')); break; } catch (e2) {}
+  }
+  if (!baseEntry) throw new Error('Cannot locate a base folder for ' + dirPath);
+  for (var j = i; j < parts.length; j++) {
+    if (!parts[j]) continue;
+    try { baseEntry = await baseEntry.getEntry(parts[j]); }
+    catch (e3) { baseEntry = await baseEntry.createFolder(parts[j]); }
+  }
+  return baseEntry;
+}
+
+// Every media leaf in the bin tree → {name, mediaPath}.
+// NOTE: the ROOT item does not cast as FolderItem — call getItems() on it directly
+// (like projectScanner/debugDump) and run dumpBinTree on each child.
+async function doctorCollectMedia(project) {
+  var media = [];
+  var rootItem = await project.getRootItem();
+  async function mediaPathOf(it) {
+    var p = '';
+    try { p = await it.getMediaFilePath(); } catch (e) {}
+    if (!p) { try { p = it.getMediaPath(); } catch (e) {} }
+    if (!p) {
+      try { var c = ppro.ClipProjectItem.cast(it); if (c) { try { p = await c.getMediaFilePath(); } catch (e) { try { p = c.getMediaPath(); } catch (e2) {} } } } catch (e) {}
+    }
+    return p || '';
+  }
+  async function scan(folder, depth) {
+    if (depth > 12) return;
+    var items;
+    try { items = await folder.getItems(); } catch (e) { return; }
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var asFolder = null; try { asFolder = ppro.FolderItem.cast(it); } catch (e) {}
+      if (asFolder) { await scan(asFolder, depth + 1); continue; }
+      var asSeq = null; try { asSeq = ppro.Sequence.cast(it); } catch (e) {}
+      if (asSeq) continue;                       // sequences are not media
+      var p = await mediaPathOf(it);
+      var pl = (p || '').toLowerCase();
+      var isCache = /\.(cfa|pek|prv)$/.test(pl) || pl.indexOf('.prv/') >= 0 ||
+        pl.indexOf('audio previews') >= 0 || pl.indexOf('video previews') >= 0 || pl.indexOf('auto-save') >= 0;
+      // real file paths only — skip synthetic (Color Matte) + regenerable cache (.cfa/.pek/previews/auto-save)
+      if (p && /[\/\\]/.test(p) && !isCache) media.push({ name: it.name, mediaPath: p, item: it });
+    }
+  }
+  await scan(rootItem, 0);
+  doctorLogFn('media items in bin (with path) = ' + media.length);
+  return media;
+}
+
+var DOCTOR_BUILD = 'D17';   // shown in the HTML report + debug log so a report self-identifies its build
+
+// Best-effort name of a Premiere object via property or getter (UXP varies by build/type).
+function doctorNameOf(obj) {
+  var n = '';
+  try { n = obj && obj.name ? obj.name : ''; } catch (e) {}
+  if (!n) { try { if (obj && typeof obj.getName === 'function') n = obj.getName() || ''; } catch (e) {} }
+  if (!n) { try { if (obj && typeof obj.getMatchName === 'function') n = obj.getMatchName() || ''; } catch (e) {} }
+  return n || '';
+}
+
+// Recurse the bin tree collecting EVERY sequence as {name, item, seq}. seq = walkable Sequence
+// (cast result) or null when cast fails — caller resolves null via project.openSequence().
+// Detection is by `item.type === 1` (the codebase's reliable signal; ppro.Sequence.cast can
+// return null / throw for sequences in some Premiere builds).
+async function doctorCollectSequencesDeep(folderItem, acc, seen, depth) {
+  if (depth > 10) return;
+  var items;
+  try { items = await folderItem.getItems(); } catch (e) { doctorLogFn('seq-scan getItems threw: ' + (e && e.message)); return; }
+  if (depth === 0) doctorLogFn('seq-scan: root items len=' + (items && items.length));
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    var ty = null; try { ty = it.type; } catch (e) {}
+    var nm = doctorNameOf(it);
+    var casted = null; try { casted = ppro.Sequence.cast(it); } catch (e) {}
+    if (depth <= 1) doctorLogFn('   item d' + depth + ' "' + nm + '" type=' + ty + ' seqCast=' + (casted ? 'Y' : 'n'));
+    if (ty === 1 || casted) {
+      if (nm && !seen[nm]) { seen[nm] = true; acc.push({ name: nm, item: it, seq: casted || null }); }
+      continue;
+    }
+    var asFolder = null; try { asFolder = ppro.FolderItem.cast(it); } catch (e) {}
+    if (asFolder) await doctorCollectSequencesDeep(asFolder, acc, seen, depth + 1);
+  }
+}
+
+// Lightweight: {name, mediaPath} of source projectItems placed on a sequence's tracks.
+// Recurses into NESTED sequences so media used only inside a nested sequence is still
+// counted as "used" on the parent timeline. Without this, a clip that lives only inside
+// a nested sequence renders a red "Media Offline" frame on the timeline, yet the report
+// wrongly marks it used:false / actionRequired:0 and never lists it as a file to send.
+// seqNameSet: { name:true } of EVERY sequence in the project. resolveSeq(name) → walkable Sequence.
+async function doctorSequenceSources(seq, seqNameSet, resolveSeq) {
+  seqNameSet = seqNameSet || {};
+  var out = [];
+  var visited = {};                                   // guard against nested-sequence cycles
+  var stats = { raw: 0, nopi: 0, nested: 0, leaves: 0, probed: 0 };
+  async function walkSeq(s) {
+    var sname = doctorNameOf(s);
+    if (sname && visited[sname]) return;
+    if (sname) visited[sname] = true;
+    async function walkTrack(track) {
+      var items = null;
+      try { items = await track.getTrackItems(1, false); } catch (e) {}
+      if (!items) { try { items = await track.getTrackItems(); } catch (e) {} }
+      if (!items) return;
+      for (var i = 0; i < items.length; i++) {
+        stats.raw++;
+        try {
+          var pi = null, piErr = '';
+          try { pi = await items[i].getProjectItem(); } catch (e) { piErr = (e && e.message) || 'threw'; }
+          var tiName = doctorNameOf(items[i]);        // track-item name (works when projectItem is null)
+          var piName = doctorNameOf(pi) || tiName;
+          // Nested sequence? Match either name against the project's full sequence-name set.
+          var nestedName = (seqNameSet[piName] && piName) || (seqNameSet[tiName] && tiName) || '';
+          if (nestedName && nestedName !== sname) {
+            var nestedSeq = await resolveSeq(nestedName);
+            if (nestedSeq) { stats.nested++; await walkSeq(nestedSeq); continue; }
+          }
+          if (!piName) {
+            stats.nopi++;
+            // Probe the first few unidentifiable clips so we learn the right API next run.
+            if (stats.probed < 5) {
+              stats.probed++;
+              var meths = '';
+              try { meths = Object.getOwnPropertyNames(Object.getPrototypeOf(items[i])).filter(function (k) { return k !== 'constructor'; }).join(','); } catch (e) {}
+              doctorLogFn('   ? unidentified clip: getPI=' + (piErr || '(null)') + ' tiName="' + tiName + '" methods=[' + meths + ']');
+            }
+            continue;
+          }
+          var p = '';
+          if (pi) { try { p = await pi.getMediaFilePath(); } catch (e) { try { p = pi.getMediaPath(); } catch (e2) {} } }
+          out.push({ name: piName, mediaPath: p || '' });
+          stats.leaves++;
+        } catch (e) {}
+      }
+    }
+    try { var vc = await s.getVideoTrackCount(); for (var v = 0; v < vc; v++) { await walkTrack(await s.getVideoTrack(v)); } } catch (e) {}
+    try { var ac = await s.getAudioTrackCount(); for (var a = 0; a < ac; a++) { await walkTrack(await s.getAudioTrack(a)); } } catch (e) {}
+  }
+  await walkSeq(seq);
+  try { doctorLogFn('  walk "' + doctorNameOf(seq) + '": raw=' + stats.raw + ' nopi=' + stats.nopi + ' nested=' + stats.nested + ' leaves=' + stats.leaves + ' visited=[' + Object.keys(visited).join(', ') + ']'); } catch (e) {}
+  return out;
+}
+
+// Source names placed on the target sequence(s). scope: 'active' | 'all'.
+async function doctorCollectUsage(project, scope) {
+  var usedByName = {}, seqNames = [], seen = {};
+
+  // 1) EVERY sequence in the project (incl. nested) as WALKABLE objects, via getSequences().
+  //    This is the reliable enumerator here — ppro.Sequence.cast() returns null and
+  //    project.openSequence() throws in this Premiere build (proven by build-D9 debug log).
+  var seqByName = {}, seqNameSet = {};
+  var allSeq = [];
+  try { allSeq = await project.getSequences(); } catch (e) { doctorLogFn('getSequences threw: ' + (e && e.message)); }
+  for (var m = 0; m < (allSeq ? allSeq.length : 0); m++) {
+    var nmm = doctorNameOf(allSeq[m]);
+    if (nmm && !seqByName[nmm]) { seqByName[nmm] = allSeq[m]; seqNameSet[nmm] = true; }
+  }
+  // make sure the active sequence is in the map (and walkable)
+  var savedActive = null; try { savedActive = await project.getActiveSequence(); } catch (e) {}
+  if (savedActive) { var an = doctorNameOf(savedActive); if (an && !seqByName[an]) { seqByName[an] = savedActive; seqNameSet[an] = true; } }
+  doctorLogFn('getSequences = ' + Object.keys(seqByName).length + ' [' + Object.keys(seqByName).join(', ') + ']');
+
+  // resolver: walkable Sequence straight from the map — no openSequence needed.
+  function resolveSeq(name) { return seqByName[name] || null; }
+
+  // 2) Decide which top-level sequence(s) to scan.
+  var topSeqs = [];   // walkable Sequence objects
+  if (scope === 'active') {
+    if (savedActive) { topSeqs.push(savedActive); seen[doctorNameOf(savedActive)] = true; }
+    else doctorLogFn('no active sequence');
+  }
+  if (!topSeqs.length || scope === 'all') {
+    Object.keys(seqByName).forEach(function (k) { if (!seen[k]) { topSeqs.push(seqByName[k]); seen[k] = true; } });
+  }
+
+  // 3) Walk each top sequence (recursing into nested via resolveSeq).
+  for (var si = 0; si < topSeqs.length; si++) {
+    var seq = topSeqs[si];
+    var nm = doctorNameOf(seq) || ('seq' + (si + 1));
+    seqNames.push(nm);
+    var srcs = await doctorSequenceSources(seq, seqNameSet, resolveSeq);
+    for (var k = 0; k < srcs.length; k++) {
+      var src = srcs[k];
+      if (!usedByName[src.name]) usedByName[src.name] = { count: 0, seqs: {}, mediaPath: src.mediaPath || '' };
+      usedByName[src.name].count++;
+      usedByName[src.name].seqs[nm] = (usedByName[src.name].seqs[nm] || 0) + 1;
+      if (!usedByName[src.name].mediaPath && src.mediaPath) usedByName[src.name].mediaPath = src.mediaPath;
+    }
+  }
+
+  return { usedByName: usedByName, sequences: seqNames };
+}
+
+async function analyzeForDoctor(scope) {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) throw new Error('No active project — open a project in Premiere first.');
+  doctorLogFn('active project = ' + (project.name || '?'));
+  var media = await doctorCollectMedia(project);
+  doctorLogFn('media items in bin = ' + media.length);
+  var usage = await doctorCollectUsage(project, scope);
+  doctorLogFn('sequences scanned = ' + usage.sequences.length + ' [' + usage.sequences.join(', ') + ']');
+  doctorLogFn('distinct used sources = ' + Object.keys(usage.usedByName).length);
+  var seen = {}, items = [];
+  for (var i = 0; i < media.length; i++) {
+    var m = media[i];
+    if (!m.name || seen[m.name]) continue;
+    seen[m.name] = true;
+    var present = await doctorPathExists(m.mediaPath);
+    // D17: the disk is only half the answer. Ask Premiere too — a clip can be offline in the
+    // app while its file is present (stale volume handle / importer crash). Reporting only the
+    // disk check is how a "551 present · 4 offline" report coexisted with a red timeline.
+    var pOff = await doctorIsOfflineInPremiere(m.item);
+    var u = usage.usedByName[m.name];
+    var usedIn = [];
+    if (u) Object.keys(u.seqs).forEach(function (sq) { usedIn.push({ seq: sq, count: u.seqs[sq] }); });
+    items.push({
+      name: m.name, mediaPath: m.mediaPath, present: present,
+      premiereOffline: pOff, ghostOffline: present && pOff === true,
+      used: !!u, usedIn: usedIn
+    });
+  }
+  // include any USED source not matched in the bin inventory (path taken from the timeline clip)
+  var usedKeys = Object.keys(usage.usedByName);
+  for (var j = 0; j < usedKeys.length; j++) {
+    var un = usedKeys[j];
+    if (seen[un]) continue;
+    seen[un] = true;
+    var uu = usage.usedByName[un];
+    // skip synthetic timeline sources (Color Matte, titles, etc. — no real file path)
+    if (!uu.mediaPath || !/[\/\\]/.test(uu.mediaPath)) continue;
+    var uIn = []; Object.keys(uu.seqs).forEach(function (sq) { uIn.push({ seq: sq, count: uu.seqs[sq] }); });
+    var pr = await doctorPathExists(uu.mediaPath);
+    // No bin item behind this record (timeline-only source) → Premiere's offline flag is unreachable.
+    items.push({ name: un, mediaPath: uu.mediaPath || '', present: pr, premiereOffline: null, ghostOffline: false, used: true, usedIn: uIn });
+  }
+  var counts = {
+    total: items.length,
+    present: items.filter(function (x) { return x.present; }).length,
+    offline: items.filter(function (x) { return !x.present; }).length,
+    // D17: file on disk, but Premiere still calls it offline — fixable in place, nothing to request.
+    ghostOffline: items.filter(function (x) { return x.ghostOffline; }).length,
+    actionRequired: items.filter(function (x) { return !x.present && x.used; }).length
+  };
+  // Premiere exposes no offline flag on some builds → detection returns null everywhere.
+  // Say so in the log instead of silently reporting "0 ghost offline".
+  counts.ghostDetectable = items.some(function (x) { return x.premiereOffline !== null && x.premiereOffline !== undefined; });
+  if (!counts.ghostDetectable) doctorLogFn('WARN: this Premiere build exposes no offline flag — ghost-offline count is unknown, not zero');
+  var scopeLabel = (scope === 'active' && usage.sequences.length === 1)
+    ? ('Active sequence: ' + usage.sequences[0])
+    : ('All sequences (' + usage.sequences.length + ')');
+
+  // Derive the project root automatically from the ACTIVE project's .prproj path.
+  // (Doctor needs no "Select folder" — it follows whatever project is open.)
+  var projPath = '';
+  try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+  // Doctor follows the ACTIVE project: derive root from its .prproj path first.
+  // Only fall back to the panel-selected folder if the project has no saved path.
+  var projectRoot = projPath
+    ? projPath.replace(/\/[^\/]*$/, '')
+    : (projectState.folderPath ? projectState.folderPath.replace(/\\/g, '/').replace(/\/+$/, '') : '');
+  // Editors keep the .prproj in 02_Edit/ → walk UP to the folder that owns 00_Setup,
+  // otherwise the report lands in 02_Edit/00_Setup and media search misses 01_Source.
+  if (projectRoot) projectRoot = await resolveProjectRoot(projectRoot);
+  doctorLogFn('project.path = ' + (projPath || '(none)'));
+  doctorLogFn('derived projectRoot = ' + (projectRoot || '(none)'));
+  doctorLogFn('counts = ' + JSON.stringify(counts));
+  var rootName = projectRoot ? projectRoot.split('/').filter(Boolean).pop() : (project.name || '');
+  var cm = String(rootName).match(/^(YT[A-Z]{2,4}\d+)_/) || String(project.name || '').match(/^(YT[A-Z]{2,4}\d+)_/);
+  var code = cm ? cm[1] : (rootName || project.name || 'project');
+
+  return {
+    project: { name: project.name || rootName, code: code, path: projectRoot, prproj: projPath },
+    generatedAt: new Date().toISOString(),
+    build: DOCTOR_BUILD,
+    scopeLabel: scopeLabel,
+    sequencesScanned: usage.sequences,
+    counts: counts, items: items, fonts: [], errors: []  // fonts: v2 (parse .prproj)
+  };
+}
+
+async function onDoctorAnalyze() {
+  var dbg = [];
+  function log(m) {
+    dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m);
+    try { console.log('[Doctor] ' + m); } catch (e) {}
+  }
+  doctorLogFn = log;
+  doctorState.lastReportPath = null;
+  doctorState.lastDebugPath = null;
+  try { $('btn-doctor-open').setAttribute('disabled', 'true'); } catch (e) {}
+  var projectRootForLog = '';
+  var scopeEl = document.querySelector('input[name="doctor-scope"]:checked');
+  var scope = scopeEl ? scopeEl.value : 'active';
+  log('=== Project Doctor run (build ' + DOCTOR_BUILD + ' · nested-seq aware) === scope=' + scope + ' ; panelFolder=' + (projectState.folderPath || '(none)'));
+  $('btn-doctor-analyze').setAttribute('disabled', 'true');
+  setDoctorStatus('Analyzing project…', 'waiting');
+  setDoctorProgress(10, 'Reading project bin + timeline…');
+  try {
+    var result = await analyzeForDoctor(scope);
+    projectRootForLog = result.project.path || '';
+    setDoctorProgress(70, 'Building report…');
+    var report = require('./src/doctor/doctorReport');
+    var html = report.buildDoctorHtml(result);
+    var json = report.buildDoctorJson(result);
+    log('report built: html=' + html.length + 'B json=' + json.length + 'B');
+
+    var projectRoot = result.project.path;
+    if (!projectRoot) throw new Error('Active project has no saved path. Save the .prproj once, then retry.');
+    // prefill the relink "also search" box with the channel parent (sibling-project assets live there)
+    try { var _er = $('doctor-extra-root'); if (_er && !_er.value) _er.value = projectRoot.replace(/\/[^\/]*$/, ''); } catch (e) {}
+    var outDir = projectRoot + '/00_Setup/05_Review';
+    log('writing report → ' + outDir);
+    var dirEntry = await doctorEnsureDir(outDir);
+    var base = result.project.code + '_doctor_' + doctorTs();
+    var htmlFile = await dirEntry.createFile(base + '.html', { overwrite: true });
+    await htmlFile.write(html);
+    var jsonFile = await dirEntry.createFile(base + '.json', { overwrite: true });
+    await jsonFile.write(json);
+    doctorState.lastReportPath = outDir + '/' + base + '.html';
+    $('btn-doctor-open').removeAttribute('disabled');
+    log('report written OK');
+
+    var c = result.counts;
+    $('doctor-summary').innerHTML =
+      '<div style="padding:8px 0;line-height:1.6">' +
+      '<span style="color:var(--text-secondary);font-size:11px">Analyzed (active project): </span><b>' +
+      escapeHtml(result.project.name) + '</b><br>' +
+      '<b style="color:#ff5252;font-size:16px">' + c.actionRequired + '</b> action required &middot; ' +
+      c.offline + ' offline &middot; ' + c.present + ' present &middot; ' + c.total + ' total<br>' +
+      (c.ghostDetectable
+        ? (c.ghostOffline
+          ? ('<b style="color:#ff9800">' + c.ghostOffline + ' ghost-offline</b> <span style="color:var(--text-secondary);font-size:11px">(file is present, Premiere says offline → 🩹 Force refresh)</span><br>')
+          : '')
+        : '<span style="color:var(--text-secondary);font-size:11px">ghost-offline: unknown (this Premiere build exposes no offline flag)</span><br>') +
+      '<span style="color:var(--text-secondary);font-size:11px">' + escapeHtml(result.scopeLabel) +
+      ' &middot; report → ' + escapeHtml(result.project.path) + '/00_Setup/05_Review/' + escapeHtml(base) + '.html</span></div>';
+
+    setDoctorProgress(100, 'Done');
+    var opened = await doctorOpen(doctorState.lastReportPath, log);
+    try { await navigator.clipboard.writeText(doctorState.lastReportPath); log('report path copied to clipboard'); } catch (e) {}
+    setDoctorStatus(c.actionRequired + ' to obtain · report ' + (opened ? 'opened' : 'saved') + ' · path copied',
+      c.actionRequired ? 'error' : 'ready');
+  } catch (e) {
+    log('ERROR: ' + (e && e.message ? e.message : String(e)));
+    if (e && e.stack) log('STACK: ' + e.stack);
+    setDoctorStatus('Error: ' + (e && e.message ? e.message : String(e)) + ' — log path copied', 'error');
+    setDoctorProgress(100, 'Error');
+  } finally {
+    $('btn-doctor-analyze').removeAttribute('disabled');
+    doctorLogFn = function () {};
+    // Debug body → FILE (not clipboard). Clipboard holds a PATH to open/send.
+    var text = '=== Project Doctor debug ===\n' + dbg.join('\n') + '\n';
+    try { await doctorWriteDebug(text, projectRootForLog); } catch (e3) {}
+    if (!doctorState.lastReportPath && doctorState.lastDebugPath) {
+      try { await navigator.clipboard.writeText(doctorState.lastDebugPath); } catch (e4) {}
+    }
+    if (doctorState.lastDebugPath) {
+      try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e5) {}
+      var st = $('doctor-status-text');
+      if (st) st.textContent += '  ·  log: ' + doctorState.lastDebugPath;
+    }
+  }
+}
+
+async function onDoctorCopyDebug() {
+  if (!doctorState.lastDebugPath) { setDoctorStatus('No debug log yet — run Analyze or Relink first.', 'waiting'); return; }
+  // OPEN the log in the default app (most useful), and copy its path as a bonus.
+  var ok = await doctorOpen(doctorState.lastDebugPath, null);
+  try { await navigator.clipboard.writeText(doctorState.lastDebugPath); } catch (e) {}
+  setDoctorStatus(ok ? ('Debug log opened · ' + doctorState.lastDebugPath)
+                     : ('Could not open — path copied · ' + doctorState.lastDebugPath), ok ? 'ready' : 'error');
+}
+
+// Open a file in the OS; if that fails, reveal its folder. Returns true if either worked.
+async function doctorOpen(path, log) {
+  if (!path) return false;
+  var shell = require('uxp').shell;
+  try {
+    var e = await uxpfs.getEntryWithUrl('file://' + path);
+    await shell.openPath(e.nativePath || path);
+    if (log) log('opened report: ' + path);
+    return true;
+  } catch (e1) { if (log) log('open file failed: ' + (e1 && e1.message)); }
+  try {
+    var folder = path.replace(/\/[^\/]*$/, '');
+    var fe = await uxpfs.getEntryWithUrl('file://' + folder);
+    await shell.openPath(fe.nativePath || folder);
+    if (log) log('opened folder: ' + folder);
+    return true;
+  } catch (e2) { if (log) log('open folder failed: ' + (e2 && e2.message)); }
+  return false;
+}
+
+// Persist the full debug text where it can be retrieved (project logs first, plugin data folder as fallback).
+async function doctorWriteDebug(text, projectRoot) {
+  var ts = doctorTs();
+  if (projectRoot) {
+    try {
+      var d = await doctorEnsureDir(projectRoot + '/00_Setup/logs');
+      var f = await d.createFile('doctor_debug_' + ts + '.log', { overwrite: true });
+      await f.write(text);
+      doctorState.lastDebugPath = projectRoot + '/00_Setup/logs/doctor_debug_' + ts + '.log';
+      try { console.log('[Doctor] debug log → ' + doctorState.lastDebugPath); } catch (e) {}
+      return;
+    } catch (e) { try { console.log('[Doctor] debug write (project) failed: ' + e.message); } catch (e1) {} }
+  }
+  try {
+    var df = await uxpfs.getDataFolder();
+    var f2 = await df.createFile('doctor_debug_' + ts + '.log', { overwrite: true });
+    await f2.write(text);
+    doctorState.lastDebugPath = (df.nativePath || '(plugin data folder)') + '/doctor_debug_' + ts + '.log';
+    try { console.log('[Doctor] debug log → ' + doctorState.lastDebugPath); } catch (e) {}
+  } catch (e3) { try { console.log('[Doctor] debug write failed entirely: ' + e3.message); } catch (e4) {} }
+}
+
+async function onDoctorOpenLast() {
+  if (!doctorState.lastReportPath) { setDoctorStatus('No report yet — run Analyze first.', 'waiting'); return; }
+  var ok = await doctorOpen(doctorState.lastReportPath, null);
+  try { await navigator.clipboard.writeText(doctorState.lastReportPath); } catch (e) {}
+  setDoctorStatus(ok ? 'Report opened · path copied' : 'Could not open — path copied to clipboard', ok ? 'ready' : 'error');
+}
+
+/* ───────────── Doctor: find local copies of offline media + relink (v2) ─────────────
+   The recurring editor-handoff case: the .prproj points media at the EDITOR'S machine
+   paths (offline / red on the timeline), but an identical file already sits in THIS
+   project (01_Source / 02_Edit / 03_Exports) or a sibling project. Instead of re-
+   requesting, find the same-name file locally and re-point the bin clip via the live
+   Premiere API ClipProjectItem.changeMediaFilePath(). One bin relink fixes every
+   timeline use. Exact basename wins (project root searched first); a copy-marker alias
+   ("Копия Vostorg A4344.MP4" → "Vostorg A4344.MP4") is the fallback. Not undoable → the
+   target is always a SAME-NAME file, and the user reviews + ⌘S afterwards. */
+
+var DOCTOR_MEDIA_EXT = /\.(mp4|mov|m4v|mxf|mts|avi|mkv|wav|mp3|aif|aiff|m4a|aac|flac|png|jpg|jpeg|psd|tif|tiff|gif|svg|webp|heic|aep|mogrt|aegraphic)$/i;
+// folders not worth walking (regenerable / huge / irrelevant to media recovery)
+var DOCTOR_SKIP_DIR = /^(.*_transcription|Adobe Premiere Pro Auto-Save|Adobe Premiere Pro Audio Previews|Adobe Premiere Pro Video Previews|node_modules|logs|per_clip)$/i;
+
+function doctorBasename(p) {
+  return String(p || '').replace(/\\/g, '/').replace(/\/+$/, '').split('/').pop() || '';
+}
+// normalise copy-markers so "Копия Vostorg A4344.MP4" ≈ "Vostorg A4344.MP4"
+function doctorNormName(name) {
+  var n = String(name || '').toLowerCase();
+  var dot = n.lastIndexOf('.'), ext = dot > 0 ? n.slice(dot) : '', stem = dot > 0 ? n.slice(0, dot) : n;
+  stem = stem.replace(/^(копия|copy of|copy_of|copy)\s+/i, '');
+  stem = stem.replace(/\s*[—–-]\s*(копия|copy)\s*$/i, '');
+  stem = stem.replace(/\s*\(\d+\)\s*$/, '');   // duplicate marker: "name (1)" ≈ "name"
+  // Editor consolidate/trim suffix: "C6381-001.MP4" ≈ "C6381.MP4", "en (1)-003.mp4" ≈ "en (1).mp4".
+  // 1-3 digits ONLY — camera stems like "RYA-FX3-0182" end in 4 digits and must stay intact.
+  stem = stem.replace(/-\d{1,3}$/, '');
+  return (stem + ext).trim();
+}
+
+// Walk the given roots once → indexes by basename (exact) and by normalised name.
+// First match wins → pass the project root FIRST so in-project copies are preferred.
+async function doctorBuildIndex(roots, log) {
+  var exact = {}, norm = {}, files = 0;
+  async function walk(folder, depth) {
+    if (depth > 9) return;
+    var entries; try { entries = await folder.getEntries(); } catch (e) { return; }
+    for (var i = 0; i < entries.length; i++) {
+      var en = entries[i], nm = en.name || '';
+      if (en.isFolder) { if (nm.charAt(0) === '.' || DOCTOR_SKIP_DIR.test(nm)) continue; await walk(en, depth + 1); continue; }
+      if (!DOCTOR_MEDIA_EXT.test(nm)) continue;
+      var full = en.nativePath || ''; if (!full) continue;
+      files++;
+      var ke = nm.toLowerCase(); if (!(ke in exact)) exact[ke] = full;
+      var kn = doctorNormName(nm); if (kn && !(kn in norm)) norm[kn] = full;
+    }
+  }
+  for (var r = 0; r < roots.length; r++) {
+    if (!roots[r]) continue;
+    var ent = null; try { ent = await uxpfs.getEntryWithUrl('file://' + roots[r]); }
+    catch (e) { if (log) log('relink: root not found — ' + roots[r]); continue; }
+    if (log) log('relink: indexing ' + roots[r]);
+    await walk(ent, 0);
+  }
+  if (log) log('relink: indexed ' + files + ' files · exact=' + Object.keys(exact).length + ' norm=' + Object.keys(norm).length);
+  return { exact: exact, norm: norm };
+}
+
+// Re-point one bin item to targetPath. Returns 'ok' | 'skip' | 'fail'.
+async function doctorRelinkItem(it, targetPath, log) {
+  var clip = null; try { clip = ppro.ClipProjectItem.cast(it); } catch (e) {}
+  if (!clip) { if (log) log('   skip (not a clip): ' + (it && it.name)); return 'skip'; }
+  try { if (clip.canChangeMediaPath && (await clip.canChangeMediaPath()) === false) { if (log) log('   skip (canChangeMediaPath=false): ' + it.name); return 'skip'; } } catch (e) {}
+  var ok = false;
+  try { ok = await clip.changeMediaFilePath(targetPath); } catch (e) { if (log) log('   change threw: ' + (e && e.message)); }
+  if (!ok) { try { ok = await clip.changeMediaFilePath(targetPath, true); } catch (e2) {} }   // retry: override codec/format compat check
+  return ok ? 'ok' : 'fail';
+}
+
+/* ───────────── D17: GHOST OFFLINE — Premiere says offline, the file is right there ─────────
+   Failure seen live (YTUVI01, 2026-09-09): the project SSD was unplugged while Premiere held
+   the project open, then re-mounted (new /dev node). Premiere latched the clips offline and
+   never re-resolved them — red "Media offline" on the timeline while the path in the .prproj
+   is byte-identical to a file that exists and reads at ~950 MB/s. Reopening the project does
+   NOT clear it, because the stale state lives in the bin item, not in the path.
+
+   Why the D11–D16 Doctor was structurally blind to this:
+     • analyzeForDoctor decided "offline" purely by disk check (`present = doctorPathExists`),
+       so the report cheerfully said "551 present / 4 offline" while the timeline was red;
+     • onDoctorRelink opened with `if (await doctorPathExists(m.mediaPath)) continue;` —
+       every ghost-offline clip was skipped as "already linked".
+   So the one case where the editor is most stuck was the one case Doctor refused to touch.
+
+   Fix = ask PREMIERE (not the filesystem) whether a clip is offline, then force a re-import
+   in place. changeMediaFilePath(samePath) is a no-op — Premiere compares strings and does
+   nothing. The bounce below re-points the clip to an OS-equivalent but textually different
+   spelling of the SAME file ("/dir/name.mp4" → "/dir/./name.mp4"), then back. Premiere sees a
+   genuine path change both times and re-imports, which is what clears the offline latch.
+   Safety: BOTH spellings resolve to the same bytes, so an interruption mid-bounce still
+   leaves the clip pointing at correct media — never at a wrong file. Not undoable → ⌘S after. */
+
+// Ask Premiere itself whether the clip is offline. API surface varies by build, so probe every
+// known spelling. Returns true | false | null (null = this build exposes no offline flag).
+async function doctorIsOfflineInPremiere(it) {
+  var targets = [it];
+  try { var c = ppro.ClipProjectItem.cast(it); if (c) targets.push(c); } catch (e) {}
+  var props = ['isOffline', 'isOfflineMedia', 'isMediaOffline', 'offline'];
+  var getters = ['isOffline', 'getIsOffline', 'isOfflineMedia', 'getIsOfflineMedia', 'isMediaOffline', 'getIsMediaOffline'];
+  for (var t = 0; t < targets.length; t++) {
+    var o = targets[t];
+    if (!o) continue;
+    for (var g = 0; g < getters.length; g++) {
+      try {
+        if (typeof o[getters[g]] === 'function') {
+          var v = await o[getters[g]]();
+          if (typeof v === 'boolean') return v;
+        }
+      } catch (e) {}
+    }
+    for (var p = 0; p < props.length; p++) {
+      try { if (typeof o[props[p]] === 'boolean') return o[props[p]]; } catch (e) {}
+    }
+  }
+  return null;
+}
+
+// OS-equivalent but textually different spelling of the same absolute path: "/a/b/f.mp4" →
+// "/a/b/./f.mp4". Used only as the bounce waypoint — never left as the final value.
+function doctorAltPathForm(p) {
+  var s = String(p || '').replace(/\\/g, '/');
+  var cut = s.lastIndexOf('/');
+  if (cut <= 0 || cut === s.length - 1) return '';
+  return s.slice(0, cut) + '/./' + s.slice(cut + 1);
+}
+
+// Force Premiere to re-import a clip that is offline despite its path being valid.
+// Returns 'ok' | 'skip' | 'fail'. Always tries to leave the clip on the canonical path.
+async function doctorForceRefreshItem(it, canonicalPath, log) {
+  var clip = null; try { clip = ppro.ClipProjectItem.cast(it); } catch (e) {}
+  if (!clip) { if (log) log('   skip (not a clip): ' + doctorNameOf(it)); return 'skip'; }
+  var nm = doctorNameOf(it) || doctorBasename(canonicalPath);
+
+  // Step 1 — the polite way, when this build offers it.
+  for (var r = 0; r < 2; r++) {
+    var fn = r === 0 ? 'refreshMedia' : 'refresh';
+    try {
+      if (typeof clip[fn] === 'function') {
+        await clip[fn]();
+        if (log) log('   ' + fn + '() called on ' + nm);
+        if ((await doctorIsOfflineInPremiere(it)) === false) { if (log) log('   OK via ' + fn + '(): ' + nm); return 'ok'; }
+      }
+    } catch (e) { if (log) log('   ' + fn + '() threw: ' + (e && e.message)); }
+  }
+
+  // Step 2 — the bounce. Both spellings point at the same bytes.
+  var alt = doctorAltPathForm(canonicalPath);
+  if (!alt) { if (log) log('   FAIL no alt form for ' + canonicalPath); return 'fail'; }
+  async function setPath(p) {
+    var ok = false;
+    try { ok = await clip.changeMediaFilePath(p); } catch (e) { if (log) log('   change threw: ' + (e && e.message)); }
+    if (!ok) { try { ok = await clip.changeMediaFilePath(p, true); } catch (e2) {} }
+    return ok;
+  }
+  var wentOut = await setPath(alt);
+  if (!wentOut && log) log('   bounce out refused for ' + nm + ' (continuing to restore canonical anyway)');
+  var cameBack = await setPath(canonicalPath);
+  if (!cameBack) {
+    // Never leave a clip parked on the waypoint if we can help it — retry once.
+    cameBack = await setPath(canonicalPath);
+  }
+
+  var finalPath = '';
+  try { finalPath = (await clip.getMediaFilePath()) || ''; } catch (e) {}
+  if (!cameBack && wentOut) {
+    if (log) log('   WARN ' + nm + ' left on alt spelling (same file): ' + (finalPath || alt));
+  }
+  var still = await doctorIsOfflineInPremiere(it);
+  if (still === true) { if (log) log('   FAIL still offline after bounce: ' + nm); return 'fail'; }
+  if (log) log('   OK via bounce: ' + nm + (finalPath ? ('  → ' + finalPath) : ''));
+  return (wentOut || cameBack) ? 'ok' : 'fail';
+}
+
+async function onDoctorRelink() {
+  var dbg = [];
+  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor relink] ' + m); } catch (e) {} }
+  doctorLogFn = log;
+  var relinked = 0, failed = 0, skipped = 0, refreshed = 0, missing = [], projectRootForLog = '';
+  try { $('btn-doctor-relink').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) {}
+  setDoctorStatus('Searching for local copies + relinking…', 'waiting');
+  setDoctorProgress(10, 'Reading project bin…');
+  log('=== Project Doctor relink (build ' + DOCTOR_BUILD + ') ===');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active project — open a project in Premiere first.');
+    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+    var projectRoot = projPath ? projPath.replace(/\/[^\/]*$/, '')
+      : (projectState.folderPath ? projectState.folderPath.replace(/\\/g, '/').replace(/\/+$/, '') : '');
+    if (!projectRoot) throw new Error('Project has no saved path — save the .prproj once, then retry.');
+    // .prproj usually sits in 02_Edit/ — walk up to the REAL project root, otherwise the
+    // media index never sees 01_Source/Video/<scene>/ where the originals live.
+    projectRoot = await resolveProjectRoot(projectRoot);
+    projectRootForLog = projectRoot;
+    var extra = ''; try { extra = ($('doctor-extra-root').value || '').trim().replace(/\/+$/, ''); } catch (e) {}
+    var roots = [projectRoot]; if (extra && extra !== projectRoot) roots.push(extra);
+    log('roots = ' + roots.join('  |  '));
+
+    setDoctorProgress(30, 'Indexing local media…');
+    var idx = await doctorBuildIndex(roots, log);
+
+    setDoctorProgress(55, 'Relinking offline clips…');
+    var media = await doctorCollectMedia(project);   // records now carry .item (the bin ProjectItem)
+    var done = {};
+    for (var i = 0; i < media.length; i++) {
+      var m = media[i];
+      if (!m.item) continue;
+      // D17: path resolving on disk no longer means "fine". A clip can be GHOST OFFLINE —
+      // Premiere latched it offline (unplugged volume, importer crash) while the file sits
+      // right there. D16 skipped exactly these, which is why Relink "did nothing" for them.
+      if (await doctorPathExists(m.mediaPath)) {
+        if ((await doctorIsOfflineInPremiere(m.item)) !== true) continue;   // genuinely linked → leave it
+        log('  GHOST ' + (m.name || doctorBasename(m.mediaPath)) + ' — offline in Premiere, file present → force refresh');
+        var gres = await doctorForceRefreshItem(m.item, m.mediaPath, log);
+        if (gres === 'ok') refreshed++; else if (gres === 'skip') skipped++; else failed++;
+        continue;
+      }
+      // Build candidate basenames in priority order. Editors often rename/export with a
+      // DOUBLED extension ("Vostorg B4382.MP4.mp4") while the bin clip NAME stays clean
+      // ("Vostorg B4382.MP4") — so try the media-path basename AND the clip name AND a
+      // de-doubled-extension variant of each, before giving up.
+      var pbn = doctorBasename(m.mediaPath);
+      var cands = [];
+      var addCand = function (x) { if (x && cands.indexOf(x) < 0) cands.push(x); };
+      addCand(pbn); addCand(m.name);
+      [pbn, m.name].forEach(function (x) { if (!x) return; var d = x.replace(/\.([A-Za-z0-9]{2,4})\.([A-Za-z0-9]{2,4})$/, '.$1'); addCand(d); });
+      if (!cands.length) continue;
+      var dkey = (m.name || pbn).toLowerCase();
+      if (done[dkey]) continue;
+      var target = null, via = '';
+      for (var ci = 0; ci < cands.length && !target; ci++) { var ek = cands[ci].toLowerCase(); if (idx.exact[ek]) { target = idx.exact[ek]; via = 'exact'; } }
+      if (!target) { for (var cj = 0; cj < cands.length && !target; cj++) { var nk = doctorNormName(cands[cj]); if (nk && idx.norm[nk]) { target = idx.norm[nk]; via = 'alias'; } } }
+      if (!target) { missing.push(m.name || pbn); log('  MISS ' + (m.name || pbn) + '  [tried: ' + cands.join(' | ') + ']'); continue; }
+      var res = await doctorRelinkItem(m.item, target, log);
+      if (res === 'ok') { relinked++; done[dkey] = 1; log('  OK   ' + (m.name || pbn) + '  (' + via + ') → ' + target); }
+      else if (res === 'skip') { skipped++; }
+      else { failed++; log('  FAIL ' + (m.name || pbn) + ' → ' + target); }
+    }
+    log('relinked=' + relinked + ' ghostRefreshed=' + refreshed + ' failed=' + failed + ' skipped=' + skipped + ' stillMissing=' + missing.length);
+
+    if ((relinked || refreshed) && project.save) { setDoctorProgress(75, 'Saving project…'); try { await project.save(); log('project saved'); } catch (e) { log('save threw: ' + (e && e.message)); } }
+
+    setDoctorProgress(85, 'Re-analyzing…');
+    try { await onDoctorAnalyze(); } catch (e) { log('re-analyze threw: ' + (e && e.message)); }
+
+    var msg = 'Relinked ' + relinked + (refreshed ? (' · ' + refreshed + ' ghost-offline refreshed') : '') +
+      (failed ? (' · ' + failed + ' failed') : '') +
+      (missing.length ? (' · ' + missing.length + ' still need editor') : ' · all resolved ✅');
+    setDoctorStatus(msg, (missing.length || failed) ? 'error' : 'ready');
+    setDoctorProgress(100, 'Done');
+    try {
+      $('doctor-validation').innerHTML = missing.length
+        ? '<div style="margin-top:8px;color:#ff9800;font-size:11px"><b>Still missing (no local copy — request from editor):</b><br>' + missing.map(escapeHtml).join('<br>') + '</div>'
+        : '<div style="margin-top:8px;color:#4caf50;font-size:11px">All offline clips relinked from local copies. Review &amp; ⌘S.</div>';
+    } catch (e) {}
+  } catch (e) {
+    log('ERROR: ' + (e && e.message ? e.message : String(e)));
+    if (e && e.stack) log('STACK: ' + e.stack);
+    setDoctorStatus('Relink error: ' + (e && e.message ? e.message : String(e)), 'error');
+    setDoctorProgress(100, 'Error');
+  } finally {
+    try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) {}
+    doctorLogFn = function () {};
+    try { await doctorWriteDebug('=== Project Doctor relink debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) {}
+    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) {} }
+  }
+}
+
+/* ───────────── D17: Force refresh — repair ghost-offline clips in place ─────────────────────
+   Standalone counterpart to Find & Relink local. Relink answers "the file moved, where is it
+   now?"; this answers "the file never moved, Premiere just stopped believing in it". Touches
+   ONLY clips Premiere reports offline, and re-points each to the very path it already has.
+   When the build exposes no offline flag, it refuses to guess unless the user opts in to the
+   blind sweep — bouncing 500 healthy clips to fix one is not a trade worth making silently. */
+async function onDoctorForceRefresh() {
+  var dbg = [];
+  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor force-refresh] ' + m); } catch (e) {} }
+  doctorLogFn = log;
+  var refreshed = 0, failed = 0, skipped = 0, noFile = [], projectRootForLog = '';
+  try { $('btn-doctor-forcerefresh').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-relink').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) {}
+  setDoctorStatus('Force-refreshing ghost-offline clips…', 'waiting');
+  setDoctorProgress(10, 'Reading project bin…');
+  log('=== Project Doctor force-refresh (build ' + DOCTOR_BUILD + ') ===');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active project — open a project in Premiere first.');
+    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+    var projectRoot = projPath ? projPath.replace(/\/[^\/]*$/, '')
+      : (projectState.folderPath ? projectState.folderPath.replace(/\\/g, '/').replace(/\/+$/, '') : '');
+    if (projectRoot) projectRoot = await resolveProjectRoot(projectRoot);
+    projectRootForLog = projectRoot;
+
+    var scopeEl = document.querySelector('input[name="doctor-scope"]:checked');
+    var scope = scopeEl ? scopeEl.value : 'active';
+    var blind = false; try { var cb = $('doctor-force-blind'); blind = !!(cb && (cb.checked || cb.getAttribute('checked') !== null)); } catch (e) {}
+    log('scope=' + scope + ' blindSweep=' + blind);
+
+    setDoctorProgress(30, 'Asking Premiere which clips are offline…');
+    var media = await doctorCollectMedia(project);
+    var usedByName = null;
+    if (scope === 'active') {
+      var usage = await doctorCollectUsage(project, 'active');
+      usedByName = usage.usedByName || {};
+      log('active-scope sequences = ' + (usage.sequences || []).join(', ') + ' · distinct used sources = ' + Object.keys(usedByName).length);
+    }
+
+    var cands = [], anyFlag = false, seenName = {};
+    for (var i = 0; i < media.length; i++) {
+      var m = media[i];
+      if (!m.item || !m.mediaPath) continue;
+      var key = (m.name || doctorBasename(m.mediaPath)).toLowerCase();
+      if (seenName[key]) continue;
+      if (usedByName && !usedByName[m.name]) continue;          // active scope → only what this timeline uses
+      var off = await doctorIsOfflineInPremiere(m.item);
+      if (off !== null) anyFlag = true;
+      var exists = await doctorPathExists(m.mediaPath);
+      if (off === true) { seenName[key] = 1; cands.push({ m: m, exists: exists, why: 'premiere-offline' }); }
+      else if (off === null && blind && exists) { seenName[key] = 1; cands.push({ m: m, exists: exists, why: 'blind-sweep' }); }
+    }
+    log('candidates = ' + cands.length + ' (offline flag readable on this build: ' + (anyFlag ? 'yes' : 'NO') + ')');
+
+    if (!cands.length) {
+      var why = anyFlag
+        ? 'Premiere reports no offline clips in this scope — nothing to refresh.'
+        : 'This Premiere build exposes no offline flag. Tick “blind sweep” to bounce every clip in scope.';
+      log(why);
+      setDoctorStatus(why, anyFlag ? 'ready' : 'error');
+      setDoctorProgress(100, 'Nothing to do');
+      try { $('doctor-validation').innerHTML = '<div style="margin-top:8px;color:#ff9800;font-size:11px">' + escapeHtml(why) + '</div>'; } catch (e) {}
+      return;
+    }
+
+    setDoctorProgress(55, 'Re-importing ' + cands.length + ' clip(s)…');
+    for (var c = 0; c < cands.length; c++) {
+      var it = cands[c];
+      var nm = it.m.name || doctorBasename(it.m.mediaPath);
+      if (!it.exists) { noFile.push(nm); log('  SKIP ' + nm + ' — offline AND file missing → use 🔗 Find & Relink local'); skipped++; continue; }
+      log('  FIX  ' + nm + '  [' + it.why + ']  ' + it.m.mediaPath);
+      var res = await doctorForceRefreshItem(it.m.item, it.m.mediaPath, log);
+      if (res === 'ok') refreshed++; else if (res === 'skip') skipped++; else failed++;
+      setDoctorProgress(55 + Math.round(20 * (c + 1) / cands.length), 'Re-importing ' + (c + 1) + '/' + cands.length + '…');
+    }
+    log('refreshed=' + refreshed + ' failed=' + failed + ' skipped=' + skipped + ' missingFile=' + noFile.length);
+
+    if (refreshed && project.save) { setDoctorProgress(78, 'Saving project…'); try { await project.save(); log('project saved'); } catch (e) { log('save threw: ' + (e && e.message)); } }
+
+    setDoctorProgress(88, 'Re-analyzing…');
+    try { await onDoctorAnalyze(); } catch (e) { log('re-analyze threw: ' + (e && e.message)); }
+
+    var msg = 'Force-refreshed ' + refreshed + ' of ' + cands.length +
+      (failed ? (' · ' + failed + ' failed') : '') +
+      (noFile.length ? (' · ' + noFile.length + ' truly missing → use Relink') : '');
+    setDoctorStatus(msg, (failed || noFile.length) ? 'error' : 'ready');
+    setDoctorProgress(100, 'Done');
+    try {
+      $('doctor-validation').innerHTML = noFile.length
+        ? '<div style="margin-top:8px;color:#ff9800;font-size:11px"><b>Offline AND file missing — these need 🔗 Find &amp; Relink local (or the editor):</b><br>' + noFile.map(escapeHtml).join('<br>') + '</div>'
+        : '<div style="margin-top:8px;color:#4caf50;font-size:11px">Ghost-offline clips re-imported in place. Review &amp; ⌘S.</div>';
+    } catch (e) {}
+  } catch (e) {
+    log('ERROR: ' + (e && e.message ? e.message : String(e)));
+    if (e && e.stack) log('STACK: ' + e.stack);
+    setDoctorStatus('Force-refresh error: ' + (e && e.message ? e.message : String(e)), 'error');
+    setDoctorProgress(100, 'Error');
+  } finally {
+    try { $('btn-doctor-forcerefresh').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) {}
+    doctorLogFn = function () {};
+    try { await doctorWriteDebug('=== Project Doctor force-refresh debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) {}
+    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) {} }
+  }
+}
+
+/* ───────────── Doctor: Restore structure (place files at the paths the project records) ─────
+   D11 relink re-points clips via changeMediaFilePath — great for regular media, but it can't
+   relink After-Effects Dynamic-Link .aep comps (and misses wrong-folder / renamed files). When
+   an editor's project records media at HIS structure (e.g. /Users/user/Documents/Roman/<PROJECT>/
+   01_Media/Ae_Projects/x.aep) and we downloaded the file to a different sub-folder, this places a
+   same-name local COPY at the EXACT relative path the project expects (editor root → our project
+   root), so Premiere resolves everything (incl. AE comps) by path on the next OPEN. Non-destructive
+   (copy). Idempotent. Reopen the project after. */
+function doctorTranslateToLocal(mediaPath, projectRoot, projBase) {
+  var mp = String(mediaPath || '').replace(/\\/g, '/');
+  var anchor = '/' + projBase + '/';
+  var i = mp.indexOf(anchor);
+  if (i < 0) return '';
+  return projectRoot.replace(/\/+$/, '') + '/' + mp.slice(i + anchor.length);
+}
+async function doctorEnsureFolderAbs(absDir, log) {
+  try { return await uxpfs.getEntryWithUrl('file://' + absDir); } catch (e) {}
+  var parts = String(absDir).replace(/\/+$/, '').split('/');
+  var idx = parts.length, base = null;
+  for (; idx > 1; idx--) { try { base = await uxpfs.getEntryWithUrl('file://' + parts.slice(0, idx).join('/')); break; } catch (e) {} }
+  if (!base) return null;
+  for (var j = idx; j < parts.length; j++) {
+    try { base = await base.createFolder(parts[j]); }
+    catch (e) { try { base = await uxpfs.getEntryWithUrl('file://' + parts.slice(0, j + 1).join('/')); } catch (e2) { if (log) log('   mkdir fail: ' + parts.slice(0, j + 1).join('/')); return null; } }
+  }
+  return base;
+}
+async function doctorPlaceFile(srcNativePath, destAbsPath, log) {
+  var destDir = destAbsPath.replace(/\/[^\/]*$/, '');
+  var destName = destAbsPath.split('/').pop();
+  var folder = await doctorEnsureFolderAbs(destDir, log);
+  if (!folder) return 'fail';
+  var src = null; try { src = await uxpfs.getEntryWithUrl('file://' + srcNativePath); } catch (e) { if (log) log('   src missing: ' + srcNativePath); return 'fail'; }
+  try { await src.copyTo(folder, { overwrite: false }); }
+  catch (e) { if (log) log('   copyTo threw: ' + (e && e.message)); return 'fail'; }
+  if (src.name !== destName) {   // recorded name differs (e.g. "C5391 (1).MP4") → rename the copy
+    try {
+      var copied = await uxpfs.getEntryWithUrl('file://' + String(folder.nativePath).replace(/\/+$/, '') + '/' + src.name);
+      if (copied && copied.moveTo) await copied.moveTo(folder, { newName: destName, overwrite: false });
+      else if (copied && copied.rename) await copied.rename(destName);
+    } catch (e) { if (log) log('   rename after copy failed (left as ' + src.name + '): ' + (e && e.message)); }
+  }
+  return 'ok';
+}
+async function onDoctorRestoreStructure() {
+  var dbg = [];
+  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor restore] ' + m); } catch (e) {} }
+  doctorLogFn = log;
+  var placed = 0, already = 0, failed = 0, missing = [], projectRootForLog = '';
+  try { $('btn-doctor-restore').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-relink').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) {}
+  setDoctorStatus('Restoring structure — placing files at recorded paths…', 'waiting');
+  setDoctorProgress(10, 'Reading project…');
+  log('=== Project Doctor restore-structure (build ' + DOCTOR_BUILD + ') ===');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active project — open a project in Premiere first.');
+    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+    var projectRoot = projPath ? projPath.replace(/\/[^\/]*$/, '')
+      : (projectState.folderPath ? projectState.folderPath.replace(/\\/g, '/').replace(/\/+$/, '') : '');
+    if (!projectRoot) throw new Error('Project has no saved path — save the .prproj once, then retry.');
+    // .prproj usually sits in 02_Edit/ — walk up to the REAL project root, otherwise the
+    // media index never sees 01_Source/Video/<scene>/ where the originals live.
+    projectRoot = await resolveProjectRoot(projectRoot);
+    projectRootForLog = projectRoot;
+    var projBase = projectRoot.split('/').pop();
+    var extra = ''; try { extra = ($('doctor-extra-root').value || '').trim().replace(/\/+$/, ''); } catch (e) {}
+    var roots = [projectRoot]; if (extra && extra !== projectRoot) roots.push(extra);
+    log('projectRoot = ' + projectRoot + '  projBase = ' + projBase);
+
+    setDoctorProgress(30, 'Indexing local files (incl. .aep)…');
+    var idx = await doctorBuildIndex(roots, log);
+
+    setDoctorProgress(55, 'Placing files at recorded paths…');
+    var media = await doctorCollectMedia(project);
+    var seen = {};
+    for (var i = 0; i < media.length; i++) {
+      var m = media[i];
+      if (!m.mediaPath) continue;
+      if (await doctorPathExists(m.mediaPath)) continue;                 // already online
+      var dkey = String(m.mediaPath).toLowerCase();
+      if (seen[dkey]) continue; seen[dkey] = 1;
+      var exp = doctorTranslateToLocal(m.mediaPath, projectRoot, projBase);
+      if (!exp) { missing.push(m.name); log('  SKIP external (no project anchor): ' + m.name); continue; }
+      if (await doctorPathExists(exp)) { already++; continue; }          // already at recorded path
+      var pbn = doctorBasename(m.mediaPath);
+      var cands = []; var add = function (x) { if (x && cands.indexOf(x) < 0) cands.push(x); };
+      add(pbn); add(m.name);
+      [pbn, m.name].forEach(function (x) { if (!x) return; add(x.replace(/\.([A-Za-z0-9]{2,4})\.([A-Za-z0-9]{2,4})$/, '.$1')); });
+      var src = null;
+      for (var ci = 0; ci < cands.length && !src; ci++) { var ek = cands[ci].toLowerCase(); if (idx.exact[ek]) src = idx.exact[ek]; }
+      if (!src) { for (var cj = 0; cj < cands.length && !src; cj++) { var nk = doctorNormName(cands[cj]); if (nk && idx.norm[nk]) src = idx.norm[nk]; } }
+      if (!src) { missing.push(m.name); log('  MISS ' + m.name + '  [no local copy — need editor]'); continue; }
+      if (String(src).replace(/\\/g, '/') === exp) { already++; continue; }
+      var r = await doctorPlaceFile(src, exp, log);
+      if (r === 'ok') { placed++; log('  PLACED ' + doctorBasename(exp) + '  <- ' + src); }
+      else { failed++; log('  FAIL ' + m.name + ' -> ' + exp); }
+    }
+    log('placed=' + placed + ' already=' + already + ' failed=' + failed + ' stillMissing=' + missing.length);
+
+    setDoctorProgress(85, 'Re-analyzing…');
+    try { await onDoctorAnalyze(); } catch (e) { log('re-analyze threw: ' + (e && e.message)); }
+
+    var msg = 'Placed ' + placed + (already ? (' · ' + already + ' already') : '') +
+      (failed ? (' · ' + failed + ' failed') : '') +
+      (missing.length ? (' · ' + missing.length + ' need editor') : '') +
+      ' — reopen the project so Premiere relinks by path.';
+    setDoctorStatus(msg, (missing.length || failed) ? 'error' : 'ready');
+    setDoctorProgress(100, 'Done');
+    try {
+      $('doctor-validation').innerHTML = (placed
+        ? '<div style="margin-top:8px;color:#4caf50;font-size:11px"><b>Placed ' + placed + ' file(s) at the paths the project records.</b> Close &amp; reopen the .prproj — Premiere relinks them (incl. AE Dynamic-Link comps) by path.</div>'
+        : '<div style="margin-top:8px;color:#8a94ab;font-size:11px">Nothing to place — found files are already at their recorded paths.</div>')
+        + (missing.length ? '<div style="margin-top:6px;color:#ff9800;font-size:11px"><b>Still missing (no local copy — request from editor):</b><br>' + missing.map(escapeHtml).join('<br>') + '</div>' : '');
+    } catch (e) {}
+  } catch (e) {
+    log('ERROR: ' + (e && e.message ? e.message : String(e)));
+    if (e && e.stack) log('STACK: ' + e.stack);
+    setDoctorStatus('Restore error: ' + (e && e.message ? e.message : String(e)), 'error');
+    setDoctorProgress(100, 'Error');
+  } finally {
+    try { $('btn-doctor-restore').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-relink').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) {}
+    doctorLogFn = function () {};
+    try { await doctorWriteDebug('=== Project Doctor restore-structure debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) {}
+    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) {} }
+  }
+}
+
+/* ───────────── Doctor: Make self-contained ─────────────────────────────────
+   Стандарт: ВСЕ исходники должны лежать ВНУТРИ папки проекта (см. project_playbook).
+   Find & Relink чинит только ОФЛАЙН-клипы. Но клип может быть ОНЛАЙН и при этом
+   линковаться на СОСЕДНИЙ проект (…/YTRF05_…/NewAssets/x.mov) — тогда папку нельзя
+   перенести целиком. Эта операция перецепляет КАЖДУЮ ссылку, ведущую наружу проекта,
+   на in-project копию того же файла (индексируется ТОЛЬКО корень проекта). Чего нет
+   внутри — выводит списком «скопировать в 02_Edit/NewAssets». */
+async function onDoctorSelfContain() {
+  var dbg = [];
+  function log(m) { dbg.push(new Date().toISOString().slice(11, 19) + '  ' + m); try { console.log('[Doctor self-contain] ' + m); } catch (e) {} }
+  doctorLogFn = log;
+  var repoint = 0, already = 0, failed = 0, needCopy = [], projectRootForLog = '';
+  try { $('btn-doctor-selfcontain').setAttribute('disabled', 'true'); } catch (e) {}
+  try { $('btn-doctor-analyze').setAttribute('disabled', 'true'); } catch (e) {}
+  setDoctorStatus('Making project self-contained…', 'waiting');
+  setDoctorProgress(10, 'Reading project bin…');
+  log('=== Make self-contained (build ' + DOCTOR_BUILD + ') ===');
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active project — open a project in Premiere first.');
+    var projPath = ''; try { projPath = (project.path || '').replace(/\\/g, '/').replace(/^file:\/\//, ''); } catch (e) {}
+    var projectRoot = projPath ? projPath.replace(/\/[^\/]*$/, '')
+      : (projectState.folderPath ? projectState.folderPath.replace(/\\/g, '/').replace(/\/+$/, '') : '');
+    if (!projectRoot) throw new Error('Project has no saved path — save the .prproj once, then retry.');
+    // .prproj usually sits in 02_Edit/ — walk up to the REAL project root, otherwise the
+    // media index never sees 01_Source/Video/<scene>/ where the originals live.
+    projectRoot = await resolveProjectRoot(projectRoot);
+    projectRootForLog = projectRoot;
+    var rootPrefix = projectRoot.replace(/\/+$/, '') + '/';
+    log('projectRoot = ' + projectRoot);
+
+    setDoctorProgress(30, 'Indexing IN-PROJECT media…');
+    var idx = await doctorBuildIndex([projectRoot], log);   // только корень проекта — нам нужны внутренние копии
+
+    setDoctorProgress(55, 'Re-pointing external links inside the project…');
+    var media = await doctorCollectMedia(project);
+    var done = {};
+    for (var i = 0; i < media.length; i++) {
+      var m = media[i];
+      if (!m.item) continue;
+      var cur = (m.mediaPath || '').replace(/\\/g, '/');
+      var inside = cur && cur.indexOf(rootPrefix) === 0;
+      var present = await doctorPathExists(m.mediaPath);
+      if (inside && present) { already++; continue; }            // уже самодостаточно
+      var pbn = doctorBasename(m.mediaPath);
+      var cands = [];
+      var addCand = function (x) { if (x && cands.indexOf(x) < 0) cands.push(x); };
+      addCand(pbn); addCand(m.name);
+      [pbn, m.name].forEach(function (x) { if (!x) return; var d = x.replace(/\.([A-Za-z0-9]{2,4})\.([A-Za-z0-9]{2,4})$/, '.$1'); addCand(d); });
+      var dkey = (m.name || pbn || '').toLowerCase();
+      if (!dkey || done[dkey]) continue;
+      var target = null;
+      for (var ci = 0; ci < cands.length && !target; ci++) { var ek = cands[ci].toLowerCase(); if (idx.exact[ek]) target = idx.exact[ek]; }
+      if (!target) { for (var cj = 0; cj < cands.length && !target; cj++) { var nk = doctorNormName(cands[cj]); if (nk && idx.norm[nk]) target = idx.norm[nk]; } }
+      if (!target) { needCopy.push(m.name || pbn); log('  NEED-COPY ' + (m.name || pbn) + '   cur=' + (cur || '(offline)')); continue; }
+      var res = await doctorRelinkItem(m.item, target, log);
+      if (res === 'ok') { repoint++; done[dkey] = 1; log('  →IN  ' + (m.name || pbn) + '  → ' + target); }
+      else if (res === 'skip') { /* nothing */ }
+      else { failed++; log('  FAIL ' + (m.name || pbn) + ' → ' + target); }
+    }
+    log('repointed=' + repoint + ' alreadyInside=' + already + ' failed=' + failed + ' needCopy=' + needCopy.length);
+
+    if (repoint && project.save) { setDoctorProgress(80, 'Saving project…'); try { await project.save(); log('project saved'); } catch (e) { log('save threw: ' + (e && e.message)); } }
+
+    setDoctorProgress(90, 'Re-analyzing…');
+    try { await onDoctorAnalyze(); } catch (e) { log('re-analyze threw: ' + (e && e.message)); }
+
+    var msg = 'Self-contained: ' + repoint + ' re-pointed inside · ' + already + ' already' +
+      (failed ? (' · ' + failed + ' failed') : '') + (needCopy.length ? (' · ' + needCopy.length + ' NOT in project') : ' ✅');
+    setDoctorStatus(msg, (needCopy.length || failed) ? 'error' : 'ready');
+    setDoctorProgress(100, 'Done');
+    try {
+      $('doctor-validation').innerHTML = needCopy.length
+        ? '<div style="margin-top:8px;color:#ff9800;font-size:11px"><b>Нет копии ВНУТРИ проекта — скопируй файл(ы) в 02_Edit/NewAssets и повтори:</b><br>' + needCopy.map(escapeHtml).join('<br>') + '</div>'
+        : '<div style="margin-top:8px;color:#4caf50;font-size:11px">Все ссылки указывают внутрь проекта — проект самодостаточен. Сохрани (⌘S).</div>';
+    } catch (e) {}
+  } catch (e) {
+    log('ERROR: ' + (e && e.message ? e.message : String(e)));
+    if (e && e.stack) log('STACK: ' + e.stack);
+    setDoctorStatus('Self-contain error: ' + (e && e.message ? e.message : String(e)), 'error');
+    setDoctorProgress(100, 'Error');
+  } finally {
+    try { $('btn-doctor-selfcontain').removeAttribute('disabled'); } catch (e) {}
+    try { $('btn-doctor-analyze').removeAttribute('disabled'); } catch (e) {}
+    doctorLogFn = function () {};
+    try { await doctorWriteDebug('=== Make self-contained debug ===\n' + dbg.join('\n') + '\n', projectRootForLog); } catch (e) {}
+    if (doctorState.lastDebugPath) { try { $('btn-doctor-debug').removeAttribute('disabled'); } catch (e) {} }
+  }
+}
+
+/**
+ * Full debug dump — exports everything to 99_Pipeline/logs/{ts}/
+ */
+async function debugDump() {
+  if (!projectState.folderPath) {
+    setProjectStatus('Select project folder first', 'error');
+    return;
+  }
+
+  $('btn-debug-dump').setAttribute('disabled', 'true');
+  $('btn-debug-dump-compact').setAttribute('disabled', 'true');
+  var _savedCompactName = $('project-compact-name').textContent;
+  $('project-compact-name').textContent = 'Dumping...';
+  $('project-compact-name').style.color = '#ff9800';
+  setProjectStatus('Debug dump...', 'waiting');
+  ingestLogger.info('=== DEBUG DUMP START ===');
+
+  try {
+    var project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('No active project');
+
+    var fps = 25;
+    if (ingestState.data && ingestState.data.media) fps = ingestState.data.media.fps || 25;
+
+    // ── 1. Create timestamped folder in 99_Pipeline/logs/ ──
+    var ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    var slug = (projectState.projectName || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
+    var folderName = slug + '_dump_' + ts;
+
+    var pipelinePath = projectState.folderPath + '/99_Pipeline';
+    var pipelineEntry;
+    try {
+      pipelineEntry = await uxpfs.getEntryWithUrl('file://' + pipelinePath);
+    } catch (e) {
+      throw new Error('99_Pipeline folder not found at: ' + pipelinePath);
+    }
+    var logsEntry = await ensureSubfolder(pipelineEntry, 'logs', ingestLogger);
+    var dumpFolder = await logsEntry.createFolder(folderName);
+    var dumpPath = dumpFolder.nativePath || (pipelinePath + '/logs/' + folderName);
+    ingestLogger.info('Dump folder: ' + dumpPath);
+
+    // ── 2. project_state.json ──
+    var stateData = {
+      exported_at: new Date().toISOString(),
+      projectState: {
+        folderPath: projectState.folderPath,
+        projectName: projectState.projectName,
+        projectCode: projectState.projectCode,
+        ingestPath: projectState.ingestPath,
+        briefPath: projectState.briefPath,
+        ingestDetected: projectState.ingestDetected,
+        briefDetected: projectState.briefDetected
+      },
+      ingestState: { filePath: ingestState.filePath, hasData: !!ingestState.data },
+      assemblyState: { filePath: assemblyState.filePath, hasData: !!assemblyState.data, segmentCount: (assemblyState.segments || []).length },
+      reviewState: { filePath: reviewState.filePath, hasData: !!reviewState.data },
+      premiere: { projectName: project.name, projectPath: project.path }
+    };
+    var stateFile = await dumpFolder.createFile('project_state.json', { overwrite: true });
+    await stateFile.write(JSON.stringify(stateData, null, 2));
+    ingestLogger.info('Wrote project_state.json');
+
+    // ── 3. All sequences ──
+    // Find sequences: active + all from root items (recursive cast)
+    var activeSeq = await project.getActiveSequence();
+    var activeSeqName = activeSeq ? activeSeq.name : null;
+    var allSequences = [];
+    var seenNames = {};
+
+    // Always include active sequence first
+    if (activeSeq) {
+      allSequences.push(activeSeq);
+      seenNames[activeSeq.name] = true;
+    }
+
+    // Enumerate REAL sequences (getSequences-first — root-cast alone only sees the
+    // active sequence in some builds and misled diagnosis of this very dump).
+    var dumpSeqEntries = await listProjectSequences(project, ingestLogger);
+    for (var ri = 0; ri < dumpSeqEntries.length; ri++) {
+      if (!seenNames[dumpSeqEntries[ri].name]) {
+        allSequences.push(dumpSeqEntries[ri].seq);
+        seenNames[dumpSeqEntries[ri].name] = true;
+      }
+    }
+
+    // Note expected-but-missing scene sequences instead of poking stubs with
+    // openSequence (that opened/threw on name-matched non-sequences).
+    if (ingestState.data) {
+      var dumpExpected = expectedIngestSequenceNames(ingestState.data);
+      var missingSeqs = Object.keys(dumpExpected).filter(function (n) { return !seenNames[n]; });
+      if (missingSeqs.length) ingestLogger.info('Dump: expected sequences not in project: ' + missingSeqs.join(', '));
+    }
+
+    // Restore active sequence
+    if (activeSeq) {
+      try { await project.setActiveSequence(activeSeq); } catch (e) {}
+    }
+
+    ingestLogger.info('Found ' + allSequences.length + ' sequence(s): ' + Object.keys(seenNames).join(', '));
+
+    // Build a filename → ingest-clip lookup so each TrackItem in the dump is
+    // enriched with its wall-clock / sync truth (creation_time, wall_offset,
+    // clock_offset, probe.fps, camera, sync{}). This is the key pairing for
+    // verifying multi-camera sync directly from the dump.
+    var ingestByName = {};
+    try {
+      var _clips = (ingestState.data && ingestState.data.clips) || [];
+      for (var _ci = 0; _ci < _clips.length; _ci++) {
+        var _c = _clips[_ci];
+        if (_c.filename) ingestByName[_c.filename] = _c;
+        if (_c.filename) ingestByName[String(_c.filename).replace(/\.[^.]+$/, '')] = _c;
+        if (_c.clip_id) ingestByName[_c.clip_id] = _c;
+      }
+    } catch (e) { ingestLogger.warn('ingestByName build failed: ' + e.message); }
+
+    var seqDumps = [];
+    for (var si = 0; si < allSequences.length; si++) {
+      ingestLogger.info('Dumping sequence: ' + allSequences[si].name);
+      var seqData = await dumpSequence(allSequences[si], fps, ingestByName);
+      seqData.is_active = (seqData.name === activeSeqName);
+      seqDumps.push(seqData);
+    }
+
+    var seqFile = await dumpFolder.createFile('all_sequences.json', { overwrite: true });
+    await seqFile.write(JSON.stringify(seqDumps, null, 2));
+    ingestLogger.info('Wrote all_sequences.json (' + seqDumps.length + ' sequences)');
+
+    // ── 4. Active sequence (separate file for quick access) ──
+    var activeData = seqDumps.find(function(s) { return s.is_active; });
+    if (activeData) {
+      var activeFile = await dumpFolder.createFile('active_sequence.json', { overwrite: true });
+      await activeFile.write(JSON.stringify(activeData, null, 2));
+      ingestLogger.info('Wrote active_sequence.json: ' + activeData.name);
+    }
+
+    // ── 5. Ingest copy ──
+    if (ingestState.data) {
+      var ingestFile = await dumpFolder.createFile('ingest_copy.json', { overwrite: true });
+      await ingestFile.write(JSON.stringify(ingestState.data, null, 2));
+      ingestLogger.info('Wrote ingest_copy.json');
+    }
+
+    // ── 6. Brief copy ──
+    if (assemblyState.data) {
+      var briefFile = await dumpFolder.createFile('brief_copy.json', { overwrite: true });
+      await briefFile.write(JSON.stringify(assemblyState.data, null, 2));
+      ingestLogger.info('Wrote brief_copy.json');
+    }
+
+    // ── 7. All logs combined ──
+    var allLogs = [
+      ingestLogger.getReport(),
+      '\\n\\n' + assemblyLogger.getReport(),
+      '\\n\\n' + reviewLogger.getReport(),
+      '\\n\\n' + screensLogger.getReport(),
+      '\\n\\n' + deletedSceneLogger.getReport()
+    ].join('');
+    var logsFile = await dumpFolder.createFile('all_logs.txt', { overwrite: true });
+    await logsFile.write(allLogs);
+    ingestLogger.info('Wrote all_logs.txt');
+
+    // ── 8. Filesystem check ──
+    if (ingestState.data) {
+      var fsCheck = { clips: [], dji_audio: [], files: {} };
+      for (var fci = 0; fci < ingestState.data.clips.length; fci++) {
+        var fc = ingestState.data.clips[fci];
+        var clipExists = false;
+        try { await uxpfs.getEntryWithUrl('file://' + fc.path); clipExists = true; } catch (e) {}
+        fsCheck.clips.push({ clip_id: fc.clip_id, path: fc.path, exists: clipExists });
+        if (fc.dji_audio) {
+          for (var di = 0; di < fc.dji_audio.length; di++) {
+            var djiExists = false;
+            try { await uxpfs.getEntryWithUrl('file://' + fc.dji_audio[di].path); djiExists = true; } catch (e) {}
+            fsCheck.dji_audio.push({ clip_id: fc.clip_id, tx: fc.dji_audio[di].tx, path: fc.dji_audio[di].path, exists: djiExists });
+          }
+        }
+      }
+      // Check key files
+      var keyFiles = ['transcript_json', 'transcript_srt', 'transcript_xlsx', 'captions_srt'];
+      for (var kfi = 0; kfi < keyFiles.length; kfi++) {
+        var kf = keyFiles[kfi];
+        var kfPath = (ingestState.data.files || {})[kf] || '';
+        if (kfPath) {
+          var kfExists = false;
+          try { await uxpfs.getEntryWithUrl('file://' + kfPath); kfExists = true; } catch (e) {}
+          fsCheck.files[kf] = { path: kfPath, exists: kfExists };
+        }
+      }
+      var missingClips = fsCheck.clips.filter(function(c) { return !c.exists; });
+      var missingDji = fsCheck.dji_audio.filter(function(d) { return !d.exists; });
+      fsCheck.summary = { total_clips: fsCheck.clips.length, missing_clips: missingClips.length, total_dji: fsCheck.dji_audio.length, missing_dji: missingDji.length };
+      var fsFile = await dumpFolder.createFile('filesystem_check.json', { overwrite: true });
+      await fsFile.write(JSON.stringify(fsCheck, null, 2));
+      ingestLogger.info('Wrote filesystem_check.json (missing: ' + missingClips.length + ' clips, ' + missingDji.length + ' dji)');
+    }
+
+    // ── 9. Premiere bin tree ──
+    var rootItem = await project.getRootItem();
+    var binTree = await dumpBinTree(rootItem, 0);
+    var binFile = await dumpFolder.createFile('premiere_bins.json', { overwrite: true });
+    await binFile.write(JSON.stringify(binTree, null, 2));
+    ingestLogger.info('Wrote premiere_bins.json');
+
+    // ── 10. Screenshot via trigger file → screenshot_watcher.sh ──
+    try {
+      var screenshotPath = dumpPath + '/screenshot.png';
+      var triggerEntry = await uxpfs.getEntryWithUrl('file:///tmp');
+      var triggerFile = await triggerEntry.createFile('ytai_screenshot.trigger', { overwrite: true });
+      await triggerFile.write(screenshotPath);
+      ingestLogger.info('Screenshot trigger written → ' + screenshotPath);
+    } catch (ssErr) {
+      ingestLogger.warn('Screenshot trigger failed: ' + ssErr.message);
+    }
+
+    // ── Copy path to clipboard ──
+    try { await navigator.clipboard.writeText(dumpPath); } catch (e) {}
+    ingestLogger.info('=== DEBUG DUMP COMPLETE === Path: ' + dumpPath);
+    setProjectStatus('Dump → ' + folderName + ' (path copied)', 'ready');
+    $('project-compact-name').textContent = _savedCompactName + ' ✓';
+    $('project-compact-name').style.color = '#c8e64a';
+    setTimeout(function() { $('project-compact-name').textContent = _savedCompactName; $('project-compact-name').style.color = ''; }, 3000);
+
+  } catch (err) {
+    ingestLogger.error('Debug dump failed: ' + err.message);
+    if (err.stack) ingestLogger.debug(err.stack);
+    setProjectStatus('Dump failed: ' + err.message, 'error');
+    $('project-compact-name').textContent = _savedCompactName + ' ✗';
+    $('project-compact-name').style.color = '#f44336';
+    setTimeout(function() { $('project-compact-name').textContent = _savedCompactName; $('project-compact-name').style.color = ''; }, 3000);
+  }
+
+  $('btn-debug-dump').removeAttribute('disabled');
+  $('btn-debug-dump-compact').removeAttribute('disabled');
+}
+
 // --- Initialization ---
 
 document.addEventListener('DOMContentLoaded', () => {
   // PROJECT buttons
   $('btn-select-project').addEventListener('click', selectProjectFolder);
+  $('btn-use-open-project').addEventListener('click', function () { useOpenProjectFolder(); });
   $('btn-copy-project-prompt').addEventListener('click', copyProjectPrompt);
+  // Auto-fill the folder from the OPEN Premiere project on load (parity with Footage).
+  // Silent: does nothing if no project is open or it is unsaved (untitled).
+  if (!projectState.folderPath) {
+    useOpenProjectFolder({ silent: true }).catch(function () { /* non-fatal */ });
+  }
   $('btn-copy-markers-prompt').addEventListener('click', copyMarkersPrompt);
   $('btn-refresh-project').addEventListener('click', refreshProject);
+  $('btn-debug-dump').addEventListener('click', debugDump);
+
+  // PROJECT compact bar — toggle expand, wire compact buttons
+  // sp-button uses Shadow DOM so e.target.closest('sp-button') fails.
+  // Use stopPropagation on buttons to prevent toggle from firing.
+  $('btn-refresh-compact').addEventListener('click', function(e) {
+    e.stopPropagation();
+    refreshProject();
+  });
+  $('btn-debug-dump-compact').addEventListener('click', function(e) {
+    e.stopPropagation();
+    debugDump();
+  });
+  $('btn-copy-error').addEventListener('click', function(e) {
+    e.stopPropagation();
+    copyLastError();
+  });
+  $('project-compact-bar').addEventListener('click', function() {
+    toggleProjectExpand();
+  });
 
   // INGEST buttons (btn-load-ingest is fallback — hidden by default)
   $('btn-load-ingest').addEventListener('click', loadIngest);
   $('btn-build-ingest').addEventListener('click', buildIngest);
-  $('btn-audio-debug').addEventListener('click', audioDebug);
+  // 📁 Hide source timelines — same action on the Ingest and Doctor tabs (status → own tab)
+  $('btn-hide-source-timelines').addEventListener('click', function () {
+    onHideSourceTimelines(setIngestStatus).catch(function (e) {
+      setIngestStatus('Hide source timelines: ' + (e && e.message ? e.message : e), 'error');
+    });
+  });
+  $('btn-finesync').addEventListener('click', runFineSync);
+  $('btn-sync-spread').addEventListener('click', spreadForSync);
+  $('btn-sync-select').addEventListener('click', selectForSyncClick);
+  $('btn-sync-clean').addEventListener('click', cleanStraysClick);
+  $('btn-sync-collect').addEventListener('click', collectFromSync);
+  $('btn-verify-ingest').addEventListener('click', verifyIngest);
+  $('btn-sync-audio').addEventListener('click', syncAudio);
+  $('btn-chapter-markers').addEventListener('click', function () {
+    applyChapterMarkersToActive().catch(function (e) {
+      setIngestStatus('Chapter markers: ' + (e && e.message ? e.message : e), 'error');
+    });
+  });
+  $('btn-chapter-markers-all').addEventListener('click', function () {
+    applyChapterMarkersToAll().catch(function (e) {
+      setIngestStatus('Chapters → all: ' + (e && e.message ? e.message : e), 'error');
+    });
+  });
+
+  // PARTS picker — тот же выбор галочками, что и «Sequences to build» в Ingest
+  $('parts-pick-new').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('parts','new'); });
+  $('parts-pick-all').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('parts','all'); });
+  $('parts-pick-none').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('parts','none'); });
+  $('parts-pick-refresh').addEventListener('click', function (e) {
+    e.preventDefault();
+    refreshPick('parts').catch(function (er) { setPartsStatus('Parts list: ' + (er && er.message), 'error'); });
+  });
+  $('btn-parts-pick-build').addEventListener('click', function () {
+    buildPicked('parts').catch(function (e) { setPartsStatus('Build: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+
+  // REVIEW picker — тот же выбор галочками; ревью-версии собираются здесь, а не в Parts
+  $('review-pick-new').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('review', 'new'); });
+  $('review-pick-all').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('review', 'all'); });
+  $('review-pick-none').addEventListener('click', function (e) { e.preventDefault(); setPickChecks('review', 'none'); });
+  $('review-pick-refresh').addEventListener('click', function (e) {
+    e.preventDefault();
+    refreshPick('review').catch(function (er) { setReviewStatus('Review list: ' + (er && er.message), 'error'); });
+  });
+  $('btn-note-add').addEventListener('click', addReviewNote);
+  $('btn-note-copyall').addEventListener('click', copyAllReviewNotes);
+  $('btn-note-sheet').addEventListener('click', openNotesSheet);
+  $('btn-tz-copy').addEventListener('click', copyTzAtPlayhead);
+  $('btn-review-pick-build').addEventListener('click', function () {
+    buildPicked('review').catch(function (e) { setReviewStatus('Build: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  // очередь заданий из терминала — тикаем, пока панель открыта
+  setInterval(function () { jobTick().catch(function () { }); }, 3000);
+
+  // INGEST scene selection quick-links (new = only unbuilt scenes)
+  $('ingest-scenes-new').addEventListener('click', function (e) { e.preventDefault(); setIngestSceneChecks('new'); });
+  $('ingest-scenes-all').addEventListener('click', function (e) { e.preventDefault(); setIngestSceneChecks('all'); });
+  $('ingest-scenes-none').addEventListener('click', function (e) { e.preventDefault(); setIngestSceneChecks('none'); });
+
+  // PARTS buttons (build-by-part stage)
+  $('btn-load-part').addEventListener('click', function () { loadPart().catch(function (e) { setPartsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); }); });
+  $('btn-build-part').addEventListener('click', function () { buildParts().catch(function (e) { setPartsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); }); });
+  // Parts "Out": same exporter as Review — dumps the ACTIVE sequence to 05_Review + copies path to clipboard.
+  var bpOut = $('btn-export-part-out');
+  if (bpOut) bpOut.addEventListener('click', function () {
+    exportSequenceJson().catch(function (e) { setPartsStatus('Export error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  // SELECTIONS (подборки): checkbox list of parts/selections/*.json → build/archive
+  // ⚠️ $() отдаёт null, и addEventListener на нём бросает — одна убранная из
+  // разметки кнопка гасила бы ВСЕ привязки ниже по списку. Поэтому цветные
+  // кнопки вешаем через on(): нет элемента — просто пропускаем.
+  on('btn-color-plan-all', function () { runColorFromPlan(true); });
+  on('btn-color-plan-active', function () { runColorFromPlan(false); });
+  // Кнопки поколения 1 (Apply LUT Layers / Active Sequence Only / Probe Donor
+  // Clone / Build LUT Donor) убраны 25.09.2026: они читают {CODE}_lut_plan.json,
+  // которого больше никто не пишет, ставят только Look и ищут кубы прошлого
+  // поколения. Код функций оставлен — на него ещё ссылается донорский путь.
+  $('btn-sel-refresh').addEventListener('click', function () { selRefresh().catch(function (e) { setPartsStatus('Selections: ' + (e && e.message ? e.message : e), 'error'); }); });
+  $('btn-sel-build').addEventListener('click', function () { selBuild().catch(function (e) { setPartsStatus('Selections build: ' + (e && e.message ? e.message : e), 'error'); }); });
+  $('btn-sel-archive').addEventListener('click', function () { selArchive().catch(function (e) { setPartsStatus('Selections archive: ' + (e && e.message ? e.message : e), 'error'); }); });
+  $('btn-export-audio-map').addEventListener('click', exportAudioMap);
+
+  // SHORTS buttons (moments → 9:16 sequences; wired directly — sp-button Shadow DOM breaks closest())
+  $('btn-shorts-refresh').addEventListener('click', function () {
+    shortsRefresh().catch(function (e) { shortsLogger.error('refresh: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  $('btn-shorts-preview').addEventListener('click', function () {
+    shortsBuildPreview().catch(function (e) { shortsLogger.error('preview: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  $('btn-shorts-readback').addEventListener('click', function () {
+    shortsReadBackMarkers().catch(function (e) { shortsLogger.error('read-back: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  $('btn-shorts-build').addEventListener('click', function () {
+    shortsBuildApproved().catch(function (e) { shortsLogger.error('build: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  $('btn-shorts-out').addEventListener('click', function () {
+    shortsExportOut().catch(function (e) { shortsLogger.error('out: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  $('btn-shorts-open-html').addEventListener('click', function () {
+    shortsOpenReviewHtml().catch(function (e) { shortsLogger.error('open html: ' + (e && e.message ? e.message : e)); setShortsStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
 
   // ASSEMBLY buttons (btn-load-brief is fallback — hidden by default)
   $('btn-load-brief').addEventListener('click', loadBrief);
@@ -5939,8 +13477,25 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-voice-enhance').addEventListener('click', applyVoiceEnhance);
   $('btn-remove-audio-fx').addEventListener('click', removeAudioEffects);
 
-  // REVIEW buttons
+  // ASSEMBLY scene timelines (scenes/ bundles) quick-links + build buttons.
+  // Wired directly on elements — sp-button Shadow DOM breaks closest().
+  $('assembly-scenes-new').addEventListener('click', function (e) { e.preventDefault(); setAssemblySceneChecks('new'); });
+  $('assembly-scenes-all').addEventListener('click', function (e) { e.preventDefault(); setAssemblySceneChecks('all'); });
+  $('assembly-scenes-none').addEventListener('click', function (e) { e.preventDefault(); setAssemblySceneChecks('none'); });
+  $('btn-build-assembly-scenes').addEventListener('click', function () { buildAssemblyScenes().catch(function (e) { setAssemblyStatus('Error: ' + (e && e.message ? e.message : e), 'error'); }); });
+  $('btn-build-premontage').addEventListener('click', function () { buildPremontage().catch(function (e) { setAssemblyStatus('Error: ' + (e && e.message ? e.message : e), 'error'); }); });
+
+  // DELETED SCENE buttons
+  $('btn-build-deleted-scene').addEventListener('click', buildDeletedScene);
+
+  // REVIEW buttons (external editor review)
+  $('btn-process-review').addEventListener('click', processReview);
+  $('btn-load-review-brief').addEventListener('click', loadReviewBrief);
   $('btn-build-review').addEventListener('click', buildReview);
+  $('btn-build-review-overlay').addEventListener('click', buildReviewOverlay);
+  $('btn-build-review-v3').addEventListener('click', buildReviewV3);
+  $('btn-export-sequence-json').addEventListener('click', exportSequenceJson);
+  $('btn-export-review-markers').addEventListener('click', exportReviewMarkers);
 
   // PRE-EDIT buttons (wrap async to catch unhandled rejections)
   $('btn-export-pre-edit-doc').addEventListener('click', function() {
@@ -5960,36 +13515,106 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-generate-pngs').addEventListener('click', generateScreenPngs);
   $('btn-build-screens').addEventListener('click', buildScreenCuesPipeline);
 
-  // LOG: copy path buttons
-  $('btn-copy-ingest-log-path').addEventListener('click', () => copyLogPath('ingest'));
-  $('btn-copy-assembly-log-path').addEventListener('click', () => copyLogPath('assembly'));
-  $('btn-copy-review-log-path').addEventListener('click', () => copyLogPath('review'));
-  $('btn-copy-screens-log-path').addEventListener('click', () => copyLogPath('screens'));
+  // DOCTOR buttons (project health — missing media vs timeline usage)
+  $('btn-doctor-analyze').addEventListener('click', function () {
+    onDoctorAnalyze().catch(function (e) { setDoctorStatus('Error: ' + e.message, 'error'); });
+  });
+  $('btn-doctor-open').addEventListener('click', function () {
+    onDoctorOpenLast().catch(function () {});
+  });
+  $('btn-doctor-debug').addEventListener('click', function () {
+    onDoctorCopyDebug().catch(function () {});
+  });
+  $('btn-doctor-relink').addEventListener('click', function () {
+    onDoctorRelink().catch(function (e) { setDoctorStatus('Relink error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  $('btn-doctor-forcerefresh').addEventListener('click', function () {
+    onDoctorForceRefresh().catch(function (e) { setDoctorStatus('Force-refresh error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  $('btn-doctor-restore').addEventListener('click', function () {
+    onDoctorRestoreStructure().catch(function (e) { setDoctorStatus('Restore error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  $('btn-doctor-selfcontain').addEventListener('click', function () {
+    onDoctorSelfContain().catch(function (e) { setDoctorStatus('Self-contain error: ' + (e && e.message ? e.message : e), 'error'); });
+  });
+  $('btn-doctor-hide-source-timelines').addEventListener('click', function () {
+    onHideSourceTimelines(setDoctorStatus).catch(function (e) {
+      setDoctorStatus('Hide source timelines: ' + (e && e.message ? e.message : e), 'error');
+    });
+  });
 
-  // LOG: clear buttons
-  $('btn-clear-ingest-log').addEventListener('click', () => {
-    $('ingest-log-panel').innerHTML = '';
-    ingestLogger.clear();
+  // FOOTAGE REVIEW
+  $('btn-footage-build').addEventListener('click', function () {
+    buildFootage().catch(function (e) { setFootageStatus('Error: ' + (e && e.message ? e.message : e), 'error'); });
   });
-  $('btn-clear-assembly-log').addEventListener('click', () => {
-    $('assembly-log-panel').innerHTML = '';
-    assemblyLogger.clear();
+  $('btn-footage-log').addEventListener('click', function () {
+    if (!footageState.lastLogPath) return;
+    navigator.clipboard.writeText(footageState.lastLogPath)
+      .then(function () { setFootageStatus('Log path copied to clipboard', 'ready'); })
+      .catch(function (e) { footageLogger.warn('clipboard copy failed: ' + e.message); });
   });
-  $('btn-clear-review-log').addEventListener('click', () => {
-    $('review-log-panel').innerHTML = '';
-    reviewLogger.clear();
+  // Footage Review launch button — standalone, separate from the pipeline tabs.
+  $('footage-launch').addEventListener('click', function () {
+    document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
+    this.classList.add('active');
+    var el = document.getElementById('tab-footage');
+    if (el) el.classList.add('active');
+    // Pre-fill the project name with the open project's folder name (if empty).
+    var nameEl = document.getElementById('footage-name');
+    if (nameEl && !nameEl.value) {
+      footageProjectFolderName().then(function (n) {
+        if (n && !nameEl.value) nameEl.value = footageHyphenate(n);
+      }).catch(function () {});
+    }
   });
-  $('btn-clear-screens-log').addEventListener('click', () => {
-    $('screens-log-panel').innerHTML = '';
-    screensLogger.clear();
+
+  // LOG: copy path buttons
+  // TAB switching
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+      var fl = document.getElementById('footage-launch'); if (fl) fl.classList.remove('active');
+      btn.classList.add('active');
+      var tabId = 'tab-' + btn.getAttribute('data-tab');
+      var tabEl = document.getElementById(tabId);
+      if (tabEl) tabEl.classList.add('active');
+      // Lazy rescan of scenes/ bundles — so bundles generated after project
+      // selection appear without hitting Refresh (footage-launch precedent).
+      if (btn.getAttribute('data-tab') === 'assembly' && projectState.folderPath) {
+        refreshAssemblyScenes().catch(function (e) { assemblyLogger.debug('Assembly scenes scan: ' + e.message); });
+      }
+      // Lazy first-load of the shorts brief on tab open (assembly precedent).
+      if (btn.getAttribute('data-tab') === 'shorts' && projectState.folderPath && !shortsState.brief) {
+        shortsRefresh().catch(function (e) { shortsLogger.debug('Shorts auto-refresh: ' + e.message); });
+      }
+      // Parts: auto-load the freshest part JSON on tab open — Build is one click away
+      // (Roman 2026-08-20: «должно быть всё автоматом»). Manual Load stays as override.
+      if (btn.getAttribute('data-tab') === 'review' && projectState.folderPath) {
+        refreshPick('review').catch(function (e) { assemblyLogger.debug('Review pick: ' + e.message); });
+      }
+      if (btn.getAttribute('data-tab') === 'parts' && projectState.folderPath) {
+        // список с галочками — всегда свежий; авто-загрузка одного JSON остаётся
+        // как быстрый путь «Build в один клик», но выбор теперь виден целиком
+        refreshPick('parts').catch(function (e) { assemblyLogger.debug('Parts pick: ' + e.message); });
+        if (!partsState.part) {
+          loadPart(true).catch(function (e) { assemblyLogger.debug('Parts auto-load: ' + e.message); });
+          selRefresh().catch(function (e) { assemblyLogger.debug('Selections auto-refresh: ' + e.message); });
+        }
+      }
+    });
   });
+
+  // Branding: show current date+time
+  var now = new Date();
+  var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+  var bv = $('branding-ver'); if (bv) bv.textContent = 'v' + PANEL_VERSION;
+  $('branding-time').textContent = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
 
   ingestLogger.info('0500_uxp initialized');
-  ingestLogger.info('Version 2.1.0');
+  ingestLogger.info('Version ' + PANEL_VERSION);
   assemblyLogger.info('0500_uxp initialized');
-  assemblyLogger.info('Version 2.1.0');
-  reviewLogger.info('0500_uxp initialized');
-  reviewLogger.info('Version 2.1.0');
+  deletedSceneLogger.info('0500_uxp initialized');
   screensLogger.info('0500_uxp initialized');
-  screensLogger.info('Version 2.1.0');
 });

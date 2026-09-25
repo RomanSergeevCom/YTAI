@@ -122,6 +122,25 @@ function generateSummary(ingest) {
     lines.push(`DJI audio: ${djiCount}/${ingest.clips.length} clips (${[...txIds].join(', ')})`);
   }
 
+  // Fine sync (audio cross-correlation, scripts/999_extra/audio_finesync/).
+  // A wall-clock ingest without it sits at SPEECH accuracy — 0.6-0.9 s, i.e.
+  // 15-20 frames. Enough to lay out the day, NOT enough to cut on the lav.
+  // Surfaced here because the panel builds straight from wall_offset and would
+  // otherwise produce a coarse timeline with no visible sign of it.
+  if (ingest.layout_mode === 'wallclock') {
+    const applied = ingest.fine_sync && ingest.fine_sync.applied_at;
+    lines.push(applied
+      ? `Fine sync: applied ${String(applied).slice(0, 16).replace('T', ' ')}`
+      : 'Fine sync: NOT APPLIED — timeline stays at speech accuracy (±0.6-0.9 s)');
+  }
+
+  // Multicam info
+  if (ingest.multicam) {
+    const mcScenes = Object.keys(ingest.multicam);
+    const totalPairs = mcScenes.reduce((sum, s) => sum + (ingest.multicam[s].pairs || []).length, 0);
+    lines.push(`Multicam: ${mcScenes.length} scene(s), ${totalPairs} pair(s) (${mcScenes.join(', ')})`);
+  }
+
   return lines.join('\n');
 }
 

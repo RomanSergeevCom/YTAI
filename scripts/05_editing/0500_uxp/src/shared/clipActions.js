@@ -13,11 +13,17 @@ try {
 }
 
 var LABEL_COLOR_INDEX;
+var SOURCE_TIMELINES_BIN = null;
 try {
   LABEL_COLOR_INDEX = require('./constants').LABEL_COLOR_INDEX;
+  SOURCE_TIMELINES_BIN = require('./constants').SOURCE_TIMELINES_BIN || null;
 } catch (e) {
   LABEL_COLOR_INDEX = null;
 }
+
+// Verified bin moves (two-arg createMoveItemAction on root + read-back), 2026-09-15.
+var binMove = null;
+try { binMove = require('./binMove'); } catch (e) { binMove = null; }
 
 /**
  * Apply color label to a ProjectItem BEFORE inserting it on the timeline.
@@ -134,17 +140,104 @@ function clearSourceInOut(project, clipItem, label, logger) {
  * @param {string} seqName - Sequence name to delete
  * @param {Object} logger - Logger instance
  */
-async function cleanExistingSequence(project, seqName, logger) {
+async function cleanExistingSequence(project, seqName, logger, extraBin) {
+  // extraBin (optional FolderItem): part.bin target — same-name sequences living
+  // INSIDE it must be archived too, else every re-build duplicates the name there
+  // (the root-only scan misses them once builds started landing in bins).
+  // 2026-09-15: the root-level 00_Source_Timelines bin is ALWAYS scanned as well (scene
+  // timelines are filed there by ingest / "Hide source timelines"), plus the project
+  // items of same-named real sequences via Sequence.getProjectItem() wherever they live.
+  // The archive move uses binMove (two-arg createMoveItemAction + read-back) in its OWN
+  // transaction after the rename — the old one-arg move inside the rename transaction
+  // never moved anything in live Premiere.
   var ARCHIVE_BIN = '03_Assembly';
   try {
     const rootItem = await project.getRootItem();
-    const allItems = await rootItem.getItems();
+    const rootOnly = await rootItem.getItems();
 
-    // Find or create 03_Assembly archive bin
+    // Containers that can hold a same-name copy: root, extraBin, 00_Source_Timelines.
+    var containers = [{ folder: rootItem, items: rootOnly || [], isRoot: true }];
+    var seenContainer = {};
+    function containerKey(f) { return (binMove && binMove.itemKey(f)) || ('name:' + (f && f.name)); }
+    async function addContainer(folder) {
+      if (!folder) return;
+      var ck = containerKey(folder);
+      if (seenContainer[ck]) return;
+      seenContainer[ck] = true;
+      try { containers.push({ folder: folder, items: (await folder.getItems()) || [], isRoot: false }); }
+      catch (eEx) { if (logger) logger.debug('bin getItems (' + folder.name + '): ' + eEx.message); }
+    }
+    await addContainer(extraBin);
+    if (binMove && SOURCE_TIMELINES_BIN) {
+      try { await addContainer(await binMove.findRootBin(project, SOURCE_TIMELINES_BIN)); }
+      catch (eSt) { if (logger) logger.debug('source timelines bin lookup: ' + eSt.message); }
+    }
+    var allItems = [];
+    var candidates = [];   // { item, from: FolderItem|null (null = root) }
+    containers.forEach(function (c) {
+      c.items.forEach(function (it) {
+        allItems.push(it);
+        candidates.push({ item: it, from: c.isRoot ? null : c.folder });
+      });
+    });
+
+    // REAL sequences only: a root item can carry the sequence's name without
+    // being one (offline master-clip stubs from importing another project).
+    // getSequences() is the reliable enumerator; guids identify items precisely.
+    var realSeqGuids = {};   // guid → the real Sequence object (deleteSequence takes a Sequence)
+    var realSeqNames = {};
+    var sameNameSeqs = [];
+    try {
+      var realSeqs = await project.getSequences();
+      for (var rq = 0; rq < (realSeqs ? realSeqs.length : 0); rq++) {
+        try {
+          var rqn = realSeqs[rq].name || '';
+          if (rqn) realSeqNames[rqn] = true;
+          if (rqn === seqName) sameNameSeqs.push(realSeqs[rq]);
+          var rqg = realSeqs[rq].guid ? String(realSeqs[rq].guid) : '';
+          if (rqg) realSeqGuids[rqg] = realSeqs[rq];
+        } catch (eq) { /* skip */ }
+      }
+    } catch (eg) { if (logger) logger.debug('getSequences threw: ' + eg.message); }
+
+    // Same-named sequences living in some OTHER bin: take their items via getProjectItem —
+    // only when an id tells them apart from what the container scan already holds
+    // (a stale second wrapper of the same item would be renamed twice).
+    for (var sn = 0; sn < sameNameSeqs.length && binMove; sn++) {
+      try {
+        if (typeof sameNameSeqs[sn].getProjectItem !== 'function') continue;
+        var spi = await sameNameSeqs[sn].getProjectItem();
+        var sk = spi ? binMove.itemKey(spi) : null;
+        if (!spi || !sk || binMove.indexOfItem(allItems, spi, sk) >= 0) continue;
+        allItems.push(spi);
+        candidates.push({ item: spi, from: null, viaSequence: true });
+      } catch (eSp) { if (logger) logger.debug('getProjectItem: ' + eSp.message); }
+    }
+
+    // The real Sequence behind a scanned item (guid match, else Sequence.cast) — null if unknown.
+    function sequenceForItem(item) {
+      var g = ''; try { g = item.guid ? String(item.guid) : ''; } catch (e) { }
+      if (g && realSeqGuids[g]) return realSeqGuids[g];
+      var casted = null; try { casted = ppro.Sequence.cast(item); } catch (e) { }
+      return casted || null;
+    }
+
+    // confirmed: guid match or Sequence.cast. nameOnly: weakest signal — enough
+    // to archive (rename/move, reversible) but never to delete.
+    function classifyItem(item) {
+      var g = ''; try { g = item.guid ? String(item.guid) : ''; } catch (e) { }
+      if (g && realSeqGuids[g]) return 'confirmed';
+      var casted = null; try { casted = ppro.Sequence.cast(item); } catch (e) { }
+      if (casted) return 'confirmed';
+      if (realSeqNames[item.name]) return 'nameOnly';
+      return 'no';
+    }
+
+    // Find or create 03_Assembly archive bin (top-level only)
     var archiveBin = null;
-    for (var ai = 0; ai < allItems.length; ai++) {
-      if (allItems[ai].name === ARCHIVE_BIN) {
-        archiveBin = ppro.FolderItem.cast(allItems[ai]);
+    for (var ai = 0; ai < rootOnly.length; ai++) {
+      if (rootOnly[ai].name === ARCHIVE_BIN) {
+        archiveBin = ppro.FolderItem.cast(rootOnly[ai]);
         break;
       }
     }
@@ -152,7 +245,9 @@ async function cleanExistingSequence(project, seqName, logger) {
       try {
         project.lockedAccess(function () {
           project.executeTransaction(function (ca) {
-            ca.addAction(ppro.FolderItem.createAddItemAction(ARCHIVE_BIN));
+            // instance createBinAction — STATIC FolderItem.createAddItemAction is absent
+            // in 25.6 (this call used to throw and the archive bin was never created)
+            ca.addAction(rootItem.createBinAction(ARCHIVE_BIN, true));
           }, 'Create ' + ARCHIVE_BIN);
         });
         // Re-fetch items to find the new bin
@@ -169,15 +264,21 @@ async function cleanExistingSequence(project, seqName, logger) {
       }
     }
 
-    // Find max version number among existing _v{N} sequences (in root and archive)
+    // Find max version number among existing _v{N} sequences (every scanned container,
+    // the archive bin, and ALL real sequence names — versions may live in any bin)
     var maxVersion = 0;
     var versionRe = new RegExp('^' + seqName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '_v(\\d+)$');
 
-    // Check root items
+    // Check scanned container items
     for (var vi = 0; vi < allItems.length; vi++) {
-      var vm = allItems[vi].name.match(versionRe);
+      var vm = String(allItems[vi].name || '').match(versionRe);
       if (vm) maxVersion = Math.max(maxVersion, parseInt(vm[1], 10));
     }
+    // Check every real sequence name (bin-agnostic)
+    Object.keys(realSeqNames).forEach(function (rn) {
+      var rm = rn.match(versionRe);
+      if (rm) maxVersion = Math.max(maxVersion, parseInt(rm[1], 10));
+    });
     // Check archive bin items
     if (archiveBin) {
       try {
@@ -189,38 +290,62 @@ async function cleanExistingSequence(project, seqName, logger) {
       } catch (e) { /* empty bin */ }
     }
 
-    for (const item of allItems) {
+    for (const cand of candidates) {
+      const item = cand.item;
       if (item.name === seqName && item.type !== 2) {
-        var newVersion = maxVersion + 1;
+        // Items reached only through Sequence.getProjectItem (any bin) are archive-only:
+        // they are confirmed sequences for rename/move, but never delete candidates.
+        var seqConfidence = cand.viaSequence ? 'confirmed' : classifyItem(item);
+        if (seqConfidence === 'no') {
+          if (logger) logger.debug('Skip "' + item.name + '": name matches but it is not a sequence (imported stub?)');
+          continue;
+        }
+        var newVersion = ++maxVersion; // bump per archived item — two same-name items must not collide
         var newName = seqName + '_v' + newVersion;
+        var renamed = false;
         try {
+          // 1) Rename in its OWN transaction (the proven part).
           project.lockedAccess(function () {
             project.executeTransaction(function (ca) {
-              // Rename
               ca.addAction(item.createSetNameAction(newName));
-              // Move to archive bin
-              if (archiveBin) {
-                ca.addAction(archiveBin.createMoveItemAction(item));
-              }
-            }, 'Archive ' + seqName + ' → ' + ARCHIVE_BIN + '/' + newName);
+            }, 'Rename ' + seqName + ' → ' + newName);
           });
-          if (logger) logger.info('Archived: "' + seqName + '" → ' + ARCHIVE_BIN + '/' + newName);
+          renamed = true;
         } catch (renameErr) {
-          // Fallback: just rename without moving
-          try {
-            project.lockedAccess(function () {
-              project.executeTransaction(function (ca) {
-                ca.addAction(item.createSetNameAction(newName));
-              }, 'Rename ' + seqName);
-            });
-            if (logger) logger.info('Renamed "' + seqName + '" → "' + newName + '" (move failed: ' + renameErr.message + ')');
-          } catch (e2) {
-            // Last resort: delete
-            try {
-              await project.deleteSequence(item);
-              if (logger) logger.info('Deleted "' + seqName + '" (rename+move failed)');
-            } catch (e3) { }
+          // Last resort: delete — the pre-existing scope only: a CONFIRMED sequence (guid/cast)
+          // at project root or in the caller's extraBin. Items found in other bins
+          // (00_Source_Timelines scan, Sequence.getProjectItem in any bin) may be hand-filed
+          // timelines — never deleted, left in place. A name-only match is never deleted.
+          var deletable = seqConfidence === 'confirmed' && !cand.viaSequence &&
+            (!cand.from || (extraBin && cand.from === extraBin));
+          var seqObj = deletable ? sequenceForItem(item) : null;
+          if (deletable && seqObj) {
+            var deleted = false;
+            try { deleted = await project.deleteSequence(seqObj); }
+            catch (e3) { if (logger) logger.debug('deleteSequence threw: ' + e3.message); }
+            if (logger) {
+              if (deleted) logger.info('Deleted "' + seqName + '" (rename failed: ' + renameErr.message + ')');
+              else logger.warn('Left "' + seqName + '" in place: rename failed (' + renameErr.message + ') and deleteSequence did not confirm');
+            }
+          } else if (logger) {
+            var whereLeft = cand.from ? cand.from.name : (cand.viaSequence ? 'its bin' : 'project root');
+            logger.warn('Left "' + seqName + '" in place (' + whereLeft + '): rename failed (' + renameErr.message + ')' +
+              (seqConfidence === 'confirmed' ? ' — not deleted (outside root/extraBin or no Sequence object)' : ' and item is not a confirmed sequence'));
           }
+        }
+        if (!renamed) continue;
+        // 2) Move to the archive bin — separate transaction, verified read-back, non-fatal.
+        var where = cand.from ? cand.from.name : 'project root';
+        var moved = false;
+        if (archiveBin && binMove) {
+          moved = await binMove.moveItemToBin(project, item, archiveBin, logger,
+            { name: newName, fromBin: cand.from || null });
+        }
+        if (moved) {
+          if (logger) logger.info('Archived: "' + seqName + '" → ' + ARCHIVE_BIN + '/' + newName);
+        } else if (logger) {
+          logger.info('Renamed "' + seqName + '" → "' + newName + '" (left in ' + where +
+            (archiveBin ? ': move to ' + ARCHIVE_BIN + ' not verified' : ': no ' + ARCHIVE_BIN + ' bin') + ')');
         }
       }
     }

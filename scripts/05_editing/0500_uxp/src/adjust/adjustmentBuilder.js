@@ -1492,6 +1492,12 @@ async function probeDonorClone(project, opts, logger) {
 }
 
 module.exports = {
+  // ⚠️ Три хелпера ниже экспортируются ради src/adjust/colorApply.js: он тоже
+  // ходит по цепочке компонентов клипа, но адресует параметр по ИНДЕКСУ.
+  // Своей копии обхода цепочки заводить нельзя — разойдутся.
+  asVideoClip,
+  getChainComponents,
+  readDisplayName,
   selectionBounds,
   ensureDonorAdjustment,
   growVideoTracks,

@@ -163,6 +163,27 @@ describe('generateSummary', () => {
     assert.ok(summary.includes('TX02'));
   });
 
+  it('warns when a wall-clock ingest has no fine sync', () => {
+    const data = JSON.parse(JSON.stringify(sampleJSON));
+    data.layout_mode = 'wallclock';
+    const summary = generateSummary(parseIngest(JSON.stringify(data)));
+    assert.ok(summary.includes('Fine sync: NOT APPLIED'));
+  });
+
+  it('reports the date when fine sync was applied', () => {
+    const data = JSON.parse(JSON.stringify(sampleJSON));
+    data.layout_mode = 'wallclock';
+    data.fine_sync = { applied_at: '2026-08-16T20:35:49', method: 'audio-xcorr-lsq' };
+    const summary = generateSummary(parseIngest(JSON.stringify(data)));
+    assert.ok(summary.includes('Fine sync: applied 2026-08-16 20:35'));
+    assert.ok(!summary.includes('NOT APPLIED'));
+  });
+
+  it('says nothing about fine sync for non-wallclock ingests', () => {
+    const summary = generateSummary(parseIngest(JSON.stringify(sampleJSON)));
+    assert.ok(!summary.includes('Fine sync'));
+  });
+
   it('omits DJI audio line when not present', () => {
     const data = JSON.parse(JSON.stringify(sampleJSON));
     // Remove all dji_audio

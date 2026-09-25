@@ -69,6 +69,16 @@ class Logger {
   _log(level, message) {
     const entry = `[${this._timestamp()}] [${level}] ${message}`;
     this._buffer.push(entry);
+    // Global error ring buffer → panel "Copy Err" button (Roman: любую ошибку можно
+    // скопировать и отправить Claude). Warnings included — often the real clue.
+    if (level === 'ERROR' || level === 'WARN') {
+      try {
+        const g = (typeof globalThis !== 'undefined') ? globalThis : window;
+        if (!g.__ytaiErrors) g.__ytaiErrors = [];
+        g.__ytaiErrors.push(entry + (this._pipeline ? '  [' + this._pipeline + ']' : ''));
+        if (g.__ytaiErrors.length > 30) g.__ytaiErrors.shift();
+      } catch (eG) { /* non-fatal */ }
+    }
     if (typeof this.onLog === 'function') {
       this.onLog(entry, level, message);
     }
@@ -153,19 +163,39 @@ class Logger {
   }
 
   /**
-   * Get the logs folder — uses plugin folder's nativePath with getEntryWithUrl
-   * for write access (requires localFileSystem: "fullAccess").
-   * Falls back to data folder if plugin folder approach fails.
+   * Get the logs folder — writes to project's 00_Setup/pipeline/logs/.
+   * Falls back to plugin folder, then UXP data folder.
    * @returns {Object} UXP folder entry for logs/
    */
   async _getLogsFolder() {
     const uxp = require('uxp');
     const fs = uxp.storage.localFileSystem;
 
+    // Primary: project's 99_Pipeline/logs/
+    if (this._sourceFolderPath) {
+      const projectLogsPath = this._sourceFolderPath + '/99_Pipeline/logs';
+      try {
+        const logsFolder = await fs.getEntryWithUrl('file://' + projectLogsPath);
+        this._log('DEBUG', `Using project logs folder: ${projectLogsPath}`);
+        return logsFolder;
+      } catch (e) {
+        // Try creating it
+        try {
+          const pipelinePath = this._sourceFolderPath + '/99_Pipeline';
+          const pipelineFolder = await fs.getEntryWithUrl('file://' + pipelinePath);
+          const logsFolder = await pipelineFolder.createFolder('logs');
+          this._log('DEBUG', `Created project logs folder: ${projectLogsPath}`);
+          return logsFolder;
+        } catch (e2) {
+          this._log('DEBUG', `Cannot create project logs: ${e2.message}`);
+        }
+      }
+    }
+
+    // Fallback: plugin folder logs/
     try {
       const pluginFolder = await fs.getPluginFolder();
       const pluginPath = pluginFolder.nativePath;
-      this._log('DEBUG', `Plugin folder nativePath: ${pluginPath}`);
 
       if (pluginPath) {
         const sep = pluginPath.includes('\\') ? '\\' : '/';
@@ -173,38 +203,24 @@ class Logger {
           ? pluginPath + 'logs'
           : pluginPath + sep + 'logs';
 
-        // Try 1: Access existing logs/ folder via absolute path
         try {
           const logsFolder = await fs.getEntryWithUrl('file://' + logsPath);
-          this._log('DEBUG', `Found logs folder: ${logsPath}`);
           return logsFolder;
         } catch (e) {
-          this._log('DEBUG', `logs/ not found at ${logsPath}, creating...`);
-        }
-
-        // Try 2: Get plugin folder via getEntryWithUrl (writable) and create logs/
-        try {
-          const writableParent = await fs.getEntryWithUrl('file://' + pluginPath);
-          const logsFolder = await writableParent.createFolder('logs');
-          this._log('DEBUG', `Created logs folder at: ${logsPath}`);
-          return logsFolder;
-        } catch (e) {
-          this._log('WARN', `Cannot create logs/ via getEntryWithUrl: ${e.message}`);
-        }
-
-        // Try 3: Create via plugin folder directly (may work in dev mode)
-        try {
-          const logsFolder = await pluginFolder.createFolder('logs');
-          return logsFolder;
-        } catch (e) {
-          this._log('WARN', `Plugin folder createFolder failed: ${e.message}`);
+          try {
+            const writableParent = await fs.getEntryWithUrl('file://' + pluginPath);
+            const logsFolder = await writableParent.createFolder('logs');
+            return logsFolder;
+          } catch (e2) {
+            this._log('WARN', `Cannot create plugin logs/: ${e2.message}`);
+          }
         }
       }
     } catch (e) {
       this._log('WARN', `Plugin folder access failed: ${e.message}`);
     }
 
-    // Fallback: data folder (always writable, UXP sandbox)
+    // Last fallback: UXP data folder
     const dataFolder = await fs.getDataFolder();
     this._log('WARN', `Using data folder fallback: ${dataFolder.nativePath || 'unknown'}`);
     return dataFolder;
@@ -347,13 +363,13 @@ class Logger {
   }
 
   /**
-   * Get the logs folder path: {source_folder}/{project_name}_transcription
-   * Used by "Open Logs" button.
+   * Get the logs folder path: {project}/00_Setup/pipeline/logs/
+   * Used by "copy path" button in UI.
    * @returns {string|null}
    */
   getLogsFolderPath() {
-    if (this._sourceFolderPath && this._projectName) {
-      return `${this._sourceFolderPath}/${this._projectName}_transcription`;
+    if (this._sourceFolderPath) {
+      return `${this._sourceFolderPath}/99_Pipeline/logs`;
     }
     return null;
   }

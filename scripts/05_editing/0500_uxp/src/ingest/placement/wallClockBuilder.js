@@ -244,7 +244,16 @@ async function buildScene(project, sceneName, sceneClips, sceneTxStrips, camLaye
   const maxAIdx = Math.max(0, ...plan.placements.map(p => p.aIdx));
   const placeholderItem = seedItem
     || (plan.placements.length ? itemByFilename[plan.placements[0].filename] : null);
-  await sequenceFactory.ensureTracks(project, sequence, seqEditor, placeholderItem, maxVIdx + 1, maxAIdx + 1, logger);
+  // Заглушку преднагрева ставим на место ПЕРВОГО клипа верхней видеодорожки:
+  // её перекроет настоящий overwrite. Удаление заглушек в живой 25.6/26 молча
+  // не срабатывает («1 item(s) REMAIN» в логе), и раньше каждая сборка сеяла
+  // однокадровые огрызки в начало V1/V3/A1/A4/A5 — их видно на таймлайне и
+  // они же ломали READBACK («stray items present»).
+  const topOnMaxV = plan.placements
+    .filter(p => p.vIdx === maxVIdx)
+    .reduce((best, p) => (best === null || p.offsetSec < best ? p.offsetSec : best), null);
+  await sequenceFactory.ensureTracks(project, sequence, seqEditor, placeholderItem,
+    maxVIdx + 1, maxAIdx + 1, logger, { coverAtSec: topOnMaxV });
 
   // 5. Place VIDEO clips ONE PER TRANSACTION, in ascending timeline order.
   //    A single batched compound executes its actions in REVERSE (measured
