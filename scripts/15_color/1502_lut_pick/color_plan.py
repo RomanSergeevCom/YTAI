@@ -174,7 +174,8 @@ def profile_target(project: Path, code: str):
     return (d.get("exposure") or {}).get("target_face_luma")
 
 
-def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict) -> dict:
+def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict,
+                known_slugs=None) -> dict:
     """Сохранить выбор Романа: канальное — в профиль, покадровое — в проект.
 
     Два адреса, потому что у решений разный срок жизни:
@@ -183,7 +184,7 @@ def save_choice(project: Path, code: str, fb: dict, by_cam_gamma: dict) -> dict:
     Профиль пишется по ГАММЕ, а не по камере: завтра в парке появится третья
     тушка на S-Log3, и она должна получить ту же проявку без правок.
     """
-    check_feedback(fb, code)
+    check_feedback(fb, code, known_slugs)
 
     prof_p = profile_path(project, code)
     prev_prof = load_json_safe(prof_p)
@@ -352,7 +353,7 @@ class BadFeedback(Exception):
     """Payload не тот, что ждёт витрина. Сохранять нельзя."""
 
 
-def check_feedback(fb: dict, code: str) -> None:
+def check_feedback(fb: dict, code: str, known_slugs=None) -> None:
     """Проверить payload ДО записи. Отказ вместо частичного сохранения.
 
     ⚠️ Раньше `doc.update(...)` клал в документ то, что пришло, не глядя. Payload
@@ -360,6 +361,14 @@ def check_feedback(fb: dict, code: str) -> None:
     архивный подборщик) не несёт ни develop, ни look, ни exposure, поэтому все эти
     поля становились None, а doc_version при этом рос. День занулялся молча и
     выглядел сохранённым.
+
+    known_slugs — слаги клипов, которые есть в проекте СЕЙЧАС. Экспозиция в
+    выборе заменяется целиком, поэтому payload со старой витрины (сцены
+    переименованы или клипы переехали) молча откатывал бы день. 25.09.2026 на
+    YTEVO03 26 клипов вечера переехали из 08 в 11; витрина осталась от 23.09, и
+    сохранение из неё вернуло бы ключи 08_* — а раскладка потом отказала бы этим
+    26 клипам «нет экспозиции», на шаг позже и в другом месте. Поэтому: payload
+    обязан покрывать ровно текущие клипы, иначе — отказ с перечнем.
     """
     if not isinstance(fb, dict):
         raise BadFeedback("payload не словарь")
@@ -375,6 +384,19 @@ def check_feedback(fb: dict, code: str) -> None:
     if not (fb.get("exposure") or fb.get("develop") or fb.get("look")):
         raise BadFeedback("в payload нет ни экспозиции, ни проявки, ни look — "
                           "сохранять нечего")
+    if known_slugs is not None and fb.get("exposure"):
+        # Отказ — только на клипы, которых в проекте НЕТ: это и есть тихий откат
+        # (старые имена). Клип проекта, которого нет в выборе, не опасен молча:
+        # снятый в Rec.709 его и не должен иметь, а новый клип раскладка сама
+        # отвергнет вслух («в выборе нет экспозиции»).
+        stale = sorted(set(fb["exposure"]) - set(known_slugs))
+        if stale:
+            raise BadFeedback(
+                "выбор скопирован со СТАРОЙ витрины — "
+                f"{len(stale)} клип(ов) из выбора в проекте нет: "
+                + ", ".join(stale[:4]) + (" …" if len(stale) > 4 else "")
+                + ". Ничего не сохранено: пересобери витрину (lut_board.py --project …) "
+                  "и скопируй выбор заново")
 
 
 class SlugCollision(Exception):

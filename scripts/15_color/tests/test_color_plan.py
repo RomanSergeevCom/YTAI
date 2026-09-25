@@ -660,6 +660,40 @@ class TestAuditFindingsFixed:
         _plan.check_feedback({"type": "lut_board", "project": "YTEVO03",
                               "exposure": {"a": 0.5}}, "YTEVO03")
 
+    def test_payload_from_a_stale_board_is_refused(self):
+        """Выбор со СТАРОЙ витрины — отказ, а не тихий откат дня (25.09.2026).
+
+        ⚠️ На YTEVO03 26 клипов вечера переехали из 08 в 11, а витрина осталась от
+        23.09. Экспозиция в выборе заменяется целиком, поэтому сохранение из старой
+        витрины вернуло бы ключи 08_*, а раскладка потом отказала бы 26 клипам
+        «нет экспозиции» — на шаг позже и в другом месте.
+        """
+        now = {"08_Drive_RYA_FX3_1230", "11_Talk_RYA_FX3_1234", "12_Rec709_RYA_ZVE1_1927"}
+        fresh = {"type": "lut_board", "project": "YTEVO03",
+                 "exposure": {"08_Drive_RYA_FX3_1230": 0.5, "11_Talk_RYA_FX3_1234": 1.0}}
+        # клип в Rec.709 экспозиции не имеет — это не повод отказывать (YTEVO03: 163 клипа, 162 в выборе)
+        _plan.check_feedback(fresh, "YTEVO03", known_slugs=now)
+        stale = {"type": "lut_board", "project": "YTEVO03",
+                 "exposure": {"08_Drive_RYA_FX3_1230": 0.5, "08_Drive_RYA_FX3_1234": 1.0}}
+        with pytest.raises(_plan.BadFeedback, match="СТАРОЙ витрины.*1 клип.*в проекте нет: 08_Drive_RYA_FX3_1234"):
+            _plan.check_feedback(stale, "YTEVO03", known_slugs=now)
+        # без списка клипов (старые вызовы) — прежнее поведение
+        _plan.check_feedback(stale, "YTEVO03")
+
+    def test_stale_save_writes_nothing(self, tmp_path, monkeypatch):
+        """Отказ случается ДО записи: ни профиль канала, ни выбор дня не тронуты."""
+        prof = tmp_path / "color_profile.json"
+        monkeypatch.setattr(_plan, "profile_path", lambda p, c: prof)
+        prj = tmp_path / "YTEVO99_X"
+        (prj / "00_Setup" / "01_Ingest").mkdir(parents=True)
+        with pytest.raises(_plan.BadFeedback):
+            _plan.save_choice(prj, "YTEVO99",
+                              {"type": "lut_board", "project": "YTEVO99", "look": "look__x",
+                               "exposure": {"08_old_clip": 0.5}}, {},
+                              known_slugs={"11_new_clip"})
+        assert not prof.exists(), "профиль канала записан несмотря на отказ"
+        assert not list(prj.rglob("*_color_choice.json")), "выбор дня записан несмотря на отказ"
+
     def test_unreadable_profile_stops_instead_of_wiping(self, tmp_path, monkeypatch):
         """CLR-16: нечитаемый профиль канала — отказ, а не пересборка с нуля.
 

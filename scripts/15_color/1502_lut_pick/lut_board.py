@@ -696,11 +696,29 @@ function persist(){{
   try{{
     var raw = localStorage.getItem(LSKEY); if(!raw) return;
     var got = JSON.parse(raw); if(!got || !got.CH) return;
-    CH.develop = Object.assign({{}}, MINE.develop, got.CH.develop||{{}});
-    CH.look = got.CH.look || MINE.look;
-    CH.expo = Object.assign({{}}, MINE.expo, got.CH.expo||{{}});
+    // ⚠️ Возвращаем только то, что есть на ЭТОЙ витрине. Ключ хранилища общий
+    // для проекта, а витрину пересобирают: 25.09.2026 26 клипов YTEVO03 переехали
+    // из 08 в 11, и старые ключи 08_* иначе примешивались к выбору и уезжали в
+    // payload. Отброшенное — считаем и говорим вслух.
+    var dropped = 0, gd = got.CH.develop || {{}}, ge = got.CH.expo || {{}};
+    CH.develop = Object.assign({{}}, MINE.develop);
+    for (var cam in gd){{ if (cam in MINE.develop) CH.develop[cam] = gd[cam]; else dropped++; }}
+    CH.expo = Object.assign({{}}, MINE.expo);
+    for (var k in ge){{ if (k in MINE.expo) CH.expo[k] = ge[k]; else dropped++; }}
+    var lookOk = !!got.CH.look && [].some.call(
+      document.querySelectorAll('.cell.pick[data-lut]:not([data-cam])'),
+      function(c){{ return c.dataset.lut === got.CH.look; }});
+    CH.look = lookOk ? got.CH.look : MINE.look;
+    if (got.CH.look && !lookOk) dropped++;
     var el=document.getElementById('restored');
-    if(el) el.textContent = 'восстановлен выбор от ' + String(got.at).slice(0,16).replace('T',' ');
+    if(el){{
+      // Местное время, а не UTC: «17:08», когда на часах 20:08, сбивает с толку.
+      var d = new Date(got.at), p = function(n){{ return (n<10?'0':'')+n; }};
+      var when = isNaN(d) ? String(got.at).slice(0,16)
+        : d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+      el.textContent = 'восстановлен выбор от ' + when
+        + (dropped ? ' · отброшено ' + dropped + ' позиций со старой витрины' : '');
+    }}
   }}catch(e){{}}
 }})();
 refresh();
@@ -759,7 +777,8 @@ def main(argv=None) -> int:
         # а падало это только потом и в другом месте: color_apply «в профиле
         # канала нет ни одной проявки». Выбор Романа при этом терялся наполовину.
         cam_gamma = {}
-        for cam, items in all_clips_by_cam(src).items():
+        by_cam_now = all_clips_by_cam(src)
+        for cam, items in by_cam_now.items():
             g = [x for x, _ in (M.detect_gamma(c, cam, rec) for _, c in items) if x]
             if g:
                 cam_gamma[cam] = max(set(g), key=g.count)
@@ -767,7 +786,13 @@ def main(argv=None) -> int:
             die("ни у одной камеры не определилась гамма — проявку записать не из чего. "
                 "Проверь, что оригиналы на месте (сайдкары M01.XML рядом с клипами) "
                 "и карта примонтирована.")
-        res = PL.save_choice(project, code, fb, cam_gamma)
+        # Выбор обязан покрывать ровно те клипы, что есть СЕЙЧАС: выбор со старой
+        # витрины (сцены переименованы, клипы переехали) — отказ, а не тихий откат дня.
+        known = {PL.clip_slug(scene, clip.stem) for items in by_cam_now.values() for scene, clip in items}
+        try:
+            res = PL.save_choice(project, code, fb, cam_gamma, known_slugs=known)
+        except PL.BadFeedback as e:
+            die(f"ВЫБОР НЕ СОХРАНЁН: {e}")
         print(f"\nВЫБОР СОХРАНЁН")
         print(f"  профиль канала: {res['profile']}")
         print(f"  выбор по дню:   {res['choice']}")

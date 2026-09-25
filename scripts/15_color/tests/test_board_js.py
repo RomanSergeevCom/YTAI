@@ -41,6 +41,23 @@ class TestClickHandlerPersists:
         assert line.index("persist()") < line.index("return"), (
             "persist() стоит ПОСЛЕ return — значит не выполнится")
 
+    def test_restore_keeps_only_what_is_on_this_board(self):
+        """Восстановление из браузера берёт только клипы и камеры ЭТОЙ витрины.
+
+        ⚠️ Ключ хранилища общий на проект ('lutboard_' + код), а витрину
+        пересобирают. После переезда 26 клипов YTEVO03 из 08 в 11 старые ключи 08_*
+        иначе примешивались к выбору и уходили в payload. И время — местное.
+        """
+        src = BOARD.read_text(encoding="utf-8")
+        m = re.search(r"\(function restore\(\)\{\{.*?\}\}\)\(\);", src, re.S)
+        assert m, "restore() не найден — витрину переписали, проверь сторожа"
+        body = m.group(0)
+        assert "Object.assign({{}}, MINE.develop, got.CH.develop" not in body, "снова вливает чужие камеры"
+        assert "Object.assign({{}}, MINE.expo, got.CH.expo" not in body, "снова вливает чужие клипы"
+        assert "in MINE.expo" in body and "in MINE.develop" in body, "нет фильтра по клипам витрины"
+        assert "dropped" in body, "отброшенное больше не сообщается"
+        assert "getHours()" in body, "время снова в UTC"
+
     def test_every_branch_that_mutates_choice_persists(self, handler):
         """CLR-22: любая ветка, меняющая CH, обязана сохранять.
 
