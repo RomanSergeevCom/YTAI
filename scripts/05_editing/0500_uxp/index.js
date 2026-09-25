@@ -267,6 +267,7 @@ function resetAllPipelineStates() {
   $('ingest-file-info').textContent = '';
   $('btn-build-ingest').setAttribute('disabled', 'true');
   $('btn-export-audio-map').setAttribute('disabled', 'true');
+  $('btn-verify-sync').setAttribute('disabled', 'true');
   $('btn-export-markers').setAttribute('disabled', 'true');
   $('btn-debug-export').setAttribute('disabled', 'true');
   $('ingest-validation').style.display = 'none';
@@ -671,6 +672,7 @@ async function autoDetectFiles(folderPath, projectName) {
   $('project-actions-row').style.display = 'flex';
   $('btn-debug-dump').removeAttribute('disabled');
   $('btn-export-audio-map').removeAttribute('disabled');
+  $('btn-verify-sync').removeAttribute('disabled');
   $('btn-export-markers').removeAttribute('disabled');
   $('btn-debug-export').removeAttribute('disabled');
   $('btn-export-pre-edit-doc').removeAttribute('disabled');
@@ -6204,6 +6206,81 @@ async function applyChapterMarkersToAll() {
   if (missing.length) msg += ' · no sequence for: ' + missing.join(', ');
   ingestLogger.info(msg);
   setIngestStatus(msg, (okScenes || skipped) ? 'ready' : 'error');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Verify Sync — verdict in FRAMES right after Build (TICKET_uxp_audit task 7 =
+// TICKET_ch4_sync_truth 5.3). Gate: worst camera↔lav pair ≤ ½ frame.
+// UXP cannot measure audio (no ffmpeg), so the panel saves the project, drops an
+// order in /tmp and opens tools/verify_sync/verify_sync.command, which dumps the
+// saved .prproj and runs the audio arbiter (wordsync_multicam/timeline_sync_audit,
+// unchanged). The verdict file carries the order's run_id — the panel waits for
+// THAT run, never mistakes an old verdict for a new one.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function verifySync() {
+  var project = await ppro.Project.getActiveProject();
+  if (!project) { setIngestStatus('No active project', 'error'); return; }
+  if (!projectState.folderPath) { setIngestStatus('Select project folder first', 'error'); return; }
+  var seq = await project.getActiveSequence();
+  if (!seq) { setIngestStatus('Open the scene sequence to verify', 'error'); return; }
+  var seqName = String(seq.name || '');
+  var fps = 25;
+  try {
+    var tb = await seq.getTimebase();
+    if (tb) fps = Math.round((254016000000 / Number(tb)) * 1000) / 1000;
+  } catch (eTb) { ingestLogger.warn('Verify Sync: getTimebase failed — assuming 25 fps', eTb); }
+
+  $('btn-verify-sync').setAttribute('disabled', 'true');
+  ingestLogger.info('=== VERIFY SYNC: ' + seqName + ' @ ' + fps + ' fps ===');
+  try {
+    // The arbiter reads the SAVED .prproj — unsaved moves would not be measured.
+    await project.save();
+    var prproj = String(project.path || '');
+    if (!prproj) throw new Error('project path unknown — save the project first');
+    var code = audioMapMod.projectCodeOf(projectState.folderPath, seqName);
+    var runId = 'vs-' + Date.now();
+    var order = {
+      run_id: runId, prproj: prproj, seq: seqName, fps: fps,
+      dump_out: projectState.folderPath + '/00_Setup/logs/verify_sync_dump.json',
+      verdict_out: projectState.folderPath + '/00_Setup/01_Ingest/' + code + '_sync_verdict.json',
+    };
+    var tmpDir = await uxpfs.getEntryWithUrl('file:///tmp');
+    var tmpFile = await tmpDir.createFile('ytai_verify_sync.json', { overwrite: true });
+    await tmpFile.write(JSON.stringify(order));
+    var cmd = require('os').homedir() + '/YTAI/scripts/05_editing/0500_uxp/tools/verify_sync/verify_sync.command';
+    await require('uxp').shell.openPath(cmd);
+    setIngestStatus('Verify Sync: measuring ' + seqName + ' in Terminal…', 'waiting');
+
+    var verdict = await waitForVerdict(order.verdict_out, runId, 15 * 60);
+    if (!verdict) throw new Error('no verdict after 15 min — see the Terminal window');
+    var s0 = (verdict.sequences || [])[0];
+    if (s0) {
+      (s0.pairs || []).forEach(function (p) {
+        ingestLogger.info('  ' + (p.judged ? (p.ok ? 'ok ' : '✗  ') : '·· ') + p.kind + '  ' + p.a.track + ' ' + p.a.name
+          + ' ↔ ' + p.b.track + ' ' + p.b.name + '  Δ=' + p.dt_ms + ' ms (' + p.dt_frames + ' fr)  peak ' + p.peak);
+      });
+    }
+    ingestLogger.info('Verify Sync: ' + verdict.verdict + ' — ' + verdict.summary + ' → ' + order.verdict_out);
+    if (verdict.verdict === 'SYNC') setIngestStatus(verdict.summary, 'ready');
+    else setIngestStatus(verdict.summary, 'error', verdict.error ? new Error(verdict.error) : undefined);
+  } catch (err) {
+    setIngestStatus('Verify Sync failed: ' + err.message, 'error', err);
+  }
+  $('btn-verify-sync').removeAttribute('disabled');
+}
+
+/** Poll a verdict file until it carries runId (or give up). Returns the verdict or null. */
+async function waitForVerdict(path, runId, maxSec) {
+  for (var waited = 0; waited <= maxSec; waited += 3) {
+    try {
+      var entry = await uxpfs.getEntryWithUrl('file://' + path);
+      var v = JSON.parse(await entry.read());
+      if (v && v.run_id === runId) return v;
+    } catch (e) { /* not written yet, or mid-write — next tick */ }
+    await new Promise(function (r) { setTimeout(r, 3000); });
+  }
+  return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -12633,6 +12710,7 @@ document.addEventListener('DOMContentLoaded', () => {
   on('btn-sel-build', function () { selBuild().catch(function (e) { setPartsStatus('Selections build: ' + (e && e.message ? e.message : e), 'error', e); }); });
   on('btn-sel-archive', function () { selArchive().catch(function (e) { setPartsStatus('Selections archive: ' + (e && e.message ? e.message : e), 'error', e); }); });
   on('btn-export-audio-map', exportAudioMap);
+  on('btn-verify-sync', verifySync);
 
   // SHORTS buttons (moments → 9:16 sequences; wired directly — sp-button Shadow DOM breaks closest())
   on('btn-shorts-refresh', function () {
