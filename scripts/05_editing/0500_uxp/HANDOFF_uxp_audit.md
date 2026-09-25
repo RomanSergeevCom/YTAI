@@ -1,3 +1,5 @@
+> ➡️ Следующий шаг — `HANDOFF_color_donor.md` (луты на клипы через донор). Аудит ниже закрыт, v2.29.2.
+
 # HANDOFF · аудит панели UXP
 
 Для сессии, которая будет делать `~/YTAI/scripts/13_preprod/TICKET_uxp_audit.md`.
