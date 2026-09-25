@@ -35,6 +35,7 @@ import time
 import base64
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -196,7 +197,7 @@ def fit_fs(lines, col, cap, by='word', floor=110, ls=0.0, weight=None):
     for s in lines:
         if not s:
             continue
-        parts += str(s).split() if by == 'word' else [str(s)]
+        parts += [w for w in str(s).split(' ') if w] if by == 'word' else [str(s)]
     if not parts:
         return cap
     worst = 0.0
@@ -208,7 +209,7 @@ def fit_fs(lines, col, cap, by='word', floor=110, ls=0.0, weight=None):
 
 def wrap_lines(text, col, fs, weight=None):
     """Жадный перенос по ширине колонки — тем же файлом шрифта, каким меряет браузер."""
-    words, lines, cur = str(text).upper().split(), [], ''
+    words, lines, cur = [w for w in str(text).upper().split(' ') if w], [], ''
     for w in words:
         trial = f'{cur} {w}'.strip()
         if cur and measure(trial, 100, weight) / 100.0 * fs > col:
@@ -521,10 +522,30 @@ _r = B('style.rule', [450, 14])
 RULE_W, RULE_H = max(560, int(_r[0])), max(18, int(_r[1]))
 
 
+# Кегли заставки главы и плашки подглавы. Канон витрины — 380/210 px на кадре 3840; режим
+# `titles` поднимает их: Роман 25.09.2026 «шрифт должен быть очень крупный». Переменные, а не
+# параметры: по подписи функции гейт предложений и KB 1.1 читают поля вида
+CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH = 380, 1080, 210, 520
+
+
+NBSP = '\u00a0'
+HANG_RX = re.compile(r'(?<![^\s«(])([А-ЯЁа-яёA-Za-z]{1,2}) ')
+
+
+def hang(t):
+    """«А ЧТО С ПАПОЙ?» → «А ЧТО С\u00a0ПАПОЙ?»: предлог, союз и частица до двух букв не висят в
+    конце строки. На крупном кегле висячее «С» или «В» читается как ошибка набора (Роман 25.09.2026)."""
+    prev = None
+    while prev != t:
+        prev, t = t, HANG_RX.sub(lambda m: m.group(1) + NBSP, t)
+    return t
+
+
 def q_ch(num, name, shot):
     """J · Заставка главы — ПОЛОТНО на языке фонда."""
     acc = accent_for(num)
-    fs = fit_block(name, 3300, 380, 1080)
+    name = hang(str(name))
+    fs = fit_block(name, 3300, CH_CAP, CH_MAXH)
     return (f'<div class="pl">{shot_div(shot, satur=SATUR)}'
             f'<div style="position:absolute;inset:0;background:{SCRIM}"></div>'
             f'<div style="position:absolute;inset:0;display:flex;flex-direction:column;'
@@ -554,7 +575,8 @@ def q_ch_light(num, name, shot):
 
 def q_sub(over, title, shot):
     """C · Плашка подглавы — текст прямо на кадре, плашки нет (канон канала)."""
-    fs = fit_block(title, 2600, 210, 520)
+    title = hang(str(title))
+    fs = fit_block(title, 2600, SUB_CAP, SUB_MAXH)
     grad = GRAD_L
     return (f'<div class="pl">{shot_div(shot, satur=SATUR)}'
             f'<div style="position:absolute;left:0;right:0;bottom:0;height:1150px;'
@@ -1189,10 +1211,116 @@ def render_plan(a):
     return 2 if bad else 0
 
 
+FILM_VARIANTS = [
+    ('a', 'ПОЛОТНО', 'кадр в затемнение, название по центру во всю ширину — как заставки глав'),
+    ('b', 'СТОЛБИК', 'название в три строки у левого поля во всю высоту — как набрано в самом кате'),
+    ('c', 'ПО НИЗУ', 'кадр почти открыт, название во всю ширину по нижней трети'),
+]
+
+
+def film_title(variant, title, shot):
+    """Название фильма после хука (Роман 25.09.2026: «сначала хук, потом название фильма»).
+
+    Не вид витрины и не входит в `plates`: название фильма ставится один раз, его не
+    предлагают по местам. Кегль подбирается под кадр, а не константой — «очень крупный»."""
+    title = hang(str(title))
+    words = [w for w in title.split(' ') if w]
+    if variant == 'a':
+        fs = fit_block(title, 3400, 760, 1500)
+        return (f'<div class="pl">{shot_div(shot, satur=SATUR)}'
+                f'<div style="position:absolute;inset:0;background:{SCRIM}"></div>'
+                f'<div style="position:absolute;inset:0;display:flex;flex-direction:column;'
+                f'align-items:center;justify-content:center;text-align:center;padding:0 {MARGIN}px">'
+                f'<div class="nm" style="font-size:{fs}px;line-height:.98;max-width:3400px;'
+                f'color:{WHITE};{SHADOW}">{esc(title)}</div>'
+                f'<div style="margin-top:90px">{rule(700, 22)}</div></div></div>')
+    if variant == 'b':
+        lines = [words[0], ' '.join(words[1:-1]), words[-1]] if len(words) >= 3 else words
+        lines = [x for x in lines if x]
+        fs = min(fit_fs(lines, 2300, 900), int(1880 / (len(lines) * 0.96)))
+        body = ''.join(f'<div style="color:{CORAL if i else WHITE}">{esc(x)}</div>'
+                       for i, x in enumerate(lines))
+        return (f'<div class="pl">{shot_div(shot, satur=SATUR)}'
+                f'<div style="position:absolute;inset:0;background:{GRAD_L}"></div>'
+                f'<div class="nm" style="position:absolute;left:{MARGIN}px;top:50%;'
+                f'transform:translateY(-50%);font-size:{fs}px;line-height:.96;{SHADOW}">{body}</div>'
+                f'</div>')
+    fs = fit_block(title, 3500, 620, 720)
+    return (f'<div class="pl">{shot_div(shot, satur=SATUR)}'
+            f'<div style="position:absolute;left:0;right:0;bottom:0;height:1250px;'
+            f'background:{GRAD_L}"></div>'
+            f'<div style="position:absolute;left:{MARGIN}px;right:{MARGIN}px;bottom:{MARGIN + 60}px">'
+            f'<div class="nm" style="font-size:{fs}px;line-height:.98;color:{WHITE};{SHADOW}">'
+            f'{esc(title)}</div><div style="margin-top:46px">{rule(560, 20)}</div></div></div>')
+
+
+def lit_frame(sec, last, floor=38):
+    """первый кадр не темнее floor (яркость 0–255) от sec до last: из затемнения, в которое
+    уходит начало фильма и склейки, заставка вышла бы чёрным прямоугольником без кадра."""
+    from PIL import Image, ImageStat                             # noqa: PLC0415
+    for s_ in range(int(sec), max(int(sec), int(last)) + 1):
+        f = frame(s_)
+        if f and ImageStat.Stat(Image.open(f).convert('L').resize((64, 36))).mean[0] >= floor:
+            return f
+    return None
+
+
+def render_titles(a):
+    """Все заставки глав и плашки подглав фильма — крупно, каждая на СВОЁМ кадре, + название.
+
+    ⚠️ Кадр берётся не на секунде начала главы, а через несколько секунд: в начале главы в
+    кате стоит его СОБСТВЕННАЯ заставка, и новая легла бы поверх старой — два названия разом.
+    Для глав, которых в кате нет, сдвиг тот же: так все примеры сравнимы между собой."""
+    global CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH
+    CH_CAP, CH_MAXH, SUB_CAP, SUB_MAXH = 640, 1500, 340, 760
+    chap = [(int(t), str(n)) for t, n in P.CHAPTERS]
+    names = P.get('ch_name', {}) or {}
+    dur = float(P.duration_sec())
+    made, miss = [], []
+    for i, (t0, no) in enumerate(chap):
+        t1 = chap[i + 1][0] if i + 1 < len(chap) else dur
+        shot = lit_frame(t0 + 6, int(t1) - 1) or frame(t0)
+        if not shot:
+            miss.append(f'глава {no}: нет кадра')
+            continue
+        page(f'titles/title_ch_{no}', q_ch(no, str(names.get(no, '')), shot))
+        made.append(f'title_ch_{no}')
+    on_cut = {j for j in range(1, len(P.get('sub') or []) + 1)} - {int(x) for x in (P.get('sub_no_screen') or [])}
+    for j, (sec, ch, label) in enumerate(P.get('sub') or [], 1):
+        # у подглавы, чья плашка в кате УЖЕ стоит, её собственный титр ещё на экране — берём кадр
+        # после него, иначе пример выйдет с двумя подписями (YTCH12, подпись куратора 11:16)
+        shot = lit_frame(int(sec) + (7 if j in on_cut else 1), int(sec) + 20)
+        if not shot:
+            miss.append(f'подглава {j:02d}: нет кадра')
+            continue
+        over = f'ГЛАВА {int(ch):02d} · {names.get(f"{int(ch):02d}", "")}'.rstrip(' ·')
+        page(f'titles/title_sub_{j:02d}', q_sub(over, str(label), shot))
+        made.append(f'title_sub_{j:02d}')
+    title = str(a.film or P.get('film_title') or '').strip().upper()
+    if title:
+        shot = frame(int(a.film_sec))
+        for v, _nm, _why in FILM_VARIANTS:
+            page(f'titles/title_film_{v}', film_title(v, title, shot))
+            made.append(f'title_film_{v}')
+        # подписи вариантов — рядом с картинками: вкладка дока читает их отсюда, а не держит копию
+        (OUT / 'titles' / 'film_variants.json').write_text(json.dumps(
+            {'title': title, 'variants': [{'v': v, 'name': nm, 'why': why} for v, nm, why in FILM_VARIANTS]},
+            ensure_ascii=False, indent=1), encoding='utf-8')
+    else:
+        miss.append('название фильма: нет ни --film, ни film_title в карточке')
+    for m in miss:
+        print('  ✗ ' + m, file=sys.stderr)
+    print(f'\nотрисовано {len(made)} · глав {len(chap)} · подглав {len(P.get("sub") or [])}'
+          + (f' · не вышло {len(miss)}' if miss else ''))
+    return 2 if miss else 0
+
+
 def main():
     ap = argparse.ArgumentParser(description='плиты глав и подглав на языке брендбука БДД')
     ap.add_argument('what', nargs='?', default='quiet',
-                    choices=['ch', 'sub', 'all', 'board', 'quiet', 'plan'])
+                    choices=['ch', 'sub', 'all', 'board', 'quiet', 'plan', 'titles'])
+    ap.add_argument('--film', default='', help='название фильма для titles (иначе card.film_title)')
+    ap.add_argument('--film-sec', type=int, default=8, help='секунда кадра под название фильма')
     ap.add_argument('--plan', default='', help='файл предложений (по умолчанию work/{cut}/screens_proposal.json)')
     ap.add_argument('--only', default='', help='отрисовать только эти номера предложений: 7,12')
     ap.add_argument('--frame', type=int, default=790, help='секунда кадра-подложки (без титров)')
@@ -1210,6 +1338,8 @@ def main():
 
     if a.what == 'plan':
         return render_plan(a)
+    if a.what == 'titles':
+        return render_titles(a)
 
     num, name, _sec = pick_chapter(a.ch - 1)
     sb = pick_sub(a.sub - 1)
@@ -1235,7 +1365,9 @@ def main():
         lead, key = (claims[0][1], claims[0][2]) if claims else ('', '')
         subj = str(P.get('film_subject') or '')
         GUEST, ROLE = 'СВЕТЛАНА', subj or 'выпускница детского дома'
-        FUND, FROLE = 'ЖУМАГУЛ ПАНФИЛОВА', 'куратор по семьям · фонд «Бюро Добрых Дел»'
+        # ⚠️ ЖИМАГУЛ, через «И»: так на сайте фонда (burodd.ru/team/zhimagul-panfilova) и на
+        # подписи 11:16. «ЖУМАГУЛ» — опечатка ката на 19:33; витрина её повторяла до 25.09.2026
+        FUND, FROLE = 'ЖИМАГУЛ ПАНФИЛОВА', 'куратор по семьям · фонд «Бюро Добрых Дел»'
         LOC = 'Нижегородская область'
         chn = [(n, nm) for n, nm, _ in chapters()]
         plates = [
@@ -1439,7 +1571,7 @@ def quiet_notes(num, name, a):
         '⚠️ «За свет 13 тысяч, за воду, капремонт всё вместе 27 тысяч» — из речи не следует, '
         'входит ли 13 в 27. На экране показаны как две отдельные строки, как и сказано; '
         'если фонд уточнит — поправим.',
-        '⚠️ Написание «ЖУМАГУЛ / ЖИМАГУЛ» — открытый пункт ТЗ, макет его не решает.',
+        '⚠️ Верно «ЖИМАГУЛ» (сайт фонда). В кате на 19:33 — «ЖУМАГУЛ», это правка монтажёру.',
         'ПУТИ ДЛЯ КОПИРОВАНИЯ:',
         f'макеты 4К:  {OUT}',
         f'исходники HTML:  {SRC}',

@@ -52,13 +52,31 @@ ap.add_argument('--tab')
 ap.add_argument('--dry-run', action='store_true')
 ap.add_argument('--images', choices=('none', 'temp'), default='none',
                 help='temp — кадры через временный доступ к закрытой папке; none (по умолчанию) — без картинок')
+# Роман 25.09.2026: «нужны только названия глав». Без подглав, без предложений экранов, без
+# трёх вариантов заставки и без длинного текста структуры — одна таблица глав и карта сверху
+ap.add_argument('--chapters-only', action='store_true',
+                help='только главы: без подглав, предложений экранов и демо вариантов заставки')
+# ⚠️ Блок H считает высоту колонки без строки «подтем нет» и на 26 главах выбирает две колонки
+# вместо трёх — главы 11–15 уходят за нижний край (YTCH12, 25.09.2026). Пока блок не починен,
+# обрезанную карту во вкладку не ставим: текстовый список ниже полный
+ap.add_argument('--no-map', action='store_true', help='не вставлять картинку карты в шапку')
+# Роман 25.09.2026: «сгенерируй их, чтобы пример был, прямо крупно — главы и подглавы».
+# Вместо сырого кадра — готовая заставка (`bdd_plates.py titles`), в шапке варианты названия фильма
+ap.add_argument('--cards', action='store_true',
+                help='в строках готовые заставки глав и подглав крупно + варианты названия фильма')
 a = ap.parse_args()
+CARDS = a.cards
+ONLY_CH = a.chapters_only or CARDS       # без предложений экранов, демо заставки и текста структуры
+SKIP_SUBS = a.chapters_only and not CARDS
 
 DOC_ID = P.need('doc_id')
 TAB_TITLE = a.tab or T('chp.tab_title', ver=P.CUT_VERSION)
-HDR = ['№', T('chp.hdr_frame'), T('chp.hdr_body'), '⏱', T('chp.hdr_now'), T('chp.hdr_do')]
-WIDTHS = [30, 262, 260, 70, 300, 300]
-IMG_W = 250
+HDR = ['№', T('chp.hdr_card') if CARDS else T('chp.hdr_frame'), T('chp.hdr_body'), '⏱',
+       T('chp.hdr_now'), T('chp.hdr_do')]
+# ⚠️ Прежние 1222 pt не влезают в альбомный лист (720 pt полезной ширины): Docs ужимает колонки
+# неравномерно, и кадр переставал соотноситься со своей строкой. В режиме заставок — ровно 720
+WIDTHS = [22, 322, 118, 50, 94, 114] if CARDS else [30, 262, 260, 70, 300, 300]
+IMG_W = 314 if CARDS else 250
 FONT = 10
 DEMOS = [(v, T(f'chp.demo_{v}_t'), T(f'chp.demo_{v}_d')) for v in ('a', 'b', 'c')]
 # Пресет «YTCG P01 · 1.1 Side slide», выбранный Романом 22.09.2026: боковая страница, заголовок
@@ -141,7 +159,7 @@ def _proposals(work_dir):
     (тот же приём, что у `feedback_view.load_structure_full`). В карточку предложения не
     пишутся: `sub_no_screen` и `sub_img` — порядковые номера, новая подглава сдвинула бы их все."""
     f = Path(work_dir) / 'screens_proposal.json'
-    if not f.is_file():
+    if ONLY_CH or not f.is_file():
         return []
     try:
         return json.loads(f.read_text(encoding='utf-8')).get('items') or []
@@ -191,10 +209,13 @@ for i, (sec, no) in enumerate(CHAP):
     _pl = prop_lines(PROP_CH.get(no))
     if _pl:
         st = [st[0], ('\n'.join([x for x in [st[1] if len(st) > 1 else ''] if x] + _pl))]
-    rows.append({'no': fin(no), 'img': CH_IMG.get(no, ''), 'body': body, 'ch': True,
+    rows.append({'no': fin(no), 'img': (f'bdd/titles/title_ch_{no}.png' if CARDS else CH_IMG.get(no, '')),
+                 'body': body, 'ch': True,
                  'tc': f'{tmm(sec)}–{tmm(end)}', 'now': st[0], 'do': st[1] if len(st) > 1 else ''})
 
     # ── строки подглав этой главы ──
+    if SKIP_SUBS:
+        continue
     mine = [(s, t, j) for j, (s, c, t) in enumerate(SUB, 1) if f'{c:02d}' == no]
     for n_, (s, t, j) in enumerate(mine):
         s_end = mine[n_ + 1][0] if n_ + 1 < len(mine) else end
@@ -205,9 +226,10 @@ for i, (sec, no) in enumerate(CHAP):
         _p = prop_lines(PROP_SUB.get(f'sub_{j:02d}'))
         if _p:
             do = (do + '\n' if do else '') + '\n'.join(_p)
-        rows.append({'no': '', 'img': SUB_IMG.get(f'{j:02d}', ''), 'body': f'▸ {t}', 'ch': False,
+        rows.append({'no': '', 'img': (f'bdd/titles/title_sub_{j:02d}.png' if CARDS
+                                       else SUB_IMG.get(f'{j:02d}', '')), 'body': f'▸ {t}', 'ch': False,
                      'tc': f'{tmm(s)}–{tmm(s_end)}', 'now': now, 'do': do})
-    if not mine:
+    if not mine and not CARDS:
         rows.append({'no': '', 'img': '', 'body': T('chp.no_subs'), 'ch': False,
                      'tc': '', 'now': '', 'do': ''})
 
@@ -220,6 +242,8 @@ for i, (sec, no) in enumerate(CHAP):
     end = CHAP[i + 1][0] if i + 1 < len(CHAP) else DUR
     ttl = (T('chp.chapter_pfx', n=fin(no)) if fin(no) != '—' else '') + str(CH_NAME.get(no, ''))
     map_lines.append((0, f'{ttl}   {tmm(sec)}–{tmm(end)}', {'bold': True}))
+    if SKIP_SUBS:
+        continue
     pg = PROG.get(no) or {}
     for k, it in enumerate(pg.get('items') or [], 1):
         map_lines.append((0, f'        {k} · {it}', {}))
@@ -232,7 +256,7 @@ for i, (sec, no) in enumerate(CHAP):
 # Роман 22.09.2026: «опиши структуру текстом в начале документа». Полный текст собирает
 # stages/structure_text.py; нет файла — блока просто нет, вкладка как раньше
 STRUCT = []
-for _i, _ln in enumerate(V.load_structure_full(W6)):
+for _i, _ln in enumerate([] if ONLY_CH else V.load_structure_full(W6)):
     STRUCT.append((2 if _i == 0 else 0, _ln, {'bold': _i == 0}))
 if STRUCT:
     STRUCT.append((0, '', {}))
@@ -262,22 +286,24 @@ if MAP_WHY:
     print(f'⚠️ карта в шапку не пойдёт: {MAP_WHY}', flush=True)
 # картинку вставляем только там, где кадры вообще разрешены: без temp_grant якорный абзац
 # остался бы пустой строкой посреди шапки на каждом автоматическом прогоне
-MAP_BLOCK = [(0, '', {'img': MAP_PNG, 'img_w': 620})] if (MAP_OK and a.images == 'temp') else []
+MAP_BLOCK = ([(0, '', {'img': MAP_PNG, 'img_w': 620})]
+             if (MAP_OK and a.images == 'temp' and not a.no_map) else [])
 
 head = [(1, T('chp.head_title', code=P.CODE, tab=TAB_TITLE), {'bold': True}),
-        (0, T('chp.lead', ver=P.CUT_VERSION, dur=tmm(DUR)) + _no_num
-            + T('chp.lead2') + T('chp.lead3'), {}),
+        (0, (T('chp.lead_cards', ver=P.CUT_VERSION, dur=tmm(DUR), n=len(CHAP),
+               have=len(CHAP) - len(P.get('new_ch') or []), new=len(P.get('new_ch') or []))
+             if CARDS else
+             T('chp.lead', ver=P.CUT_VERSION, dur=tmm(DUR)) + _no_num + T('chp.lead2') + T('chp.lead3')), {}),
         (0, '', {}),
         ] + STRUCT + MAP_BLOCK + [
         (2, T('chp.map_h', ch=n_ch, sub=n_sub), {'bold': True}),
         (0, T('chp.map_note', ch=n_ch, last=f'{n_ch:02d}'), {}),
         (0, T('chp.map_link') + 'mockups/info_structure_map.png (4K, в папке проекта)', {}),
-        ] + map_lines + [
-        (0, '', {}),
+        ] + map_lines + [(0, '', {})] + ([] if ONLY_CH else [
         (2, T('chp.var_h_picked', v=PICKED.upper()) if PICKED else T('chp.var_h_ask'), {'bold': True}),
         (0, T('chp.var_lead', ch=DEMO_CH)
             + (T('chp.var_picked', v=PICKED.upper(), n=n_ch) if PICKED
-               else T('chp.var_ask', n=n_ch)), {})]
+               else T('chp.var_ask', n=n_ch)), {})])
 
 
 def put_images(tab_id, want, log=print):
@@ -458,12 +484,29 @@ def main():
         reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': '\n'}})
         cur += 1
 
-    for v, name, why in DEMOS:
+    if CARDS:
+        fv = Path(P.MOCK) / 'bdd' / 'titles' / 'film_variants.json'
+        film = json.loads(fv.read_text(encoding='utf-8')) if fv.is_file() else {}
+        if film.get('variants'):
+            for lvl, text in ((2, T('chp.film_h', title=film.get('title', ''))), (0, T('chp.film_lead'))):
+                t = text + '\n'
+                reqs.append({'insertText': {'location': {'tabId': tab_id, 'index': cur}, 'text': t}})
+                if lvl:
+                    reqs.append({'updateParagraphStyle': {
+                        'range': {'tabId': tab_id, 'startIndex': cur, 'endIndex': cur + u16(t)},
+                        'paragraphStyle': {'namedStyleType': f'HEADING_{lvl}'}, 'fields': 'namedStyleType'}})
+                cur += u16(t)
+            for fvar in film['variants']:
+                block(f'{fvar["v"].upper()} — {fvar["name"]}', fvar['why'],
+                      f'bdd/titles/title_film_{fvar["v"]}.png')
+        else:
+            print('⚠️ вариантов названия фильма нет — сначала bdd_plates.py titles', flush=True)
+    for v, name, why in ([] if ONLY_CH else DEMOS):
         mark = T('chp.chosen') if PICKED == v else ''
         block(f'{v.upper()} — {name}{mark}', why, f'ch_demo_{v}.jpg')
 
     # ── подглавы: панели перечислений внутри главы (Роман 22.09.2026) ──
-    if PROG:
+    if PROG and not ONLY_CH:
         for lvl, text, opts in [(2, T('chp.pan_h'), {'bold': True}),
                                 (0, T('chp.pan_lead'), {}),
                                 (0, T('chp.pan_ask'), {'bold': True})]:
@@ -502,7 +545,7 @@ def main():
 
     # картинки НЕ вставляем по ходу: под временным доступом файл открыт считанные секунды, поэтому
     # все вставки — одной пачкой в самом конце, когда весь текст вкладки уже записан
-    want = [(name, at, 460) for name, at in demo_at] + head_img
+    want = [(name, at, 640 if 'title_film_' in name else 460) for name, at in demo_at] + head_img
 
     cur = tab_body(tab_id)[-1]['endIndex'] - 1
     batch_update(DOC_ID, [{'insertTable': {'location': {'tabId': tab_id, 'index': cur},
