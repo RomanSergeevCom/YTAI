@@ -199,6 +199,8 @@ def main():
     ap.add_argument('cmd', nargs='?', default='check', choices=['check', 'kinds'])
     ap.add_argument('--in', dest='inp', default='', help='файл предложений')
     ap.add_argument('--fix-quotes', action='store_true', help='переписать quoted словами ката')
+    ap.add_argument('--remap', action='store_true',
+                    help='пересчитать ch у каждого предложения по его секунде (после переезда глав)')
     a = ap.parse_args()
 
     sys.path.insert(0, str(HERE))
@@ -255,6 +257,22 @@ def main():
            'fund_speaker': P.get('fund_speaker', ''), 'max_words': MAX_WORDS,
            'find': find, 'norm': TD.norm,
            'mock': lambda k: (Path(P.MOCK) / 'bdd' / f'{k}.png').exists()}
+
+    if a.remap:
+        # Границы глав двигают руками, а `ch` у предложения записан числом. Пересчитываем его
+        # по секунде — иначе гейт поймает расхождение, но только после того, как половина
+        # предложений уже уехала в чужую главу на всех поверхностях
+        moved = []
+        for it in items:
+            was = str(it.get('ch', ''))
+            now = CP.chapter_of(float(it.get('sec', 0)), chap, dur)
+            if now != was:
+                it['ch'], _ = now, moved.append((it.get('n'), was, now))
+        if moved:
+            P.write_json_atomic(src, d)
+            for n, was, now in moved:
+                print(f'#{n}: глава {was} → {now}')
+        print(f'пересчитано глав: {len(moved)} из {len(items)}')
 
     if a.fix_quotes:
         fixed = 0

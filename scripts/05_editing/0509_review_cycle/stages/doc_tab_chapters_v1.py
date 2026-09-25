@@ -186,9 +186,11 @@ for i, (sec, no) in enumerate(CHAP):
         want_no = (T('chp.want_no', n=fin(no)) if fin(no) != '—' else T('chp.want_no_drop'))
         st[0] = (st[0] + '\n' if st[0] else '') + cut_no
         st[1] = (st[1] + '\n' if len(st) > 1 and st[1] else '') + want_no
-    # предложения экранов дополняют пустую ячейку; написанный руками ch_state всегда главнее
-    if not (len(st) > 1 and st[1]) and PROP_CH.get(no):
-        st = [st[0], '\n'.join(prop_lines(PROP_CH[no]))]
+    # предложения экранов ДОПИСЫВАЮТСЯ под написанное руками, а не вместо него: раньше
+    # непустой ch_state прятал их целиком, и глава с самой важной правкой выглядела пустой
+    _pl = prop_lines(PROP_CH.get(no))
+    if _pl:
+        st = [st[0], ('\n'.join([x for x in [st[1] if len(st) > 1 else ''] if x] + _pl))]
     rows.append({'no': fin(no), 'img': CH_IMG.get(no, ''), 'body': body, 'ch': True,
                  'tc': f'{tmm(sec)}–{tmm(end)}', 'now': st[0], 'do': st[1] if len(st) > 1 else ''})
 

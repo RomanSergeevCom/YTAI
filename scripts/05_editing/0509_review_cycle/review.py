@@ -2112,7 +2112,8 @@ def cmd_selftest(a) -> int:
                 'stages/doc_tab_feedback_v1.py', 'stages/doc_tab_feedback_v1_verify.py',
                 # карта выпуска и предложения экранов (вне конвейера, запускаются руками):
                 # ловят переименование видов в bdd_plates.py и схлопывание веток .xmind
-                'stages/screens_spots.py', 'stages/screens_proposal.py', 'stages/structure_xmind.py'):
+                'stages/screens_spots.py', 'stages/screens_proposal.py', 'stages/structure_xmind.py',
+                'stages/doc_notes_read.py', 'stages/pravki_page.py'):
         try:
             rc = subprocess.run([PY, ROOT / mod, '--selftest'], capture_output=True, text=True, env=fb_env, timeout=900)
             ok(f'feedback: {mod} --selftest', rc.returncode == 0 and 'SELFTEST OK' in rc.stdout, (rc.stdout + rc.stderr).strip()[-200:])

@@ -72,8 +72,13 @@ def build(max_short=40):
     head = (f'СТРУКТУРА ФИЛЬМА {P.CUT_VERSION.upper()} — {len(chap)} глав, {len(sub)} подглав'
             + (f', {len(claims)} крупные фразы' if claims else ''))
     short, full = [head], [head]
-    short.append('Карточки глав в кате стоят все. Плашек подглав не хватает — '
-                 f'{len(no_screen)} из {len(sub)}.')
+    # ⚠️ «Карточки глав стоят все» нельзя писать литералом: на фильме, где главу предложили
+    # добавить, текст врал бы ровно в том месте, ради которого его и читают (YTCH12, 25.09.2026)
+    new_ch = {str(x) for x in (P.get('new_ch') or [])}
+    short.append(('Карточки глав в кате стоят все. ' if not new_ch else
+                  f'Карточек глав в кате {len(chap) - len(new_ch)} из {len(chap)} — создать надо '
+                  f'{len(new_ch)}. ')
+                 + f'Плашек подглав не хватает — {len(no_screen)} из {len(sub)}.')
     full.append(short[1])
     full.append('Ниже — что стоит в кате сейчас и что предлагаем добавить. '
                 'Якорная реплика — фраза, ради которой глава существует.')
@@ -81,7 +86,8 @@ def build(max_short=40):
     for i, (sec, no) in enumerate(chap):
         nm = str(names.get(no, f'ГЛАВА {no}')).strip()
         dot = '' if nm[-1:] in '.?!…' else '.'        # «ПОЧЕМУ ИНТЕРНАТ?» — второй точки не надо
-        line = f'{tc(sec)} — глава {no}. {nm}{dot} Карточка стоит.'
+        line = (f'{tc(sec)} — глава {no}. {nm}{dot} '
+                + ('Карточки нет — создать.' if no in new_ch else 'Карточка стоит.'))
         short.append(line)
         full.append(line)
         if anc.get(sec):
