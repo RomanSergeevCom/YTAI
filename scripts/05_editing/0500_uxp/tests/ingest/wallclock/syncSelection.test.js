@@ -115,7 +115,7 @@ test('выделение: два выделяемых айтема на одно
   (await seq.getVideoTrack(0))._addItem('ZV.MP4', 50, 70);
   await assert.rejects(
     () => selectForSync(fakeProject(), seq, manifest, logger),
-    /два выделяемых айтема/
+    /two selectable items/
   );
 });
 
@@ -135,7 +135,7 @@ test('выделение: пустая секвенция — внятный о�
     { videoTracks: manifest.nVideoTracks, audioTracks: manifest.nAudioTracks });
   await assert.rejects(
     () => selectForSync(fakeProject(), seq, manifest, logger),
-    /раскладка не легла/
+    /the spread did not land/
   );
 });
 

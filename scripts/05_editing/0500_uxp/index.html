@@ -516,7 +516,7 @@
       <sp-button id="btn-note-add" variant="cta" size="s" style="flex:0 0 auto">Note @ playhead</sp-button>
       <sp-button id="btn-note-copyall" variant="secondary" size="s" style="flex:0 0 auto">Copy all</sp-button>
       <sp-button id="btn-note-sheet" variant="secondary" size="s" style="flex:0 0 auto">Sheet ↗</sp-button>
-      <sp-button id="btn-tz-copy" variant="secondary" size="s" style="flex:0 0 auto" title="Full ТЗ text + material links for the nearest V4 plate → clipboard">Copy ТЗ @ playhead</sp-button>
+      <sp-button id="btn-tz-copy" variant="secondary" size="s" style="flex:0 0 auto" title="Full brief text + material links for the nearest V4 plate → clipboard">Copy Brief @ playhead</sp-button>
       <div class="info-text" id="note-status" style="flex:1 1 100%; margin:0"></div>
     </div>
 
@@ -565,8 +565,8 @@
       <div class="btn-row" style="align-items:center;gap:6px">
         <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">Premiere sync:</label>
         <sp-button id="btn-sync-spread" disabled variant="secondary" size="s">Spread</sp-button>
-        <sp-button id="btn-sync-select" disabled variant="secondary" size="s" title="Выделить ровно источники манифеста — ⌘A ловит однокадровый мусор, и Synchronize гаснет">Select</sp-button>
-        <sp-button id="btn-sync-clean" disabled variant="secondary" size="s" title="Выделить весь однокадровый мусор преднагрева; если снос не сработает — нажми ⌫">Clean</sp-button>
+        <sp-button id="btn-sync-select" disabled variant="secondary" size="s" title="Select exactly the manifest sources — ⌘A also grabs one-frame strays and greys out Synchronize">Select</sp-button>
+        <sp-button id="btn-sync-clean" disabled variant="secondary" size="s" title="Select all one-frame pre-warm strays; if removal does not work, press ⌫">Clean</sp-button>
         <sp-button id="btn-sync-collect" disabled variant="secondary" size="s">Collect</sp-button>
       </div>
 
@@ -670,7 +670,7 @@
 
       <div class="validation-panel" id="parts-validation"></div>
 
-      <div class="info-text" style="margin-top:14px"><b>Selections (подборки)</b> — тематические нарезки из Source по запросам Claude. Каждая = своя секвенция; галочками выбери что строить. Файлы: <code>02_Assembly/parts/selections/</code>, Archive убирает в <code>selections/archive/</code>.</div>
+      <div class="info-text" style="margin-top:14px"><b>Selections</b> — themed cuts from Source built by Claude on request. Each one is its own sequence; tick what to build. Files: <code>02_Assembly/parts/selections/</code>; Archive moves them to <code>selections/archive/</code>.</div>
       <div class="btn-row">
         <sp-button id="btn-sel-refresh" variant="secondary">Refresh</sp-button>
         <sp-button id="btn-sel-build" disabled>Build Selected</sp-button>

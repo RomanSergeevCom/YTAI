@@ -276,7 +276,7 @@ test('контракт L9: предел считается по ДОРОЖКАМ
   }
   const { manifest } = planSpread(BENCH_CLIPS, strips, { mode: 'bench', fps: 25 });
   assert.ok(manifest.items.filter(i => i.kind === 'clip').length < 40, 'клипов мало');
-  assert.throws(() => assertSpreadContract(manifest), /^Error: L9:.*49 дорожек/);
+  assert.throws(() => assertSpreadContract(manifest), /^Error: L9:.*49 tracks/);
 });
 
 // ─── chooseSyncItems ────────────────────────────────────────────────────

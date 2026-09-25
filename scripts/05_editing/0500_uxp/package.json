@@ -11,6 +11,7 @@
     "test:assembly": "node --test tests/assembly/*.test.js"
   },
   "devDependencies": {
+    "acorn": "^8.18.0",
     "eslint": "^10.11.0"
   }
 }

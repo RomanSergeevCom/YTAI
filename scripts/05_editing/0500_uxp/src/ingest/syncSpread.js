@@ -244,7 +244,7 @@ function planSpread(sceneClips, txStrips = [], opts = {}) {
 function assertSpreadContract(manifest, opts = {}) {
   const maxTracks = typeof opts.maxTracks === 'number' ? opts.maxTracks : MAX_SPREAD_TRACKS;
   if (!manifest || !Array.isArray(manifest.items) || manifest.items.length === 0) {
-    throw new Error('L0: пустой манифест раскладки');
+    throw new Error('L0: empty spread manifest');
   }
   const items = manifest.items;
 
@@ -256,15 +256,15 @@ function assertSpreadContract(manifest, opts = {}) {
   }
   const clash = Object.keys(perTrack).filter(k => perTrack[k].length > 1);
   if (clash.length) {
-    throw new Error('L1: на дорожку ' + clash[0] + ' назначено несколько источников: '
+    throw new Error('L1: several sources assigned to track ' + clash[0] + ': '
       + perTrack[clash[0]].join(', '));
   }
 
   // L2 — преролл: Synchronize должен мочь двигать клип ВЛЕВО от нуля
   const minPlaced = Math.min(...items.map(i => i.placedSec));
   if (!(minPlaced > 0)) {
-    throw new Error('L2: самый ранний источник стоит в ' + minPlaced
-      + ' с — из нуля Premiere не сдвинет его влево, преролл обязателен');
+    throw new Error('L2: the earliest source sits at ' + minPlaced
+      + ' s — Premiere cannot move it left of zero, a pre-roll is required');
   }
 
   // L3 — индексы плотные.
@@ -276,14 +276,14 @@ function assertSpreadContract(manifest, opts = {}) {
   const vIdx = items.filter(i => i.trackType === 'video').map(i => i.trackIdx).sort((a, b) => a - b);
   for (let k = 0; k < vIdx.length; k++) {
     if (vIdx[k] !== k) {
-      throw new Error('L3: дыра в индексах video-дорожек: ожидали ' + k + ', получили ' + vIdx[k]);
+      throw new Error('L3: gap in video track indices: expected ' + k + ', got ' + vIdx[k]);
     }
   }
   const aIdx = items.filter(i => i.trackType === 'audio').map(i => i.trackIdx).sort((a, b) => a - b);
   for (let k = 0; k < aIdx.length; k++) {
     if (aIdx[k] !== nV + k) {
-      throw new Error('L3: дыра в индексах audio-дорожек: ожидали ' + (nV + k)
-        + ', получили ' + aIdx[k]);
+      throw new Error('L3: gap in audio track indices: expected ' + (nV + k)
+        + ', got ' + aIdx[k]);
     }
   }
 
@@ -291,9 +291,9 @@ function assertSpreadContract(manifest, opts = {}) {
   // айтемов ПЛЮС по одной на каждый камерный клип (его собственный звук).
   const nA = items.filter(i => i.trackType === 'audio').length;
   if (manifest.nAudioTracks !== nV + nA || manifest.nVideoTracks !== nV) {
-    throw new Error('L4: счётчики манифеста V' + manifest.nVideoTracks + '/A' + manifest.nAudioTracks
-      + ' не сходятся с содержимым: видео ' + nV + ', звуковых айтемов ' + nA
-      + ' → ожидали V' + nV + '/A' + (nV + nA));
+    throw new Error('L4: manifest counts V' + manifest.nVideoTracks + '/A' + manifest.nAudioTracks
+      + ' do not match the content: video ' + nV + ', audio items ' + nA
+      + ' → expected V' + nV + '/A' + (nV + nA));
   }
 
   // L5 — каждый источник пересекается хотя бы с одним другим по времени.
@@ -303,8 +303,8 @@ function assertSpreadContract(manifest, opts = {}) {
   const lonely = withDur.filter(a => !withDur.some(b => b !== a
     && Math.min(a.placedSec + a.duration, b.placedSec + b.duration) - Math.max(a.placedSec, b.placedSec) > 0));
   if (lonely.length) {
-    throw new Error('L5: ни с чем не пересекаются: ' + lonely.map(i => i.id).join(', ')
-      + ' — Synchronize их не тронет, а вердикт покажет ложный ноль');
+    throw new Error('L5: overlap nothing: ' + lonely.map(i => i.id).join(', ')
+      + ' — Synchronize will not touch them and the verdict would show a false zero');
   }
 
   // L7 — filename уникален внутри типа дорожек (запасная ветка matchItem иначе
@@ -312,15 +312,15 @@ function assertSpreadContract(manifest, opts = {}) {
   for (const type of ['video', 'audio']) {
     const names = items.filter(i => i.trackType === type).map(i => i.filename);
     const dup = names.find((n, k) => names.indexOf(n) !== k);
-    if (dup) throw new Error('L7: имя "' + dup + '" встречается дважды среди ' + type + '-дорожек');
+    if (dup) throw new Error('L7: name "' + dup + '" appears twice among ' + type + ' tracks');
   }
 
   // L9 — лимит считается по ДОРОЖКАМ, а не по клипам: сцена из 10 клипов и 30
   // петличек прошла бы проверку на клипах и родила 40 дорожек.
   const total = (manifest.nVideoTracks || 0) + (manifest.nAudioTracks || 0);
   if (total > maxTracks) {
-    throw new Error('L9: раскладке нужно ' + total + ' дорожек при пределе ' + maxTracks
-      + ' — используй Fine Sync');
+    throw new Error('L9: the spread needs ' + total + ' tracks, the limit is ' + maxTracks
+      + ' — use Fine Sync');
   }
   return true;
 }

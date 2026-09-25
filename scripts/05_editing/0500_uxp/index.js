@@ -1178,8 +1178,8 @@ async function spreadForSync() {
       return typeof a.durationSec !== 'number' || a.durationSec >= syncSpread.MIN_SYNC_ITEM_SEC;
     });
     if (placedReal.length < planned.manifest.items.length) {
-      throw new Error('на таймлайне ' + placedReal.length + ' источников из '
-        + planned.manifest.items.length + ' — раскладка не легла; запусти sync_ready.py');
+      throw new Error(placedReal.length + ' of ' + planned.manifest.items.length
+        + ' sources are on the timeline — the spread did not land; run sync_ready.py');
     }
 
     // Persist the manifest — Collect may happen after a panel reload.
@@ -1213,9 +1213,9 @@ async function spreadForSync() {
     const nSel = sel ? sel.selected : 0;
     const nTracks = sel ? Object.keys(sel.perTrack).length : planned.manifest.nAudioTracks;
     setIngestStatus(sel
-      ? ('Стенд готов: ' + nSel + ' источников на ' + nTracks + ' аудиодорожках, выделение стоит. '
-         + 'Щёлкни по таймлайну и жми Clip > Synchronize → Audio')
-      : ('Стенд собран, но выделение не встало — нажми Select for Sync'),
+      ? ('Sync bench ready: ' + nSel + ' sources on ' + nTracks + ' audio tracks, selection set. '
+         + 'Click the timeline, then Clip > Synchronize → Audio')
+      : ('Sync bench built, but the selection did not take — press Select'),
       sel ? 'ready' : 'error');
     ingestLogger.info('Spread: ' + planned.placements.length + ' источников audio-only в ' + seqName
       + (sel ? ', выделено ' + nSel : '') + '. Дальше: Clip > Synchronize, потом Collect.');
@@ -1268,7 +1268,7 @@ async function selectForSyncClick() {
   if (!project) { setIngestStatus('No active project', 'error'); return; }
   const seq = await project.getActiveSequence();
   if (!seq || !/_SYNC$/.test(seq.name)) {
-    setIngestStatus('Открой секвенцию *_SYNC — выделять нужно в ней', 'error');
+    setIngestStatus('Open the *_SYNC sequence — selection happens there', 'error');
     return;
   }
   const at = await resolveActiveScene(project);
@@ -1278,10 +1278,10 @@ async function selectForSyncClick() {
   try {
     const manifest = await loadSyncManifest(at.scene);
     const r = await syncSelectionMod.selectForSync(project, seq, manifest, ingestLogger);
-    let msg = 'Выделено ' + r.selected + ' на ' + Object.keys(r.perTrack).length
-      + ' дорожках. Щёлкни по таймлайну и жми Clip > Synchronize → Audio';
-    if (r.missing.length) msg += ' · не найдено: ' + r.missing.length;
-    if (r.skippedShort) msg += ' · огрызков пропущено: ' + r.skippedShort;
+    let msg = 'Selected ' + r.selected + ' on ' + Object.keys(r.perTrack).length
+      + ' tracks. Click the timeline, then Clip > Synchronize → Audio';
+    if (r.missing.length) msg += ' · not found: ' + r.missing.length;
+    if (r.skippedShort) msg += ' · one-frame strays skipped: ' + r.skippedShort;
     setIngestStatus(msg, 'ready');
     if (r.strays.length) {
       ingestLogger.warn('Огрызки на дорожках: '
@@ -1290,7 +1290,7 @@ async function selectForSyncClick() {
     }
   } catch (err) {
     ingestLogger.error('Select for Sync: ' + err.message);
-    setIngestStatus('Выделение не встало: ' + err.message, 'error', err);
+    setIngestStatus('Selection failed: ' + err.message, 'error', err);
   } finally {
     $('btn-sync-select').removeAttribute('disabled');
   }
@@ -1307,20 +1307,20 @@ async function cleanStraysClick() {
   const project = await ppro.Project.getActiveProject();
   if (!project) { setIngestStatus('No active project', 'error'); return; }
   const seq = await project.getActiveSequence();
-  if (!seq) { setIngestStatus('Открой секвенцию', 'error'); return; }
+  if (!seq) { setIngestStatus('Open a sequence first', 'error'); return; }
 
   $('btn-sync-clean').setAttribute('disabled', 'true');
   try {
     const r = await syncSelectionMod.selectStrays(project, seq, ingestLogger);
     if (!r.found) {
-      setIngestStatus('Огрызков нет — чистить нечего', 'ready');
+      setIngestStatus('No one-frame strays — nothing to clean', 'ready');
     } else {
-      setIngestStatus('Огрызков ' + r.found + ' выделено ('
-        + r.list.map(function (x) { return x.track; }).join(', ') + ') — нажми ⌫', 'ready');
+      setIngestStatus(r.found + ' one-frame strays selected ('
+        + r.list.map(function (x) { return x.track; }).join(', ') + ') — press ⌫', 'ready');
     }
   } catch (err) {
     ingestLogger.error('Clean: ' + err.message);
-    setIngestStatus('Чистка не вышла: ' + err.message, 'error', err);
+    setIngestStatus('Clean failed: ' + err.message, 'error', err);
   } finally {
     $('btn-sync-clean').removeAttribute('disabled');
   }
@@ -1366,9 +1366,9 @@ async function collectFromSync() {
     // У них разная раскладка (аудио против видео), поэтому чужой манифест даёт
     // «не нашлось всё» — и это надо сказать словами, а не молча собрать нули.
     if (deltas.missing.length === manifest.items.length) {
-      throw new Error('ни один источник манифеста не найден на таймлайне. Манифест от "'
-        + (manifest.source || 'неизвестно') + '", раскладка в ' + seq.name
-        + ' построена не им. Пересобери Spread тем же путём, что и манифест');
+      throw new Error('no manifest source found on the timeline. The manifest comes from "'
+        + (manifest.source || 'unknown') + '", the spread in ' + seq.name
+        + ' was not built from it. Rebuild Spread the same way as the manifest');
     }
 
     // ── Сначала ОТЧЁТ, запись потом ──────────────────────────────────────
@@ -1394,11 +1394,11 @@ async function collectFromSync() {
 
     // Вердикт снят — кладём в буфер просьбу проверить, чтобы её осталось вставить.
     const copied = await copyCheckSyncRequest();
-    const tail = copied ? ' · «check all syncs» + путь скопированы в буфер' : '';
+    const tail = copied ? ' · «check all syncs» + path copied to the clipboard' : '';
 
     if (deltas.moved === 0) {
-      setIngestStatus('Ничего не сдвинулось — либо Clip > Synchronize не запускали, '
-        + 'либо Premiere согласен с нашим синхроном' + tail, 'ready');
+      setIngestStatus('Nothing moved — either Clip > Synchronize was not run, '
+        + 'or Premiere agrees with our sync' + tail, 'ready');
       return;
     }
     // ⚠️ Порог — СОВЕТ, а не запрет. Остаток меньше кадра означает «Premiere не
@@ -1409,12 +1409,12 @@ async function collectFromSync() {
     if (!(ingestState.collectArmed && ingestState.collectArmed.scene === scene)) {
       ingestState.collectArmed = { scene: scene };
       setIngestStatus(below
-        ? ('Premiere согласен: худший остаток ' + (deltas.maxAbsSec * 1000).toFixed(1)
-           + ' мс — меньше кадра, писать НЕ НУЖНО. Таблица в логе. Если всё же хочешь '
-           + 'собрать второй вариант — нажми Collect ещё раз' + tail)
-        : ('Худший остаток ' + (deltas.maxAbsSec * 1000).toFixed(1) + ' мс ('
-           + (deltas.maxAbsSec / frameSec).toFixed(2) + ' кадра) по ' + deltas.moved
-           + ' источникам. Таблица в логе. Нажми Collect ЕЩЁ РАЗ, чтобы записать в ингест'
+        ? ('Premiere agrees: worst residual ' + (deltas.maxAbsSec * 1000).toFixed(1)
+           + ' ms — under one frame, NO need to write. Table in the log. To build '
+           + 'a second variant anyway, press Collect again' + tail)
+        : ('Worst residual ' + (deltas.maxAbsSec * 1000).toFixed(1) + ' ms ('
+           + (deltas.maxAbsSec / frameSec).toFixed(2) + ' frames) across ' + deltas.moved
+           + ' sources. Table in the log. Press Collect AGAIN to write it into the ingest'
            + tail),
         below ? 'ready' : 'waiting');
       return;
@@ -3366,7 +3366,7 @@ async function selRefresh() {
     // freshest first (Roman: свежие подборки сверху), name as tiebreaker
     selState.entries.sort(function (a, b) { return (b.mtime - a.mtime) || a.name.localeCompare(b.name); });
     if (!selState.entries.length) {
-      box.innerHTML = '<div class="val-line">selections/ пуста — попроси Claude собрать подборку</div>';
+      box.innerHTML = '<div class="val-line">selections/ is empty — ask Claude to build a selection</div>';
       box.style.display = 'block';
       $('btn-sel-build').setAttribute('disabled', 'true');
       $('btn-sel-archive').setAttribute('disabled', 'true');
@@ -3395,7 +3395,7 @@ async function selRefresh() {
   } catch (err) {
     // Missing selections/ dir is NOT an error — the folder is optional per project.
     if (/Could not find an entry/i.test(err.message || '')) {
-      box.innerHTML = '<div class="val-line">selections/ нет в проекте — попроси Claude собрать подборку (папка появится сама)</div>';
+      box.innerHTML = '<div class="val-line">No selections/ in the project — ask Claude to build a selection (the folder is created automatically)</div>';
       box.style.display = 'block';
       $('btn-sel-build').setAttribute('disabled', 'true');
       $('btn-sel-archive').setAttribute('disabled', 'true');
@@ -3943,7 +3943,7 @@ async function shortsExportOut() {
     var outPath = shortsDir() + '/' + fname;
     var copied = false;
     try { await navigator.clipboard.writeText(outPath); copied = true; } catch (eCb) { shortsLogger.debug('clipboard: ' + eCb.message); }
-    setShortsStatus('Out → ' + fname + (copied ? ' — путь скопирован 📋' : ''), 'ready');
+    setShortsStatus('Out → ' + fname + (copied ? ' — path copied 📋' : ''), 'ready');
     setShortsValidation('<div class="val-line"><b>Exported for Claude</b>' + (copied ? ' · 📋 path copied' : '') + '</div>' +
       '<div class="val-line">' + escapeHtml(outPath) + '</div>' +
       '<div class="val-line">' + shortsState.buildReports.length + ' build report(s) · ' +
@@ -5919,7 +5919,7 @@ async function addReviewNote() {
     else copied = await copyToClipboard(id + ' @ ' + mm + ':' + p2(ss) + (comment ? ' · ' + comment : ''));
 
     st.textContent = '📌 ' + id + ' @ ' + mm + ':' + p2(ss) + ' — magenta marker' +
-      (copied ? (link ? ' · Sheet link copied' : ' · text copied (Sheet link появится после первого push)') : '') +
+      (copied ? (link ? ' · Sheet link copied' : ' · text copied (the Sheet link appears after the first push)') : '') +
       (comment ? '' : ' · no comment yet — add in the Sheet');
     assemblyLogger.info('Review note ' + id + ' @ ' + sec.toFixed(2) + 's on "' + seq.name + '"' +
       (copied ? ' (link copied)' : ''));
@@ -5997,7 +5997,7 @@ async function copyTzAtPlayhead() {
       if (mod > fbMod) { fallback = part; fbMod = mod; }
     }
     var part2 = best || fallback;
-    if (!part2) throw new Error('No review JSON with ТЗ (item_marker) in 05_Review');
+    if (!part2) throw new Error('No review JSON with a brief (item_marker) in 05_Review');
     var cand = part2.segments.filter(function (s) { return s.item_marker; });
     var hit = null, hitD = Infinity;
     cand.forEach(function (s) {
@@ -6005,7 +6005,7 @@ async function copyTzAtPlayhead() {
       var d = (sec >= a && sec <= b) ? 0 : Math.min(Math.abs(sec - a), Math.abs(sec - b));
       if (d < hitD) { hitD = d; hit = s; }
     });
-    if (!hit) throw new Error('No ТЗ segments in ' + ((part2.part || {}).name || 'review JSON'));
+    if (!hit) throw new Error('No brief segments in ' + ((part2.part || {}).name || 'review JSON'));
     var im = hit.item_marker;
     var mm = Math.floor(sec / 60), ss = Math.floor(sec % 60);
     function p2(n) { return ('0' + n).slice(-2); }
@@ -6015,13 +6015,13 @@ async function copyTzAtPlayhead() {
     var note = String((part2.part || {}).note || '');
     var mFolder = /https:\/\/drive\.google\.com\/drive\/folders\/[A-Za-z0-9_-]+/.exec(note);
     if (mFolder) lines.push((links.length ? '' : '\n') + '📁 Review_materials: ' + mFolder[0]);
-    lines.push('', '⏱ playhead ' + mm + ':' + p2(ss) + ' · ' + seq.name + (hitD > 0 ? ' · ближайшее ТЗ в ' + Math.round(hitD) + ' с' : ''));
+    lines.push('', '⏱ playhead ' + mm + ':' + p2(ss) + ' · ' + seq.name + (hitD > 0 ? ' · nearest brief ' + Math.round(hitD) + ' s away' : ''));
     var ok = await copyToClipboard(lines.join('\n'));
-    st.textContent = ok ? ('📋 ' + String(im.name || hit.segment_id).slice(0, 48) + (hitD > 0 ? ' (в ' + Math.round(hitD) + ' с)' : '') + ' — copied')
+    st.textContent = ok ? ('📋 ' + String(im.name || hit.segment_id).slice(0, 48) + (hitD > 0 ? ' (' + Math.round(hitD) + ' s away)' : '') + ' — copied')
       : 'Clipboard unavailable — see Err log';
     assemblyLogger.info('Copy ТЗ @ ' + sec.toFixed(2) + 's → ' + (im.name || hit.segment_id) + ' from ' + ((part2.part || {}).name || '?'));
   } catch (err) {
-    if (st) st.textContent = 'Copy ТЗ failed: ' + err.message;
+    if (st) st.textContent = 'Copy Brief failed: ' + err.message;
     assemblyLogger.error('Copy ТЗ failed: ' + (err && err.message));
   }
 }
@@ -10064,16 +10064,16 @@ async function buildReviewOverlay() {
     const result = await buildPartSequence(project, clipMap, part, segments, reviewLogger, assemblyState.projectSettings);
     try { await project.save(); } catch (e) { reviewLogger.debug('save: ' + (e && e.message)); }
 
-    var msg = 'Review-overlay: ' + result.seqName + ' — рендер V1 + ' + result.placed + ' вставок V2/V3' +
-      (result.skipped ? ' (' + result.skipped + ' пропущено — не в бине)' : '');
+    var msg = 'Review-overlay: ' + result.seqName + ' — render on V1 + ' + result.placed + ' inserts on V2/V3' +
+      (result.skipped ? ' (' + result.skipped + ' skipped — not in bin)' : '');
     setReviewStatus(msg, result.skipped ? 'warning' : 'ready');
     try {
       var vp = $('review-validation');
       vp.style.display = 'block';
       vp.innerHTML = '<div class="val-line"><b>' + escapeHtml(result.seqName) + '</b></div>' +
-        '<div class="val-line">База: ' + escapeHtml(renderName) + ' → V1/A1 (редактируемо: режь/меняй местами)</div>' +
-        '<div class="val-line">Вставок: ' + result.placed + (result.skipped ? ' (+' + result.skipped + ' не в бине)' : '') + ' на V2/V3 + маркеры</div>' +
-        '<div class="val-line">Аниматору: подставить свой таймлайн на V1 ИЛИ перенести слой V2/V3 к себе</div>';
+        '<div class="val-line">Base: ' + escapeHtml(renderName) + ' → V1/A1 (editable: cut / reorder)</div>' +
+        '<div class="val-line">Inserts: ' + result.placed + (result.skipped ? ' (+' + result.skipped + ' not in bin)' : '') + ' on V2/V3 + markers</div>' +
+        '<div class="val-line">Animator: drop your own timeline on V1 OR move the V2/V3 layer into yours</div>';
     } catch (e) { /* cosmetic panel; status line already shown */ }
     hideReviewProgress();
     reviewLogger.info('=== REVIEW-OVERLAY DONE: ' + result.seqName + ' (' + result.placed + ' placed, ' + result.skipped + ' skipped) ===');
@@ -10301,11 +10301,11 @@ async function exportSequenceJson() {
     var copied = false;
     try { await navigator.clipboard.writeText(outPath); copied = true; } catch (e) { reviewLogger.debug('clipboard: ' + e.message); }
 
-    setReviewStatus('Exported: ' + fname + ' (' + nclips + ' clips, ' + (ndisabled ? ndisabled + ' disabled ✂, ' : '') + data.markers.length + ' markers)' + (copied ? ' — ссылка скопирована' : ''), 'ready');
+    setReviewStatus('Exported: ' + fname + ' (' + nclips + ' clips, ' + (ndisabled ? ndisabled + ' disabled ✂, ' : '') + data.markers.length + ' markers)' + (copied ? ' — link copied' : ''), 'ready');
     reviewLogger.info('=== SEQUENCE EXPORTED → ' + outPath + ' (' + nclips + ' clips, ' + data.markers.length + ' markers, tracks ' + Object.keys(data.tracks).join(',') + ') ===');
     try {
       var vp = $('review-validation'); vp.style.display = 'block';
-      vp.innerHTML = '<div class="val-line"><b>Exported for Claude</b>' + (copied ? ' · 📋 ссылка скопирована' : '') + '</div>' +
+      vp.innerHTML = '<div class="val-line"><b>Exported for Claude</b>' + (copied ? ' · 📋 link copied' : '') + '</div>' +
         '<div class="val-line">' + escapeHtml(outPath) + '</div>' +
         '<div class="val-line">' + nclips + ' clips · ' + data.markers.length + ' markers · tracks ' + escapeHtml(Object.keys(data.tracks).join(', ')) + '</div>';
     } catch (e) { /* cosmetic panel; export already written and logged */ }
@@ -12264,8 +12264,8 @@ async function onDoctorSelfContain() {
     setDoctorProgress(100, 'Done');
     try {
       $('doctor-validation').innerHTML = needCopy.length
-        ? '<div style="margin-top:8px;color:#ff9800;font-size:11px"><b>Нет копии ВНУТРИ проекта — скопируй файл(ы) в 02_Edit/NewAssets и повтори:</b><br>' + needCopy.map(escapeHtml).join('<br>') + '</div>'
-        : '<div style="margin-top:8px;color:#4caf50;font-size:11px">Все ссылки указывают внутрь проекта — проект самодостаточен. Сохрани (⌘S).</div>';
+        ? '<div style="margin-top:8px;color:#ff9800;font-size:11px"><b>No copy INSIDE the project — copy the file(s) to 02_Edit/NewAssets and run again:</b><br>' + needCopy.map(escapeHtml).join('<br>') + '</div>'
+        : '<div style="margin-top:8px;color:#4caf50;font-size:11px">All links point inside the project — the project is self-contained. Save (⌘S).</div>';
     } catch (e) { /* cosmetic: status line already carries the result */ }
   } catch (e) {
     log('ERROR: ' + (e && e.message ? e.message : String(e)));

@@ -153,3 +153,52 @@ describe('panel contracts — one verified parameter write (task 4)', () => {
     assert.doesNotMatch(read('src/adjust/adjustmentBuilder.js'), /postInner === paramValue/);
   });
 });
+
+describe('panel contracts — English UI (Roman 25.09: all button and function names in English)', () => {
+  const CY = /[А-Яа-яЁё]/;
+
+  it('index.html: no Cyrillic in anything visible (labels, titles, info text)', () => {
+    const html = read('index.html')
+      .replace(/<!--[\s\S]*?-->/g, '').replace(/<style[\s\S]*?<\/style>/g, '');
+    const bad = html.split('\n').filter(l => CY.test(l)).map(l => l.trim().slice(0, 100));
+    assert.deepEqual(bad, []);
+  });
+
+  it('index.js: no Cyrillic string reaches a status line, panel text or tooltip', () => {
+    const acorn = require('acorn');
+    const src = read('index.js');
+    const ast = acorn.parse(src, { ecmaVersion: 2022, sourceType: 'script', locations: true });
+    const each = (n, fn) => { if (!n || typeof n.type !== 'string') return; fn(n);
+      for (const k of Object.keys(n)) { const c = n[k];
+        if (Array.isArray(c)) c.forEach(x => each(x, fn)); else if (c && typeof c.type === 'string') each(c, fn); } };
+    const cyr = (n) => { const out = []; each(n, m => {
+      if (m.type === 'Literal' && typeof m.value === 'string' && CY.test(m.value)) out.push(m.loc.start.line + ': ' + m.value);
+      if (m.type === 'TemplateElement' && CY.test(m.value.raw)) out.push(m.loc.start.line + ': ' + m.value.raw); }); return out; };
+    const bad = [];
+    each(ast, fnNode => {
+      if (!/Function/.test(fnNode.type)) return;
+      const assigns = {};
+      each(fnNode.body, m => {
+        if (m.type === 'VariableDeclarator' && m.id.type === 'Identifier' && m.init) (assigns[m.id.name] = assigns[m.id.name] || []).push(m.init);
+        if (m.type === 'AssignmentExpression' && m.left.type === 'Identifier') (assigns[m.left.name] = assigns[m.left.name] || []).push(m.right);
+      });
+      each(fnNode.body, n => {
+        let sink = null;
+        if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && /^set\w+(Status|Progress|Validation)$/.test(n.callee.name)) sink = n.arguments[0];
+        if (n.type === 'AssignmentExpression' && n.left.type === 'MemberExpression' && n.left.property
+          && /^(textContent|innerHTML|innerText|title|placeholder)$/.test(n.left.property.name)) sink = n.right;
+        if (!sink) return;
+        bad.push(...cyr(sink));
+        each(sink, m => { if (m.type === 'Identifier') for (const rhs of (assigns[m.name] || [])) bad.push(...cyr(rhs)); });
+      });
+    });
+    assert.deepEqual([...new Set(bad)], []);
+  });
+
+  it('no Cyrillic in thrown error messages (they end up in status lines)', () => {
+    const bad = PANEL_CODE.flatMap(rel => read(rel).split('\n')
+      .map((l, i) => (/throw new Error\(/.test(l) && CY.test(l.replace(/\/\/.*$/, ''))) ? rel + ':' + (i + 1) : null)
+      .filter(Boolean));
+    assert.deepEqual(bad, []);
+  });
+});

@@ -73,7 +73,7 @@ async function readSequenceItems(sequence) {
 /** setSelection синхронна с 26.3 и возвращала Promise до неё — покрываем обе. */
 async function applySelection(sequence, handles) {
   const sel = await createEmptySelectionCompat();
-  if (!sel) throw new Error('TrackItemSelection недоступен');
+  if (!sel) throw new Error('TrackItemSelection is not available on this build');
   for (const h of handles) sel.addItem(h, true);
   const r = sequence.setSelection(sel);
   return (r && typeof r.then === 'function') ? await r : r;
@@ -103,12 +103,12 @@ async function selectForSync(project, sequence, manifest, logger, opts = {}) {
 
   if (pick.maxPerTrack > 1) {
     const worst = Object.keys(pick.perTrack).filter(k => pick.perTrack[k] > 1);
-    throw new Error('на дорожке ' + worst.join(', ') + ' два выделяемых айтема — '
-      + 'нарушен контракт раскладки, выделять нельзя');
+    throw new Error('two selectable items on track ' + worst.join(', ') + ' — '
+      + 'the spread contract is broken, refusing to select');
   }
   if (!pick.chosen.length) {
-    throw new Error('в секвенции нет ни одного источника манифеста — '
-      + 'раскладка не легла (проверь sync_ready.py)');
+    throw new Error('no manifest source in this sequence — '
+      + 'the spread did not land (check sync_ready.py)');
   }
 
   // ⚠️ Объекты, созданные ВНЕ lockedAccess, в живой Premiere протухают
